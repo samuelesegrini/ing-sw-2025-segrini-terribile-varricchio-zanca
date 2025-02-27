@@ -1,4 +1,5 @@
 <!-- Add mermaid plugin in IntelliJ to visualize the class diagram -->
+# v1 - Class Diagram
 ```mermaid
 classDiagram
     %% Adding a comment
@@ -21,7 +22,7 @@ classDiagram
     }
 
 ```
-### Then can create an entire document
+### Main features and classes
 
 ```java
 import javafx.application.Application;
