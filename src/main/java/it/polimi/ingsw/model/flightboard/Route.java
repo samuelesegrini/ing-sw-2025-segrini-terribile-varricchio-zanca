@@ -11,7 +11,6 @@ public class Route {
 
     //constructor defined by user
     public void Route(GameLevel level){};
-    public
 
     public int getLenght() {
         return lenght;
@@ -25,9 +24,9 @@ public class Route {
         return availableStartingPositions;
     }
 
-    public int assignStartingPosition();
+    public int assignStartingPosition(){};
     //normalize position based on the number of laps completed by the player
-    public int normalizePosition (int position);
+    public int normalizePosition (int position){};
     public boolean isPositionOccupied (int position, Map<String, PlayerFlightData> playerData){};
 
 }

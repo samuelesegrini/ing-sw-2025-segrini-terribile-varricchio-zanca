@@ -1,14 +1,14 @@
 package it.polimi.ingsw.model.ship;
 
-public class Battery {
+public class Battery extends Component {
     private int maxBatteries;
     private int currentBatteries;
-    public int getCurrentBatteries();
+    public int getCurrentBatteries(){};
     //returns true if it has at least one battery
-    public boolean canUseBattery();
+    public boolean canUseBattery(){};
     //decrements the number of batteries by the value passed as a parameter.
-    public void useBattery(int numberOfBatteries);
+    public void useBattery(int numberOfBatteries){};
     //at the start of the game, it fills the battery compartments to full capacity
-    public void resetBatteries();
+    public void resetBatteries(){};
 
 }

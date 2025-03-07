@@ -9,11 +9,11 @@ public abstract class Component {
     private Position position;
     private Map<Direction,ConnectorType> connectors;
 
-    public void rotate();
-    public void place(Position p,Ship s);
-    public boolean canBePlacedAt(Position );
-    public ComponentType getType();
-    public Direction getFacing();
-    public ConnectorType getConnectorAt(Direction);
-    public Map<Direction, ConnectorType> getConnectors();
+    public void rotate(){};
+    public void place(Position p,Ship s){};
+    public boolean canBePlacedAt(Position ){};
+    public ComponentType getType(){};
+    public Direction getFacing(){};
+    public ConnectorType getConnectorAt(Direction){};
+    public Map<Direction, ConnectorType> getConnectors(){};
 }

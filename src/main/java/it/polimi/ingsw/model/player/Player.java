@@ -9,12 +9,12 @@ public class Player(){
     private Ship ship;
 
     public void moveTo (int position){};
-    public int getId();
-    public String getUsername();
-    public String getColor();
-    public int getCredits();
-    public void addCredits(int credits);
-    public void subtractCredits (int credits);
-    public int getTotalCrewMember();
-    public updateCrewMember (CrewType type, int members);
+    public int getId(){};
+    public String getUsername(){};
+    public String getColor(){};
+    public int getCredits(){};
+    public void addCredits(int credits){};
+    public void subtractCredits (int credits){};
+    public int getTotalCrewMember(){};
+    public updateCrewMember (CrewType type, int members){};
 }
