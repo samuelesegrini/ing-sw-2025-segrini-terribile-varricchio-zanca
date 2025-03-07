@@ -9,11 +9,53 @@ public abstract class Component {
     private Position position;
     private Map<Direction,ConnectorType> connectors;
 
+    /**
+     * Rotate the component 90 degrees clockwise from the direction
+     * stored in the facing attribute
+     */
     public void rotate(){};
+
+    /**
+     * Position the component in the ship at the specified location.
+     * @param p coordinates on the ShipBoardLayout
+     * @param s ship where to place the component
+     * @see ShipBoardLayout
+     */
     public void place(Position p,Ship s){};
-    public boolean canBePlacedAt(Position ){};
+
+    /**
+     * It checks if a component can be placed at the specified location,
+     * considering whether another component occupies the space
+     * and if the input coordinates match a valid point on the grid.
+     * @param p coordinates on the ShipBoardLayout
+     * @return true if the component can be placed at the specified location, false otherwise
+     * @see ShipBoardLayout
+     */
+    public boolean canBePlacedAt(Position p){};
+
+    /**
+     * Returns the type of the component.
+     * @return The type of the component
+     */
     public ComponentType getType(){};
+
+    /**
+     * Returns the component's direction. If it hasn't been rotated
+     * or has been rotated by multiples of 360 degrees, the direction will be UP.
+     * @return direction of the component
+     */
     public Direction getFacing(){};
-    public ConnectorType getConnectorAt(Direction){};
+
+    /**
+     * Given a direction it returns the connector type
+     * @param d direction of interest
+     * @return Returns the connector type at the specified direction
+     */
+    public ConnectorType getConnectorAt(Direction d){};
+
+    /**
+     * Returns all the component connectors with their corresponding directions
+     * @return Map that associates directions with connector types.
+     */
     public Map<Direction, ConnectorType> getConnectors(){};
 }

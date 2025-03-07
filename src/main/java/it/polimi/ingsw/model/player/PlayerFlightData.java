@@ -5,7 +5,10 @@ public class PlayerFlightData {
     private int lapsCompleted;
     private FlightStatus status;
 
-    //constructor defined by user
+    /** Constructor defined by user
+     *
+     * @param startPosition
+     */
     public PlayerFlightData(int startPosition){};
     public int getPosition (){ return position; }
     //normalize position based on number of laps completed
