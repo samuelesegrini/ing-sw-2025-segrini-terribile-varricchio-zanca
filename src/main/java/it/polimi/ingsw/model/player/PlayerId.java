@@ -6,7 +6,6 @@ public class PlayerId {
     private UUID value;
     private String nickname;
 
-
     /**
      * Concatenate the player's nickname and UUID into a single string.
      */
