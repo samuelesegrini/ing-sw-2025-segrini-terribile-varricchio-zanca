@@ -13,14 +13,22 @@ public class Planet {
     }
 
     //get which good types are on the planet and in what quantity
-    public Map<GoodType, Integer> getGoodQuantities(){}
+    public Map<GoodType, Integer> getGoodQuantities(){
+        return null;
+    }
 
     //in what quantity are on the planet for a given good type
-    public int getQuantityByType(GoodType type)
+    public int getQuantityByType(GoodType type){
+        return 0;
+    }
 
     // has the planet already been visited
-    public boolean isVisited(){}
+    public boolean isVisited(){
+        return false;
+    }
 
     // how many goods are on the planet regardless of the type of the goods
-    public int getTotalGoodsQuantity(){}
+    public int getTotalGoodsQuantity(){
+        return 0;
+    }
 }

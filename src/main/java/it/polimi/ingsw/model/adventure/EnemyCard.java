@@ -8,7 +8,13 @@ public abstract class EnemyCard {
     //empty constructor
     public EnemyCard(){}
 
-    public int getPowerLevel(){}
-    public int getMovementPenalty(){}
-    public boolean canSkipMovementPenalty(){}
+    public int getPowerLevel(){
+        return 0;
+    }
+    public int getMovementPenalty(){
+        return 0;
+    }
+    public boolean canSkipMovementPenalty(){
+        return false;
+    }
 }

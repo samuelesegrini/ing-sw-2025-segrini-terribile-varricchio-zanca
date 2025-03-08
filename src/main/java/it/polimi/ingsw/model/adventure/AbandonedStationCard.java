@@ -1,5 +1,7 @@
 package it.polimi.ingsw.model.adventure;
 
+import it.polimi.ingsw.model.gamestate.GameState;
+
 public class AbandonedStationCard {
 
     private Map<GoodType, Integer> goodQuantities;
@@ -13,10 +15,22 @@ public class AbandonedStationCard {
         this.goodQuantities = goodQuantities;
     }
 
-    public Map<GoodType, Integer> getGoodQuantities(){}
-    public int getQuantityByType(GoodType type){}
-    public int getMinCrewRequired()
-    public int getLostDays(){}
-    public int getTotalGoodsQuantity(){}
-    public <T> T accept(AdventureCardVisitor<T> visitor, GameState state){}
+    public Map<GoodType, Integer> getGoodQuantities(){
+        return null;
+    }
+    public int getQuantityByType(GoodType type){
+        return 0;
+    }
+    public int getMinCrewRequired(){
+        return 0;
+    }
+    public int getLostDays(){
+        return 0;
+    }
+    public int getTotalGoodsQuantity(){
+        return 0;
+    }
+    public <T> T accept(AdventureCardVisitor<T> visitor, GameState state){
+        return null;
+    }
 }

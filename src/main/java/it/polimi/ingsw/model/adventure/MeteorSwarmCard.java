@@ -1,5 +1,7 @@
 package it.polimi.ingsw.model.adventure;
 
+import java.util.List;
+
 public class MeteorSwarmCard {
 
     private List<Meteor> meteorPattern;
@@ -10,8 +12,12 @@ public class MeteorSwarmCard {
     }
 
     //get the list of what meteors and their relative intensity and direction is the swarm made of
-    public List<Meteor> getMeteorPattern(){}
+    public List<Meteor> getMeteorPattern(){
+        return List.of();
+    }
 
     // accept visitor
-    public <T> T accept(AdventureCardVisitor<T> visitor, GameState state){}
+    public <T> T accept(AdventureCardVisitor<T> visitor, GameState state){
+        return null;
+    }
 }

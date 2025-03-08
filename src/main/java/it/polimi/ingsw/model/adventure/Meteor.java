@@ -1,5 +1,6 @@
 package it.polimi.ingsw.model.adventure;
 
+import it.polimi.ingsw.model.ship.Direction;
 import javafx.scene.control.skin.TextInputControlSkin;
 
 public class Meteor {
@@ -14,11 +15,19 @@ public class Meteor {
     }
 
 
-    public MeteorType getType(){}
+    public ShotIntensity getType(){
+        return null;
+    }
 
-    public Direction getApproach(){}
+    public Direction getApproach(){
+        return null;
+    }
 
-    public boolean canBeBlockedByShield(){}
+    public boolean canBeBlockedByShield(){
+        return false;
+    }
 
-    public boolean canBeDestroyedByCannon(){}
+    public boolean canBeDestroyedByCannon(){
+        return false;
+    }
 }

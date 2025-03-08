@@ -1,12 +1,12 @@
 package it.polimi.ingsw.model.adventure;
 
 public class SmugglersCard {
-    private Map<GoodType, int> availableGoods;
+    private Map<GoodType, Integer> availableGoods;
     private int goodsLostIfDefeated;
     private boolean isDefeated;
 
     //constructor
-    public SmugglersCard(int goodsLostIfDefeated, Map<GoodType, int> availableGoods) {
+    public SmugglersCard(int goodsLostIfDefeated, Map<GoodType, Integer> availableGoods) {
         this.goodsLostIfDefeated = goodsLostIfDefeated;
         this.availableGoods = availableGoods;
         isDefeated = false;
@@ -17,11 +17,17 @@ public class SmugglersCard {
     }
 
     // which goods and in what quantity are available in case of victory
-    public Map<GoodType, int> getAvailableGoods(){}
+    public Map<GoodType, Integer> getAvailableGoods(){
+        return null;
+    }
 
     //how many goods the players lose if they lose
-    public int getGoodsLostIfDefeated(){}
+    public int getGoodsLostIfDefeated(){
+        return 0;
+    }
 
     // accept visitor
-    public <T> T accept(AdventureCardVisitor<T> visitor, GameState state){}
+    public <T> T accept(AdventureCardVisitor<T> visitor, GameState state){
+        return null;
+    }
 }

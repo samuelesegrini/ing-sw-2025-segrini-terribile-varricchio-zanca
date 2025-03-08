@@ -14,14 +14,22 @@ public class PiratesCard {
     }
 
     //get how many credits the players get in case of victory
-    public int getCreditReward() {}
+    public int getCreditReward() {
+        return 0;
+    }
 
     //get how many cannon fires the player will be attacked by
-    public int getCannonFireCount(){}
+    public int getCannonFireCount(){
+        return 0;
+    }
 
     //get a list of the cannon fires attacking the player including direction and intensity
-    public List<CannonFire> getAttackPattern(){}
+    public List<CannonFire> getAttackPattern(){
+        return List.of();
+    }
 
     // accept visitor
-    public <T> T accept(AdventureCardVisitor<T> visitor, GameState state){}
+    public <T> T accept(AdventureCardVisitor<T> visitor, GameState state){
+        return null;
+    }
 }

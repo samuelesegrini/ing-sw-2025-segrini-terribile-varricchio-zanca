@@ -1,6 +1,6 @@
 package it.polimi.ingsw.model.adventure;
 
-public enum PileIdentified {
+public enum PileIdentifier {
     BOTTOM_LEFT,
     BOTTOM_CENTER,
     BOTTOM_RIGHT,
@@ -12,8 +12,12 @@ public enum PileIdentified {
 
     //mancano tutti i commenti ma non ho capito molto di questa cosa che sembra una mezza enumerazione mezza classe normale :))
 
-    public int getIndex(){}
-    public boolean isPredictable(){}
-    public static void PileIdentifier fromIndex(int){}
-    public static void PileIdentifier[] getPredictablePiles(GameLevel){}
+    public int getIndex(){
+        return 0;
     }
+    public boolean isPredictable(){
+        return false;
+    }
+    public static void PileIdentifier fromIndex(int index){ }
+    public static void PileIdentifier[] getPredictablePiles(GameLevel){}
+}

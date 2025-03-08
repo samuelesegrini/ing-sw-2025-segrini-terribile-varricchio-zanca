@@ -14,14 +14,22 @@ public class AbandonedShipCard {
     }
 
     //
-    public int getCrewLost(){}
+    public int getCrewLost(){
+        return 0;
+    }
 
     //
-    public int getCreditsGained(){}
+    public int getCreditsGained(){
+        return 0;
+    }
 
     //
-    public int getLostDays(){}
+    public int getLostDays(){
+        return 0;
+    }
 
     // accept visitor
-    public <T> T accept(AdventureCardVisitor<T> visitor, GameState state){}
+    public <T> T accept(AdventureCardVisitor<T> visitor, GameState state){
+        return null;
+    }
 }

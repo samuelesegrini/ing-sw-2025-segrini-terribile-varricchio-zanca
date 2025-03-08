@@ -23,5 +23,7 @@ public class PlanetsCard {
     public int getLostDays(){}
 
     //acceptor visitor
-    public <T> T accept(AdventureCardVisitor<T> visitor, GameState state){}
+    public <T> T accept(AdventureCardVisitor<T> visitor, GameState state){
+        return null;
+    }
 }

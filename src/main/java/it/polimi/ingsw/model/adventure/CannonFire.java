@@ -1,13 +1,21 @@
 package it.polimi.ingsw.model.adventure;
 
+import it.polimi.ingsw.model.ship.Direction;
+
 public class CannonFire {
-    private Direction direction
-    private ShotIntensity intensity
+    private Direction direction;
+    private ShotIntensity intensity;
 
     //constructor da finire
     public CannonFire() {}
 
-    public Direction getDirection(){}
-    public ShotIntensity getIntensity(){}
-    public boolean isBlockable(){}
+    public Direction getDirection(){
+        return null;
+    }
+    public ShotIntensity getIntensity(){
+        return null;
+    }
+    public boolean isBlockable(){
+        return false;
+    }
 }
