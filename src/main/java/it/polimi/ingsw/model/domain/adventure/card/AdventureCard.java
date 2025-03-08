@@ -1,6 +1,9 @@
 package it.polimi.ingsw.model.domain.adventure.card;
 
-public class AdventureCard {
+import it.polimi.ingsw.model.enums.adventure.AdventureType;
+import it.polimi.ingsw.model.enums.adventure.CardLevel;
+
+public abstract class AdventureCard {
     private String id;
     private CardLevel level;
     private String description;

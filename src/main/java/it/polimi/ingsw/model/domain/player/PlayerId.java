@@ -1,4 +1,4 @@
-package it.polimi.ingsw.model.player;
+package it.polimi.ingsw.model.domain.player;
 
 import java.util.UUID;
 

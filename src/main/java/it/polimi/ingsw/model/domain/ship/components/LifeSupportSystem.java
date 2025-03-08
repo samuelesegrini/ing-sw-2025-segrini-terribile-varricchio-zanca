@@ -1,4 +1,4 @@
-package it.polimi.ingsw.model.ship.components;
+package it.polimi.ingsw.model.domain.ship.components;
 
 import it.polimi.ingsw.model.enums.crew.AlienColor;
 

@@ -1,4 +1,4 @@
-package it.polimi.ingsw.model.adventure;
+package it.polimi.ingsw.model.domain.adventure;
 
 import java.util.List;
 import java.util.Map;

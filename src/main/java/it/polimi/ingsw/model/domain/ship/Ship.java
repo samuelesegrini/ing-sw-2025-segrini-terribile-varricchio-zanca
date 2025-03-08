@@ -1,5 +1,11 @@
-package it.polimi.ingsw.model.ship;
+package it.polimi.ingsw.model.domain.ship;
 import java.util.List;
+import java.util.Map;
+
+import it.polimi.ingsw.model.domain.ship.ShipBoardLayout;
+import it.polimi.ingsw.model.domain.ship.components.Component;
+import it.polimi.ingsw.model.domain.ship.Grid;
+import it.polimi.ingsw.model.enums.resource.GoodType;
 
 public class Ship {
     private Grid<Component> grid;

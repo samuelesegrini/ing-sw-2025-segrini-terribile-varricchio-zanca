@@ -1,8 +1,10 @@
-package it.polimi.ingsw.model.ship.components;
+package it.polimi.ingsw.model.domain.ship.components;
 
+import it.polimi.ingsw.model.domain.ship.Position;
 import it.polimi.ingsw.model.enums.ship.ComponentType;
 import it.polimi.ingsw.model.enums.ship.ConnectorType;
-import it.polimi.ingsw.model.ship.*;
+import it.polimi.ingsw.model.enums.ship.Direction;
+import it.polimi.ingsw.model.domain.ship.Ship;
 import java.util.Map;
 
 public abstract class Component {

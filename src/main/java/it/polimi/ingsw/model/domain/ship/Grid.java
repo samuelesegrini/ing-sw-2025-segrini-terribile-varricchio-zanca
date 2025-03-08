@@ -1,4 +1,4 @@
-package it.polimi.ingsw.model.ship;
+package it.polimi.ingsw.model.domain.ship;
 
 import java.util.Map;
 

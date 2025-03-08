@@ -1,4 +1,4 @@
-package it.polimi.ingsw.model.adventure;
+package it.polimi.ingsw.model.domain.adventure;
 
 import it.polimi.ingsw.model.enums.PileIdentifier;
 import it.polimi.ingsw.model.domain.adventure.card.AdventureCard;

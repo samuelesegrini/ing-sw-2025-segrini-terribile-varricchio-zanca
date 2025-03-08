@@ -1,4 +1,4 @@
-package it.polimi.ingsw.model.ship;
+package it.polimi.ingsw.model.domain.ship;
 
 import it.polimi.ingsw.model.enums.ship.Direction;
 

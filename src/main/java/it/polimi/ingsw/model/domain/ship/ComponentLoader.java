@@ -1,8 +1,9 @@
 package it.polimi.ingsw.model.domain.ship;
 
+import it.polimi.ingsw.model.domain.ship.components.Component;
 import it.polimi.ingsw.model.enums.ship.ComponentType;
 import it.polimi.ingsw.model.enums.ship.ConnectorType;
-import it.polimi.ingsw.model.ship.Direction;
+import it.polimi.ingsw.model.enums.ship.Direction;
 
 import java.util.Map;
 

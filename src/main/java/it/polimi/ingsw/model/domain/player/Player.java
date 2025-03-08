@@ -1,4 +1,4 @@
-package it.polimi.ingsw.model.player;
+package it.polimi.ingsw.model.domain.player;
 
 import it.polimi.ingsw.model.player.PlayerId;
 import it.polimi.ingsw.model.ship.Ship;

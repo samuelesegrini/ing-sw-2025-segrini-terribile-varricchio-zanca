@@ -1,11 +1,18 @@
 package it.polimi.ingsw.model.domain.adventure.card;
 
-public class SlaversCard {
+import it.polimi.ingsw.model.domain.GameState;
+import it.polimi.ingsw.model.enums.adventure.AdventureType;
+import it.polimi.ingsw.model.enums.adventure.CardLevel;
+
+public class SlaversCard extends EnemyCard {
     private int creditReward;
     private int crewLossAmount;
 
     //constructor
-    public SlaversCard(int creditReward, int crewLossAmount) {
+    public SlaversCard(String id, CardLevel level, String description,
+                     int powerLevel, int movementPenalty,
+                     int creditReward, int crewLossAmount) {
+        super(id, level, description, AdventureType.SLAVERS, powerLevel, movementPenalty);
         this.creditReward = creditReward;
         this.crewLossAmount = crewLossAmount;
     }
