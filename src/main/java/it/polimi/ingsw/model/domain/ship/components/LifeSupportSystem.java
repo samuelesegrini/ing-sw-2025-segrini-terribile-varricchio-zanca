@@ -1,6 +1,7 @@
 package it.polimi.ingsw.model.domain.ship.components;
 
 import it.polimi.ingsw.model.enums.crew.AlienColor;
+import it.polimi.ingsw.model.enums.crew.CrewType;
 
 public class LifeSupportSystem {
     private AlienColor supportedAlienColor;

@@ -9,10 +9,14 @@ import java.util.Map;
 
 public class ComponentLoader {
     private static String components_file;
-    private ObjectMapper mapper;
+    
+    //TODO: check the JsonNode import and what to use to handle it
+    //private ObjectMapper mapper;
 
     public ComponentLoader() {}
     public void loadComponentPool() {}
-    public Component createComponentFromJson(String id, ComponentType type, JsonNode node) {return null;}
-    public Map<Direction, ConnectorType> parseConnections(JsonNode node) {return null;}
+    public Component createComponentFromJson(String id, ComponentType type/*, JsonNode node*/) {return null;}
+
+    //TODO: check the JsonNode import and what to use to handle it
+    public Map<Direction, ConnectorType> parseConnections(/*JsonNode node*/) {return null;}
 }

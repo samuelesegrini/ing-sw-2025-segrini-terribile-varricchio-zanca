@@ -1,8 +1,9 @@
 package it.polimi.ingsw.model.domain.adventure;
 
-import it.polimi.ingsw.model.enums.PileIdentifier;
+import it.polimi.ingsw.model.enums.GameLevel;
+import it.polimi.ingsw.model.util.PileIdentifier;
 import it.polimi.ingsw.model.domain.adventure.card.AdventureCard;
-import it.polimi.ingsw.model.player.PlayerId;
+import it.polimi.ingsw.model.domain.player.PlayerId;
 
 import java.util.List;
 import java.util.Map;

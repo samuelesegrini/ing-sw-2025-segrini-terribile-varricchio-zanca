@@ -1,5 +1,7 @@
 package it.polimi.ingsw.model.domain.adventure.card;
 
+import it.polimi.ingsw.model.domain.GameState;
+import it.polimi.ingsw.model.domain.adventure.AdventureCardVisitor;
 import it.polimi.ingsw.model.enums.adventure.AdventureType;
 import it.polimi.ingsw.model.enums.adventure.CardLevel;
 
@@ -24,4 +26,6 @@ public abstract class EnemyCard extends AdventureCard {
     public boolean canSkipMovementPenalty(){
         return false;
     }
+
+    public abstract <T> T accept(AdventureCardVisitor<T> visitor, GameState state);
 }

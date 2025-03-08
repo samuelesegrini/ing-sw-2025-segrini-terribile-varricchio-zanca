@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import it.polimi.ingsw.model.domain.GameState;
+import it.polimi.ingsw.model.domain.adventure.AdventureCardVisitor;
 import it.polimi.ingsw.model.enums.adventure.AdventureType;
 import it.polimi.ingsw.model.enums.adventure.CardLevel;
 import it.polimi.ingsw.model.enums.resource.GoodType;

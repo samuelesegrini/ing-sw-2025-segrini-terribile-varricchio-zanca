@@ -1,5 +1,9 @@
 package it.polimi.ingsw.model.domain.adventure.entity;
 
+import it.polimi.ingsw.model.enums.resource.GoodType;
+
+import java.util.Map;
+
 public class Planet {
 
     //which good types are on the planet and in what quantity

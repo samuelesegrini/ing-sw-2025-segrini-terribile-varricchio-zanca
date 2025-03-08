@@ -3,7 +3,8 @@ package it.polimi.ingsw.model.domain.adventure;
 import java.util.List;
 import java.util.Map;
 
-import it.polimi.ingsw.model.enums.CardLevel;
+import it.polimi.ingsw.model.enums.GameLevel;
+import it.polimi.ingsw.model.enums.adventure.CardLevel;
 
 import it.polimi.ingsw.model.domain.adventure.card.AdventureCard;
 
@@ -15,7 +16,9 @@ public class AdventureCardFactory {
     public AdventureCardFactory(String jsonPath){}
 
     public void loadCardsFromJson(String path){}
-    public AdventureCard createCardFromJson(JsonNode cardNode, CardLevel level){
+
+    //TODO: check the JsonNode import and what to use to handle it
+    public AdventureCard createCardFromJson(/*JsonNode cardNode,*/ CardLevel level){
         return null;
     }
     public AdventureDeck createDeckForGameLevel(GameLevel gameLevel){

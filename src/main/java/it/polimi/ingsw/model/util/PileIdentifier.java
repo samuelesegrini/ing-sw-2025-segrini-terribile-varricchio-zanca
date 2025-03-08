@@ -1,23 +1,77 @@
 package it.polimi.ingsw.model.util;
 
+import it.polimi.ingsw.model.enums.GameLevel;
+import java.util.Arrays;
+
+/**
+ * Identifies the different piles of components or cards on the game board.
+ * Each pile has a position and can be either predictable (contents known) or unpredictable.
+ */
 public enum PileIdentifier {
-    BOTTOM_LEFT,
-    BOTTOM_CENTER,
-    BOTTOM_RIGHT,
-    UNKNOWN;
-    private int index;
-    private boolean predictable;
+    // Predictable piles (contents known in advance)
+    BOTTOM_LEFT(0, true),
+    BOTTOM_CENTER(1, true),
+    BOTTOM_RIGHT(2, true),
+    
+    // Special value for unidentified piles
+    UNKNOWN(-1, false);
+    
+    private final int index;
+    private final boolean predictable;
 
-    //c'è da fare un costruttore????
-
-    //mancano tutti i commenti ma non ho capito molto di questa cosa che sembra una mezza enumerazione mezza classe normale :))
-
-    public int getIndex(){
-        return 0;
+    /**
+     * Creates a new pile identifier.
+     *
+     * @param index The numeric index of this pile
+     * @param predictable Whether the pile's contents are predictable
+     */
+    PileIdentifier(int index, boolean predictable) {
+        this.index = index;
+        this.predictable = predictable;
     }
-    public boolean isPredictable(){
-        return false;
+
+    /**
+     * Gets the numeric index of this pile.
+     *
+     * @return The pile's index
+     */
+    public int getIndex() {
+        return index;
     }
-    public static void PileIdentifier fromIndex(int index){ }
-    public static void PileIdentifier[] getPredictablePiles(GameLevel){}
+
+    /**
+     * Determines if this pile has predictable contents.
+     *
+     * @return true if the pile's contents are predictable, false otherwise
+     */
+    public boolean isPredictable() {
+        return predictable;
+    }
+
+    /**
+     * Gets the pile identifier corresponding to a specific index.
+     *
+     * @param index The index to look up
+     * @return The matching pile identifier or UNKNOWN if no match
+     */
+    public static PileIdentifier fromIndex(int index) {
+        for (PileIdentifier pile : values()) {
+            if (pile.index == index) {
+                return pile;
+            }
+        }
+        return UNKNOWN;
+    }
+
+    /**
+     * Gets all predictable piles available for a specific game level.
+     *
+     * @param level The game difficulty level
+     * @return Array of predictable pile identifiers
+     */
+    public static PileIdentifier[] getPredictablePiles(GameLevel level) {
+        return Arrays.stream(values())
+                    .filter(PileIdentifier::isPredictable)
+                    .toArray(PileIdentifier[]::new);
+    }
 }
