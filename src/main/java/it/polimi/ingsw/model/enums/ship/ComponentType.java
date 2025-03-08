@@ -1,4 +1,4 @@
-package it.polimi.ingsw.model.enums.ship
+package it.polimi.ingsw.model.enums.ship;
 
 public enum ComponentType {
     CABIN_START, CABIN, ENGINE_SINGLE, ENGINE_DOUBLE, CANNON_SINGLE, CANNON_DOUBLE, SHIELD,
