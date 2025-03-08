@@ -1,6 +1,8 @@
 package it.polimi.ingsw.model.domain.flight;
 
-import it.polimi.ingsw.model.ship.Ship;
+import it.polimi.ingsw.model.enums.GameLevel;
+import it.polimi.ingsw.model.enums.resource.GoodType;
+import it.polimi.ingsw.model.domain.ship.Ship;
 
 import java.util.List;
 import java.util.Map;
@@ -17,7 +19,7 @@ public class RewardSystem {
     }
 
     //you can sell the goods you collected during the flight for cosmic credits
-    public int getCreditsForResources(List<GoodType>) {
+    public int getCreditsForResources(List<GoodType> resources){
         return 0;
     }
 

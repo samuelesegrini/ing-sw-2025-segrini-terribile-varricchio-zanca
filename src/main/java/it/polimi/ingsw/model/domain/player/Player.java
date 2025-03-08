@@ -1,9 +1,11 @@
 package it.polimi.ingsw.model.domain.player;
 
-import it.polimi.ingsw.model.player.PlayerId;
-import it.polimi.ingsw.model.ship.Ship;
+import it.polimi.ingsw.model.domain.player.PlayerId;
+import it.polimi.ingsw.model.domain.ship.Ship;
+import it.polimi.ingsw.model.enums.crew.CrewType;
+import it.polimi.ingsw.model.enums.player.PlayerColor;
 
-public class Player(){
+public class Player {
     private PlayerId playerId;
     private PlayerColor color;
     private int credits;

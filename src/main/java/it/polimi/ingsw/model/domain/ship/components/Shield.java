@@ -1,5 +1,7 @@
 package it.polimi.ingsw.model.domain.ship.components;
 
+import it.polimi.ingsw.model.enums.ship.Direction;
+
 import java.util.Set;
 
 public class Shield extends Component{

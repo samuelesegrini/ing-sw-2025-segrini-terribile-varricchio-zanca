@@ -1,5 +1,7 @@
 package it.polimi.ingsw.model.domain.ship.components;
 
+import it.polimi.ingsw.model.enums.crew.CrewType;
+
 public class Cabin extends Component{
     //if crewType is alien, then crewCount must be exactly one at the beginning
     private CrewType currentCrew;

@@ -1,5 +1,9 @@
 package it.polimi.ingsw.model.domain.ship.components;
 
+import it.polimi.ingsw.model.domain.ship.Position;
+import it.polimi.ingsw.model.domain.ship.Ship;
+import it.polimi.ingsw.model.enums.ship.Direction;
+
 public class Engine extends Component{
     private boolean isDouble;
 

@@ -1,5 +1,7 @@
 package it.polimi.ingsw.model.domain.flight;
 
+import it.polimi.ingsw.model.enums.flight.FlightStatus;
+
 public class PlayerFlightData {
     private int position;
     private int lapsCompleted;

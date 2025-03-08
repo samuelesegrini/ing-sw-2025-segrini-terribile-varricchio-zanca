@@ -19,8 +19,5 @@ public class Battery {
     }
 
     //at the start of the game, it fills the battery compartments to full capacity
-    public void resetBatteries() {
-
-    }
-
+    public void resetBatteries() {}
 }

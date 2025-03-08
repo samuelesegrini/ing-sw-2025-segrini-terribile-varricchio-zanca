@@ -1,6 +1,7 @@
 package it.polimi.ingsw.model.domain.adventure.entity;
 
-import it.polimi.ingsw.model.ship.Direction;
+import it.polimi.ingsw.model.enums.adventure.ShotIntensity;
+import it.polimi.ingsw.model.enums.ship.Direction;
 
 public class CannonFire {
     private Direction direction;

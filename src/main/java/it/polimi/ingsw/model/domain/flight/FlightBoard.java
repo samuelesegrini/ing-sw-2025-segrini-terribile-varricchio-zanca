@@ -1,7 +1,8 @@
 package it.polimi.ingsw.model.domain.flight;
 
-import it.polimi.ingsw.model.player.PlayerFlightData;
-import it.polimi.ingsw.model.player.PlayerId;
+import it.polimi.ingsw.model.domain.flight.PlayerFlightData;
+import it.polimi.ingsw.model.domain.player.PlayerId;
+import it.polimi.ingsw.model.enums.GameLevel;
 
 import java.util.List;
 import java.util.Map;
