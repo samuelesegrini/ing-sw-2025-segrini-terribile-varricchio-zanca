@@ -16,7 +16,7 @@ public class Ship {
 
     public Ship(ShipBoardLayout layout) {}
 
-    // adds component to the given position
+    // adds component at the given position
     public void addComponent(Component component, Position position) {}
 
     // removes component at the given position

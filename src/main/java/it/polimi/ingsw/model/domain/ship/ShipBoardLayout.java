@@ -16,9 +16,15 @@ public class ShipBoardLayout {
         this.adjacentPositionCache = level.adjacentPositionCache;
     }
 
-
+    // returns true if given position is valid, false otherwise
     public boolean isValidPosition(Position position) {return false;}
+
+    // returns ship's center position (starting cabin)
     public Position getCenterPosition() {return centerPosition;}
+
+    // returns a set with adjacent positions to the given one
     public Set<Position> getAdjacentPositions(Position position) {return null;}
+
+    // initializes positions
     public void initializePositions() {}
 }
