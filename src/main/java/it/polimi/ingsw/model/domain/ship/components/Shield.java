@@ -14,7 +14,7 @@ public class Shield extends Component{
     /**
      * Checks if the shield protects in a specific direction.
      * @param d direction
-     * @return true if the shield cover the specified direction, false otherwise
+     * @return {@code true} if the shield cover the specified direction, {@code false} otherwise
      */
     public boolean protectsFromDirection(Direction d){ return false; }
 }

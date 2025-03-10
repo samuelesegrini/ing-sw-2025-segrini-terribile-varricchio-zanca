@@ -60,7 +60,7 @@ public class Route {
      * @param position player's position
      * @param playerData map that associates each player,
      * identified by the username string, with their flight data.
-     * @return true if the position is already occupied by another player, otherwise returns false.
+     * @return {@code true} if the position is already occupied by another player, {@code false} otherwise.
      */
     public boolean isPositionOccupied (int position, Map<String, PlayerFlightData> playerData){ return false; }
 }

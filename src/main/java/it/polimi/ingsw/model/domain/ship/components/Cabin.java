@@ -23,15 +23,15 @@ public class Cabin extends Component{
      * Update the number of crew members currently in the cabin.
      * @param type crew type (purple alien, brown alien or human)
      * @param count number of crew members to subtract
-     * @return true if the number of crew members in the cabin is at least equal to
-     * the number of crew members to subtract, false otherwise. If true, proceeds to subtract the amount passed as a parameter
+     * @return {@code true} if the number of crew members in the cabin is at least equal to
+     * the number of crew members to subtract, {@code false} otherwise. If {@code true}, proceeds to subtract the amount passed as a parameter
      */
     public boolean setCrew(CrewType type, int count){ return false; }
 
     /**
      * Indicates if the cabin is connected to a life support system,
      * meaning it can have aliens as crew members.
-     * @return true if the cabin is connected to a life support system, false otherwise
+     * @return {@code true} if the cabin is connected to a life support system, {@code false} otherwise
      */
     public boolean hasMatchingLifeSupport(){ return false; }
 }

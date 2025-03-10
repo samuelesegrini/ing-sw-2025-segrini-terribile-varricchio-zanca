@@ -14,7 +14,7 @@ public class Battery extends Component {
 
     /**
      * Check if the component it has at least one battery stored.
-     * @return true if there is at least one battery in the component, false otherwise.
+     * @return {@code true} if there is at least one battery in the component, {@code false} otherwise.
      */
     public boolean canUseBattery(){ return false; }
 

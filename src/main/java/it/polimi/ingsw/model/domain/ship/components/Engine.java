@@ -12,7 +12,7 @@ public class Engine extends Component{
      * and that no component is placed on the square behind the engine.
      * @param s ship where to place the engine
      * @param p coordinates on the ShipBoardLayout
-     * @return true if both conditions for the engine placement are met, false otherwise
+     * @return {@code true} if both conditions for the engine placement are met, {@code false} otherwise
      */
     public boolean canBePlacedAt (Ship s, Position p){ return false; }
 

@@ -34,7 +34,7 @@ public abstract class Component {
      * considering whether another component occupies the space
      * and if the input coordinates match a valid point on the grid.
      * @param p coordinates on the ShipBoardLayout
-     * @return true if the component can be placed at the specified location, false otherwise
+     * @return {@code true} if the component can be placed at the specified location, {@code false} otherwise
      * @see ShipBoardLayout
      */
     public boolean canBePlacedAt(Position p){ return false; }
