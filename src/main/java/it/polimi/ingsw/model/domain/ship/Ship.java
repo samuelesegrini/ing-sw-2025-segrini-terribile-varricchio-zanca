@@ -14,23 +14,42 @@ public class Ship {
     private List<Component> reservedComponents;
     private Map<GoodType, Integer> resources;
 
-    public Ship(ShipBoardLayout layout) {}
+    public Ship(ShipBoardLayout layout) {};
 
-    // adds component at the given position
-    public void addComponent(Component component, Position position) {}
+    /**
+     * Adds a component to the ship at the specified position on the grid.
+     * @param component The component to add.
+     * @param position The position on the grid where the component should be placed.
+     */
+    public void addComponent(Component component, Position position) {};
 
-    // removes component at the given position
-    public void removeComponent(Position position) {}
+    /**
+     * Removes the component from the ship at the specified position on the grid.
+     * @param position The position on the grid from which the component should be removed.
+     */
+    public void removeComponent(Position position) {};
 
-    // adds component to reservedComponents
-    public void reserveComponent(Component component) {}
+    /**
+     * Reserves a component for future use, allowing it to be kept aside without attaching it to the ship.
+     * @param component The component to reserve.
+     */
+    public void reserveComponent(Component component) {};
 
-    // returns ship's total engine strength
+    /**
+     * Calculates and returns the total engine strength of the ship.
+     * @return The engine strength.
+     */
     public double getEngineStrength() {return 0.0;}
 
-    // returns ship's total cannon strength
+    /**
+     * Calculates and returns the total cannon strength of the ship.
+     * @return The cannon strength.
+     */
     public double getCannonStrength() {return 0.0;}
 
-    // returns ship's total crew number
+    /**
+     * Returns the number of crew members assigned to the ship.
+     * @return The crew number.
+     */
     public int getCrewNumber() {return 0;}
 }
