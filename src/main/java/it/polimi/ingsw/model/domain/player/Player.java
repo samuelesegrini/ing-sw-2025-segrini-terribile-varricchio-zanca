@@ -11,37 +11,59 @@ public class Player {
     private int credits;
     private Ship ship;
 
-    public void moveTo (int position){};
+    /**
+     * Moves the player to the specified position.
+     * @param position int representing the position on the Route
+     */
+    public void moveTo (int position){}
 
-    public int getId() {
-        return 0;
-    }
+    /**
+     * Returns player's ID, which includes UUID and nickname.
+     * @return player's Id
+     * @see PlayerId
+     */
+    public int getId(){ return 0; }
 
-    public String getUsername() {
-        return null;
-    }
+    /**
+     * Returns a string representing player's username.
+     * @return player's username
+     */
+    public String getUsername(){ return ""; }
 
-    public String getColor() {
-        return null;
-    }
+    /**
+     * Returns a string representing player's color.
+     * @return player's color
+     */
+    public String getColor(){ return ""; }
 
-    public int getCredits() {
-        return 0;
-    }
+    /**
+     * Returns the number of credits earned by the player.
+     * @return number of credits
+     */
+    public int getCredits(){ return 0; }
 
-    public void addCredits(int credits) {
+    /**
+     * Adds the specified credits to the player's total.
+     * @param credits number of credits to add to the player
+     */
+    public void addCredits(int credits){}
 
-    }
+    /**
+     * Subtracts the specified credits to the player's total.
+     * @param credits number of credits to subtracts to the player
+     */
+    public void subtractCredits (int credits){}
 
-    public void subtractCredits(int credits) {
+    /**
+     * Returns the number of the player's crew member
+     * @return number of the crew members
+     */
+    public int getTotalCrewMember(){ return 0; }
 
-    }
-
-    public int getTotalCrewMember() {
-        return 0;
-    }
-
-    public void updateCrewMember(CrewType type, int members) {
-
-    }
+    /**
+     * Updates the number of crew members of a specific type.
+     * @param type type of the crew members
+     * @param members new total number of crew members
+     */
+    public void updateCrewMember (CrewType type, int members){}
 }

@@ -1,4 +1,4 @@
-package it.polimi.ingsw.model.player;
+package it.polimi.ingsw.model.domain.player;
 
 import java.util.UUID;
 
@@ -9,11 +9,11 @@ public class PlayerId {
     /**
      * Concatenate the player's nickname and UUID into a single string.
      */
-    public void StringToString(){};
+    public void StringToString(){}
 
     /**
      * Generate a Universally Unique Identifier for each player.
      * @return a 36-character string that includes numbers and letters
      */
-    public static PlayerId generatePlayerId(){};
+    public static PlayerId generatePlayerId(){ return null; }
 }

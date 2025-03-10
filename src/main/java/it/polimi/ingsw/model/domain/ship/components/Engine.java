@@ -7,20 +7,26 @@ import it.polimi.ingsw.model.enums.ship.Direction;
 public class Engine extends Component{
     private boolean isDouble;
 
-    public boolean canBePlacedAt(Ship ship, Position position) {
-        return false;
-    }
+    /**
+     * Verifies that the engine points to the rear of the spaceship
+     * and that no component is placed on the square behind the engine.
+     * @param s ship where to place the engine
+     * @param p coordinates on the ShipBoardLayout
+     * @return true if both conditions for the engine placement are met, false otherwise
+     */
+    public boolean canBePlacedAt (Ship s, Position p){ return false; }
 
-    //the exhaust pipe must point to the rear of the space ship (toward the
-    //player) and no component can sit on the square behind the engine.
-    public Direction getExhaustDirection() {
-        return null;
-    }
+    /**
+     * Returns the direction the exhaust is facing.
+     * @return the direction the exhaust is facing
+     */
+    public Direction getExhaustDirection(){ return null; }
 
-    //calculate the power contribution considering that double engine have twice the power, but at the
-    //expense of consuming a battery.
-    public int getPowerContribution(boolean usingBattery) {
-        return 0;
-    }
+    /**
+     * Calculate the power contribution considering that double engine have twice the power.
+     * @param usingBattery indicates whether a battery has been spent to enable double engine
+     * @return the power contribution
+     */
+    public int getPowerContribution (boolean usingBattery){ return 0; }
 }
 

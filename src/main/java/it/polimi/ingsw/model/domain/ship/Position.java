@@ -14,9 +14,6 @@ public class Position {
     // returns y coordinate
     public int getY() {return 0;}
 
-    // ?
     public Position offsetBy(Direction direction) {return null;}
-
-    // ?
     public int hashCode() {return 0;}
 }

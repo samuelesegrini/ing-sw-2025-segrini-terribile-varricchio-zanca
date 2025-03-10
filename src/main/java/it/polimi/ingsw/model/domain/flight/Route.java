@@ -1,10 +1,13 @@
-package it.polimi.ingsw.model.flightboard;
+package it.polimi.ingsw.model.domain.flight;
+
+import it.polimi.ingsw.model.domain.flight.PlayerFlightData;
+import it.polimi.ingsw.model.enums.GameLevel;
 
 import java.util.List;
 import java.util.Map;
 
 public class Route {
-    private int lenght;
+    private int length;
     private List<Integer> startingPositions;
     private List<Integer> availableStartingPositions;
     private RewardSystem rewardSystem;
@@ -13,15 +16,15 @@ public class Route {
      * Constructor that initializes the Route based on the game level.
      * @param level game level
      */
-    public void Route(GameLevel level){};
+    public Route(GameLevel level, int length){
+        this.length = length;
+    }
 
     /**
-     * Returns the lenght of the route.
-     * @return lenght of the route
+     * Returns the length of the route.
+     * @return length of the route
      */
-    public int getLenght() {
-        return lenght;
-    }
+    public int getLength() { return length; }
 
     /**
      * Provides a list of all players' starting positions from first to last.
@@ -43,14 +46,14 @@ public class Route {
      * Assigns the player their starting position on the Route.
      * @return player's position
      */
-    public int assignStartingPosition(){};
+    public int assignStartingPosition(){ return 0; }
 
     /**
      * Normalize the position based on the number of laps completed by the player.
      * @param position player's position
      * @return player's normalized position
      */
-    public int normalizePosition (int position){};
+    public int normalizePosition (int position){ return position; }
 
     /**
      * Indicates if the position is occupied by another player.
@@ -59,7 +62,6 @@ public class Route {
      * identified by the username string, with their flight data.
      * @return true if the position is already occupied by another player, otherwise returns false.
      */
-    public boolean isPositionOccupied (int position, Map<String, PlayerFlightData> playerData){};
-
+    public boolean isPositionOccupied (int position, Map<String, PlayerFlightData> playerData){ return false; }
 }
 

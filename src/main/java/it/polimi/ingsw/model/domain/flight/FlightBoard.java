@@ -3,6 +3,7 @@ package it.polimi.ingsw.model.domain.flight;
 import it.polimi.ingsw.model.domain.flight.PlayerFlightData;
 import it.polimi.ingsw.model.domain.player.PlayerId;
 import it.polimi.ingsw.model.enums.GameLevel;
+import it.polimi.ingsw.model.domain.flight.Route;
 
 import java.util.List;
 import java.util.Map;
@@ -40,9 +41,6 @@ public class FlightBoard {
         return false;
     }
 }
-
-
-
 
 
 

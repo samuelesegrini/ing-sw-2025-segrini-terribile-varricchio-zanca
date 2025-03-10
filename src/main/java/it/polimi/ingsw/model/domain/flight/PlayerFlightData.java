@@ -7,29 +7,51 @@ public class PlayerFlightData {
     private int lapsCompleted;
     private FlightStatus status;
 
-    //constructor defined by user
-    public PlayerFlightData(int startPosition) {
-
+    /**
+     * Constructor that sets the starting position.
+     * @param startPosition representing the player's position on Route
+     * @see it.polimi.ingsw.model.domain.flight.Route
+     */
+    public PlayerFlightData (int startPosition){
+        this.position = startPosition;
     }
 
-    public int getPosition (){ return position; }
+    /**
+     * Return player's position on Route
+     * @return player's position on Route
+     * @see it.polimi.ingsw.model.domain.flight.Route
+     */
+    public int getPosition(){ return position; }
 
-    //normalize position based on number of laps completed
-    public int getAbsolutePosition() {
-        return 0;
-    }
+    /**
+     * Return the normalized player's position based on number of laps completed
+     * @return normalized player's position
+     */
+    public int getAbsolutePosition(){ return 0; }
 
-    public void setPosition(int position, int routeLength) {
+    /**
+     * Sets the normalized player's position, based on number of laps completed.
+     * @param position player's position on Route
+     * @param routeLength Route's length
+     * @see it.polimi.ingsw.model.domain.flight.Route
+     */
+    public void setPosition(int position, int routeLength){}
 
-    }
+    /**
+     * Return the number of laps completed by the player.
+     * @return the number of laps completed
+     */
+    public int getLapsCompleted() { return lapsCompleted; }
 
-    public int getLapsCompleted() {return lapsCompleted;};
+    /**
+     *Returns the player's flight status: still in the race or abandoned.
+     * @return player's flight status
+     */
+    public FlightStatus getStatus(){ return null; }
 
-    public FlightStatus getStatus() {
-        return null;
-    }
-
-    public void setStatus(FlightStatus status) {
-
-    }
+    /**
+     * Update the player's flight status
+     * @param status new status to set
+     */
+    public void setStatus (FlightStatus status){}
 }
