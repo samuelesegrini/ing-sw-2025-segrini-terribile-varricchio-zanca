@@ -32,7 +32,7 @@ public abstract class EnemyCard extends AdventureCard {
      * @return The enemy's power level.
      */
     public int getPowerLevel(){
-        return 0;
+        return powerLevel;
     }
 
     /**
@@ -41,17 +41,9 @@ public abstract class EnemyCard extends AdventureCard {
      * @return The number of spaces the ship moves backward.
      */
     public int getMovementPenalty(){
-        return 0;
+        return movementPenalty;
     }
 
-    /**
-     * Checks if the movement penalty can be skipped by refusing the reward.
-     *
-     * @return {@code true} if the player can skip the penalty, {@code false} otherwise.
-     */
-    public boolean canSkipMovementPenalty(){
-        return false;
-    }
 
     /**
      * Accepts a visitor to process this EnemyCard according to the visitor pattern.

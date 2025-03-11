@@ -38,7 +38,7 @@ public class AbandonedShipCard extends AdventureCard {
      * @return The number of crew members to be lost.
      */
     public int getCrewLost(){
-        return 0;
+        return crewLost;
     }
 
     /**
@@ -47,7 +47,7 @@ public class AbandonedShipCard extends AdventureCard {
      * @return The number of credits gained.
      */
     public int getCreditsGained(){
-        return 0;
+        return creditsGained;
     }
 
     /**
@@ -56,7 +56,7 @@ public class AbandonedShipCard extends AdventureCard {
      * @return The number of flight days spent on the repair.
      */
     public int getLostDays(){
-        return 0;
+        return lostDays;
     }
 
     /**

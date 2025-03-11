@@ -38,7 +38,7 @@ public class PiratesCard extends EnemyCard {
      * @return The amount of credits the player will receive for defeating the Pirates.
      */
     public int getCreditReward() {
-        return 0;
+        return creditReward;
     }
 
     /**
@@ -48,7 +48,7 @@ public class PiratesCard extends EnemyCard {
      * @return The number of cannon fire attacks that will be made against the player.
      */
     public int getCannonFireCount(){
-        return 0;
+        return attackPattern().lenght;
     }
 
     /**

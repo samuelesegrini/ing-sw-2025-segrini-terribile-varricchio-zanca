@@ -31,7 +31,7 @@ public class Planet {
      */
     //get which good types are on the planet and in what quantity
     public Map<GoodType, Integer> getGoodQuantities(){
-        return null;
+        return goodQuantities;
     }
 
 
@@ -43,7 +43,7 @@ public class Planet {
      */
     //in what quantity are on the planet for a given good type
     public int getQuantityByType(GoodType type){
-        return 0;
+        return goodQuantities.get(type);
     }
 
     /**
@@ -54,7 +54,7 @@ public class Planet {
      */
     // has the planet already been visited
     public boolean isVisited(){
-        return false;
+        return visited;
     }
 
     /**
@@ -64,6 +64,6 @@ public class Planet {
      */
     // how many goods are on the planet regardless of the type of the goods
     public int getTotalGoodsQuantity(){
-        return 0;
+        return goodQuantities.values().stream().mapToInt(Integer::intValue).sum();
     }
 }

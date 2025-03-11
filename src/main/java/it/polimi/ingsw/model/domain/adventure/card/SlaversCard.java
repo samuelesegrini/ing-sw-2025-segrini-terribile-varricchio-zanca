@@ -35,7 +35,7 @@ public class SlaversCard extends EnemyCard {
      * @return The credit reward amount.
      */
     public int getCreditReward(){
-        return 0;
+        return creditReward;
     }
 
     /**

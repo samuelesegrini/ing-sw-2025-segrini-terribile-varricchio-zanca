@@ -1,13 +1,24 @@
 package it.polimi.ingsw.model.enums.crew;
 
 public enum CrewType {
+    /**
+     * Crew type is Purple Alien.
+     */
     ALIEN_PURPLE(true, AlienColor.PURPLE, 1),
+
+    /**
+     * Crew type is Brown Alien.
+     */
     ALIEN_BROWN(true, AlienColor.BROWN, 1),
+
+    /**
+     * Crew type is Human.
+     */
     HUMAN(false, null, 2);
 
-    private boolean isAlien;
-    private AlienColor alienColor;
-    private int maxPerCabin;
+    private final boolean isAlien;
+    private final AlienColor alienColor;
+    private final int maxPerCabin;
 
     private CrewType(boolean isAlien, AlienColor alienColor, int maxPerCabin) {
         this.isAlien = isAlien;

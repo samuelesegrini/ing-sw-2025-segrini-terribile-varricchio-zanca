@@ -25,7 +25,7 @@ public class Meteor {
      * @return The {@link ShotIntensity} value that represents the meteor's intensity.
      */
     public ShotIntensity getType(){
-        return null;
+        return intensity;
     }
 
     /**
@@ -34,7 +34,7 @@ public class Meteor {
      * @return The {@link Direction} representing the meteor's approach.
      */
     public Direction getApproach(){
-        return null;
+        return approach;
     }
 
     /**
@@ -44,16 +44,9 @@ public class Meteor {
      * @return {@code true} if the meteor can be blocked by the shield, otherwise {@code false}.
      */
     public boolean canBeBlockedByShield(){
+        if (intensity=='LIGHT')
+            return true;
         return false;
     }
 
-    /**
-     * Determines if the meteor can be destroyed by the ship's cannon.
-     * Depending on the meteor's intensity and direction, it may or may not be destroyable by the player's cannon.
-     *
-     * @return {@code true} if the meteor can be destroyed by the cannon, otherwise {@code false}.
-     */
-    public boolean canBeDestroyedByCannon(){
-        return false;
-    }
 }

@@ -34,7 +34,7 @@ public class CombatCheck {
      */
     public CombatCheck(CombatAttributeType attribute, List<CannonFire> cannonFires) {
         this.attribute = attribute;
-        this.penaltyType = null;
+        this.penaltyType = PenaltyType.CANNON_FIRE ;
         this.penaltyValue = 0;
         this.cannonFires = new ArrayList<>(cannonFires);
     }
@@ -44,8 +44,7 @@ public class CombatCheck {
      *
      * @return The attribute type (e.g., crew count, engine power, cannon strength).
      */
-    public CombatAttributeType getAttribute() {
-        return attribute;
+    public CombatAttributeType getAttribute() { return attribute;
     }
 
     /**

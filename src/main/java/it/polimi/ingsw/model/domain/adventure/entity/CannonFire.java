@@ -15,7 +15,7 @@ public class CannonFire {
      * @return The direction of the shot.
      */
     public Direction getDirection(){
-        return null;
+        return direction;
     }
 
     /**
@@ -24,7 +24,7 @@ public class CannonFire {
      * @return The intensity level of the shot (e.g., light or heavy).
      */
     public ShotIntensity getIntensity(){
-        return null;
+        return intensity;
     }
 
     /**
@@ -33,6 +33,8 @@ public class CannonFire {
      * @return {@code true} if the shot is blockable, {@code false} otherwise.
      */
     public boolean isBlockable(){
+        if (intensity=='LIGHT')
+            return true;
         return false;
     }
 }
