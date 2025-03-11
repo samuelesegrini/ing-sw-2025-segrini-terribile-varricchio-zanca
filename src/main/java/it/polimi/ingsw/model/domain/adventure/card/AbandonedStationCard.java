@@ -45,7 +45,7 @@ public class AbandonedStationCard extends AdventureCard {
      * @return A map of goods and their quantities.
      */
     public Map<GoodType, Integer> getGoodQuantities(){
-        return null;
+        return goodQuantities;
     }
 
     /**
@@ -54,7 +54,7 @@ public class AbandonedStationCard extends AdventureCard {
      * @return The quantity of the specified good type available.
      */
     public int getQuantityByType(GoodType type){
-        return 0;
+        return goodQuantities.get(type);
     }
 
     /**
@@ -62,7 +62,7 @@ public class AbandonedStationCard extends AdventureCard {
      * @return The minimum crew required.
      */
     public int getMinCrewRequired(){
-        return 0;
+        return minCrewRequired;
     }
 
     /**
@@ -70,7 +70,7 @@ public class AbandonedStationCard extends AdventureCard {
      * @return The number of flight days lost.
      */
     public int getLostDays(){
-        return 0;
+        return lostDays;
     }
 
     /**
@@ -78,7 +78,7 @@ public class AbandonedStationCard extends AdventureCard {
      * @return The total number of goods available on the station.
      */
     public int getTotalGoodsQuantity(){
-        return 0;
+        return goodQuantities.values().stream().mapToInt(Integer::intValue).sum();
     }
 
     /**

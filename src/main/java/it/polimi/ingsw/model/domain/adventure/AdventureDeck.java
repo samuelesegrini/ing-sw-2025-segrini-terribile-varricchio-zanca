@@ -5,6 +5,7 @@ import it.polimi.ingsw.model.util.PileIdentifier;
 import it.polimi.ingsw.model.domain.adventure.card.AdventureCard;
 import it.polimi.ingsw.model.domain.player.PlayerId;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -47,7 +48,12 @@ public class AdventureDeck {
      * @throws IllegalArgumentException if any parameter is null or if piles are empty
      */
     public AdventureDeck(GameLevel gameLevel, List<List<AdventureCard>> uncoveredPiles, List<AdventureCard> coveredPile) {
-        // Implementation would go here
+        this.gameLevel = gameLevel;
+        this.uncoveredPiles = uncoveredPiles;
+        this.coveredPile = coveredPile;
+        this.currentIndex = 0;
+        this.playerViewing = new HashMap<PlayerId, PileIdentifier>();
+        this.isFlightPhase = false;
     }
     
     /**
@@ -67,8 +73,10 @@ public class AdventureDeck {
      * @throws IllegalArgumentException if playerId or pileId is null
      */
     public boolean canPlayerViewPile(PlayerId playerId, PileIdentifier pileId) {
-        // Implementation would go here
-        return false;
+        if(playerViewing.containsKey(PileIdentifier)) {
+            return false;
+        }
+        return true;
     }
     
     /**

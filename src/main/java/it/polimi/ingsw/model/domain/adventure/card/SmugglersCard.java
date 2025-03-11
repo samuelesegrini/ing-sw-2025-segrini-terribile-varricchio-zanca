@@ -53,7 +53,7 @@ public class SmugglersCard extends EnemyCard {
      * @return A map of the available goods and their quantities.
      */
     public Map<GoodType, Integer> getAvailableGoods(){
-        return null;
+        return availableGoods;
     }
 
     /**
@@ -62,7 +62,7 @@ public class SmugglersCard extends EnemyCard {
      * @return The number of goods lost in the event of defeat.
      */
     public int getGoodsLostIfDefeated(){
-        return 0;
+        return goodsLostIfDefeated;
     }
 
     /**

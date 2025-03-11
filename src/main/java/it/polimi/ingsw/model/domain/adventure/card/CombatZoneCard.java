@@ -30,7 +30,10 @@ public class CombatZoneCard extends AdventureCard {
      *
      * @param check The CombatCheck to be added.
      */
-    public void addCombatCheck(CombatCheck check){};
+    public void addCombatCheck(CombatCheck check){
+        this.combatChecks.add(check);
+        return;
+    };
 
     /**
      * Accepts a visitor to process this CombatZone card according to the visitor pattern.
