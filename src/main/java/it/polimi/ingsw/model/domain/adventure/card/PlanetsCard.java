@@ -2,6 +2,7 @@ package it.polimi.ingsw.model.domain.adventure.card;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import it.polimi.ingsw.model.domain.GameState;
 import it.polimi.ingsw.model.domain.adventure.AdventureCardVisitor;
@@ -9,28 +10,66 @@ import it.polimi.ingsw.model.domain.adventure.entity.Planet;
 import it.polimi.ingsw.model.enums.adventure.AdventureType;
 import it.polimi.ingsw.model.enums.adventure.CardLevel;
 
+/**
+ * Represents the Planets event in the game, where players can land on one of several planets to pick up goods.
+ * Each player will decide whether to land on a planet, which costs a certain number of flight days.
+ * Only one rocket is allowed per planet, and the leader chooses first, followed by other players in order.
+ */
 public class PlanetsCard extends AdventureCard {
 
     private List<Planet> planets;
     private int lostDays;
 
-    //constructor
+    /**
+     * Constructs a new Planets event card with the specified details.
+     *
+     * @param id The unique identifier for the Planets card.
+     * @param level The level of the card.
+     * @param description A description explaining the event and its effects on the player's actions.
+     * @param lostDays The number of flight days players lose when they land on a planet.
+     * @param planets A list of planets that players can choose to land on to pick up goods.
+     */
     public PlanetsCard(String id, CardLevel level, String description, int lostDays, List<Planet> planets) {
         super(id, level, description, AdventureType.PLANETS);
         this.lostDays = lostDays;
         this.planets = new ArrayList<>(planets);
     }
 
-    //get what planets are on this card
-    public List<Planet> getPlanets(){ return planets; }
+    /**
+     * Gets the list of all planets in the Planets Card.
+     *
+     * @return A list of {@link Planet} objects.
+     */
+    public List<Planet> getPlanets() {
+        return planets;
+    }
 
-    //get what unvisited planets are on this card
-    public List<Planet> getUnvisitedPlanets(){ return planets; }
+    /**
+     * Gets the list of planets that have not been visited yet.
+     *
+     * @return A list of {@link Planet} objects representing the unvisited planets.
+     */
+    public List<Planet> getUnvisitedPlanets() {
+        return planets.stream()
+                .filter(planet -> !planet.isVisited())
+                .collect(Collectors.toList());
+    }
 
-    //get how many days players lose if they decide to land on a planet
+    /**
+     * Gets the number of flight days that players lose when landing on a planet in this event.
+     *
+     * @return The number of flight days lost when landing on a planet.
+     */
     public int getLostDays(){ return lostDays; }
 
-    //acceptor visitor
+    /**
+     * Accepts a visitor to process this PlanetsCard.
+     *
+     * @param visitor The visitor implementing which will perform actions on the card.
+     * @param state The current game state.
+     * @param <T> The return type of the visitor's action.
+     * @return The result of the visitor's action on the PlanetsCard.
+     */
     public <T> T accept(AdventureCardVisitor<T> visitor, GameState state){
         return null;
     }
