@@ -17,7 +17,8 @@ public class Route {
      * @param level game level
      */
     public Route(GameLevel level, int length){
-        this.length = length;
+        switch{
+        }
     }
 
     /**
