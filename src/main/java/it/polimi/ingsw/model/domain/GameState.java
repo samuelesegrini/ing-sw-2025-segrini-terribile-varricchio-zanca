@@ -3,6 +3,7 @@ package it.polimi.ingsw.model.domain;
 import it.polimi.ingsw.model.domain.adventure.AdventureDeck;
 import it.polimi.ingsw.model.domain.flight.FlightBoard;
 import it.polimi.ingsw.model.domain.player.Player;
+import it.polimi.ingsw.model.enums.GamePhase;
 
 import java.util.List;
 
@@ -21,13 +22,17 @@ public class GameState {
      * Returns the current player in the game.
      * @return The player who is currently taking their turn.
      */
-    public Player getCurrentPlayer() {};
+    public Player getCurrentPlayer() {
+        return null;
+    }
 
     /**
      * Moves to the next player in the game, transitioning the turn to the next player.
      * @return The player who will take their turn next.
      */
-    public Player nextPlayer() {};
+    public Player nextPlayer(){
+        return null;
+    }
 
 
     /**
@@ -50,7 +55,9 @@ public class GameState {
      * Returns a list of all the players participating in the game.
      * @return A list of players.
      */
-    public List<Player> getPlayers() {};
+    public List<Player> getPlayers() {
+        return List.of();
+    }
 
     /**
      * Returns the current phase of the game (setup, building, flight, end).
