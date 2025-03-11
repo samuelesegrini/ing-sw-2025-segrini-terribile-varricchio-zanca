@@ -11,5 +11,5 @@ public enum AdventureType {
     WAR_ZONE,
     ABANDONED_STATION,
     SPACE_DUST,
-    EPIDEMIC
+    EPIDEMIC;
 }

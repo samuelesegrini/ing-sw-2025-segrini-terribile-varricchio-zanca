@@ -29,7 +29,7 @@ public class Position {
      * @param direction The direction to offset the position.
      * @return A new Position with the offset applied.
      */
-    public Position offsetBy(Direction direction) {return 0;}
+    public Position offsetBy(Direction direction) {return null;}
 
     /**
      * Returns a hash code value for the Position.
