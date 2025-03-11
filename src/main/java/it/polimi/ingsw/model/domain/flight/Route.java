@@ -17,8 +17,6 @@ public class Route {
      * @param level game level
      */
     public Route(GameLevel level, int length){
-        switch{
-        }
     }
 
     /**
