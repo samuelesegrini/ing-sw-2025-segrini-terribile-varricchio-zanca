@@ -23,7 +23,7 @@ public class GameState {
      * @return The player who is currently taking their turn.
      */
     public Player getCurrentPlayer() {
-        return null;
+        return currentPlayer;
     }
 
     /**
@@ -31,7 +31,11 @@ public class GameState {
      * @return The player who will take their turn next.
      */
     public Player nextPlayer(){
-        return null;
+        int temp = players.indexOf(currentPlayer)+1;
+        if (temp = players.size()){
+            temp = 0;
+        }
+        return players.get(temp);
     }
 
 
@@ -56,7 +60,7 @@ public class GameState {
      * @return A list of players.
      */
     public List<Player> getPlayers() {
-        return List.of();
+        return players;
     }
 
     /**

@@ -16,8 +16,11 @@ public class Route {
      * Constructor that initializes the Route based on the game level.
      * @param level game level
      */
-    public Route(GameLevel level, int length){
+    public Route(GameLevel level, int length, List<Integer> startingPositions, RewardSystem rewardSystem) {
         this.length = length;
+        this.startingPositions = startingPositions;
+        this.availableStartingPositions = startingPositions;
+        this.rewardSystem = rewardSystem;
     }
 
     /**
@@ -46,7 +49,11 @@ public class Route {
      * Assigns the player their starting position on the Route.
      * @return player's position
      */
-    public int assignStartingPosition(){ return 0; }
+    public int assignStartingPosition(){
+        Integer startingPosition = availableStartingPositions.get(0);
+        availableStartingPositions.remove(startingPosition);
+        return startingPosition;
+    }
 
     /**
      * Normalize the position based on the number of laps completed by the player.
