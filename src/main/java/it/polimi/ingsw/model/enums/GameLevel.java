@@ -10,10 +10,10 @@ public enum GameLevel {
     // sistema valori
     LEVEL_II(0, 0, 0, null);
 
-    private int duration;
-    private int predictablePileCount;
-    private int cardPerPile;
-    private CardLevel primaryCardLevel;
+    private final int duration;
+    private final int predictablePileCount;
+    private final int cardPerPile;
+    private final CardLevel primaryCardLevel;
 
     private GameLevel(int duration, int predictablePileCount, int cardPerPile, CardLevel primaryCardLevel) {
         this.duration = duration;

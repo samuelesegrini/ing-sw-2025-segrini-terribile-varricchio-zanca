@@ -2,26 +2,24 @@ package it.polimi.ingsw.model.enums.ship;
 
 public enum ConnectorType {
     /**
-     * Connector type is universal.
+     * Connector type is Universal.
      */
     UNIVERSAL,
 
     /**
-     * Connector type is double.
+     * Connector type is Double.
      */
     DOUBLE,
 
     /**
-     * Connector type is single.
+     * Connector type is Single.
      */
     SINGLE,
 
     /**
-     * Connector type is plain.
+     * Connector type is Plain.
      */
     PLAIN;
-
-    // returns true if the connector can be connected to the connector given, false otherwise
 
     /**
      * Checks if the connector type is compatible with the connector type given as argument.
@@ -29,5 +27,7 @@ public enum ConnectorType {
      * @return {@code true} if the connector type is compatible with the connector type given as argument,
      * {@code false} otherwise.
      */
-    public boolean canConnectTo(ConnectorType other) {return false;}
+    public boolean canConnectTo(ConnectorType other) {
+        return false;
+    }
 }

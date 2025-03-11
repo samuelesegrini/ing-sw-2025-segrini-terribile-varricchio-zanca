@@ -1,9 +1,24 @@
 package it.polimi.ingsw.model.enums.ship;
 
 public enum Direction {
+    /**
+     * Direction is Up.
+     */
     UP,
+
+    /**
+     * Direction is Down.
+     */
     DOWN,
+
+    /**
+     * Direction is Left.
+     */
     LEFT,
+
+    /**
+     * Direction is Right.
+     */
     RIGHT;
 
     /**
