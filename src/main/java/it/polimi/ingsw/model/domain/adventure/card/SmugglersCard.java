@@ -15,7 +15,17 @@ public class SmugglersCard extends EnemyCard {
     private int goodsLostIfDefeated;
     private boolean isDefeated;
 
-    //constructor
+    /**
+     * Constructs a new Smugglers encounter card with the specified attributes.
+     *
+     * @param id The unique identifier for the Smugglers card.
+     * @param level The card's level.
+     * @param description A brief description of the Smugglers' card effects.
+     * @param powerLevel The power level of the Smugglers' attack.
+     * @param movementPenalty The penalty to movement (flight days) if the player is defeated.
+     * @param goodsLostIfDefeated The amount of goods the player will lose if they are defeated by the Smugglers.
+     * @param availableGoods A map of the goods available to the player if they defeat the Smugglers.
+     */
     public SmugglersCard(String id, CardLevel level, String description,
                         int powerLevel, int movementPenalty,
                         int goodsLostIfDefeated, Map<GoodType, Integer> availableGoods) {
@@ -24,23 +34,45 @@ public class SmugglersCard extends EnemyCard {
         this.availableGoods = new HashMap<>(availableGoods);
         this.isDefeated = false;
     }
-   
-    //have the smugglers been defeated
+
+    /**
+     * Checks if the Smugglers have been defeated.
+     * This method returns true if the player successfully defeats the Smugglers, and false otherwise.
+     *
+     * @return {@code true} if the Smugglers have been defeated, {@code false} otherwise.
+     */
     public boolean isDefeated() {
         return isDefeated;
     }
 
-    // which goods and in what quantity are available in case of victory
+    /**
+     * Gets the goods available to the player if they successfully defeat the Smugglers.
+     * This is a map where each key represents a type of good, and the corresponding value represents the quantity
+     * of that good.
+     *
+     * @return A map of the available goods and their quantities.
+     */
     public Map<GoodType, Integer> getAvailableGoods(){
         return null;
     }
 
-    //how many goods the players lose if they lose
+    /**
+     * Gets the number of goods the player will lose if they are defeated by the Smugglers.
+     *
+     * @return The number of goods lost in the event of defeat.
+     */
     public int getGoodsLostIfDefeated(){
         return 0;
     }
 
-    // accept visitor
+    /**
+     * Accepts a visitor that performs some action on the Smugglers card.
+     *
+     * @param visitor The visitor handling the card logic.
+     * @param state The current game state, which may affect the behavior of the visitor.
+     * @param <T> The type of the result returned by the visitor.
+     * @return The result of the visitor's action on the Smugglers card.
+     */
     public <T> T accept(AdventureCardVisitor<T> visitor, GameState state){
         return null;
     }

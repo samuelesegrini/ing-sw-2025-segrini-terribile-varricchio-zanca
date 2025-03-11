@@ -10,22 +10,56 @@ public abstract class EnemyCard extends AdventureCard {
     private int powerLevel;
     private int movementPenalty;
 
-    //constructor
+    /**
+     * Constructs a new enemy card with the specified details.
+     *
+     * @param id The unique identifier for the enemy card.
+     * @param level The level of the card.
+     * @param description A description that explains the effects and consequences of the encounter with the enemy.
+     * @param type The type of adventure associated with this enemy card.
+     * @param powerLevel The power level of the enemy's attack, which determines how challenging the encounter will be.
+     * @param movementPenalty The penalty to the player's movement (flight days) if they are defeated by the enemy.
+     */
     public EnemyCard(String id, CardLevel level, String description, AdventureType type, int powerLevel, int movementPenalty) {
         super(id, level, description, type);
         this.powerLevel = powerLevel;
         this.movementPenalty = movementPenalty;
     }
 
+    /**
+     * Gets the power level of the enemy.
+     *
+     * @return The enemy's power level.
+     */
     public int getPowerLevel(){
         return 0;
     }
+
+    /**
+     * Gets the movement penalty applied when the enemy is defeated.
+     *
+     * @return The number of spaces the ship moves backward.
+     */
     public int getMovementPenalty(){
         return 0;
     }
+
+    /**
+     * Checks if the movement penalty can be skipped by refusing the reward.
+     *
+     * @return {@code true} if the player can skip the penalty, {@code false} otherwise.
+     */
     public boolean canSkipMovementPenalty(){
         return false;
     }
 
+    /**
+     * Accepts a visitor to process this EnemyCard according to the visitor pattern.
+     *
+     * @param visitor The visitor handling the card logic.
+     * @param state The current game state.
+     * @param <T> The return type of the visitor's operation.
+     * @return The result of the visitor's processing.
+     */
     public abstract <T> T accept(AdventureCardVisitor<T> visitor, GameState state);
 }

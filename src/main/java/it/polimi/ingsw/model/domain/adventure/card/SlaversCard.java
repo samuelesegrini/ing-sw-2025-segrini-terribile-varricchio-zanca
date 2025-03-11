@@ -9,7 +9,17 @@ public class SlaversCard extends EnemyCard {
     private int creditReward;
     private int crewLossAmount;
 
-    //constructor
+    /**
+     * Constructs a new Slavers encounter card with the specified attributes.
+     *
+     * @param id The unique identifier for the Slavers card.
+     * @param level The card's level.
+     * @param description A brief description of the Slavers card's effect.
+     * @param powerLevel The power level of the Slavers' attack, determining the challenge of the encounter.
+     * @param movementPenalty The penalty to movement (flight days) that the player will face.
+     * @param creditReward The amount of credits the player will earn if they defeat the Slavers.
+     * @param crewLossAmount The number of crew members the player will lose if defeated by the Slavers.
+     */
     public SlaversCard(String id, CardLevel level, String description,
                      int powerLevel, int movementPenalty,
                      int creditReward, int crewLossAmount) {
@@ -18,18 +28,34 @@ public class SlaversCard extends EnemyCard {
         this.crewLossAmount = crewLossAmount;
     }
 
-    //how many credits the players get in case of victory
+    /**
+     * Gets the credit reward given to the player if they defeat the Slavers.
+     * The credits are granted in exchange for sacrificing crew members during the encounter.
+     *
+     * @return The credit reward amount.
+     */
     public int getCreditReward(){
         return 0;
     }
 
-    //how many crew memebers the players lose if defeated
-    public int getCrewLossAmount(){
-        return 0;
+    /**
+     * Gets the amount of crew members the player will lose if they are defeated by the Slavers.
+     *
+     * @return The number of crew members lost during the encounter.
+     */
+    public int getCrewLossAmount() {
+        return crewLossAmount;
     }
 
-    // accept visitor
-    public <T> T accept(AdventureCardVisitor<T> visitor, GameState state){
+    /**
+     * Accepts a visitor to process this Slavers card according to the visitor pattern.
+     *
+     * @param visitor The visitor handling the card logic.
+     * @param state The current game state.
+     * @param <T> The return type of the visitor's operation.
+     * @return The result of the visitor's processing.
+     */
+    private <T> T accept(AdventureCardVisitor<T> visitor, GameState state){
         return null;
     }
 }
