@@ -33,33 +33,6 @@ public class AbandonedShipCard extends AdventureCard {
     }
 
     /**
-     * Returns the number of crew members that must be lost to repair the abandoned ship.
-     *
-     * @return The number of crew members to be lost.
-     */
-    public int getCrewLost(){
-        return crewLost;
-    }
-
-    /**
-     * Returns the number of cosmic credits a player gains by repairing the abandoned ship.
-     *
-     * @return The number of credits gained.
-     */
-    public int getCreditsGained(){
-        return creditsGained;
-    }
-
-    /**
-     * Returns the number of flight days a player loses when repairing the abandoned ship.
-     *
-     * @return The number of flight days spent on the repair.
-     */
-    public int getLostDays(){
-        return lostDays;
-    }
-
-    /**
     * Accepts a visitor to perform some operation on this adventure card.
     * This is part of the Visitor design pattern, where specific logic can be applied to
     * different types of adventure cards.

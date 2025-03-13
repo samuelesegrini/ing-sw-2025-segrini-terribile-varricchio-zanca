@@ -32,34 +32,6 @@ public class PiratesCard extends EnemyCard {
         this.attackPattern = new ArrayList<>(attackPattern);
     }
 
-    /**
-     * Gets the credit reward the player will receive if they successfully defeat the Pirates.
-     *
-     * @return The amount of credits the player will receive for defeating the Pirates.
-     */
-    public int getCreditReward() {
-        return creditReward;
-    }
-
-    /**
-     * Gets the number of cannon fire attacks that the player will face if they are attacked by the Pirates.
-     * This value is determined by the number of cannon fires present in the attack pattern.
-     *
-     * @return The number of cannon fire attacks that will be made against the player.
-     */
-    public int getCannonFireCount(){
-        return attackPattern().lenght;
-    }
-
-    /**
-     * Gets the list of cannon fire attacks the player will face if they are attacked by the Pirates.
-     * Each {@link CannonFire} instance in the list includes information about the direction and intensity of the attack.
-     *
-     * @return A list of {@link CannonFire} instances.
-     */
-    public List<CannonFire> getAttackPattern(){
-        return attackPattern;
-    }
 
     /**
      * Accepts a visitor that performs some action on the Pirates card.

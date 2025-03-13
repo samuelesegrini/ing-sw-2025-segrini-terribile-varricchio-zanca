@@ -46,26 +46,6 @@ public class SmugglersCard extends EnemyCard {
     }
 
     /**
-     * Gets the goods available to the player if they successfully defeat the Smugglers.
-     * This is a map where each key represents a type of good, and the corresponding value represents the quantity
-     * of that good.
-     *
-     * @return A map of the available goods and their quantities.
-     */
-    public Map<GoodType, Integer> getAvailableGoods(){
-        return availableGoods;
-    }
-
-    /**
-     * Gets the number of goods the player will lose if they are defeated by the Smugglers.
-     *
-     * @return The number of goods lost in the event of defeat.
-     */
-    public int getGoodsLostIfDefeated(){
-        return goodsLostIfDefeated;
-    }
-
-    /**
      * Accepts a visitor that performs some action on the Smugglers card.
      *
      * @param visitor The visitor handling the card logic.

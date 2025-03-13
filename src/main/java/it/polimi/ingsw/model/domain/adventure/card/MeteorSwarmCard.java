@@ -31,16 +31,6 @@ public class MeteorSwarmCard extends AdventureCard {
     }
 
     /**
-     * Gets the list of meteors that define the meteor swarm pattern.
-     * Each meteor in the list represents a single meteor strike, with specific coordinates and intensity.
-     *
-     * @return A list of {@link Meteor} objects.
-     */
-    public List<Meteor> getMeteorPattern(){
-        return meteorPattern;
-    }
-
-    /**
      * Accepts a visitor to process this MeteorSwarmCard.
      *
      * @param visitor The visitor which will perform actions on the card.

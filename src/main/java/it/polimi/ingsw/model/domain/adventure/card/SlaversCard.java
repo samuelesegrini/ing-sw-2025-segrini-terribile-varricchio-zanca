@@ -29,25 +29,6 @@ public class SlaversCard extends EnemyCard {
     }
 
     /**
-     * Gets the credit reward given to the player if they defeat the Slavers.
-     * The credits are granted in exchange for sacrificing crew members during the encounter.
-     *
-     * @return The credit reward amount.
-     */
-    public int getCreditReward(){
-        return creditReward;
-    }
-
-    /**
-     * Gets the amount of crew members the player will lose if they are defeated by the Slavers.
-     *
-     * @return The number of crew members lost during the encounter.
-     */
-    public int getCrewLossAmount() {
-        return crewLossAmount;
-    }
-
-    /**
      * Accepts a visitor to process this Slavers card according to the visitor pattern.
      *
      * @param visitor The visitor handling the card logic.

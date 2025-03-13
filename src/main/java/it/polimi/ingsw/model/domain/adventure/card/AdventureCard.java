@@ -28,32 +28,4 @@ public abstract class AdventureCard {
         this.description = description;
         this.type = type;
     }
-    /**
-     * Returns the unique identifier of the adventure card.
-     * @return The ID of the adventure card.
-     */
-    public String getId(){
-        return id;
-    }
-    /**
-     * Returns the level of the adventure card.
-     * @return The level of the adventure card.
-     */
-    public CardLevel getLevel(){
-        return level;
-    }
-    /**
-     * Returns the description of the adventure card.
-     * @return The description of the card.
-     */
-    public String getDescription(){
-        return description;
-    }
-    /**
-     * Returns the type of the adventure card.
-     * @return The type of the card.
-     */
-    public AdventureType getType(){
-        return type;
-    }
 }

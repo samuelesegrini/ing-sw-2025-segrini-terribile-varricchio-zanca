@@ -36,33 +36,6 @@ public class PlanetsCard extends AdventureCard {
     }
 
     /**
-     * Gets the list of all planets in the Planets Card.
-     *
-     * @return A list of {@link Planet} objects.
-     */
-    public List<Planet> getPlanets() {
-        return planets;
-    }
-
-    /**
-     * Gets the list of planets that have not been visited yet.
-     *
-     * @return A list of {@link Planet} objects representing the unvisited planets.
-     */
-    public List<Planet> getUnvisitedPlanets() {
-        return planets.stream()
-                .filter(planet -> !planet.isVisited())
-                .collect(Collectors.toList());
-    }
-
-    /**
-     * Gets the number of flight days that players lose when landing on a planet in this event.
-     *
-     * @return The number of flight days lost when landing on a planet.
-     */
-    public int getLostDays(){ return lostDays; }
-
-    /**
      * Accepts a visitor to process this PlanetsCard.
      *
      * @param visitor The visitor implementing which will perform actions on the card.

@@ -26,24 +26,6 @@ public abstract class EnemyCard extends AdventureCard {
         this.movementPenalty = movementPenalty;
     }
 
-    /**
-     * Gets the power level of the enemy.
-     *
-     * @return The enemy's power level.
-     */
-    public int getPowerLevel(){
-        return powerLevel;
-    }
-
-    /**
-     * Gets the movement penalty applied when the enemy is defeated.
-     *
-     * @return The number of spaces the ship moves backward.
-     */
-    public int getMovementPenalty(){
-        return movementPenalty;
-    }
-
 
     /**
      * Accepts a visitor to process this EnemyCard according to the visitor pattern.

@@ -40,48 +40,6 @@ public class AbandonedStationCard extends AdventureCard {
     }
 
     /**
-     * Returns a map of all the goods available on the abandoned station.
-     * The map's key is the type of good, and the value is the quantity of that good available.
-     * @return A map of goods and their quantities.
-     */
-    public Map<GoodType, Integer> getGoodQuantities(){
-        return goodQuantities;
-    }
-
-    /**
-     * Returns the quantity of a specific type of good available on the abandoned station.
-     * @param type The type of good to check for quantity.
-     * @return The quantity of the specified good type available.
-     */
-    public int getQuantityByType(GoodType type){
-        return goodQuantities.get(type);
-    }
-
-    /**
-     * Returns the minimum number of crew members required to land on the abandoned station.
-     * @return The minimum crew required.
-     */
-    public int getMinCrewRequired(){
-        return minCrewRequired;
-    }
-
-    /**
-     * Returns the number of flight days lost by landing on the abandoned station.
-     * @return The number of flight days lost.
-     */
-    public int getLostDays(){
-        return lostDays;
-    }
-
-    /**
-     * Returns the sum of all goods available, regardless of type.
-     * @return The total number of goods available on the station.
-     */
-    public int getTotalGoodsQuantity(){
-        return goodQuantities.values().stream().mapToInt(Integer::intValue).sum();
-    }
-
-    /**
      * Accepts a visitor to perform an operation on this adventure card.
      * The visitor pattern allows operations to be applied to the card without modifying its class.
      * @param <T> The type of result returned by the visitor.
