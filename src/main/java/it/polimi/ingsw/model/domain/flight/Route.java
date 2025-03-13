@@ -46,10 +46,10 @@ public class Route {
     }
 
     /**
-     * Assigns the player their starting position on the Route.
-     * @return player's position
+     * Provides the first available starting position on the Route, and removes it from the available positions
+     * @return the position
      */
-    public int assignStartingPosition(){
+    public int getFirstAvailableStartingPosition(){
         Integer startingPosition = availableStartingPositions.get(0);
         availableStartingPositions.remove(startingPosition);
         return startingPosition;
@@ -69,6 +69,11 @@ public class Route {
      * identified by the username string, with their flight data.
      * @return {@code true} if the position is already occupied by another player, {@code false} otherwise.
      */
-    public boolean isPositionOccupied (int position, Map<String, PlayerFlightData> playerData){ return false; }
+    public boolean isPositionOccupied (int position, Map<String, PlayerFlightData> playerData){
+        if(playerData.containsKey(position)){
+            return true;
+        }
+        return false;
+    }
 }
 

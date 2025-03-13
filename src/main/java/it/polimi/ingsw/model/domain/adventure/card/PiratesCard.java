@@ -58,7 +58,7 @@ public class PiratesCard extends EnemyCard {
      * @return A list of {@link CannonFire} instances.
      */
     public List<CannonFire> getAttackPattern(){
-        return List.of();
+        return attackPattern;
     }
 
     /**

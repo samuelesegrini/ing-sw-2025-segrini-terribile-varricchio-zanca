@@ -37,7 +37,7 @@ public class MeteorSwarmCard extends AdventureCard {
      * @return A list of {@link Meteor} objects.
      */
     public List<Meteor> getMeteorPattern(){
-        return List.of();
+        return meteorPattern;
     }
 
     /**
