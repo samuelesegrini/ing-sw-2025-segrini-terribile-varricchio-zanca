@@ -10,14 +10,14 @@ public class Cabin extends Component{
     * Retrieves the number of crew members currently in the cabin.
     * @return the number of crew members in the cabin
     */
-    public int getCrewCount(){ return 0; }
+    public int getCrewCount(){ return this.crewCount; }
 
     /**
      * Indicates the crew type in the cabin.
      * If they are aliens, there can be at most one. If they are people, the cabin can hold up to two
      * @return crew's type
      */
-    public CrewType getCurrentCrew(){ return null; }
+    public CrewType getCurrentCrew(){ return this.currentCrew; }
 
     /**
      * Update the number of crew members currently in the cabin.

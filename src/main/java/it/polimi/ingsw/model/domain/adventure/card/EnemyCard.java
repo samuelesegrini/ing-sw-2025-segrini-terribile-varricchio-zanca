@@ -9,6 +9,7 @@ public abstract class EnemyCard extends AdventureCard {
 
     private int powerLevel;
     private int movementPenalty;
+    private boolean defeated;
 
     /**
      * Constructs a new enemy card with the specified details.
@@ -24,6 +25,7 @@ public abstract class EnemyCard extends AdventureCard {
         super(id, level, description, type);
         this.powerLevel = powerLevel;
         this.movementPenalty = movementPenalty;
+        this.defeated = false;
     }
 
     public int getMovementPenalty() {
@@ -31,6 +33,20 @@ public abstract class EnemyCard extends AdventureCard {
     }
     public int getPowerLevel() {
         return this.powerLevel;
+    }
+
+    /**
+     * Checks if the Enemy has been defeated.
+     * This method returns true if a player successfully defeats the Enemy, and false otherwise.
+     *
+     * @return {@code true} if the Enemy has been defeated, {@code false} otherwise.
+     */
+    public boolean isDefeated(){
+        return defeated();
+    }
+
+    public void setDefeated(){
+        this.defeated = true;
     }
 
     /**

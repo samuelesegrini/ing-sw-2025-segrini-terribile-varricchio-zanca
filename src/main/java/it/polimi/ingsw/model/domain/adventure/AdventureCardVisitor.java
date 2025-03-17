@@ -7,6 +7,7 @@ import it.polimi.ingsw.model.domain.flight.FlightBoard;
 import it.polimi.ingsw.model.domain.player.Player;
 import it.polimi.ingsw.model.domain.ship.Ship;
 import it.polimi.ingsw.model.domain.ship.components.Component;
+import it.polimi.ingsw.model.enums.crew.CrewType;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -122,7 +123,35 @@ public interface AdventureCardVisitor<T> {
      * @param state Current game state
      * @return Result of processing the card
      */
-    T visitSlaversCard(SlaversCard card, GameState state);
+    T visitSlaversCard(SlaversCard card, GameState state){
+        System.out.println("Resolving Slavers card: " + card.getType());
+
+        FlightBoard flightBoard = state.getFlightBoard();
+        List<Player> playersOrdered = flightBoard.getPlayerOrderByPosition();
+
+        //Slavers attack the players’ ships in order
+        for(Player player: playersOrdered){
+            // In case of a tie nothing happens to that player.
+            // The enemy moves on to attack the next player
+            if(player.getShip().getCannonStrength()==card.getPowerLevel()){
+                continue;
+            }
+            else if(player.getShip().getCannonStrength()<card.getPowerLevel()){
+                // The player loses and smugglers take player's crew.
+                // The player can choose which humans or aliens to surrender in exchange for his freedom
+                CrewType type;
+                player.subtractCrewMember(type, card.getCrewLossAmount());
+            }
+            else if(player.getShip().getCannonStrength()>card.getPowerLevel()){
+                //The player CAN claim the reward losing flying days
+                card.setDefeated();
+                player.addCredits(card.getCreditReward());
+                flightBoard.movePlayer(player, card.getMovementPenalty(), false);
+                break;
+            }
+        }
+
+    }
     
     /**
      * Visits a SmugglersCard.

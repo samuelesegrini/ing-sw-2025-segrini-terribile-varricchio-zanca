@@ -27,6 +27,12 @@ public class SlaversCard extends EnemyCard {
         this.creditReward = creditReward;
         this.crewLossAmount = crewLossAmount;
     }
+    public int getCreditReward() {
+        return this.creditReward;
+    }
+    public int getCrewLossAmount() {
+        return this.crewLossAmount;
+    }
 
     /**
      * Accepts a visitor to process this Slavers card according to the visitor pattern.
@@ -37,6 +43,6 @@ public class SlaversCard extends EnemyCard {
      * @return The result of the visitor's processing.
      */
     private <T> T accept(AdventureCardVisitor<T> visitor, GameState state){
-        return null;
+        return visitor.visitSlaversCard(this, state);
     }
 }

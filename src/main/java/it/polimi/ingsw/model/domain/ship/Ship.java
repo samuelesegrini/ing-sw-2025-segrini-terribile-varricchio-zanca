@@ -3,6 +3,7 @@ import java.util.List;
 import java.util.Map;
 
 import it.polimi.ingsw.model.domain.ship.components.Component;
+import it.polimi.ingsw.model.enums.crew.CrewType;
 import it.polimi.ingsw.model.enums.resource.GoodType;
 import it.polimi.ingsw.model.enums.ship.ComponentType;
 import it.polimi.ingsw.model.enums.ship.Direction;
@@ -12,7 +13,7 @@ import static it.polimi.ingsw.model.enums.ship.ComponentType.BATTERY;
 public class Ship {
     private Grid<Component> grid;
     private ShipBoardLayout layout;
-    private List<Component> componets;
+    private List<Component> components;
     private List<Component> reservedComponents;
     private Map<GoodType, Integer> resources;
     private int lostComponents;
@@ -24,7 +25,7 @@ public class Ship {
 
     public int getLostComponents() {return this.lostComponents;}
     public List<Component> getReservedComponents() {return this.reservedComponents;}
-    public List<Component> getComponents() {return this.componets;}
+    public List<Component> getComponents() {return this.components;}
     public Map<GoodType, Integer> getResources() {return this.resources;}
 
     /**
@@ -33,7 +34,7 @@ public class Ship {
      * @param position  The position on the grid where the component should be placed.
      */
     public void addComponent(Component component, Position position) {
-        this.componets.add(component);
+        this.components.add(component);
         this.grid.put(position, component);
     }
 
@@ -42,7 +43,7 @@ public class Ship {
      * @param position The position on the grid from which the component should be removed.
      */
     public void removeComponent(Position position) {
-        this.componets.remove(grid.getGrid().get(position));
+        this.components.remove(grid.getGrid().get(position));
     }
 
     /**
@@ -80,12 +81,18 @@ public class Ship {
      */
     public double getCannonStrength() {
         double cannonStrength = 0;
-        for (Component component : this.componets) {
+        for (Component component : this.components) {
             if(component.getType()==ComponentType.CANNON_SINGLE) {
                 cannonStrength=+component.getFirePowerContribution(false);
                 }
             if(component.getType()==ComponentType.CANNON_DOUBLE){
                 cannonStrength=+component.getFirePowerContribution(true); //andrebbe fatto decidere al giocatore
+            }
+        }
+        for (Component component : this.components) {
+            if((component.getType()==ComponentType.CABIN)&&(component.hasMatchingLifeSupport())
+                    &&(component.getCrewCount()>0)&&(component.getCrewType()== CrewType.ALIEN_PURPLE)&&(cannonStrength>0)) {
+                cannonStrength=+2;
             }
         }
         return cannonStrength;
@@ -97,7 +104,13 @@ public class Ship {
      * @return The crew number.
      */
     public int getCrewNumber() {
-        return 0;
+        int crewNumber = 0;
+        for (Component component : this.components) {
+            if ((component.getType() == ComponentType.CABIN)) {
+                crewNumber =+ component.getCrewCount();
+            }
+        }
+        return crewNumber;
     }
 
     /**
@@ -106,7 +119,7 @@ public class Ship {
      */
     public int checkCargoHoldCapacity(){
         int capacity =0;
-        for (Component component : this.componets) {
+        for (Component component : this.components) {
             if(component.getType()==ComponentType.CARGO_HOLD){
                 capacity += component.getCapacity();
             }
@@ -120,7 +133,7 @@ public class Ship {
      */
     public int getCargoHoldSpecialCapacity(){
         int capacity =0;
-        for (Component component : this.componets) {
+        for (Component component : this.components) {
             if(component.getType()==ComponentType.CARGO_HOLD_SPECIAL){
                 capacity += component.getCapacity();
             }
@@ -265,7 +278,7 @@ public class Ship {
         }
 
         if (deletingNumber > 0) {
-            for(Component component : this.componets){
+            for(Component component : this.components){
                 if(component.getType()==BATTERY){
                     while(component.getCurrentBatteries()>0 && deletingNumber>0){
                         component.setCurrentBatteries(component.getCurrentBatteries()-1);

@@ -3,8 +3,10 @@ package it.polimi.ingsw.model.domain.player;
 import it.polimi.ingsw.model.domain.flight.PlayerFlightData;
 import it.polimi.ingsw.model.domain.player.PlayerId;
 import it.polimi.ingsw.model.domain.ship.Ship;
+import it.polimi.ingsw.model.domain.ship.components.Component;
 import it.polimi.ingsw.model.enums.crew.CrewType;
 import it.polimi.ingsw.model.enums.player.PlayerColor;
+import it.polimi.ingsw.model.enums.ship.ComponentType;
 
 import java.security.InvalidParameterException;
 import java.util.Map;
@@ -44,7 +46,7 @@ public class Player {
         return this.color;
     }
 
-    public Ship getShip(){ return this.ship;
+    public Ship getShip(){ return this.ship;}
 
     /**
      * Adds the specified credits to the player's total.
@@ -81,15 +83,22 @@ public class Player {
      * @param type type of the crew members
      * @param members new total number of crew members
      */
-    public void updateCrewMember (CrewType type, int members) throws InvalidParameterException {
-        if(crew.containsKey(type)){
-            crew.put(type, crew.get(type) + members);
+    public void updateCrewMember (CrewType type, int members) throws IllegalArgumentException {
+        if (type != null) {
+            crew.put(type, crew.getOrDefault(type, 0) + members);
         }
-       else if (type!=null) {
-           crew.put(type, members);
+        else {
+           throws new IllegalArgumentException("CrewType cannot be null");
         }
-       else {
-           throw new InvalidParameterException();
+    }
+    public void subtractCrewMember (CrewType type, int members) throws IllegalArgumentException {
+        if (type != null) {
+            //dovremmo aggiornare anche la capacità dei componenti
+            crew.put(type, crew.getOrDefault(type, 0) - members);
+        }
+        else {
+            throw new IllegalArgumentException("CrewType cannot be null");
         }
     }
 }
+

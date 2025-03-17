@@ -13,7 +13,6 @@ public class SmugglersCard extends EnemyCard {
 
     private Map<GoodType, Integer> availableGoods;
     private int goodsLostIfDefeated;
-    private boolean isDefeated;
 
     /**
      * Constructs a new Smugglers encounter card with the specified attributes.
@@ -32,20 +31,8 @@ public class SmugglersCard extends EnemyCard {
         super(id, level, description, AdventureType.SMUGGLERS, powerLevel, movementPenalty);
         this.goodsLostIfDefeated = goodsLostIfDefeated;
         this.availableGoods = new HashMap<>(availableGoods);
-        this.isDefeated = false;
     }
 
-    /**
-     * Checks if the Smugglers have been defeated.
-     * This method returns true if the player successfully defeats the Smugglers, and false otherwise.
-     *
-     * @return {@code true} if the Smugglers have been defeated, {@code false} otherwise.
-     */
-    public boolean isDefeated() {
-        return isDefeated;
-    }
-    public void setDefeated() {
-        this.isDefeated = true;
     }
     public int getGoodsLostIfDefeated() {
         return this.goodsLostIfDefeated;
