@@ -11,6 +11,7 @@ import java.util.Map;
 public class Planet {
 
     //which good types are on the planet and in what quantity
+    private String name;
     private Map<GoodType, Integer> goodQuantities;
     private boolean visited;
 
@@ -19,9 +20,14 @@ public class Planet {
      *
      * @param goodQuantities A map of {@link GoodType} to their corresponding quantities available on the planet.
      */
-    public Planet(Map<GoodType, Integer> goodQuantities) {
+    public Planet(String name, Map<GoodType, Integer> goodQuantities) {
+        this.name = name;
         this.goodQuantities = goodQuantities;
         visited = false;
+    }
+
+    public String getName() {
+        return name;
     }
 
     /**
@@ -29,11 +35,9 @@ public class Planet {
      *
      * @return A map where the keys are {@link GoodType} objects and the values are the quantities of each good.
      */
-    //get which good types are on the planet and in what quantity
     public Map<GoodType, Integer> getGoodQuantities(){
         return goodQuantities;
     }
-
 
     /**
      * Gets the quantity of goods of a specific type available on this planet.
@@ -41,9 +45,21 @@ public class Planet {
      * @param type The type of good.
      * @return The quantity of the specified good type, or 0 if the good type is not available on the planet.
      */
-    //in what quantity are on the planet for a given good type
     public int getQuantityByType(GoodType type){
         return goodQuantities.get(type);
+    }
+
+    /**
+     * Gets the sum of the quantities of each type of good on the planet.
+     *
+     * @return The total quantity of all goods available on the planet.
+     */
+    public int getTotalGoodsQuantity(){
+        int total = 0;
+        for (Map.Entry<GoodType, Integer> entry : goodQuantities.entrySet()){
+            total += entry.getValue();
+        }
+        return total;
     }
 
     /**
@@ -52,18 +68,12 @@ public class Planet {
      *
      * @return {@code true} if the planet has been visited, {@code false} otherwise.
      */
-    // has the planet already been visited
     public boolean isVisited(){
         return visited;
     }
 
-    /**
-     * Gets the sum of the quantities of each type of good on the planet.
-     *
-     * @return The total quantity of all goods available on the planet.
-     */
-    // how many goods are on the planet regardless of the type of the goods
-    public int getTotalGoodsQuantity(){
-        return goodQuantities.values().stream().mapToInt(Integer::intValue).sum();
+    public void setVisited(){
+        visited = true;
     }
+
 }

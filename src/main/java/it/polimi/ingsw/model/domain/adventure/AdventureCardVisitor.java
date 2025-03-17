@@ -2,6 +2,13 @@ package it.polimi.ingsw.model.domain.adventure;
 
 import it.polimi.ingsw.model.domain.GameState;
 import it.polimi.ingsw.model.domain.adventure.card.*;
+import it.polimi.ingsw.model.domain.adventure.entity.Planet;
+import it.polimi.ingsw.model.domain.flight.FlightBoard;
+import it.polimi.ingsw.model.domain.player.Player;
+import it.polimi.ingsw.model.domain.ship.Ship;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Visitor interface for processing different types of adventure cards.
@@ -49,7 +56,25 @@ public interface AdventureCardVisitor<T> {
      * @param state Current game state
      * @return Result of processing the card
      */
-    T visitPlanetsCard(PlanetsCard card, GameState state);
+    T visitPlanetsCard(PlanetsCard card, GameState state){
+        FlightBoard flightBoard = state.getFlightBoard();
+        List<Player> playersOrdered = flightBoard.getPlayerOrderByPosition();
+
+        System.out.println("Resolving planet: " + card.getType());
+
+        for(Player player : playersOrdered ){
+            for(Planet planet : card.getPlanets()){
+                //the planet must be unvisited and the player must have enough space to gather resources
+                if((!planet.isVisited()) && (player.getShip().addResources(planet.getGoodQuantities()))){
+                    flightBoard.movePlayer(player, card.getLostDays(), false);
+                    planet.setVisited();
+                    System.out.println(player.getId().getNickname() + " è atterrato su " + planet.getName());
+                    break;  // passa al giocatore successivo
+                }
+            }
+        }
+
+    }
     
     /**
      * Visits an OpenSpaceCard.

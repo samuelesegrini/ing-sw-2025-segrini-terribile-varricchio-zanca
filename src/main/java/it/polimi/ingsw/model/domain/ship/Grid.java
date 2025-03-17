@@ -1,11 +1,18 @@
 package it.polimi.ingsw.model.domain.ship;
 
+import java.util.HashMap;
 import java.util.Map;
 
 public class Grid<T> {
     private Map<Position, T> grid;
 
-    public Grid() {}
+    public Grid() {
+        this.grid = new HashMap<Position, T>();
+    }
+
+    public Map<Position, T> getGrid() {
+        return this.grid;
+    }
 
     /**
      * Inserts an element into the grid at the specified position.
@@ -15,7 +22,8 @@ public class Grid<T> {
      * @param component the component to be added to the grid
      *
      */
-    public void put (Position position, T component){};
+    public void put (Position position, T component){
+    };
 
     /**
      * Removes and returns the element at the specified position, if present.

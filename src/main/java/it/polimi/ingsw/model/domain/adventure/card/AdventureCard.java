@@ -28,4 +28,17 @@ public abstract class AdventureCard {
         this.description = description;
         this.type = type;
     }
+
+    public String getId(){
+        return this.id;
+    }
+    public CardLevel getLevel(){
+        return this.level;
+    }
+    public String getDescription(){
+        return this.description;
+    }
+    public AdventureType getType(){
+        return this.type;
+    }
 }

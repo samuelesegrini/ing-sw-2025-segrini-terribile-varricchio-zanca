@@ -34,6 +34,12 @@ public class PlanetsCard extends AdventureCard {
         this.lostDays = lostDays;
         this.planets = new ArrayList<>(planets);
     }
+    public List<Planet> getPlanets(){
+        return this.planets;
+    }
+    public int getLostDays(){
+        return this.lostDays;
+    }
 
     /**
      * Accepts a visitor to process this PlanetsCard.
@@ -44,6 +50,6 @@ public class PlanetsCard extends AdventureCard {
      * @return The result of the visitor's action on the PlanetsCard.
      */
     public <T> T accept(AdventureCardVisitor<T> visitor, GameState state){
-        return null;
+        return visitor.visitPlanetsCard(this,state);
     }
 }

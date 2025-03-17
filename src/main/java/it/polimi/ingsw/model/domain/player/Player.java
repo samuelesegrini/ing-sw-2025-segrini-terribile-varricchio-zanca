@@ -32,7 +32,7 @@ public class Player {
      * @return player's flight data
      * @see PlayerFlightData
      */
-    public PlayerId getFlightData(){
+    public PlayerFlightData getFlightData(){
         return this.playerFlightData;
     }
 
@@ -44,13 +44,7 @@ public class Player {
         return this.color;
     }
 
-    /**
-     * Returns the number of credits earned by the player.
-     * @return number of credits
-     */
-    public int getCredits(){
-        return this.credits;
-    }
+    public Ship getShip(){ return this.ship;
 
     /**
      * Adds the specified credits to the player's total.
@@ -59,6 +53,8 @@ public class Player {
     public void addCredits(int credits){
         this.credits += credits;
     }
+
+    public int getCredits(){}
 
     /**
      * Subtracts the specified credits to the player's total.

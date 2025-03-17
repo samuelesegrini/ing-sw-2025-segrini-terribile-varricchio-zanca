@@ -29,7 +29,9 @@ public class AdventureDeck {
     
     /** The main covered pile of cards from which cards are drawn. */
     private List<AdventureCard> coveredPile;
-    
+
+    private List<AdventureCard> combinedPile;
+
     /** Index tracking the current position in the covered pile. */
     private int currentIndex;
     
