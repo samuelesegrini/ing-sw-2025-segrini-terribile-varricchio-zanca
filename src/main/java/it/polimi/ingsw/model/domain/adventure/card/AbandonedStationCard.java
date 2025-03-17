@@ -21,6 +21,7 @@ public class AbandonedStationCard extends AdventureCard {
     private Map<GoodType, Integer> goodQuantities;
     private int minCrewRequired;
     private int lostDays;
+    boolean isVisited;
 
     /**
      * Constructs an AbandonedStationCard with the given details.
@@ -37,6 +38,16 @@ public class AbandonedStationCard extends AdventureCard {
         this.minCrewRequired = minCrewRequired;
         this.lostDays = lostDays;
         this.goodQuantities = goodQuantities;
+        this.isVisited = false;
+
+    }
+
+    int getMinCrewRequired() {
+        return minCrewRequired;
+    }
+
+    int getGoodQuantities() {
+        return this.goodQuantities;
     }
 
     /**

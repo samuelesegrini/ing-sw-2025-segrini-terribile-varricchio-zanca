@@ -15,6 +15,9 @@ public abstract class Component {
     private Position position;
     private Map<Direction,ConnectorType> connectors;
 
+
+    public boolean isExposed();
+
     /**
      * Rotate the component 90 degrees clockwise from the direction
      * stored in the facing attribute

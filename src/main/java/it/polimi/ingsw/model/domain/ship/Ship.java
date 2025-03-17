@@ -35,6 +35,15 @@ public class Ship {
         return this.resources;
     }
 
+    public int getExposedComponents() {
+        int exposedComponents = 0;
+        for (Component comp : this.componets) {
+            if(comp.isExposed){
+                exposedComponents++;
+        }
+        return exposedComponents;
+    }
+
     /**
      * Adds a component to the ship at the specified position on the grid.
      *
@@ -45,8 +54,6 @@ public class Ship {
         this.componets.add(component);
         this.grid.put(position, component);
     }
-
-    ;
 
     /**
      * Removes the component from the ship at the specified position on the grid.

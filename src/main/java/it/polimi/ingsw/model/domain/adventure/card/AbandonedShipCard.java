@@ -14,6 +14,7 @@ public class AbandonedShipCard extends AdventureCard {
     private int crewLost;
     private int creditsGained;
     private int lostDays;
+    private boolean isVisited;
 
     /**
      * Constructs a new AbandonedShipCard with the specified details.
@@ -30,7 +31,21 @@ public class AbandonedShipCard extends AdventureCard {
         this.crewLost = crewLost;
         this.creditsGained = creditsGained;
         this.lostDays = lostDays;
+        this.isVisited = false;
     }
+
+    int getCrewLost() {
+        return crewLost;
+    }
+
+    int getCreditsGained() {
+        return creditsGained;
+    }
+
+    void visit() {
+        isVisited = true;
+    }
+
 
     /**
     * Accepts a visitor to perform some operation on this adventure card.

@@ -29,7 +29,19 @@ public interface AdventureCardVisitor<T> {
      * @param state Current game state
      * @return Result of processing the card
      */
-    T visitAbandonedShipCard(AbandonedShipCard card, GameState state);
+    T visitAbandonedShipCard(AbandonedShipCard card, GameState state){
+        FlightBoard flightBoard = state.getFlightBoard();
+        List<Player> playersOrdered = flightBoard.getPlayerOrderByPosition();
+
+        for(Player player : playersOrdered ) {
+            if ((!card.isVisited()) && (player.getShip().getCrewNumber() >= card.getCrewLost())) {
+                flightBoard.movePlayer(player, AbandonedShipCard.lostDays(), false);
+                card.visit();
+                System.out.println(player.getId().getNickname() + " ha saccheggiato la nave ");
+            }
+            break;  // passa al giocatore successivo
+        }
+    }
 
     /**
      * Visits a MeteorSwarmCard.
@@ -83,7 +95,13 @@ public interface AdventureCardVisitor<T> {
      * @param state Current game state
      * @return Result of processing the card
      */
-    T visitOpenSpaceCard(OpenSpaceCard card, GameState state);
+    T visitOpenSpaceCard(OpenSpaceCard card, GameState state){
+        FlightBoard flightBoard = state.getFlightBoard();
+        List<Player> playersOrdered;
+        for(Player player : playersOrdered){
+            flightBoard.movePlayer(player, player.getShip().getEngineStrength(), true);
+        }
+    }
     
     /**
      * Visits a StardustCard.
@@ -119,7 +137,9 @@ public interface AdventureCardVisitor<T> {
      * @param state Current game state
      * @return Result of processing the card
      */
-    T visitCombatZoneCard(CombatZoneCard card, GameState state);
+    T visitCombatZoneCard(CombatZoneCard card, GameState state){
+
+    }
 
     /**
      * Visits an EpidemicCard.
@@ -128,7 +148,15 @@ public interface AdventureCardVisitor<T> {
      * @param state Current game state
      * @return Result of processing the card
      */
-    T visitEpidemicCard(EpidemicCard card, GameState state);
+    T visitEpidemicCard(EpidemicCard card, GameState state){
+        FlightBoard flightBoard = state.getFlightBoard();
+        List<Player> playersOrdered = flightBoard.getPlayerOrderByPosition();
+
+        for(Player player : playersOrdered ) {
+            //perde un membro dell'equipaggio per ogni cabina collegata ad un'altra
+            break;  // passa al giocatore successivo
+        }
+    }
     
     /**
      * Visits an AbandonedStationCard.
@@ -137,8 +165,20 @@ public interface AdventureCardVisitor<T> {
      * @param state Current game state
      * @return Result of processing the card
      */
-    T visitAbandonedStationCard(AbandonedStationCard card, GameState state);
-    
+    T visitAbandonedStationCard(AbandonedStationCard card, GameState state){
+            FlightBoard flightBoard = state.getFlightBoard();
+            List<Player> playersOrdered = flightBoard.getPlayerOrderByPosition();
+
+            for (Player player : playersOrdered) {
+                if ((!card.isVisited()) && (player.getShip().getCrewNumber() >= card.getMinCrewRequired())) {
+                    flightBoard.movePlayer(player, AbandonedShipCard.lostDays(), false);
+                    card.visit();
+                    player.getShip().addResources(card.getGoodQuantities());
+                    System.out.println(player.getId().getNickname() + " ha saccheggiato la stazione");
+                    break;  // passa al giocatore successivo
+                }
+            }
+        }
     /**
      * Visits a CosmicDustCard.
      *
@@ -146,5 +186,11 @@ public interface AdventureCardVisitor<T> {
      * @param state Current game state
      * @return Result of processing the card
      */
-    T visitCosmicDustCard(StardustCard card, GameState state);
+    T visitCosmicDustCard(StardustCard card, GameState state){
+        FlightBoard flightBoard = state.getFlightBoard();
+        List<Player> playersOrdered = flightBoard.getPlayerOrderByPosition();
+        for (Player player : playersOrdered){
+            flightBoard.movePlayer(player, player.getShip().getExposedComponents() , false);
+        }
+    }
 }
