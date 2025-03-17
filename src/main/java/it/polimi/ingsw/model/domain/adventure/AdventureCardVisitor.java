@@ -6,9 +6,12 @@ import it.polimi.ingsw.model.domain.adventure.entity.Planet;
 import it.polimi.ingsw.model.domain.flight.FlightBoard;
 import it.polimi.ingsw.model.domain.player.Player;
 import it.polimi.ingsw.model.domain.ship.Ship;
+import it.polimi.ingsw.model.domain.ship.components.Component;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static it.polimi.ingsw.model.enums.ship.ComponentType.CARGO_HOLD_SPECIAL;
 
 /**
  * Visitor interface for processing different types of adventure cards.
@@ -69,10 +72,10 @@ public interface AdventureCardVisitor<T> {
      * @return Result of processing the card
      */
     T visitPlanetsCard(PlanetsCard card, GameState state){
+        System.out.println("Resolving planet: " + card.getType());
+
         FlightBoard flightBoard = state.getFlightBoard();
         List<Player> playersOrdered = flightBoard.getPlayerOrderByPosition();
-
-        System.out.println("Resolving planet: " + card.getType());
 
         for(Player player : playersOrdered ){
             for(Planet planet : card.getPlanets()){
@@ -128,7 +131,37 @@ public interface AdventureCardVisitor<T> {
      * @param state Current game state
      * @return Result of processing the card
      */
-    T visitSmugglersCard(SmugglersCard card, GameState state);
+    T visitSmugglersCard(SmugglersCard card, GameState state){
+        System.out.println("Resolving Smugglers card: " + card.getType());
+
+        FlightBoard flightBoard = state.getFlightBoard();
+        List<Player> playersOrdered = flightBoard.getPlayerOrderByPosition();
+
+        //Smugglers attack the players’ ships in order
+        for(Player player: playersOrdered){
+            // In case of a tie nothing happens to that player.
+            // The enemy moves on to attack the next player
+            if(player.getShip().getCannonStrength()==card.getPowerLevel()){
+                continue;
+            }
+            else if(player.getShip().getCannonStrength()<card.getPowerLevel()){
+                // The player loses and smugglers take player's most valuable goods.
+                if(!(player.getShip().removeValuableResources(card.getGoodsLostIfDefeated()))){
+                    throw new IllegalArgumentException("Not enough resources available!");
+                }
+                else {
+                    continue;
+                }
+            }
+            else if(player.getShip().getCannonStrength()>card.getPowerLevel()){
+                //The player CAN claim the reward losing flying days
+                card.setDefeated();
+                player.getShip().addResources(card.getAvailableGoods());
+                flightBoard.movePlayer(player, card.getMovementPenalty(), false);
+                break;
+            }
+        }
+    }
     
     /**
      * Visits a CombatZoneCard.

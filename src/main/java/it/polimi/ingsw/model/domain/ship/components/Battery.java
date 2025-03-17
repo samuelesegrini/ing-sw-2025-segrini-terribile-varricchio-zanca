@@ -11,6 +11,8 @@ public class Battery extends Component {
      * @return number of remaining batteries
      */
     public int getCurrentBatteries(){ return 0; }
+    public void setCurrentBatteries(int currentBatteries){ this.currentBatteries = currentBatteries;}
+    public int getMaxBatteries(){ return maxBatteries; }
 
     /**
      * Check if the component it has at least one battery stored.

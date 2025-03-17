@@ -26,6 +26,12 @@ public abstract class EnemyCard extends AdventureCard {
         this.movementPenalty = movementPenalty;
     }
 
+    public int getMovementPenalty() {
+        return this.movementPenalty;
+    }
+    public int getPowerLevel() {
+        return this.powerLevel;
+    }
 
     /**
      * Accepts a visitor to process this EnemyCard according to the visitor pattern.
@@ -35,5 +41,5 @@ public abstract class EnemyCard extends AdventureCard {
      * @param <T> The return type of the visitor's operation.
      * @return The result of the visitor's processing.
      */
-    public abstract <T> T accept(AdventureCardVisitor<T> visitor, GameState state);
+    public abstract <T> T accept(AdventureCardVisitor<T> visitor, GameState state){}
 }

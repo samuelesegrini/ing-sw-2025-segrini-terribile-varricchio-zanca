@@ -44,6 +44,16 @@ public class SmugglersCard extends EnemyCard {
     public boolean isDefeated() {
         return isDefeated;
     }
+    public void setDefeated() {
+        this.isDefeated = true;
+    }
+    public int getGoodsLostIfDefeated() {
+        return this.goodsLostIfDefeated;
+    }
+
+    public Map<GoodType, Integer> getAvailableGoods() {
+        return this.availableGoods;
+    }
 
     /**
      * Accepts a visitor that performs some action on the Smugglers card.
@@ -54,6 +64,6 @@ public class SmugglersCard extends EnemyCard {
      * @return The result of the visitor's action on the Smugglers card.
      */
     public <T> T accept(AdventureCardVisitor<T> visitor, GameState state){
-        return null;
+        return visitor.visitSmugglersCard(this, state);
     }
 }

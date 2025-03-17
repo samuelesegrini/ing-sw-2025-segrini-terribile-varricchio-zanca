@@ -5,6 +5,9 @@ import java.util.Map;
 import it.polimi.ingsw.model.domain.ship.components.Component;
 import it.polimi.ingsw.model.enums.resource.GoodType;
 import it.polimi.ingsw.model.enums.ship.ComponentType;
+import it.polimi.ingsw.model.enums.ship.Direction;
+
+import static it.polimi.ingsw.model.enums.ship.ComponentType.BATTERY;
 
 public class Ship {
     private Grid<Component> grid;
@@ -19,34 +22,13 @@ public class Ship {
         this.layout = layout;
     }
 
-    public int getLostComponents() {
-        return this.lostComponents;
-    }
-
-    public List<Component> getReservedComponents() {
-        return this.reservedComponents;
-    }
-
-    public List<Component> getComponents() {
-        return this.componets;
-    }
-
-    public Map<GoodType, Integer> getResources() {
-        return this.resources;
-    }
-
-    public int getExposedComponents() {
-        int exposedComponents = 0;
-        for (Component comp : this.componets) {
-            if(comp.isExposed){
-                exposedComponents++;
-        }
-        return exposedComponents;
-    }
+    public int getLostComponents() {return this.lostComponents;}
+    public List<Component> getReservedComponents() {return this.reservedComponents;}
+    public List<Component> getComponents() {return this.componets;}
+    public Map<GoodType, Integer> getResources() {return this.resources;}
 
     /**
      * Adds a component to the ship at the specified position on the grid.
-     *
      * @param component The component to add.
      * @param position  The position on the grid where the component should be placed.
      */
@@ -57,18 +39,14 @@ public class Ship {
 
     /**
      * Removes the component from the ship at the specified position on the grid.
-     *
      * @param position The position on the grid from which the component should be removed.
      */
     public void removeComponent(Position position) {
         this.componets.remove(grid.getGrid().get(position));
     }
 
-    ;
-
     /**
      * Reserves a component for future use, allowing it to be kept aside without attaching it to the ship.
-     *
      * @param component The component to reserve.
      */
     public void reserveComponent(Component component) {
@@ -81,20 +59,36 @@ public class Ship {
 
     /**
      * Calculates and returns the total engine strength of the ship.
-     *
      * @return The engine strength.
      */
     public double getEngineStrength() {
-        return 0.0;
+        double engineStrenght = 0;
+        for (Component component : this.componets) {
+            if(component.getType()==ComponentType.ENGINE_SINGLE) {
+                engineStrenght=+component.getPowerContribution(false);
+            }
+            if(component.getType()==ComponentType.ENGINE_DOUBLE){
+                engineStrenght=+component.getPowerContribution(true); //andrebbe fatto decidere al giocatore
+            }
+        }
+        return engineStrenght;
     }
 
     /**
      * Calculates and returns the total cannon strength of the ship.
-     *
      * @return The cannon strength.
      */
     public double getCannonStrength() {
-        return 0.0;
+        double cannonStrength = 0;
+        for (Component component : this.componets) {
+            if(component.getType()==ComponentType.CANNON_SINGLE) {
+                cannonStrength=+component.getFirePowerContribution(false);
+                }
+            if(component.getType()==ComponentType.CANNON_DOUBLE){
+                cannonStrength=+component.getFirePowerContribution(true); //andrebbe fatto decidere al giocatore
+            }
+        }
+        return cannonStrength;
     }
 
     /**
@@ -192,5 +186,97 @@ public class Ship {
 
         return true; // Resources added successfully
     }
-}
+
+    public boolean removeValuableResources(int deletingNumber) {
+        int totalNormalCapacity = checkCargoHoldCapacity();
+        int totalSpecialCapacity = getCargoHoldSpecialCapacity();
+
+        // Calculate the currently occupied space
+        int occupiedNormal = 0;
+        int occupiedSpecial = 0;
+
+        for (Map.Entry<GoodType, Integer> entry : resources.entrySet()) {
+            if (entry.getKey() == GoodType.RED) {
+                occupiedSpecial += entry.getValue();
+            } else {
+                occupiedNormal += entry.getValue();
+            }
+        }
+
+        //elimino prima tutte le merci rosse
+        if (deletingNumber > 0) {
+            if (resources.containsKey(GoodType.RED)) {
+                while (occupiedSpecial > 0 && deletingNumber > 0 && resources.get(GoodType.RED) > 0) {
+                    this.resources.put(GoodType.RED, resources.get(GoodType.RED) - 1);
+                    deletingNumber--;
+                    occupiedNormal--;
+
+                    // Rimuovo il record se il valore diventa 0
+                    if (resources.get(GoodType.RED) == 0) {
+                        this.resources.remove(GoodType.RED);
+                    }
+                }
+            }
+        }
+        //Elimino altre merci in ordine decrescente di valore (BLUE, GREEN, YELLOW)
+        if (deletingNumber > 0) {
+            if (resources.containsKey(GoodType.BLUE)) {
+                while (occupiedNormal > 0 && deletingNumber > 0 && resources.get(GoodType.BLUE) > 0) {
+                    this.resources.put(GoodType.BLUE, resources.get(GoodType.BLUE) - 1);
+                    deletingNumber--;
+                    occupiedNormal--;
+
+                    // Rimuovo il record se il valore diventa 0
+                    if (resources.get(GoodType.BLUE) == 0) {
+                        this.resources.remove(GoodType.BLUE);
+                    }
+                }
+            }
+        }
+
+        if (deletingNumber > 0) {
+            if (resources.containsKey(GoodType.GREEN)) {
+                while (occupiedNormal > 0 && deletingNumber > 0 && resources.get(GoodType.GREEN) > 0) {
+                    this.resources.put(GoodType.GREEN, resources.get(GoodType.GREEN) - 1);
+                    deletingNumber--;
+                    occupiedNormal--;
+
+                    // Rimuovo il record se il valore diventa 0
+                    if (resources.get(GoodType.GREEN) == 0) {
+                        this.resources.remove(GoodType.GREEN);
+                    }
+                }
+            }
+        }
+
+        if (deletingNumber > 0) {
+            if (resources.containsKey(GoodType.YELLOW)) {
+                while (occupiedNormal > 0 && deletingNumber > 0 && resources.get(GoodType.YELLOW) > 0) {
+                    this.resources.put(GoodType.YELLOW, resources.get(GoodType.YELLOW) - 1);
+                    deletingNumber--;
+                    occupiedNormal--;
+
+                    // Rimuovo il record se il valore diventa 0
+                    if (resources.get(GoodType.YELLOW) == 0) {
+                        this.resources.remove(GoodType.YELLOW);
+                    }
+                }
+            }
+        }
+
+        if (deletingNumber > 0) {
+            for(Component component : this.componets){
+                if(component.getType()==BATTERY){
+                    while(component.getCurrentBatteries()>0 && deletingNumber>0){
+                        component.setCurrentBatteries(component.getCurrentBatteries()-1);
+                        deletingNumber--;
+                    }
+                }
+            }
+        }
+        if (deletingNumber > 0){
+            return false;
+        }
+        return true;
+    }
 }
