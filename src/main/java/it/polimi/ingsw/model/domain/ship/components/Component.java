@@ -102,8 +102,12 @@ public abstract class Component {
         this.connectors.put(d,c);
     }
 
+
+    public void accept(ComponentVisitor visitor) {}
+
     // These methods are overridden by the subclasses
-    public void use() {}
     public void count(Ship s) {}
-    public boolean check(Ship s) {}
+    public boolean check(Ship s) {
+        return false;
+    }
 }

@@ -9,7 +9,11 @@ public class Battery extends Component {
     private int maxBatteries;
     private int currentBatteries;
 
-    // USE()
+    @Override
+    public void accept(ComponentVisitor v) {
+        int quantity = 0;
+        v.visitBattery(this, quantity);
+    }
 
     @Override
     public void count(Ship s) {
