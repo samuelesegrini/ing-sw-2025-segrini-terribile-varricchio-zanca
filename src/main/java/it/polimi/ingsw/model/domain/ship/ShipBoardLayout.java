@@ -2,7 +2,6 @@ package it.polimi.ingsw.model.domain.ship;
 
 import java.util.Map;
 import java.util.Set;
-
 import it.polimi.ingsw.model.enums.ship.Direction;
 
 public class ShipBoardLayout {

@@ -4,10 +4,10 @@ public enum AlienColor {
     /**
      * Alien is purple.
      */
-    PURPLE,
+    ALIEN_PURPLE,
 
     /**
      * Alien is brown.
      */
-    BROWN;
+    ALIEN_BROWN;
 }

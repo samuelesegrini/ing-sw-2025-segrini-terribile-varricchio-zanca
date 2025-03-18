@@ -12,7 +12,9 @@ public class LifeSupportSystem extends Component {
      *
      * @return the color of the alien that can be placed in the cabin.
      */
-    public AlienColor getSupportedAlienColor() {return null;}
+    public AlienColor getSupportedAlienColor() {
+        return this.supportedAlienColor;
+    }
 
     // returns true if given crew type is supported, false otherwise
     /**
@@ -21,5 +23,7 @@ public class LifeSupportSystem extends Component {
      * @param crewType the type of crew to check for life support compatibility.
      * @return {@code true} if the life support system supports the given crew type, {@code false} otherwise.
      */
-    public boolean supportsCrewType(CrewType crewType) {return false;}
+    public boolean supportsCrewType(CrewType crewType) {
+        return ((crewType.toString()).equals(this.supportedAlienColor.toString()));
+    }
 }

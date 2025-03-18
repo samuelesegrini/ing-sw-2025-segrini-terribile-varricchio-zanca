@@ -18,6 +18,25 @@ public class Ship {
     private Map<GoodType, Integer> resources;
     private int lostComponents;
 
+    // Diego
+    private int cannons;
+    private int engines;
+    private int batteries;
+    private int crew;
+
+    public Grid<Component> getGrid() {return this.grid;}
+    public ShipBoardLayout getLayout() {return this.layout;}
+
+    public void setCannons(int cannons) {this.cannons = cannons;}
+    public int getCannons() {return this.cannons;}
+    public void setEngines(int engines) {this.engines = engines;}
+    public int getEngines() {return this.engines;}
+    public void setBatteries(int batteries) {this.batteries = batteries;}
+    public int getBatteries() {return this.batteries;}
+    public void setCrew(int crew) {this.crew = crew;}
+    public int getCrew() {return this.crew;}
+    // Diego
+
     public Ship(ShipBoardLayout layout, Grid<Component> grid) {
         this.grid = grid;
         this.layout = layout;

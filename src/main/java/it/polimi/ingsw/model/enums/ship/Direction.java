@@ -27,14 +27,29 @@ public enum Direction {
      * @param to The final direction
      * @return The number of steps needed
      */
-    public int getRotationSteps(Direction from, Direction to) {return 0;}
+    public int getRotationSteps(Direction from, Direction to) {
+        if (from == to) {
+            return 0;
+        }
+        else if (from == to.getOpposite()) {
+            return 2;
+        }
+        else {
+            return 1;
+        }
+    }
 
     /**
      * Gets the opposite direction to the given one.
      * @return The opposite direction
      */
     public Direction getOpposite() {
-        return null;
+        return switch (this) {
+            case UP -> DOWN;
+            case RIGHT -> LEFT;
+            case DOWN -> UP;
+            case LEFT -> RIGHT;
+        };
     }
 
     /**
@@ -42,7 +57,12 @@ public enum Direction {
      * @return The direction after the 90° clockwise rotation
      */
     public Direction rotateClockwise() {
-        return null;
+        return switch (this) {
+            case UP -> RIGHT;
+            case RIGHT -> DOWN;
+            case DOWN -> LEFT;
+            case LEFT -> UP;
+        };
     }
 
     /**
@@ -50,6 +70,11 @@ public enum Direction {
      * @return The direction after the 90° counterclockwise rotation
      */
     public Direction rotateCounterClockwise() {
-        return null;
+        return switch (this) {
+            case UP -> LEFT;
+            case RIGHT -> UP;
+            case DOWN -> RIGHT;
+            case LEFT -> DOWN;
+        };
     }
 }

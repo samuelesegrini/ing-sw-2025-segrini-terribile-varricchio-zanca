@@ -4,12 +4,12 @@ public enum CrewType {
     /**
      * Crew type is Purple Alien.
      */
-    ALIEN_PURPLE(true, AlienColor.PURPLE, 1),
+    ALIEN_PURPLE(true, AlienColor.ALIEN_PURPLE, 1),
 
     /**
      * Crew type is Brown Alien.
      */
-    ALIEN_BROWN(true, AlienColor.BROWN, 1),
+    ALIEN_BROWN(true, AlienColor.ALIEN_BROWN, 1),
 
     /**
      * Crew type is Human.
@@ -31,7 +31,7 @@ public enum CrewType {
      * @return {@code true} if the crew type is alien, {@code false} otherwise
      */
     public boolean isAlien() {
-        return isAlien;
+        return this.isAlien;
     }
 
     /**
@@ -39,7 +39,7 @@ public enum CrewType {
      * @return The alien color (null if CrewType=HUMAN)
      */
     public AlienColor getAlienColor() {
-        return alienColor;
+        return this.alienColor;
     }
 
     /**
@@ -47,6 +47,6 @@ public enum CrewType {
      * @return The maximum number of human/alien crew
      */
     public int getMaxPerCabin() {
-        return maxPerCabin;
+        return this.maxPerCabin;
     }
 }
