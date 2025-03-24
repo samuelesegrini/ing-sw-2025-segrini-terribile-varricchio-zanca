@@ -8,7 +8,7 @@ public enum GameLevel {
     TEST_FLIGHT(0, 0, 8, null),
 
     // sistema valori
-    LEVEL_II(0, 0, 0, null);
+    LEVEL_II(0, 3, 0, null);
 
     private final int duration;
     private final int predictablePileCount;

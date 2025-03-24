@@ -1,10 +1,8 @@
 package it.polimi.ingsw.model.domain.flight;
 
-import it.polimi.ingsw.model.domain.flight.PlayerFlightData;
 import it.polimi.ingsw.model.enums.GameLevel;
 
 import java.util.List;
-import java.util.Map;
 
 public class Route {
     private int length;
@@ -28,7 +26,6 @@ public class Route {
      * @return length of the route
      */
     public int getLength() { return length; }
-
     /**
      * Provides a list of all players' starting positions from first to last.
      * @return players' starting positions
@@ -60,20 +57,7 @@ public class Route {
      * @param position player's position
      * @return player's normalized position
      */
-    public int normalizePosition (int position){ return position; }
+    public int getNormalizedPosition(int position){ return position%(length-1); }
 
-    /**
-     * Indicates if the position is occupied by another player.
-     * @param position player's position
-     * @param playerData map that associates each player,
-     * identified by the username string, with their flight data.
-     * @return {@code true} if the position is already occupied by another player, {@code false} otherwise.
-     */
-    public boolean isPositionOccupied (int position, Map<String, PlayerFlightData> playerData){
-        if(playerData.containsKey(position)){
-            return true;
-        }
-        return false;
-    }
 }
 

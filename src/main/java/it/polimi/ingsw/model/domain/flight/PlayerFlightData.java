@@ -5,8 +5,8 @@ import it.polimi.ingsw.model.enums.flight.FlightStatus;
 public class PlayerFlightData {
     private int position;
     private int lapsCompleted;
-    private FlightStatus status;
     private int startPosition;
+    private FlightStatus status;
 
     /**
      * Constructor that sets the starting position.
@@ -16,6 +16,8 @@ public class PlayerFlightData {
     public PlayerFlightData (int startPosition){
         this.position = startPosition;
         this.startPosition = startPosition;
+        this.lapsCompleted = 0;
+        this.status = FlightStatus.RACING;
     }
 
     /**
@@ -59,15 +61,13 @@ public class PlayerFlightData {
      * @see it.polimi.ingsw.model.domain.flight.Route
      */
     public void setPosition(int position, int routeLength){
-        this.position = position%routeLength;
-    }
-
-    /**
-     * Sets the laps completed by the player.
-     * @param lapsCompleted Number of laps completed.
-     */
-    public void setLapsCompleted(int lapsCompleted) {
-        this.lapsCompleted = lapsCompleted;
+        if(position%routeLength !=0){
+            this.lapsCompleted++;
+            this.position = position%routeLength;
+        }
+        else{
+            this.position = position;
+        }
     }
 
     /**
