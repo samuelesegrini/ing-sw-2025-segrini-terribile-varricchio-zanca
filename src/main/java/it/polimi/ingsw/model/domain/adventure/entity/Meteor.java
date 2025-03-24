@@ -33,20 +33,6 @@ public class Meteor {
      *
      * @return The {@link Direction} representing the meteor's approach.
      */
-    public Direction getApproach(){
-        return approach;
-    }
-
-    /**
-     * Determines if the meteor can be blocked by the ship's shield.
-     * Depending on the meteor's intensity and direction, it may be possible for the player to block it using a shield.
-     *
-     * @return {@code true} if the meteor can be blocked by the shield, otherwise {@code false}.
-     */
-    public boolean canBeBlockedByShield(){
-        if (intensity=='LIGHT')
-            return true;
-        return false;
-    }
-
+    public Direction getApproach(){return approach;}
+    public ShotIntensity getShotIntensity() { return intensity; }
 }

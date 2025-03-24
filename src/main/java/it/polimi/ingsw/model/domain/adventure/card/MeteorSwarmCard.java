@@ -15,7 +15,11 @@ import it.polimi.ingsw.model.enums.adventure.CardLevel;
  */
 public class MeteorSwarmCard extends AdventureCard {
 
-    private List<Meteor> meteorPattern;
+    private final List<Meteor> meteorPattern;
+
+    public List<Meteor> getMeteorPattern() {
+        return meteorPattern;
+    }
 
     /**
      * Constructs a new Meteor Swarm event card with the specified details.
@@ -35,10 +39,9 @@ public class MeteorSwarmCard extends AdventureCard {
      *
      * @param visitor The visitor which will perform actions on the card.
      * @param state The current game state.
-     * @param <T> The return type of the visitor's action.
      * @return The result of the visitor's action on the MeteorSwarmCard.
      */
-    public <T> T accept(AdventureCardVisitor<T> visitor, GameState state){
-        return null;
+    public boolean accept(AdventureCardVisitor visitor, GameState state){
+        return visitor.visitMeteorSwarmCard(this, state);
     }
 }

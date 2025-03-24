@@ -32,6 +32,13 @@ public class PiratesCard extends EnemyCard {
         this.attackPattern = new ArrayList<>(attackPattern);
     }
 
+    public int getCreditReward() {
+        return this.creditReward;
+    }
+
+    public List<CannonFire> getAttackPattern(){
+        return this.attackPattern;
+    }
 
     /**
      * Accepts a visitor that performs some action on the Pirates card.
@@ -42,6 +49,6 @@ public class PiratesCard extends EnemyCard {
      * @return The result of the visitor's action on the Pirates card.
      */
     public <T> T accept(AdventureCardVisitor<T> visitor, GameState state){
-        return null;
+        return visitor.visitPiratesCard(this, state);
     }
 }

@@ -7,11 +7,12 @@ import it.polimi.ingsw.model.enums.crew.CrewType;
 import it.polimi.ingsw.model.enums.resource.GoodType;
 import it.polimi.ingsw.model.enums.ship.ComponentType;
 import it.polimi.ingsw.model.enums.ship.Direction;
+import org.controlsfx.control.spreadsheet.Grid;
 
 import static it.polimi.ingsw.model.enums.ship.ComponentType.BATTERY;
 
 public class Ship {
-    private Grid<Component> grid;
+    private Grid <T> grid;
     private ShipBoardLayout layout;
     private List<Component> components;
     private List<Component> reservedComponents;
@@ -24,8 +25,13 @@ public class Ship {
     private int batteries;
     private int crew;
 
-    public Grid<Component> getGrid() {return this.grid;}
+    public Grid<T> getGrid() {return this.grid;}
     public ShipBoardLayout getLayout() {return this.layout;}
+    public List<Component> getComponents() {return this.components;}
+    public List<Component> getReservedComponents() {return this.reservedComponents;}
+    public int getLostComponents() {return this.lostComponents;}
+    public Map<GoodType, Integer> getResources() {return this.resources;}
+
 
     public void setCannons(int cannons) {this.cannons = cannons;}
     public int getCannons() {return this.cannons;}
@@ -37,15 +43,10 @@ public class Ship {
     public int getCrew() {return this.crew;}
     // Diego
 
-    public Ship(ShipBoardLayout layout, Grid<Component> grid) {
+    public Ship(ShipBoardLayout layout, Grid<T> grid) {
         this.grid = grid;
         this.layout = layout;
     }
-
-    public int getLostComponents() {return this.lostComponents;}
-    public List<Component> getReservedComponents() {return this.reservedComponents;}
-    public List<Component> getComponents() {return this.components;}
-    public Map<GoodType, Integer> getResources() {return this.resources;}
 
     /**
      * Adds a component to the ship at the specified position on the grid.
@@ -54,7 +55,6 @@ public class Ship {
      */
     public void addComponent(Component component, Position position) {
         this.components.add(component);
-        this.grid.put(position, component);
     }
 
     /**
@@ -67,80 +67,44 @@ public class Ship {
 
     /**
      * Reserves a component for future use, allowing it to be kept aside without attaching it to the ship.
+     * If there are already 2 reserved components, the first one is removed to make room for the new component.
+     *
      * @param component The component to reserve.
      */
     public void reserveComponent(Component component) {
-        if (this.reservedComponents.size() < 2) {
-            this.reservedComponents.add(component);
-        } else {
-            throw new IllegalArgumentException("Reserved components can have more than 2 components");
+        if (this.reservedComponents.size() >= 2) {
+            this.reservedComponents.remove(0);
         }
+        this.reservedComponents.add(component);
     }
 
     /**
      * Calculates and returns the total engine strength of the ship.
      * @return The engine strength.
      */
-    public double getEngineStrength() {
-        double engineStrenght = 0;
-        for (Component component : this.componets) {
-            if(component.getType()==ComponentType.ENGINE_SINGLE) {
-                engineStrenght=+component.getPowerContribution(false);
-            }
-            if(component.getType()==ComponentType.ENGINE_DOUBLE){
-                engineStrenght=+component.getPowerContribution(true); //andrebbe fatto decidere al giocatore
-            }
-        }
-        return engineStrenght;
-    }
+    public double getEngineStrength() {}
 
     /**
      * Calculates and returns the total cannon strength of the ship.
      * @return The cannon strength.
      */
-    public double getCannonStrength() {
-        double cannonStrength = 0;
-        for (Component component : this.components) {
-            if(component.getType()==ComponentType.CANNON_SINGLE) {
-                cannonStrength=+component.getFirePowerContribution(false);
-                }
-            if(component.getType()==ComponentType.CANNON_DOUBLE){
-                cannonStrength=+component.getFirePowerContribution(true); //andrebbe fatto decidere al giocatore
-            }
-        }
-        for (Component component : this.components) {
-            if((component.getType()==ComponentType.CABIN)&&(component.hasMatchingLifeSupport())
-                    &&(component.getCrewCount()>0)&&(component.getCrewType()== CrewType.ALIEN_PURPLE)&&(cannonStrength>0)) {
-                cannonStrength=+2;
-            }
-        }
-        return cannonStrength;
-    }
+    public double getCannonStrength() {}
 
     /**
      * Returns the number of crew members assigned to the ship.
-     *
      * @return The crew number.
      */
-    public int getCrewNumber() {
-        int crewNumber = 0;
-        for (Component component : this.components) {
-            if ((component.getType() == ComponentType.CABIN)) {
-                crewNumber =+ component.getCrewCount();
-            }
-        }
-        return crewNumber;
-    }
+    public int getCrewNumber() {}
 
     /**
      * Calculates the total capacity of standard cargo holds (CARGO_HOLD).
      * @return The total capacity of all standard cargo holds in the ship.
      */
-    public int checkCargoHoldCapacity(){
+    public int getCargoHoldCapacity(){
         int capacity =0;
         for (Component component : this.components) {
             if(component.getType()==ComponentType.CARGO_HOLD){
-                capacity += component.getCapacity();
+                capacity += component.count();
             }
         }
         return capacity;
@@ -154,7 +118,7 @@ public class Ship {
         int capacity =0;
         for (Component component : this.components) {
             if(component.getType()==ComponentType.CARGO_HOLD_SPECIAL){
-                capacity += component.getCapacity();
+                capacity += component.count();
             }
         }
         return capacity;
@@ -171,7 +135,7 @@ public class Ship {
      * @return {@code true} if resources were successfully added, {@code false} if there was insufficient space.
      */
     public boolean addResources(Map<GoodType, Integer> newResources) {
-        int totalNormalCapacity = checkCargoHoldCapacity();
+        int totalNormalCapacity = getCargoHoldCapacity();
         int totalSpecialCapacity = getCargoHoldSpecialCapacity();
 
         // Calculate the currently occupied space
@@ -220,7 +184,7 @@ public class Ship {
     }
 
     public boolean removeValuableResources(int deletingNumber) {
-        int totalNormalCapacity = checkCargoHoldCapacity();
+        int totalNormalCapacity = getCargoHoldCapacity();
         int totalSpecialCapacity = getCargoHoldSpecialCapacity();
 
         // Calculate the currently occupied space

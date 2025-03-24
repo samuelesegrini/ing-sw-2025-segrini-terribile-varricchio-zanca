@@ -2,15 +2,24 @@ package it.polimi.ingsw.model.domain.adventure;
 
 import it.polimi.ingsw.model.domain.GameState;
 import it.polimi.ingsw.model.domain.adventure.card.*;
+import it.polimi.ingsw.model.domain.adventure.entity.CannonFire;
+import it.polimi.ingsw.model.domain.adventure.entity.Meteor;
 import it.polimi.ingsw.model.domain.adventure.entity.Planet;
 import it.polimi.ingsw.model.domain.flight.FlightBoard;
 import it.polimi.ingsw.model.domain.player.Player;
+import it.polimi.ingsw.model.domain.ship.Position;
 import it.polimi.ingsw.model.domain.ship.Ship;
 import it.polimi.ingsw.model.domain.ship.components.Component;
+import it.polimi.ingsw.model.enums.adventure.ShotIntensity;
 import it.polimi.ingsw.model.enums.crew.CrewType;
+import it.polimi.ingsw.model.enums.ship.ComponentType;
+import it.polimi.ingsw.model.enums.ship.ConnectorType;
+import it.polimi.ingsw.model.enums.ship.Direction;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Random;
 
 import static it.polimi.ingsw.model.enums.ship.ComponentType.CARGO_HOLD_SPECIAL;
 
@@ -21,10 +30,9 @@ import static it.polimi.ingsw.model.enums.ship.ComponentType.CARGO_HOLD_SPECIAL;
  * on adventure cards without modifying their classes. Each method handles 
  * a specific card type and can return a generic result.
  * </p>
- * 
- * @param <T> The return type of the visitor operations
+ *
  */
-public interface AdventureCardVisitor<T> {
+public class AdventureCardVisitor {
 
     /**
      * Visits an AbandonedShipCard.
@@ -33,18 +41,22 @@ public interface AdventureCardVisitor<T> {
      * @param state Current game state
      * @return Result of processing the card
      */
-    T visitAbandonedShipCard(AbandonedShipCard card, GameState state){
+    public boolean visitAbandonedShipCard(AbandonedShipCard card, GameState state){
         FlightBoard flightBoard = state.getFlightBoard();
-        List<Player> playersOrdered = flightBoard.getPlayerOrderByPosition();
+        List<Player> playersOrdered = flightBoard.getCurrentOrder();
+        System.out.println("Resolving "+card.getType());
 
         for(Player player : playersOrdered ) {
             if ((!card.isVisited()) && (player.getShip().getCrewNumber() >= card.getCrewLost())) {
-                flightBoard.movePlayer(player, AbandonedShipCard.lostDays(), false);
-                card.visit();
-                System.out.println(player.getId().getNickname() + " ha saccheggiato la nave ");
+                flightBoard.movePlayer(player, card.getLostDays(), false);
+                player.addCredits(card.getCreditsGained());
+                player.updateCrewMember(card.getCrewLost(), true);
+
+                card.setVisited();
+                System.out.println(player.getId().getNickname() + " has repaired the ship and sold it to part of their crew. ");
             }
-            break;  // passa al giocatore successivo
         }
+        return card.isVisited();
     }
 
     /**
@@ -54,7 +66,46 @@ public interface AdventureCardVisitor<T> {
      * @param state Current game state
      * @return Result of processing the card
      */
-    T visitMeteorSwarmCard(MeteorSwarmCard card, GameState state);
+    public boolean visitMeteorSwarmCard(MeteorSwarmCard card, GameState state){
+        FlightBoard flightBoard = state.getFlightBoard();
+        List<Player> playersOrdered = flightBoard.getCurrentOrder();
+
+        for(Meteor meteor: card.getMeteorPattern()){
+            Random dice = new Random();
+            int index = dice.nextInt(6) + 1;
+
+            for(Player player : playersOrdered){
+                Position impactPosition = player.getShip().getGrid().findFirstComponet(meteor.getApproach(), index);
+                Component impactComponent = player.getShip().getGrid().get(impactPosition);
+
+                if(meteor.getShotIntensity() == ShotIntensity.LIGHT){
+                    if(impactComponent.getConnectorAt(meteor.getApproach())== ConnectorType.PLAIN){
+                        System.out.println(player.getId().getNickname()+ " has deflected meteor number"
+                                +card.getMeteorPattern().indexOf(meteor));
+                        break;
+                    }
+                    else if(player.getShip().getGrid().protectedByShield(meteor.getApproach()){
+                        System.out.println(player.getId().getNickname()+ " has activated a shield against meteor number"
+                                +card.getMeteorPattern().indexOf(meteor));
+                        break;
+                    }
+                }
+
+                else {
+                    if(player.getShip().getGrid().protectedByCannon(meteor.getApproach(), index)){
+                        System.out.println(player.getId().getNickname()+ " has shot meteor number"
+                                +card.getMeteorPattern().indexOf(meteor));
+                        break;
+                    }
+                }
+
+                System.out.println(player.getId().getNickname()+ " has no protection against meteor number"
+                        +card.getMeteorPattern().indexOf(meteor));
+                player.getShip().removeComponent(impactPosition);
+            }
+        }
+        return true;
+    }
     
     /**
      * Visits a PiratesCard.
@@ -63,7 +114,51 @@ public interface AdventureCardVisitor<T> {
      * @param state Current game state
      * @return Result of processing the card
      */
-    T visitPiratesCard(PiratesCard card, GameState state);
+    public boolean visitPiratesCard(PiratesCard card, GameState state){
+        System.out.println("Resolving: " + card.getType());
+        FlightBoard flightBoard = state.getFlightBoard();
+        List<Player> playersOrdered = flightBoard.getCurrentOrder();
+        List<Player> defeated = new ArrayList<>();
+
+        for(Player player : playersOrdered ) {
+            if(player.getShip().getCannonStrength()>card.getPowerLevel()){
+                player.addCredits(card.getCreditReward());
+                flightBoard.movePlayer(player, card.getMovementPenalty(), false);
+            }
+            else if(player.getShip().getCannonStrength()==card.getPowerLevel()){
+                continue;
+            }
+            else if(player.getShip().getCannonStrength()<card.getPowerLevel()){
+                defeated.add(player);
+            }
+        }
+        if(!defeated.isEmpty()){
+            for(Player player : defeated) {
+                for(CannonFire cannonFire : card.getAttackPattern()){
+
+                    Random dice1 = new Random();
+                    Random dice2 = new Random();
+                    int index1 = dice1.nextInt(6) + 1;
+                    int index2 = dice2.nextInt(6) + 1;
+                    int index = index1 + index2;
+
+                    Position impactPosition = player.getShip().getGrid().findFirstComponet(cannonFire.getApproach(), index);
+                    Component impactComponent = player.getShip().getGrid().get(impactPosition);
+
+                    if(cannonFire.isBlockable() && player.getShip().getGrid().protectedByShield(cannonFire.getApproach()){
+                        System.out.println(player.getId().getNickname()+ " has activated a shield against cannon fire number "
+                        +card.getAttackPattern().indexOf(cannonFire));
+                    } else {
+                        System.out.println(player.getId().getNickname()+ " has no protection against cannon fire number "
+                                +card.getAttackPattern().indexOf(cannonFire));
+                        player.getShip().removeComponent(impactPosition);
+                    }
+                }
+            }
+        }
+        return true;
+    }
+
     
     /**
      * Visits a PlanetsCard.
@@ -72,11 +167,11 @@ public interface AdventureCardVisitor<T> {
      * @param state Current game state
      * @return Result of processing the card
      */
-    T visitPlanetsCard(PlanetsCard card, GameState state){
+    public boolean visitPlanetsCard(PlanetsCard card, GameState state){
         System.out.println("Resolving planet: " + card.getType());
 
         FlightBoard flightBoard = state.getFlightBoard();
-        List<Player> playersOrdered = flightBoard.getPlayerOrderByPosition();
+        List<Player> playersOrdered = flightBoard.getCurrentOrder();
 
         for(Player player : playersOrdered ){
             for(Planet planet : card.getPlanets()){
@@ -99,7 +194,7 @@ public interface AdventureCardVisitor<T> {
      * @param state Current game state
      * @return Result of processing the card
      */
-    T visitOpenSpaceCard(OpenSpaceCard card, GameState state){
+    public T visitOpenSpaceCard(OpenSpaceCard card, GameState state){
         FlightBoard flightBoard = state.getFlightBoard();
         List<Player> playersOrdered;
         for(Player player : playersOrdered){
@@ -123,11 +218,11 @@ public interface AdventureCardVisitor<T> {
      * @param state Current game state
      * @return Result of processing the card
      */
-    T visitSlaversCard(SlaversCard card, GameState state){
-        System.out.println("Resolving Slavers card: " + card.getType());
+    public T visitSlaversCard(SlaversCard card, GameState state){
+        System.out.println("Resolving: " + card.getType());
 
         FlightBoard flightBoard = state.getFlightBoard();
-        List<Player> playersOrdered = flightBoard.getPlayerOrderByPosition();
+        List<Player> playersOrdered = flightBoard.getCurrentOrder();
 
         //Slavers attack the players’ ships in order
         for(Player player: playersOrdered){
@@ -160,7 +255,7 @@ public interface AdventureCardVisitor<T> {
      * @param state Current game state
      * @return Result of processing the card
      */
-    T visitSmugglersCard(SmugglersCard card, GameState state){
+    public T visitSmugglersCard(SmugglersCard card, GameState state){
         System.out.println("Resolving Smugglers card: " + card.getType());
 
         FlightBoard flightBoard = state.getFlightBoard();
@@ -199,7 +294,7 @@ public interface AdventureCardVisitor<T> {
      * @param state Current game state
      * @return Result of processing the card
      */
-    T visitCombatZoneCard(CombatZoneCard card, GameState state){
+    public T visitCombatZoneCard(CombatZoneCard card, GameState state){
 
     }
 
@@ -210,7 +305,7 @@ public interface AdventureCardVisitor<T> {
      * @param state Current game state
      * @return Result of processing the card
      */
-    T visitEpidemicCard(EpidemicCard card, GameState state){
+    public T visitEpidemicCard(EpidemicCard card, GameState state){
         FlightBoard flightBoard = state.getFlightBoard();
         List<Player> playersOrdered = flightBoard.getPlayerOrderByPosition();
 
@@ -227,7 +322,7 @@ public interface AdventureCardVisitor<T> {
      * @param state Current game state
      * @return Result of processing the card
      */
-    T visitAbandonedStationCard(AbandonedStationCard card, GameState state){
+    public T visitAbandonedStationCard(AbandonedStationCard card, GameState state){
             FlightBoard flightBoard = state.getFlightBoard();
             List<Player> playersOrdered = flightBoard.getPlayerOrderByPosition();
 
@@ -248,11 +343,11 @@ public interface AdventureCardVisitor<T> {
      * @param state Current game state
      * @return Result of processing the card
      */
-    T visitCosmicDustCard(StardustCard card, GameState state){
+    public boolean visitCosmicDustCard(StardustCard card, GameState state) {
         FlightBoard flightBoard = state.getFlightBoard();
-        List<Player> playersOrdered = flightBoard.getPlayerOrderByPosition();
-        for (Player player : playersOrdered){
-            flightBoard.movePlayer(player, player.getShip().getExposedComponents() , false);
+        List<Player> playersOrdered = flightBoard.getCurrentOrder();
+        for (Player player : playersOrdered) {
+            flightBoard.movePlayer(player, player.getShip().getExposedComponents(), false);
         }
     }
 }

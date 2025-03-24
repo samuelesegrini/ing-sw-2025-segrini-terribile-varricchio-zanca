@@ -34,15 +34,15 @@ public class AbandonedShipCard extends AdventureCard {
         this.isVisited = false;
     }
 
-    int getCrewLost() {
+    public int getLostDays() { return this.lostDays; }
+    public int getCrewLost() {
         return crewLost;
     }
-
-    int getCreditsGained() {
+    public int getCreditsGained() {
         return creditsGained;
     }
-
-    void visit() {
+    public boolean isVisited() { return isVisited; }
+    public void setVisited() {
         isVisited = true;
     }
 
@@ -54,10 +54,10 @@ public class AbandonedShipCard extends AdventureCard {
     *
     * @param visitor The visitor that performs an operation on this card.
     * @param state The current state of the game.
-     * @param <T> The type of result returned by the visitor
      * @return The result of applying the visitor to this card
      */
-    public <T> T accept(AdventureCardVisitor<T> visitor, GameState state){
-        return null;
+    public boolean accept(AdventureCardVisitor visitor, GameState state){
+        return visitor.visitAbandonedShipCard(this, state);
     }
+
 }

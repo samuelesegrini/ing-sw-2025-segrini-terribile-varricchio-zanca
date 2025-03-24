@@ -15,88 +15,84 @@ public class Player {
     private PlayerId playerId;
     private PlayerFlightData playerFlightData;
     private PlayerColor color;
-    private Map <CrewType, Integer> crew;
+    private Map<CrewType, Integer> crew;
     private int credits;
+    private int crewMembers;
     private Ship ship;
 
-
-    /**
-     * Returns player's ID, which includes UUID and nickname.
-     * @return player's Id
-     * @see PlayerId
-     */
-    public PlayerId getId(){
+    public PlayerId getId() {
         return this.playerId;
     }
 
-    /**
-     * Returns player's flight data, which includes position and laps completed.
-     * @return player's flight data
-     * @see PlayerFlightData
-     */
-    public PlayerFlightData getFlightData(){
+    public PlayerFlightData getFlightData() {
         return this.playerFlightData;
     }
 
-    /**
-     * Returns a string representing player's color.
-     * @return player's color
-     */
-    public String getColor(){
+    public PlayerColor getColor() {
         return this.color;
     }
 
-    public Ship getShip(){ return this.ship;}
+    public int getCredits() {
+        return this.credits;
+    }
+
+    public Ship getShip() {
+        return this.ship;
+    }
 
     /**
      * Adds the specified credits to the player's total.
+     *
      * @param credits number of credits to add to the player
      */
-    public void addCredits(int credits){
+    public void addCredits(int credits) {
         this.credits += credits;
     }
 
-    public int getCredits(){}
-
     /**
      * Subtracts the specified credits to the player's total.
+     *
      * @param credits number of credits to subtracts to the player
      */
-    public void subtractCredits (int credits){
-        this.credits=this.credits-credits;
+    public void subtractCredits(int credits) {
+        this.credits -= credits;
     }
 
     /**
      * Returns the number of the player's crew member
+     *
      * @return number of the crew members
      */
     public int getTotalCrewMember() {
-        int total = 0;
-        for (CrewType t : crew.keySet()) {
-            total += crew.get(t);
+        return this.crewMembers;
+    }
+    public void updateCrewMember(int crewMembers, boolean penalty) {
+        if (penalty){
+            this.crewMembers -= crewMembers;
         }
-        return total;
+        else{
+            this.crewMembers += crewMembers;
+        }
     }
 
     /**
      * Updates the number of crew members of a specific type.
-     * @param type type of the crew members
+     *
+     * @param type    type of the crew members
      * @param members new total number of crew members
      */
-    public void updateCrewMember (CrewType type, int members) throws IllegalArgumentException {
+    public int addCrewMember(CrewType type, int members) throws IllegalArgumentException {
         if (type != null) {
             crew.put(type, crew.getOrDefault(type, 0) + members);
-        }
-        else {
-           throws new IllegalArgumentException("CrewType cannot be null");
+        } else {
+            throw new IllegalArgumentException("CrewType cannot be null");
         }
     }
-    public void subtractCrewMember (CrewType type, int members) throws IllegalArgumentException {
+
+    public void subtractCrewMember(CrewType type, int members) throws IllegalArgumentException {
         if (type != null) {
-            //dovremmo aggiornare anche la capacità dei componenti
             crew.put(type, crew.getOrDefault(type, 0) - members);
-        }
-        else {
+        } else {
             throw new IllegalArgumentException("CrewType cannot be null");
         }
     }

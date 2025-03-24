@@ -46,7 +46,7 @@ public class AbandonedStationCard extends AdventureCard {
         return minCrewRequired;
     }
 
-    int getGoodQuantities() {
+    public int getGoodQuantities() {
         return this.goodQuantities;
     }
 
@@ -60,5 +60,8 @@ public class AbandonedStationCard extends AdventureCard {
      */
     public <T> T accept(AdventureCardVisitor<T> visitor, GameState state){
         return null;
+    }
+
+    public boolean isVisited() {
     }
 }
