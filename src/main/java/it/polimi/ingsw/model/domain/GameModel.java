@@ -11,7 +11,7 @@ import java.util.List;
  * Represents the current state of the game, including the current player, the flight board,
  * the adventure deck, the list of players, and the current game phase.
  */
-public class GameState {
+public class GameModel {
     private Player currentPlayer;
     private FlightBoard flightBoard;
     private AdventureDeck adventureDeck;
