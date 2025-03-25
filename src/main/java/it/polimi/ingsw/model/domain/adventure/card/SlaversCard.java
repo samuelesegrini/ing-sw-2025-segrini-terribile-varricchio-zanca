@@ -1,7 +1,8 @@
 package it.polimi.ingsw.model.domain.adventure.card;
 
-import it.polimi.ingsw.model.domain.GameState;
+import it.polimi.ingsw.model.domain.general.GameModel;
 import it.polimi.ingsw.model.domain.adventure.AdventureCardVisitor;
+import it.polimi.ingsw.model.domain.general.GameModel;
 import it.polimi.ingsw.model.enums.adventure.AdventureType;
 import it.polimi.ingsw.model.enums.adventure.CardLevel;
 
@@ -41,7 +42,7 @@ public class SlaversCard extends EnemyCard {
      * @param state The current game state.
      * @return The result of the visitor's processing.
      */
-    public boolean accept(AdventureCardVisitor visitor, GameState state){
+    public boolean accept(AdventureCardVisitor visitor, GameModel state){
         return visitor.visitSlaversCard(this, state);
     }
 }

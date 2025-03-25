@@ -1,6 +1,6 @@
 package it.polimi.ingsw.model.domain.adventure.card;
 
-import it.polimi.ingsw.model.domain.GameState;
+import it.polimi.ingsw.model.domain.general.GameModel;
 import it.polimi.ingsw.model.domain.adventure.AdventureCardVisitor;
 import it.polimi.ingsw.model.enums.adventure.AdventureType;
 import it.polimi.ingsw.model.enums.adventure.CardLevel;
@@ -56,7 +56,7 @@ public class AbandonedShipCard extends AdventureCard {
     * @param state The current state of the game.
      * @return The result of applying the visitor to this card
      */
-    public boolean accept(AdventureCardVisitor visitor, GameState state){
+    public boolean accept(AdventureCardVisitor visitor, GameModel state){
         return visitor.visitAbandonedShipCard(this, state);
     }
 

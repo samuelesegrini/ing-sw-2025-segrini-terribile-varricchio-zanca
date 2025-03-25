@@ -3,7 +3,7 @@ package it.polimi.ingsw.model.domain.adventure.card;
 import java.util.ArrayList;
 import java.util.List;
 
-import it.polimi.ingsw.model.domain.GameState;
+import it.polimi.ingsw.model.domain.general.GameModel;
 import it.polimi.ingsw.model.domain.adventure.AdventureCardVisitor;
 import it.polimi.ingsw.model.domain.adventure.entity.Meteor;
 import it.polimi.ingsw.model.enums.adventure.AdventureType;
@@ -41,7 +41,7 @@ public class MeteorSwarmCard extends AdventureCard {
      * @param state The current game state.
      * @return The result of the visitor's action on the MeteorSwarmCard.
      */
-    public boolean accept(AdventureCardVisitor visitor, GameState state){
+    public boolean accept(AdventureCardVisitor visitor, GameModel state){
         return visitor.visitMeteorSwarmCard(this, state);
     }
 }

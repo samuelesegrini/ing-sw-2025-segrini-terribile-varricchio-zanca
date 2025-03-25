@@ -1,6 +1,6 @@
 package it.polimi.ingsw.model.domain.adventure.card;
 
-import it.polimi.ingsw.model.domain.GameState;
+import it.polimi.ingsw.model.domain.general.GameModel;
 import it.polimi.ingsw.model.domain.adventure.AdventureCardVisitor;
 import it.polimi.ingsw.model.enums.adventure.AdventureType;
 import it.polimi.ingsw.model.enums.adventure.CardLevel;
@@ -29,7 +29,7 @@ public class OpenSpaceCard extends AdventureCard {
      * @param state The current game state, which may affect how the visitor interacts with the OpenSpaceCard.
      * @return The result of the visitor's action on the OpenSpaceCard.
      */
-    public boolean accept(AdventureCardVisitor visitor, GameState state){
+    public boolean accept(AdventureCardVisitor visitor, GameModel state){
         return visitor.visitOpenSpaceCard(this, state);
     }
 }

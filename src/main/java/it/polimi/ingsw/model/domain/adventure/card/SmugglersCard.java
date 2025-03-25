@@ -3,8 +3,9 @@ package it.polimi.ingsw.model.domain.adventure.card;
 import java.util.HashMap;
 import java.util.Map;
 
-import it.polimi.ingsw.model.domain.GameState;
+import it.polimi.ingsw.model.domain.general.GameModel;
 import it.polimi.ingsw.model.domain.adventure.AdventureCardVisitor;
+import it.polimi.ingsw.model.domain.general.GameModel;
 import it.polimi.ingsw.model.enums.adventure.AdventureType;
 import it.polimi.ingsw.model.enums.adventure.CardLevel;
 import it.polimi.ingsw.model.enums.resource.GoodType;
@@ -33,7 +34,6 @@ public class SmugglersCard extends EnemyCard {
         this.availableGoods = new HashMap<>(availableGoods);
     }
 
-    }
     public int getGoodsLostIfDefeated() {
         return this.goodsLostIfDefeated;
     }
@@ -50,7 +50,7 @@ public class SmugglersCard extends EnemyCard {
      * @param <T> The type of the result returned by the visitor.
      * @return The result of the visitor's action on the Smugglers card.
      */
-    public <T> T accept(AdventureCardVisitor<T> visitor, GameState state){
+    public <T> T accept(AdventureCardVisitor<T> visitor, GameModel state){
         return visitor.visitSmugglersCard(this, state);
     }
 }

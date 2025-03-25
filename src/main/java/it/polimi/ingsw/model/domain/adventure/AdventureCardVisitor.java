@@ -1,6 +1,6 @@
 package it.polimi.ingsw.model.domain.adventure;
 
-import it.polimi.ingsw.model.domain.GameState;
+import it.polimi.ingsw.model.domain.general.GameModel;
 import it.polimi.ingsw.model.domain.adventure.card.*;
 import it.polimi.ingsw.model.domain.adventure.entity.CannonFire;
 import it.polimi.ingsw.model.domain.adventure.entity.Meteor;
@@ -38,7 +38,7 @@ public class AdventureCardVisitor {
      * @param state Current game state
      * @return Result of processing the card
      */
-    public boolean visitAbandonedShipCard(AbandonedShipCard card, GameState state){
+    public boolean visitAbandonedShipCard(AbandonedShipCard card, GameModel state){
         FlightBoard flightBoard = state.getFlightBoard();
         List<Player> playersOrdered = flightBoard.getCurrentOrder();
         System.out.println("Resolving "+card.getType());
@@ -63,7 +63,7 @@ public class AdventureCardVisitor {
      * @param state Current game state
      * @return Result of processing the card
      */
-    public boolean visitMeteorSwarmCard(MeteorSwarmCard card, GameState state){
+    public boolean visitMeteorSwarmCard(MeteorSwarmCard card, GameModel state){
         FlightBoard flightBoard = state.getFlightBoard();
         List<Player> playersOrdered = flightBoard.getCurrentOrder();
 
@@ -111,7 +111,7 @@ public class AdventureCardVisitor {
      * @param state Current game state
      * @return Result of processing the card
      */
-    public boolean visitPiratesCard(PiratesCard card, GameState state){
+    public boolean visitPiratesCard(PiratesCard card, GameModel state){
         System.out.println("Resolving: " + card.getType());
         FlightBoard flightBoard = state.getFlightBoard();
         List<Player> playersOrdered = flightBoard.getCurrentOrder();
@@ -164,7 +164,7 @@ public class AdventureCardVisitor {
      * @param state Current game state
      * @return Result of processing the card
      */
-    public boolean visitPlanetsCard(PlanetsCard card, GameState state){
+    public boolean visitPlanetsCard(PlanetsCard card, GameModel state){
         System.out.println("Resolving planet: " + card.getType());
 
         FlightBoard flightBoard = state.getFlightBoard();
@@ -191,7 +191,7 @@ public class AdventureCardVisitor {
      * @param state Current game state
      * @return Result of processing the card
      */
-    public boolean visitOpenSpaceCard (OpenSpaceCard card, GameState state){
+    public boolean visitOpenSpaceCard (OpenSpaceCard card, GameModel state){
         FlightBoard flightBoard = state.getFlightBoard();
         List<Player> playersOrdered = flightBoard.getCurrentOrder();
         List<Player> defeated = new ArrayList<>();
@@ -217,7 +217,7 @@ public class AdventureCardVisitor {
      * @param state Current game state
      * @return Result of processing the card
      */
-    public boolean visitStardustCard(StardustCard card, GameState state){
+    public boolean visitStardustCard(StardustCard card, GameModel state){
         System.out.println("Resolving: " + card.getType());
 
         FlightBoard flightBoard = state.getFlightBoard();
@@ -238,7 +238,7 @@ public class AdventureCardVisitor {
      * @param state Current game state
      * @return Result of processing the card
      */
-    public boolean visitSlaversCard(SlaversCard card, GameState state){
+    public boolean visitSlaversCard(SlaversCard card, GameModel state){
         System.out.println("Resolving: " + card.getType());
 
         FlightBoard flightBoard = state.getFlightBoard();
@@ -272,7 +272,7 @@ public class AdventureCardVisitor {
      * @param state Current game state
      * @return Result of processing the card
      */
-    public boolean visitSmugglersCard(SmugglersCard card, GameState state){
+    public boolean visitSmugglersCard(SmugglersCard card, GameModel state){
         System.out.println("Resolving: " + card.getType());
 
         FlightBoard flightBoard = state.getFlightBoard();
@@ -310,7 +310,7 @@ public class AdventureCardVisitor {
      * @param state Current game state
      * @return Result of processing the card
      */
-    public T visitCombatZoneCard(CombatZoneCard card, GameState state){
+    public T visitCombatZoneCard(CombatZoneCard card, GameModel state){
         //se crew persa tutta giocatore è costretto ad abbandonare
     }
 
@@ -321,7 +321,7 @@ public class AdventureCardVisitor {
      * @param state Current game state
      * @return Result of processing the card
      */
-    public T visitEpidemicCard(EpidemicCard card, GameState state){
+    public T visitEpidemicCard(EpidemicCard card, GameModel state){
         FlightBoard flightBoard = state.getFlightBoard();
         List<Player> playersOrdered = flightBoard.getPlayerOrderByPosition();
 
@@ -338,7 +338,7 @@ public class AdventureCardVisitor {
      * @param state Current game state
      * @return Result of processing the card
      */
-    public T visitAbandonedStationCard(AbandonedStationCard card, GameState state){
+    public T visitAbandonedStationCard(AbandonedStationCard card, GameModel state){
             FlightBoard flightBoard = state.getFlightBoard();
             List<Player> playersOrdered = flightBoard.getPlayerOrderByPosition();
 
@@ -359,7 +359,7 @@ public class AdventureCardVisitor {
      * @param state Current game state
      * @return Result of processing the card
      */
-    public boolean visitCosmicDustCard(StardustCard card, GameState state) {
+    public boolean visitCosmicDustCard(StardustCard card, GameModel state) {
         FlightBoard flightBoard = state.getFlightBoard();
         List<Player> playersOrdered = flightBoard.getCurrentOrder();
         for (Player player : playersOrdered) {

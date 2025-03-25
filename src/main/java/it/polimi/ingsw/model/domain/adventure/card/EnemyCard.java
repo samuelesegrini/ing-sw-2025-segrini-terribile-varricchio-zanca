@@ -1,6 +1,6 @@
 package it.polimi.ingsw.model.domain.adventure.card;
 
-import it.polimi.ingsw.model.domain.GameState;
+import it.polimi.ingsw.model.domain.general.GameModel;
 import it.polimi.ingsw.model.domain.adventure.AdventureCardVisitor;
 import it.polimi.ingsw.model.enums.adventure.AdventureType;
 import it.polimi.ingsw.model.enums.adventure.CardLevel;
@@ -55,5 +55,5 @@ public abstract class EnemyCard extends AdventureCard {
      * @param state The current game state.
      * @return The result of the visitor's processing.
      */
-    public abstract boolean accept(AdventureCardVisitor visitor, GameState state);
+    public abstract boolean accept(AdventureCardVisitor visitor, GameModel state);
 }

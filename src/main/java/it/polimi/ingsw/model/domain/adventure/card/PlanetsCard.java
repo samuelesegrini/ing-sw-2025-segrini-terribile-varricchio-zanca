@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import it.polimi.ingsw.model.domain.GameState;
+import it.polimi.ingsw.model.domain.general.GameModel;
 import it.polimi.ingsw.model.domain.adventure.AdventureCardVisitor;
 import it.polimi.ingsw.model.domain.adventure.entity.Planet;
 import it.polimi.ingsw.model.enums.adventure.AdventureType;
@@ -49,7 +49,7 @@ public class PlanetsCard extends AdventureCard {
      * @param <T> The return type of the visitor's action.
      * @return The result of the visitor's action on the PlanetsCard.
      */
-    public <T> T accept(AdventureCardVisitor<T> visitor, GameState state){
+    public <T> T accept(AdventureCardVisitor<T> visitor, GameModel state){
         return visitor.visitPlanetsCard(this,state);
     }
 }
