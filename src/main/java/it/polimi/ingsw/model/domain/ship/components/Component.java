@@ -49,7 +49,7 @@ public abstract class Component {
      */
     public boolean canBePlacedAt(Position p, Ship s) {
         ShipBoardLayout layout = s.getLayout();
-        Grid<T> grid = s.getGrid();    // ERRORE DA SISTEMARE
+        Grid<Component> grid = s.getGrid();
         return (layout.isValidPosition(p)) && (!grid.containsKey((p)));
     }
 

@@ -1,11 +1,12 @@
 package it.polimi.ingsw.model.domain.ship.components;
 
+import it.polimi.ingsw.model.enums.resource.GoodType;
+import java.util.Map;
+
 public interface ComponentVisitor {
-    public void visitBattery(Battery battery, int quantity);
-    public void visitCabin(Cabin cabin);
-    public void visitCargoHold(CargoHold cargoHold);
-    public void visitEngine(Engine engine);
-    // public void visitLifeSupportSystem(LifeSupportSystem lifeSupportSystem);
-    public void visitShield(Shield shield);
-    // public void visitStructuralModule(StructuralModule structuralModule);
+    public void useBattery(Battery battery, int quantity);
+    public void useCabin(Cabin cabin, int quantity);
+    public void useCargoHold(CargoHold cargoHold, Map<GoodType, Integer> goods);
+    public void useEngine(Engine engine);
+    public void useShield(Shield shield);
 }

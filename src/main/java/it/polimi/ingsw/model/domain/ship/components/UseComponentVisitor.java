@@ -1,28 +1,32 @@
 package it.polimi.ingsw.model.domain.ship.components;
 
+import it.polimi.ingsw.model.enums.resource.GoodType;
+
+import java.util.Map;
+
 public class UseComponentVisitor implements ComponentVisitor {
     @Override
-    public void visitBattery(Battery battery, int quantity) {
+    public void useBattery(Battery battery, int quantity) {
 
     }
 
     @Override
-    public void visitCabin(Cabin cabin) {
+    public void useCabin(Cabin cabin, int quantity) {
 
     }
 
     @Override
-    public void visitCargoHold(CargoHold cargoHold) {
+    public void useCargoHold(CargoHold cargoHold, Map<GoodType, Integer> goods) {
 
     }
 
     @Override
-    public void visitEngine(Engine engine) {
+    public void useEngine(Engine engine) {
 
     }
 
     @Override
-    public void visitShield(Shield shield) {
+    public void useShield(Shield shield) {
 
     }
 }

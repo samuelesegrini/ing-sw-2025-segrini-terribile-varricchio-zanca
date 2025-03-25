@@ -1,9 +1,68 @@
 package it.polimi.ingsw.model.domain.ship.components;
 
+import it.polimi.ingsw.model.domain.ship.Grid;
 import it.polimi.ingsw.model.domain.ship.Position;
 import it.polimi.ingsw.model.domain.ship.Ship;
 import it.polimi.ingsw.model.enums.ship.Direction;
 
+public class Engine extends Component {
+    private boolean isDouble;
+
+    @Override
+    public void accept(ComponentVisitor v) {
+        v.useEngine(this);
+    }
+
+    @Override
+    public void count(Ship s) {
+        int power;
+        // Chi verifica che venga usata una batteria?
+        if (isDouble) {
+            power = 2;
+        }
+        else {
+            power = 1;
+        }
+
+        s.setEngines(s.getEngines() + power);
+    }
+
+    @Override
+    public boolean check(Ship s) {
+        Grid<Component> grid = s.getGrid();
+
+        for (Direction d :  Direction.values()) {
+            if (grid.containsKey(this.getPosition().offsetBy(d))) {
+                return true;
+            }
+        }
+        return false;
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
 public class Engine extends Component{
     private boolean isDouble;
 
@@ -13,20 +72,20 @@ public class Engine extends Component{
      * @param s ship where to place the engine
      * @param p coordinates on the ShipBoardLayout
      * @return {@code true} if both conditions for the engine placement are met, {@code false} otherwise
-     */
-    public boolean canBePlacedAt (Ship s, Position p){ return false; }
 
-    /**
-     * Returns the direction the exhaust is facing.
-     * @return the direction the exhaust is facing
-     */
-    public Direction getExhaustDirection(){ return null; }
+public boolean canBePlacedAt (Ship s, Position p){ return false; }
 
-    /**
-     * Calculate the power contribution considering that double engine have twice the power.
-     * @param usingBattery indicates whether a battery has been spent to enable double engine
-     * @return the power contribution
-     */
-    public int getPowerContribution (boolean usingBattery){ return 0; }
+        /**
+         * Returns the direction the exhaust is facing.
+         * @return the direction the exhaust is facing
+
+        public Direction getExhaustDirection(){ return null; }
+
+        /**
+         * Calculate the power contribution considering that double engine have twice the power.
+         * @param usingBattery indicates whether a battery has been spent to enable double engine
+         * @return the power contribution
+
+        public int getPowerContribution (boolean usingBattery){ return 0; }
 }
-
+ */
