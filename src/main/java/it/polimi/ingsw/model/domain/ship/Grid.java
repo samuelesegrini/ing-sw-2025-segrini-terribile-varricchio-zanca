@@ -123,7 +123,7 @@ public class Grid<T> {
         if ((direction == Direction.UP) || (direction == Direction.DOWN)) {
             for (int row = 0; row < rows && !foundSingle; row++) {
                 Position pos = new Position(row, fixedIndex);
-                if (grid.containsKey(pos) && (grid.get(pos) == ComponentType.CANNON_SINGLE){
+                if (grid.containsKey(pos) && (grid.get(pos) == ComponentType.CANNON_SINGLE)){
                     foundSingle = true;
                 }
                 else if (grid.containsKey(pos) && grid.get(pos) == ComponentType.CANNON_DOUBLE){
@@ -136,10 +136,9 @@ public class Grid<T> {
                 if (r >= 0 && r < rows) {
                     for (int col = 0; col < cols && !foundSingle; col++) {
                         Position pos = new Position(r, col);
-                        if (grid.containsKey(pos) && (grid.get(pos) == ComponentType.CANNON_SINGLE) {
+                        if (grid.containsKey(pos) && (grid.get(pos) == ComponentType.CANNON_SINGLE)) {
                             foundSingle = true;
-                        }
-                        else if (grid.containsKey(pos) && grid.get(pos) == ComponentType.CANNON_DOUBLE) {
+                        }else if (grid.containsKey(pos) && grid.get(pos) == ComponentType.CANNON_DOUBLE) {
                             foundDouble = true;
                         }
                     }

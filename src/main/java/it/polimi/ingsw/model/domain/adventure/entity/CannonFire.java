@@ -31,7 +31,7 @@ public class CannonFire {
      * @return {@code true} if the shot is blockable, {@code false} otherwise.
      */
     public boolean isBlockable(){
-        if (intensity=='LIGHT')
+        if (intensity == ShotIntensity.LIGHT)
             return true;
         return false;
     }
