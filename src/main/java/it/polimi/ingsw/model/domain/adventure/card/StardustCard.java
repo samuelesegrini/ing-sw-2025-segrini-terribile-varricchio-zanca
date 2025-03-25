@@ -30,7 +30,7 @@ public class StardustCard extends AdventureCard {
      * @param <T> The return type of the visitor's action.
      * @return The result of the visitor's action on the StardustCard.
      */
-    private <T> T accept(AdventureCardVisitor<T> visitor, GameState state){
-        return null;
+    private boolean accept(AdventureCardVisitor visitor, GameState state){
+        return visitor.visitStardustCard(this, state);
     }
 }
