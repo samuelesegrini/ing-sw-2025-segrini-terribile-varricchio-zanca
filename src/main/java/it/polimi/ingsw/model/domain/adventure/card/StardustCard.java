@@ -28,7 +28,6 @@ public class StardustCard extends AdventureCard {
      *
      * @param visitor The visitor which will perform actions on the card.
      * @param state The current game state.
-     * @param <T> The return type of the visitor's action.
      * @return The result of the visitor's action on the StardustCard.
      */
     private boolean accept(AdventureCardVisitor visitor, GameModel state){

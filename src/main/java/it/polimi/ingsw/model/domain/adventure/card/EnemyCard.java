@@ -41,12 +41,8 @@ public abstract class EnemyCard extends AdventureCard {
      *
      * @return {@code true} if the Enemy has been defeated, {@code false} otherwise.
      */
-    public boolean isDefeated(){
-        return defeated;
-    }
-    public void setDefeated(){
-        this.defeated = true;
-    }
+    public boolean isDefeated(){ return defeated; }
+    public void setDefeated(){ this.defeated = true; }
 
     /**
      * Accepts a visitor to process this EnemyCard according to the visitor pattern.

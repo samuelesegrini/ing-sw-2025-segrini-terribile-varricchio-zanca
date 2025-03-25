@@ -1,6 +1,6 @@
 package it.polimi.ingsw.model.domain.adventure.card;
 
-import it.polimi.ingsw.model.domain.general.GameModel;
+import it.polimi.ingsw.model.domain.GameState;
 import it.polimi.ingsw.model.domain.adventure.AdventureCardVisitor;
 import it.polimi.ingsw.model.domain.adventure.entity.CombatCheck;
 import it.polimi.ingsw.model.enums.adventure.AdventureType;
@@ -24,6 +24,7 @@ public class CombatZoneCard extends AdventureCard {
         this.combatChecks = new ArrayList<>();
     }
 
+    public List<CombatCheck> getCombatChecks() { return combatChecks; }
     /**
      * Adds a CombatCheck to this CombatZone.
      * Each CombatCheck defines a comparison between players based on a specific attribute.
@@ -32,18 +33,16 @@ public class CombatZoneCard extends AdventureCard {
      */
     public void addCombatCheck(CombatCheck check){
         this.combatChecks.add(check);
-        return;
-    };
+    }
 
     /**
      * Accepts a visitor to process this CombatZone card according to the visitor pattern.
      *
      * @param visitor The visitor handling the card logic.
      * @param state The current game state.
-     * @param <T> The return type of the visitor's operation.
      * @return The result of the visitor's processing.
      */
-    private <T> T accept(AdventureCardVisitor<T> visitor, GameModel state){
-        return null;
+    private boolean accept(AdventureCardVisitor visitor, GameState state){
+        return visitor.visitCombatZoneCard(this, state);
     }
 }

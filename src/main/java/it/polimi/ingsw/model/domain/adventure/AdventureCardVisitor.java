@@ -1,24 +1,21 @@
 package it.polimi.ingsw.model.domain.adventure;
 
-import it.polimi.ingsw.model.domain.general.GameModel;
+import it.polimi.ingsw.model.domain.GameState;
 import it.polimi.ingsw.model.domain.adventure.card.*;
 import it.polimi.ingsw.model.domain.adventure.entity.CannonFire;
+import it.polimi.ingsw.model.domain.adventure.entity.CombatCheck;
 import it.polimi.ingsw.model.domain.adventure.entity.Meteor;
 import it.polimi.ingsw.model.domain.adventure.entity.Planet;
 import it.polimi.ingsw.model.domain.flight.FlightBoard;
 import it.polimi.ingsw.model.domain.player.Player;
 import it.polimi.ingsw.model.domain.ship.Position;
-import it.polimi.ingsw.model.domain.ship.Ship;
 import it.polimi.ingsw.model.domain.ship.components.Component;
+import it.polimi.ingsw.model.enums.adventure.CombatAttributeType;
+import it.polimi.ingsw.model.enums.adventure.PenaltyType;
 import it.polimi.ingsw.model.enums.adventure.ShotIntensity;
-import it.polimi.ingsw.model.enums.crew.CrewType;
-import it.polimi.ingsw.model.enums.ship.ComponentType;
 import it.polimi.ingsw.model.enums.ship.ConnectorType;
-import it.polimi.ingsw.model.enums.ship.Direction;
 
 import java.util.*;
-
-import static it.polimi.ingsw.model.enums.ship.ComponentType.CARGO_HOLD_SPECIAL;
 
 /**
  * Visitor interface for processing different types of adventure cards.
@@ -38,10 +35,11 @@ public class AdventureCardVisitor {
      * @param state Current game state
      * @return Result of processing the card
      */
-    public boolean visitAbandonedShipCard(AbandonedShipCard card, GameModel state){
+    public boolean visitAbandonedShipCard(AbandonedShipCard card, GameState state){
+        System.out.println("Resolving "+card.getType());
+
         FlightBoard flightBoard = state.getFlightBoard();
         List<Player> playersOrdered = flightBoard.getCurrentOrder();
-        System.out.println("Resolving "+card.getType());
 
         for(Player player : playersOrdered ) {
             if ((!card.isVisited()) && (player.getShip().getCrewNumber() >= card.getCrewLost())) {
@@ -63,9 +61,17 @@ public class AdventureCardVisitor {
      * @param state Current game state
      * @return Result of processing the card
      */
-    public boolean visitMeteorSwarmCard(MeteorSwarmCard card, GameModel state){
+    public boolean visitMeteorSwarmCard(MeteorSwarmCard card, GameState state){
+        System.out.println("Resolving "+card.getType());
+
         FlightBoard flightBoard = state.getFlightBoard();
         List<Player> playersOrdered = flightBoard.getCurrentOrder();
+
+        if(flightBoard.getPlayerCount()==1){
+            flightBoard.getDeck().drawNextCard();
+            System.out.println("Skipping " +card.getType()+" card");
+            return false;
+        }
 
         for(Meteor meteor: card.getMeteorPattern()){
             Random dice = new Random();
@@ -111,7 +117,7 @@ public class AdventureCardVisitor {
      * @param state Current game state
      * @return Result of processing the card
      */
-    public boolean visitPiratesCard(PiratesCard card, GameModel state){
+    public boolean visitPiratesCard(PiratesCard card, GameState state){
         System.out.println("Resolving: " + card.getType());
         FlightBoard flightBoard = state.getFlightBoard();
         List<Player> playersOrdered = flightBoard.getCurrentOrder();
@@ -164,7 +170,7 @@ public class AdventureCardVisitor {
      * @param state Current game state
      * @return Result of processing the card
      */
-    public boolean visitPlanetsCard(PlanetsCard card, GameModel state){
+    public boolean visitPlanetsCard(PlanetsCard card, GameState state){
         System.out.println("Resolving planet: " + card.getType());
 
         FlightBoard flightBoard = state.getFlightBoard();
@@ -191,7 +197,9 @@ public class AdventureCardVisitor {
      * @param state Current game state
      * @return Result of processing the card
      */
-    public boolean visitOpenSpaceCard (OpenSpaceCard card, GameModel state){
+    public boolean visitOpenSpaceCard (OpenSpaceCard card, GameState state){
+        System.out.println("Resolving: " + card.getType());
+
         FlightBoard flightBoard = state.getFlightBoard();
         List<Player> playersOrdered = flightBoard.getCurrentOrder();
         List<Player> defeated = new ArrayList<>();
@@ -217,7 +225,7 @@ public class AdventureCardVisitor {
      * @param state Current game state
      * @return Result of processing the card
      */
-    public boolean visitStardustCard(StardustCard card, GameModel state){
+    public boolean visitStardustCard(StardustCard card, GameState state){
         System.out.println("Resolving: " + card.getType());
 
         FlightBoard flightBoard = state.getFlightBoard();
@@ -238,7 +246,7 @@ public class AdventureCardVisitor {
      * @param state Current game state
      * @return Result of processing the card
      */
-    public boolean visitSlaversCard(SlaversCard card, GameModel state){
+    public boolean visitSlaversCard(SlaversCard card, GameState state){
         System.out.println("Resolving: " + card.getType());
 
         FlightBoard flightBoard = state.getFlightBoard();
@@ -251,7 +259,7 @@ public class AdventureCardVisitor {
             else if(player.getShip().getCannonStrength() < card.getPowerLevel()){
                 player.updateCrewMember(card.getCrewLossAmount(), true);
             }
-            else if(player.getShip().getCannonStrength()>card.getPowerLevel()){
+            else if(player.getShip().getCannonStrength() > card.getPowerLevel()){
                 card.setDefeated();
                 //The player CAN claim the reward losing flying days
                 player.addCredits(card.getCreditReward());
@@ -272,7 +280,7 @@ public class AdventureCardVisitor {
      * @param state Current game state
      * @return Result of processing the card
      */
-    public boolean visitSmugglersCard(SmugglersCard card, GameModel state){
+    public boolean visitSmugglersCard(SmugglersCard card, GameState state){
         System.out.println("Resolving: " + card.getType());
 
         FlightBoard flightBoard = state.getFlightBoard();
@@ -297,7 +305,7 @@ public class AdventureCardVisitor {
                 break;
             }
         }
-        if(card.isDefeated()){
+        if (card.isDefeated()){
             return true;
         }
         return false;
@@ -310,9 +318,60 @@ public class AdventureCardVisitor {
      * @param state Current game state
      * @return Result of processing the card
      */
-    public T visitCombatZoneCard(CombatZoneCard card, GameModel state){
-        //se crew persa tutta giocatore è costretto ad abbandonare
+    public boolean visitCombatZoneCard(CombatZoneCard card, GameState state){
+        System.out.println("Resolving: " + card.getType());
+
+        FlightBoard flightBoard = state.getFlightBoard();
+        List<Player> playersOrdered = flightBoard.getCurrentOrder();
+
+        if(flightBoard.getPlayerCount()==1){
+            flightBoard.getDeck().drawNextCard();
+            System.out.println("Skipping " +card.getType()+" card");
+            return false;
+        }
+
+        for(CombatCheck check : card.getCombatChecks()){
+            CombatAttributeType attributeType = check.getAttribute();
+            Player combatLoser = check.getCombatLoser(playersOrdered);
+
+            if(combatLoser == null){
+                throw new IllegalStateException("No combat losing player found.");
+                return false;
+            }
+
+            PenaltyType penalty = check.getPenaltyType();
+            switch (penalty){
+                case CREW_LOSS:
+                    combatLoser.updateCrewMember(check.getPenaltyValue(), true);
+                    if(combatLoser.getTotalCrewMember() >= 0){
+                        flightBoard.abandonPlayer(combatLoser); //controllo che andrebbe fatto direttamente in updateCrew
+                    }
+                case FLIGHT_DAYS_LOSS:
+                    flightBoard.movePlayer(combatLoser, check.getPenaltyValue(), false);
+                case CANNON_FIRE:
+                    for(CannonFire cannonFire : check.getCannonFires()){
+                        Random dice1 = new Random();
+                        Random dice2 = new Random();
+                        int index1 = dice1.nextInt(6) + 1;
+                        int index2 = dice2.nextInt(6) + 1;
+                        int index = index1 + index2;
+
+                        Position impactPosition = combatLoser.getShip().getGrid().findFirstComponet(cannonFire.getApproach(), index);
+                        Component impactComponent = combatLoser.getShip().getGrid().get(impactPosition);
+
+                        if(cannonFire.isBlockable() && combatLoser.getShip().getGrid().protectedByShield(cannonFire.getApproach()){
+                            System.out.println(combatLoser.getId().getNickname()+ " has activated a shield against cannon fire number "
+                                    +check.getCannonFires().indexOf(cannonFire));
+                        } else {
+                            System.out.println(combatLoser.getId().getNickname()+ " has no protection against cannon fire number "
+                                    +check.getCannonFires().indexOf(cannonFire));
+                            combatLoser.getShip().removeComponent(impactPosition);
+                        }
+                    }
+            }
+        }
     }
+
 
     /**
      * Visits an EpidemicCard.
@@ -321,9 +380,11 @@ public class AdventureCardVisitor {
      * @param state Current game state
      * @return Result of processing the card
      */
-    public T visitEpidemicCard(EpidemicCard card, GameModel state){
+    public boolean visitEpidemicCard(EpidemicCard card, GameState state){
+        System.out.println("Resolving: " + card.getType());
+
         FlightBoard flightBoard = state.getFlightBoard();
-        List<Player> playersOrdered = flightBoard.getPlayerOrderByPosition();
+        List<Player> playersOrdered = flightBoard.getCurrentOrder();
 
         for(Player player : playersOrdered ) {
             //perde un membro dell'equipaggio per ogni cabina collegata ad un'altra
@@ -338,32 +399,23 @@ public class AdventureCardVisitor {
      * @param state Current game state
      * @return Result of processing the card
      */
-    public T visitAbandonedStationCard(AbandonedStationCard card, GameModel state){
-            FlightBoard flightBoard = state.getFlightBoard();
-            List<Player> playersOrdered = flightBoard.getPlayerOrderByPosition();
-
-            for (Player player : playersOrdered) {
-                if ((!card.isVisited()) && (player.getShip().getCrewNumber() >= card.getMinCrewRequired())) {
-                    flightBoard.movePlayer(player, AbandonedShipCard.lostDays(), false);
-                    card.visit();
-                    player.getShip().addResources(card.getGoodQuantities());
-                    System.out.println(player.getId().getNickname() + " ha saccheggiato la stazione");
-                    break;  // passa al giocatore successivo
-                }
-            }
-        }
-    /**
-     * Visits a CosmicDustCard.
-     *
-     * @param card The cosmic dust card to process
-     * @param state Current game state
-     * @return Result of processing the card
-     */
-    public boolean visitCosmicDustCard(StardustCard card, GameModel state) {
+    public boolean visitAbandonedStationCard(AbandonedStationCard card, GameState state){
+        System.out.println("Resolving: " + card.getType());
         FlightBoard flightBoard = state.getFlightBoard();
         List<Player> playersOrdered = flightBoard.getCurrentOrder();
+
         for (Player player : playersOrdered) {
-            flightBoard.movePlayer(player, player.getShip().getExposedComponents(), false);
-        }
+            if ((!card.isVisited()) && (player.getShip().getCrewNumber() >= card.getMinCrewRequired())) {
+                //se il giocatore sceglie di prendere le risorse e perdere giorni di volo
+                card.setVisited();
+                flightBoard.movePlayer(player, card.getLostDays(), false);
+                player.getShip().addResources(card.getGoodQuantities());
+                System.out.println(player.getId().getNickname() + " looted the abandoned station.");
+                }
+            }
+            if(card.isVisited()){
+                return true;
+            }
+            return false;
     }
 }

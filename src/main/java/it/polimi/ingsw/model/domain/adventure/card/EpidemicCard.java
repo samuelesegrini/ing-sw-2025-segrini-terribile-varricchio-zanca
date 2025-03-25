@@ -1,8 +1,7 @@
 package it.polimi.ingsw.model.domain.adventure.card;
 
-import it.polimi.ingsw.model.domain.general.GameModel;
+import it.polimi.ingsw.model.domain.GameState;
 import it.polimi.ingsw.model.domain.adventure.AdventureCardVisitor;
-import it.polimi.ingsw.model.domain.general.GameModel;
 import it.polimi.ingsw.model.enums.adventure.AdventureType;
 import it.polimi.ingsw.model.enums.adventure.CardLevel;
 
@@ -29,10 +28,9 @@ public class EpidemicCard extends AdventureCard {
      *
      * @param visitor The visitor to accept.
      * @param state The current game state.
-     * @param <T> The type of the result returned by the visitor.
      * @return The result of the visitor's action on the Epidemic card.
      */
-    private <T> T accept(AdventureCardVisitor<T> visitor, GameModel state){
-        return null;
+    public boolean accept(AdventureCardVisitor visitor, GameState state){
+        return visitor.visitEpidemicCard(this, state);
     }
 }

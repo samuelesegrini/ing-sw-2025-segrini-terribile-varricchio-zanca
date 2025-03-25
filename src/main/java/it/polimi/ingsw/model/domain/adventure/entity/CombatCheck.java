@@ -1,5 +1,6 @@
 package it.polimi.ingsw.model.domain.adventure.entity;
 
+import it.polimi.ingsw.model.domain.player.Player;
 import it.polimi.ingsw.model.enums.adventure.CombatAttributeType;
 import it.polimi.ingsw.model.enums.adventure.PenaltyType;
 
@@ -39,13 +40,45 @@ public class CombatCheck {
         this.cannonFires = new ArrayList<>(cannonFires);
     }
 
+    public Player getCombatLoser(List<Player> playersOrdered) {
+        double count = Double.MAX_VALUE;
+        Player combatLoser = null;
+
+        if(attribute == CombatAttributeType.CREW_COUNT) {
+            for (Player player : playersOrdered) {
+                //il giocatore pù in vantaggio paga la penalità in caso di pareggio
+                // faccio il confronto con minore stretto e copro anche il caso di pareggio
+                // ( in playersOrdered i giocatori sono ordinati dal primo all'ultimo )
+                if (player.getTotalCrewMember() < count) {
+                    count = player.getTotalCrewMember();
+                    combatLoser = player;
+                }
+            }
+        }
+        else if(attribute == CombatAttributeType.CANNON_STRENGTH){
+            for(Player player : playersOrdered){
+                if (player.getShip().getCannonStrength() < count) {
+                    count = player.getShip().getCannonStrength();
+                    combatLoser = player;
+                }
+            }
+        }
+        else if (attribute == CombatAttributeType.ENGINE_POWER){
+            for (Player player : playersOrdered) {
+                if(player.getShip().getEngineStrength() < count){
+                    count = player.getShip().getEngineStrength();
+                    combatLoser = player;
+                }
+            }
+        }
+        return combatLoser;
+    }
     /**
      * Gets the attribute being evaluated in this CombatCheck.
      *
      * @return The attribute type (e.g., crew count, engine power, cannon strength).
      */
-    public CombatAttributeType getAttribute() { return attribute;
-    }
+    public CombatAttributeType getAttribute() { return attribute; }
 
     /**
      * Gets the penalty type applied in this CombatCheck.

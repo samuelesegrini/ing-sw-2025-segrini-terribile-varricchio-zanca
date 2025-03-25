@@ -1,5 +1,6 @@
 package it.polimi.ingsw.model.domain.flight;
 
+import it.polimi.ingsw.model.domain.adventure.AdventureDeck;
 import it.polimi.ingsw.model.domain.flight.PlayerFlightData;
 import it.polimi.ingsw.model.domain.player.Player;
 import it.polimi.ingsw.model.domain.player.PlayerId;
@@ -12,6 +13,7 @@ import java.util.*;
 public class FlightBoard {
     private Route route;
     private int playerCount;
+    private AdventureDeck deck;
     private Map <Player, PlayerFlightData> playerDataMap;
     private List<Player> currentOrder;
     private List <Player> finishOrder;
@@ -57,6 +59,10 @@ public class FlightBoard {
     public List<Player> getFinishOrder() {
         return finishOrder;
     }
+
+    public int getPlayerCount() { return playerCount; }
+
+    public AdventureDeck getDeck() { return deck; }
 
     /**
      * Returns the current position of the player on the flight route.

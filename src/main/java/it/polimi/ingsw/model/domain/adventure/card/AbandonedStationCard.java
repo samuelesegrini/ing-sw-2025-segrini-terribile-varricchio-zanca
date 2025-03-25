@@ -1,6 +1,6 @@
 package it.polimi.ingsw.model.domain.adventure.card;
 
-import it.polimi.ingsw.model.domain.general.GameModel;
+import it.polimi.ingsw.model.domain.GameState;
 import it.polimi.ingsw.model.domain.adventure.AdventureCardVisitor;
 import it.polimi.ingsw.model.enums.adventure.AdventureType;
 import it.polimi.ingsw.model.enums.adventure.CardLevel;
@@ -42,26 +42,24 @@ public class AbandonedStationCard extends AdventureCard {
 
     }
 
-    int getMinCrewRequired() {
+    public int getMinCrewRequired() {
         return minCrewRequired;
     }
-
-    public int getGoodQuantities() {
+    public int getLostDays() { return lostDays; }
+    public Map<GoodType,Integer> getGoodQuantities() {
         return this.goodQuantities;
     }
+    public boolean isVisited() { return isVisited; }
+    public void setVisited() { isVisited = true; }
 
     /**
      * Accepts a visitor to perform an operation on this adventure card.
      * The visitor pattern allows operations to be applied to the card without modifying its class.
-     * @param <T> The type of result returned by the visitor.
      * @param visitor The visitor that will process this card.
      * @param state The current game state.
      * @return The result of the visitor's operation on this card.
      */
-    public <T> T accept(AdventureCardVisitor<T> visitor, GameModel state){
-        return null;
-    }
-
-    public boolean isVisited() {
+    public boolean accept(AdventureCardVisitor visitor, GameState state){
+        return visitor.visitAbandonedStationCard(this, state);
     }
 }
