@@ -27,10 +27,9 @@ public class OpenSpaceCard extends AdventureCard {
      *
      * @param visitor The visitor which will perform actions on the card.
      * @param state The current game state, which may affect how the visitor interacts with the OpenSpaceCard.
-     * @param <T> The return type of the visitor's action.
      * @return The result of the visitor's action on the OpenSpaceCard.
      */
-    private <T> T accept(AdventureCardVisitor<T> visitor, GameState state){
-        return null;
+    public boolean accept(AdventureCardVisitor visitor, GameState state){
+        return visitor.visitOpenSpaceCard(this, state);
     }
 }

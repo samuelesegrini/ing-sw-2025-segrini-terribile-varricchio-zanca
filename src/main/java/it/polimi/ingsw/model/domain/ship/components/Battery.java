@@ -2,7 +2,6 @@ package it.polimi.ingsw.model.domain.ship.components;
 
 import it.polimi.ingsw.model.domain.ship.Grid;
 import it.polimi.ingsw.model.domain.ship.Ship;
-import it.polimi.ingsw.model.domain.ship.components.Component;
 import it.polimi.ingsw.model.enums.ship.Direction;
 
 public class Battery extends Component {
@@ -12,7 +11,7 @@ public class Battery extends Component {
     @Override
     public void accept(ComponentVisitor v) {
         int quantity = 0;
-        v.visitBattery(this, quantity);
+        v.useBattery(this, quantity);
     }
 
     @Override
@@ -22,16 +21,23 @@ public class Battery extends Component {
 
     @Override
     public boolean check(Ship s) {
-        Grid<T> grid = s.getGrid();
+        Grid<Component> grid = s.getGrid();
 
         for (Direction d :  Direction.values()) {
             if (grid.containsKey(this.getPosition().offsetBy(d))) {
                 return true;
             }
         }
-        return false;    // Componente staccato dalla nave, aiut
+        return false;
     }
 }
+
+
+
+
+
+
+
 
 
 

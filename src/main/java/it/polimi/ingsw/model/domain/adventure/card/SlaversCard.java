@@ -39,10 +39,9 @@ public class SlaversCard extends EnemyCard {
      *
      * @param visitor The visitor handling the card logic.
      * @param state The current game state.
-     * @param <T> The return type of the visitor's operation.
      * @return The result of the visitor's processing.
      */
-    private <T> T accept(AdventureCardVisitor<T> visitor, GameState state){
+    public boolean accept(AdventureCardVisitor visitor, GameState state){
         return visitor.visitSlaversCard(this, state);
     }
 }

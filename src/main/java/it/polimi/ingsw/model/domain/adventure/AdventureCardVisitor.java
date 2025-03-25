@@ -16,10 +16,7 @@ import it.polimi.ingsw.model.enums.ship.ComponentType;
 import it.polimi.ingsw.model.enums.ship.ConnectorType;
 import it.polimi.ingsw.model.enums.ship.Direction;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 
 import static it.polimi.ingsw.model.enums.ship.ComponentType.CARGO_HOLD_SPECIAL;
 
@@ -184,7 +181,7 @@ public class AdventureCardVisitor {
                 }
             }
         }
-
+        return true;
     }
     
     /**
@@ -194,12 +191,23 @@ public class AdventureCardVisitor {
      * @param state Current game state
      * @return Result of processing the card
      */
-    public T visitOpenSpaceCard(OpenSpaceCard card, GameState state){
+    public boolean visitOpenSpaceCard (OpenSpaceCard card, GameState state){
         FlightBoard flightBoard = state.getFlightBoard();
-        List<Player> playersOrdered;
+        List<Player> playersOrdered = flightBoard.getCurrentOrder();
+        List<Player> defeated = new ArrayList<>();
+
         for(Player player : playersOrdered){
-            flightBoard.movePlayer(player, player.getShip().getEngineStrength(), true);
+            flightBoard.movePlayer(player, (int)player.getShip().getEngineStrength(), true);
+            if(player.getShip().getEngineStrength() <= 0){
+                defeated.add(player);
+            }
         }
+        if(!defeated.isEmpty()){
+            for(Player player : defeated){
+                flightBoard.abandonPlayer(player);
+            }
+        }
+        return true;
     }
     
     /**
@@ -209,7 +217,19 @@ public class AdventureCardVisitor {
      * @param state Current game state
      * @return Result of processing the card
      */
-    T visitStardustCard(StardustCard card, GameState state);
+    public boolean visitStardustCard(StardustCard card, GameState state){
+        System.out.println("Resolving: " + card.getType());
+
+        FlightBoard flightBoard = state.getFlightBoard();
+        List<Player> playersOrdered = flightBoard.getCurrentOrder();
+        Collections.reverse(playersOrdered);
+
+        for(Player player : playersOrdered){
+            int exposedConnectors = player.getShip().getExposedConnectors();
+            flightBoard.movePlayer(player, exposedConnectors, false);
+        }
+        return true;
+    }
     
     /**
      * Visits a SlaversCard.
@@ -218,34 +238,31 @@ public class AdventureCardVisitor {
      * @param state Current game state
      * @return Result of processing the card
      */
-    public T visitSlaversCard(SlaversCard card, GameState state){
+    public boolean visitSlaversCard(SlaversCard card, GameState state){
         System.out.println("Resolving: " + card.getType());
 
         FlightBoard flightBoard = state.getFlightBoard();
         List<Player> playersOrdered = flightBoard.getCurrentOrder();
 
-        //Slavers attack the players’ ships in order
         for(Player player: playersOrdered){
-            // In case of a tie nothing happens to that player.
-            // The enemy moves on to attack the next player
-            if(player.getShip().getCannonStrength()==card.getPowerLevel()){
+            if(player.getShip().getCannonStrength() == card.getPowerLevel()){
                 continue;
             }
-            else if(player.getShip().getCannonStrength()<card.getPowerLevel()){
-                // The player loses and smugglers take player's crew.
-                // The player can choose which humans or aliens to surrender in exchange for his freedom
-                CrewType type;
-                player.subtractCrewMember(type, card.getCrewLossAmount());
+            else if(player.getShip().getCannonStrength() < card.getPowerLevel()){
+                player.updateCrewMember(card.getCrewLossAmount(), true);
             }
             else if(player.getShip().getCannonStrength()>card.getPowerLevel()){
-                //The player CAN claim the reward losing flying days
                 card.setDefeated();
+                //The player CAN claim the reward losing flying days
                 player.addCredits(card.getCreditReward());
                 flightBoard.movePlayer(player, card.getMovementPenalty(), false);
                 break;
             }
         }
-
+        if(card.isDefeated()){
+            return true;
+        }
+        return false;
     }
     
     /**
@@ -255,36 +272,35 @@ public class AdventureCardVisitor {
      * @param state Current game state
      * @return Result of processing the card
      */
-    public T visitSmugglersCard(SmugglersCard card, GameState state){
-        System.out.println("Resolving Smugglers card: " + card.getType());
+    public boolean visitSmugglersCard(SmugglersCard card, GameState state){
+        System.out.println("Resolving: " + card.getType());
 
         FlightBoard flightBoard = state.getFlightBoard();
-        List<Player> playersOrdered = flightBoard.getPlayerOrderByPosition();
+        List<Player> playersOrdered = flightBoard.getCurrentOrder();
 
-        //Smugglers attack the players’ ships in order
+        double powerLevel = card.getPowerLevel();
         for(Player player: playersOrdered){
-            // In case of a tie nothing happens to that player.
-            // The enemy moves on to attack the next player
-            if(player.getShip().getCannonStrength()==card.getPowerLevel()){
+            double cannonStrength = player.getShip().getCannonStrength();
+            if(powerLevel == cannonStrength){
                 continue;
             }
-            else if(player.getShip().getCannonStrength()<card.getPowerLevel()){
-                // The player loses and smugglers take player's most valuable goods.
+            else if(powerLevel < cannonStrength){
                 if(!(player.getShip().removeValuableResources(card.getGoodsLostIfDefeated()))){
                     throw new IllegalArgumentException("Not enough resources available!");
                 }
-                else {
-                    continue;
-                }
             }
-            else if(player.getShip().getCannonStrength()>card.getPowerLevel()){
-                //The player CAN claim the reward losing flying days
+            else if (powerLevel > cannonStrength){
                 card.setDefeated();
+                //The player CAN claim the reward losing flying days
                 player.getShip().addResources(card.getAvailableGoods());
                 flightBoard.movePlayer(player, card.getMovementPenalty(), false);
                 break;
             }
         }
+        if(card.isDefeated()){
+            return true;
+        }
+        return false;
     }
     
     /**
@@ -295,7 +311,7 @@ public class AdventureCardVisitor {
      * @return Result of processing the card
      */
     public T visitCombatZoneCard(CombatZoneCard card, GameState state){
-
+        //se crew persa tutta giocatore è costretto ad abbandonare
     }
 
     /**
