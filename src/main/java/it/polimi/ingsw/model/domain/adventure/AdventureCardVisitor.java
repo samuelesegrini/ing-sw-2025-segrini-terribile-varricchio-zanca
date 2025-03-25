@@ -81,7 +81,7 @@ public class AdventureCardVisitor {
                                 +card.getMeteorPattern().indexOf(meteor));
                         break;
                     }
-                    else if(player.getShip().getGrid().protectedByShield(meteor.getApproach()){
+                    else if(player.getShip().getGrid().protectedByShield(meteor.getApproach())){
                         System.out.println(player.getId().getNickname()+ " has activated a shield against meteor number"
                                 +card.getMeteorPattern().indexOf(meteor));
                         break;
@@ -142,7 +142,7 @@ public class AdventureCardVisitor {
                     Position impactPosition = player.getShip().getGrid().findFirstComponet(cannonFire.getApproach(), index);
                     Component impactComponent = player.getShip().getGrid().get(impactPosition);
 
-                    if(cannonFire.isBlockable() && player.getShip().getGrid().protectedByShield(cannonFire.getApproach()){
+                    if(cannonFire.isBlockable() && player.getShip().getGrid().protectedByShield(cannonFire.getApproach())){
                         System.out.println(player.getId().getNickname()+ " has activated a shield against cannon fire number "
                         +card.getAttackPattern().indexOf(cannonFire));
                     } else {
