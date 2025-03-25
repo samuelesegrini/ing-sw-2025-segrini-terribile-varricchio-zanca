@@ -8,9 +8,11 @@ import it.polimi.ingsw.model.domain.player.Player;
 import it.polimi.ingsw.model.domain.general.config.GameConfig;
 import it.polimi.ingsw.model.domain.general.ComponentDeck;
 import it.polimi.ingsw.model.domain.player.PlayerId;
+import it.polimi.ingsw.model.domain.ship.Position;
 import it.polimi.ingsw.model.domain.ship.components.Component;
 import it.polimi.ingsw.model.enums.GameLevel;
 import it.polimi.ingsw.model.enums.GamePhase;
+import it.polimi.ingsw.model.enums.player.PlayerColor;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -60,35 +62,36 @@ public class GameModel {
     /**
      * Adds a new player to the game.
      * 
-     * @param id The unique identifier for the player.
+     * @param playerId The unique identifier for the player.
      * @param name The display name of the player.
      * @throws IllegalStateException if maximum players reached or game already started
      * @throws IllegalArgumentException if player ID already exists
      */
-    public void addPlayer(int id, String name) {
+    public void addPlayer(PlayerId playerId, String name) {
         if (currentPhase != GamePhase.SETUP) {
             throw new IllegalStateException("Cannot add players after game has started");
         }
         if (players.size() >= 4) {
             throw new IllegalStateException("Maximum number of players reached");
         }
-        if (getPlayerById(id) != null) {
-            throw new IllegalArgumentException("Player with ID " + id + " already exists");
+        if (getPlayerById(playerId) != null) {
+            throw new IllegalArgumentException("Player with ID " + playerId + " already exists");
         }
-        
-        Player player = new Player(id, name);
+
+        //TODO: Configure logic for player colors
+        Player player = new Player(playerId, PlayerColor.BLUE);
         players.add(player);
     }
 
     /**
      * Retrieves a player by their ID.
      * 
-     * @param id The unique identifier of the player to retrieve.
+     * @param playerId The unique identifier of the player to retrieve.
      * @return The player with the specified ID, or null if no such player exists.
      */
-    public Player getPlayerById(PlayerId id) {
+    public Player getPlayerById(PlayerId playerId) {
         return players.stream()
-                .filter(player -> player.getId() == id)
+                .filter(player -> player.getId().equals(playerId))
                 .findFirst()
                 .orElse(null);
     }
@@ -105,13 +108,13 @@ public class GameModel {
             throw new IllegalStateException("Game already initialized");
         }
 
-        this.flightBoard = new FlightBoard(players.size(), level);
+        this.flightBoard = new FlightBoard(level);
         this.adventureDeck = configManager.createAdventureDeck(level);
         this.componentDeck = configManager.createComponentDeck(level);
         
         // Initialize player positions on flight board
         for (Player player : players) {
-            flightBoard.addPlayer(player);
+            flightBoard.registerPlayer(player);
         }
     }
 
@@ -166,8 +169,7 @@ public class GameModel {
                 // Initialize adventure phase
                 break;
             case END:
-                calculateFinalScores();
-                determineWinner();
+                //TODO: make final calculations
                 break;
         }
     }
@@ -178,14 +180,9 @@ public class GameModel {
      * @throws IllegalStateException if not in building phase
      */
     public Optional<Component> drawComponent() {
-        if (currentPhase != GamePhase.BUILDING) {
-            throw new IllegalStateException("Components can only be drawn during building phase");
-        }
-        
-        Player currentPlayer = getCurrentPlayer();
-        Optional<Component> drawnComponent = componentDeck.draw();
-        drawnComponent.ifPresent(currentPlayer::addComponent);
-        return drawnComponent;
+        //TODO: implement or check if redundant
+
+        return componentDeck.draw();
     }
 
     /**
@@ -194,11 +191,9 @@ public class GameModel {
      * @throws IllegalStateException if not in flight phase
      */
     public Optional<AdventureCard> drawAdventureCard() {
-        if (currentPhase != GamePhase.FLIGHT) {
-            throw new IllegalStateException("Adventure cards can only be drawn during flight phase");
-        }
-        
-        return adventureDeck.draw();
+        //TODO: implement or check if redundant
+
+        return adventureDeck.drawNextCard();
     }
 
     /**
@@ -207,12 +202,7 @@ public class GameModel {
      * @throws IllegalArgumentException if card is null
      */
     public void resolveAdventureCard(AdventureCard card) {
-        if (card == null) {
-            throw new IllegalArgumentException("Card cannot be null");
-        }
-        
-        card.applyEffect(this);
-        updateLeadPlayer();
+        //TODO: implement or check if redundant
     }
 
     /**
@@ -222,26 +212,21 @@ public class GameModel {
      * @param spaces The number of spaces to move the player.
      */
     public void movePlayer(Player player, int spaces) {
-        flightBoard.movePlayer(player, spaces);
-        updateLeadPlayer();
+        //TODO: implement or check if redundant
     }
 
     /**
      * Updates the lead player based on current positions on the flight board.
      */
     private void updateLeadPlayer() {
-        this.leadPlayer = flightBoard.getLeadingPlayer();
+        //TODO: implement or check if redundant
     }
 
     /**
      * Calculates the final scores for all players at the end of the game.
      */
     private void calculateFinalScores() {
-        // Implementation will depend on scoring rules
-        for (Player player : players) {
-            // Calculate score for each player
-            // For example: player.setScore(calculatePlayerScore(player));
-        }
+        //TODO: Implementation will depend on scoring rules
     }
 
     /**
@@ -252,11 +237,7 @@ public class GameModel {
     private Player determineWinner() {
         // Example implementation
         Player winner = players.get(0);
-        for (Player player : players) {
-            if (player.getScore() > winner.getScore()) {
-                winner = player;
-            }
-        }
+        //TODO: Impèlement the end logic
         return winner;
     }
 

@@ -1,23 +1,38 @@
 package it.polimi.ingsw.model.enums;
 
+/**
+ * Represents the different phases of the game
+ */
 public enum GamePhase {
     /**
-     * Game phase is Setup.
+     * Initial setup phase where players join and game is configured
      */
     SETUP,
 
     /**
-     * Game phase is Building.
+     * Building phase where players construct their ships
      */
     BUILDING,
 
     /**
-     * Game phase is Flight.
+     * Flight phase where players navigate through space
      */
     FLIGHT,
 
     /**
-     * Game phase is End.
+     * End phase where final scores are calculated and winner is determined
      */
     END;
+
+    /**
+     * Gets the next phase in the game sequence
+     * @return the next game phase, or END if already at END phase
+     */
+    public GamePhase getNextPhase() {
+        return switch (this) {
+            case SETUP -> BUILDING;
+            case BUILDING -> FLIGHT;
+            case FLIGHT, END -> END;
+        };
+    }
 }
