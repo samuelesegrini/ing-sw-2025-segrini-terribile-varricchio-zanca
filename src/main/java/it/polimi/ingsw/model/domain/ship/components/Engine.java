@@ -1,11 +1,10 @@
 package it.polimi.ingsw.model.domain.ship.components;
 
-import it.polimi.ingsw.model.domain.ship.Grid;
+import it.polimi.ingsw.model.domain.ship.NewShip;
 import it.polimi.ingsw.model.domain.ship.Position;
-import it.polimi.ingsw.model.domain.ship.Ship;
 import it.polimi.ingsw.model.enums.ship.Direction;
 
-public class Engine extends Component {
+public class Engine extends NewComponent {
     private boolean isDouble;
 
     @Override
@@ -14,7 +13,7 @@ public class Engine extends Component {
     }
 
     @Override
-    public void count(Ship s) {
+    public void count(NewShip s) {
         int power;
         // Chi verifica che venga usata una batteria?
         if (isDouble) {
@@ -28,15 +27,29 @@ public class Engine extends Component {
     }
 
     @Override
-    public boolean check(Ship s) {
-        Grid<Component> grid = s.getGrid();
+    public boolean check(NewShip s) {
+        NewComponent[][] board = s.getBoard();
+        boolean result = false;
 
-        for (Direction d :  Direction.values()) {
-            if (grid.containsKey(this.getPosition().offsetBy(d))) {
-                return true;
+        for (Direction d : Direction.values()) {
+            Position neighbor = this.getPosition().offsetBy(d);
+            int x = neighbor.getX();
+            int y = neighbor.getY();
+
+            if (board[x][y] != null) {
+                result = true;
             }
         }
-        return false;
+
+        Direction exhaust = direction.getOpposite();
+        int x = position.offsetBy(exhaust).getX();
+        int y = position.offsetBy(exhaust).getY();
+
+        if (board[x][y] != null) {
+            result = false;    // Exhaust pipe is blocked
+        }
+
+        return result;
     }
 }
 

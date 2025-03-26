@@ -1,25 +1,9 @@
 package it.polimi.ingsw.model.domain.ship.components;
 
-import it.polimi.ingsw.model.domain.ship.Grid;
-import it.polimi.ingsw.model.domain.ship.Ship;
 import it.polimi.ingsw.model.enums.crew.AlienColor;
-import it.polimi.ingsw.model.enums.crew.CrewType;
-import it.polimi.ingsw.model.enums.ship.Direction;
 
-public class LifeSupportSystem extends Component {
+public class LifeSupportSystem extends NewComponent {
     private AlienColor supportedAlienColor;
-
-    @Override
-    public boolean check(Ship s) {
-        Grid<Component> grid = s.getGrid();
-
-        for (Direction d :  Direction.values()) {
-            if (grid.containsKey(this.getPosition().offsetBy(d))) {
-                return true;
-            }
-        }
-        return false;
-    }
 }
 
 

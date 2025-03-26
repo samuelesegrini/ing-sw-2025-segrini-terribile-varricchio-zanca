@@ -1,34 +1,20 @@
 package it.polimi.ingsw.model.domain.ship.components;
 
-import it.polimi.ingsw.model.domain.ship.Grid;
-import it.polimi.ingsw.model.domain.ship.Ship;
-import it.polimi.ingsw.model.enums.ship.Direction;
+import it.polimi.ingsw.model.domain.ship.NewShip;
 
-public class Battery extends Component {
+public class Battery extends NewComponent {
     private int maxBatteries;
     private int currentBatteries;
 
     @Override
     public void accept(ComponentVisitor v) {
-        int quantity = 0;
+        int quantity = 0;    // Input da utente
         v.useBattery(this, quantity);
     }
 
     @Override
-    public void count(Ship s) {
+    public void count(NewShip s) {
         s.setBatteries(s.getBatteries() + currentBatteries);
-    }
-
-    @Override
-    public boolean check(Ship s) {
-        Grid<Component> grid = s.getGrid();
-
-        for (Direction d :  Direction.values()) {
-            if (grid.containsKey(this.getPosition().offsetBy(d))) {
-                return true;
-            }
-        }
-        return false;
     }
 }
 

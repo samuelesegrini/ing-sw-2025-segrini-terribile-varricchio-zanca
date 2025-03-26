@@ -1,9 +1,7 @@
 package it.polimi.ingsw.model.domain.ship.components;
 
-import it.polimi.ingsw.model.domain.ship.Grid;
 import it.polimi.ingsw.model.domain.ship.Ship;
 import it.polimi.ingsw.model.enums.resource.GoodType;
-import it.polimi.ingsw.model.enums.ship.Direction;
 
 import java.util.List;
 import java.util.Map;
@@ -20,19 +18,7 @@ public class CargoHold extends Component {
 
     @Override
     public void count(Ship s) {
-        // Serve?
-    }
-
-    @Override
-    public boolean check(Ship s) {
-        Grid<Component> grid = s.getGrid();
-
-        for (Direction d :  Direction.values()) {
-            if (grid.containsKey(this.getPosition().offsetBy(d))) {
-                return true;
-            }
-        }
-        return false;
+        // TODO
     }
 }
 

@@ -41,25 +41,16 @@ public class Position {
      * @throws IllegalArgumentException If the direction is {@code null}.
      */
     public Position offsetBy(Direction direction) throws IllegalArgumentException {
-
         if (direction == null) {
             throw new IllegalArgumentException("Not a valid direction");
         }
 
-        switch (direction) {
-            case UP: {
-                return new Position(this.x, this.y + 1);
-            }
-            case DOWN: {
-                return new Position(this.x, this.y-1);
-            }
-            case LEFT: {
-                return new Position(this.x-1, this.y);
-            }
-            case RIGHT: {
-                return new Position(this.x+1, this.y);
-            }
-        }
+        return switch (direction) {
+            case UP -> new Position(x, y + 1);
+            case DOWN -> new Position(x, y - 1);
+            case LEFT -> new Position(x - 1, y);
+            case RIGHT -> new Position(x + 1, y);
+        };
     }
 
     /**

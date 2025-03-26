@@ -9,10 +9,10 @@ import it.polimi.ingsw.model.enums.ship.Direction;
 import java.util.Map;
 
 public abstract class NewComponent {
-    private ComponentType type;
-    private Direction direction;
-    private Position position;
-    private Map<Direction, ConnectorType> connectors;
+    protected ComponentType type;
+    protected Direction direction;
+    protected Position position;
+    protected Map<Direction, ConnectorType> connectors;
 
 
     public ComponentType getType() {
@@ -50,9 +50,25 @@ public abstract class NewComponent {
 
     public void accept(ComponentVisitor visitor) {}
 
+
     // These methods are overridden by the subclasses
+
+    // Updates the ship's stats adding this component's contributions
     public void count(NewShip s) {}
+
+    // Checks if the component is still connected to at least one other component, and other specific conditions
     public boolean check(NewShip s) {
+        NewComponent[][] board = s.getBoard();
+
+        for (Direction d : Direction.values()) {
+            Position neighbor = this.getPosition().offsetBy(d);
+            int x = neighbor.getX();
+            int y = neighbor.getY();
+
+            if (board[x][y] != null) {
+                return true;
+            }
+        }
         return false;
     }
 }

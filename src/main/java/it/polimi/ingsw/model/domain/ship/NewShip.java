@@ -91,6 +91,12 @@ public class NewShip {
     }
 
 
+    public NewComponent[][] getBoard() {
+        return board;
+    }
+
+
+    // Calls the count() for each component on the board
     public void updateStats() {
         for (int x = 0; x < board.length; x++) {
             for (int y = 0; y < board[x].length; y++) {
@@ -164,7 +170,4 @@ public class NewShip {
     public void setLostComponents(int lostComponents) {
         this.lostComponents = lostComponents;
     }
-
-
-
 }

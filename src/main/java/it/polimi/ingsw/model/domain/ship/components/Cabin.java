@@ -1,13 +1,14 @@
 package it.polimi.ingsw.model.domain.ship.components;
 
-import it.polimi.ingsw.model.domain.ship.Grid;
+import it.polimi.ingsw.model.domain.ship.NewShip;
 import it.polimi.ingsw.model.domain.ship.Position;
-import it.polimi.ingsw.model.domain.ship.Ship;
 import it.polimi.ingsw.model.enums.crew.CrewType;
+import it.polimi.ingsw.model.enums.ship.ComponentType;
 import it.polimi.ingsw.model.enums.ship.Direction;
+
 import java.util.Map;
 
-public class Cabin extends Component {
+public class Cabin extends NewComponent {
     private CrewType currentCrew;
     private int crewCount;
 
@@ -18,13 +19,41 @@ public class Cabin extends Component {
     }
 
     @Override
-    public void count(Ship s) {
+    public void count(NewShip s) {
         s.setCrew(s.getCrew() + crewCount);
+
+        // TODO: SE CANNONS È ZERO, IL BONUS DELL'ALIENO NON CONTA
+        if (currentCrew == CrewType.ALIEN_PURPLE) {
+            s.setCannons(s.getCannons() + 2);
+        }
+        else if (currentCrew == CrewType.ALIEN_BROWN) {
+            s.setEngines(s.getEngines() + 2);
+        }
     }
 
+    // Also checks in the case of an alien if there is the corresponding life support system
     @Override
-    public boolean check(Ship s) {
-        return false; // Nel caso di un alieno, controlla anche che ci sia un LifeSupportSystem vicino
+    public boolean check(NewShip s) {
+        NewComponent[][] board = s.getBoard();
+
+        for (Direction d :  Direction.values()) {
+            Position neighbor = this.getPosition().offsetBy(d);
+            int x = neighbor.getX();
+            int y = neighbor.getY();
+
+            if (board[x][y] != null) {
+                if (currentCrew == CrewType.HUMAN) {
+                    return true;
+                }
+                else if (currentCrew == CrewType.ALIEN_PURPLE && board[x][y].getType() == ComponentType.LIFE_SUPPORT_PURPLE) {
+                    return true;
+                }
+                else if (currentCrew == CrewType.ALIEN_BROWN && board[x][y].getType() == ComponentType.LIFE_SUPPORT_BROWN) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 }
 
