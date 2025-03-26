@@ -8,10 +8,10 @@ import java.util.Set;
 import java.util.Map;
 
 public class NewShip {
-    private final Player player;
+    private Player player;
 
     private NewComponent[][] board;
-    private static Set<Position> forbiddenPositions;  // final?
+    private static Set<Position> forbiddenPositions;
 
     private Set<NewComponent> reservedComponents;
 
