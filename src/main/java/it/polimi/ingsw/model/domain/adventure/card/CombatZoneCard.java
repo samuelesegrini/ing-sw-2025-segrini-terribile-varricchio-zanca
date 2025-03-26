@@ -1,6 +1,6 @@
 package it.polimi.ingsw.model.domain.adventure.card;
 
-import it.polimi.ingsw.model.domain.GameState;
+import it.polimi.ingsw.model.domain.general.GameModel;
 import it.polimi.ingsw.model.domain.adventure.AdventureCardVisitor;
 import it.polimi.ingsw.model.domain.adventure.entity.CombatCheck;
 import it.polimi.ingsw.model.enums.adventure.AdventureType;
@@ -42,7 +42,7 @@ public class CombatZoneCard extends AdventureCard {
      * @param state The current game state.
      * @return The result of the visitor's processing.
      */
-    private boolean accept(AdventureCardVisitor visitor, GameState state){
+    private boolean accept(AdventureCardVisitor visitor, GameModel state){
         return visitor.visitCombatZoneCard(this, state);
     }
 }
