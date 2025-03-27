@@ -56,6 +56,23 @@ public class Cabin extends NewComponent {
         }
         return false;
     }
+
+
+    public CrewType getCurrentCrew() {
+        return currentCrew;
+    }
+
+    public void setCurrentCrew(CrewType currentCrew) {
+        this.currentCrew = currentCrew;
+    }
+
+    public int getCrewCount() {
+        return crewCount;
+    }
+
+    public void setCrewCount(int crewCount) {
+        this.crewCount = crewCount;
+    }
 }
 
 

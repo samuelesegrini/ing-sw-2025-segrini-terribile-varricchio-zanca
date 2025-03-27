@@ -52,6 +52,15 @@ public class Engine extends NewComponent {
 
         return result;
     }
+
+
+    public boolean isDouble() {
+        return isDouble;
+    }
+
+    public void setDouble(boolean isDouble) {
+        this.isDouble = isDouble;
+    }
 }
 
 

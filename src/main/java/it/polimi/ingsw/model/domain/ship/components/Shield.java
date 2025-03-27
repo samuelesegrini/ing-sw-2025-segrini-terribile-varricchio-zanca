@@ -1,9 +1,24 @@
 package it.polimi.ingsw.model.domain.ship.components;
 
+import it.polimi.ingsw.model.enums.ship.Direction;
+
+import java.util.Set;
+
 public class Shield extends NewComponent{
+    private Set<Direction> protectedDirections;
+
     @Override
     public void accept(ComponentVisitor v) {
         v.useShield(this);
+    }
+
+
+    public Set<Direction> getProtectedDirections() {
+        return protectedDirections;
+    }
+
+    public void setProtectedDirections(Set<Direction> protectedDirections) {
+        this.protectedDirections = protectedDirections;
     }
 }
 

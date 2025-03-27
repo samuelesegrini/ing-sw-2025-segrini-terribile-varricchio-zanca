@@ -20,6 +20,23 @@ public class CargoHold extends Component {
     public void count(Ship s) {
         // TODO
     }
+
+
+    public int getCapacity() {
+        return capacity;
+    }
+
+    public void setCapacity(int capacity) {
+        this.capacity = capacity;
+    }
+
+    public Map<GoodType, Integer> getStoredGoods() {
+        return storedGoods;
+    }
+
+    public void setStoredGoods(Map<GoodType, Integer> storedGoods) {
+        this.storedGoods = storedGoods;
+    }
 }
 
 

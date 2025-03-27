@@ -16,6 +16,23 @@ public class Battery extends NewComponent {
     public void count(NewShip s) {
         s.setBatteries(s.getBatteries() + currentBatteries);
     }
+
+
+    public int getMaxBatteries() {
+        return maxBatteries;
+    }
+
+    public void setMaxBatteries(int maxBatteries) {
+        this.maxBatteries = maxBatteries;
+    }
+
+    public int getCurrentBatteries() {
+        return currentBatteries;
+    }
+
+    public void setCurrentBatteries(int currentBatteries) {
+        this.currentBatteries = currentBatteries;
+    }
 }
 
 
