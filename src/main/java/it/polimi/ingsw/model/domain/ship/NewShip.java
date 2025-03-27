@@ -98,6 +98,15 @@ public class NewShip {
 
     // Calls the count() for each component on the board
     public void updateStats() {
+        // Set all stats to zero
+        cannons = 0.0;
+        engines = 0.0;
+        batteries = 0;
+        crew = 0;
+        specialGoods = 0;
+        normalGoods = 0;
+        resources.replaceAll((t, v) -> 0);
+
         for (int x = 0; x < board.length; x++) {
             for (int y = 0; y < board[x].length; y++) {
                 if (board[x][y] != null) {

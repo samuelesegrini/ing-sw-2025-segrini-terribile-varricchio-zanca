@@ -2,6 +2,7 @@ package it.polimi.ingsw.model.domain.ship.components;
 
 import it.polimi.ingsw.model.domain.ship.NewShip;
 import it.polimi.ingsw.model.domain.ship.Position;
+import it.polimi.ingsw.model.enums.ship.ConnectorType;
 import it.polimi.ingsw.model.enums.ship.Direction;
 
 public class Engine extends NewComponent {
@@ -36,7 +37,7 @@ public class Engine extends NewComponent {
             int x = neighbor.getX();
             int y = neighbor.getY();
 
-            if (board[x][y] != null) {
+            if (board[x][y] != null && board[x][y].getConnectorAt(d.getOpposite()) != ConnectorType.PLAIN) {
                 result = true;
             }
         }

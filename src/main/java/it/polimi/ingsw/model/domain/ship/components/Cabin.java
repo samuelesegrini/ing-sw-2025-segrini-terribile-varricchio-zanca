@@ -4,6 +4,7 @@ import it.polimi.ingsw.model.domain.ship.NewShip;
 import it.polimi.ingsw.model.domain.ship.Position;
 import it.polimi.ingsw.model.enums.crew.CrewType;
 import it.polimi.ingsw.model.enums.ship.ComponentType;
+import it.polimi.ingsw.model.enums.ship.ConnectorType;
 import it.polimi.ingsw.model.enums.ship.Direction;
 
 import java.util.Map;
@@ -41,7 +42,7 @@ public class Cabin extends NewComponent {
             int x = neighbor.getX();
             int y = neighbor.getY();
 
-            if (board[x][y] != null) {
+            if (board[x][y] != null && board[x][y].getConnectorAt(d.getOpposite()) != ConnectorType.PLAIN) {
                 if (currentCrew == CrewType.HUMAN) {
                     return true;
                 }

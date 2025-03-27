@@ -65,7 +65,8 @@ public abstract class NewComponent {
             int x = neighbor.getX();
             int y = neighbor.getY();
 
-            if (board[x][y] != null) {
+            // Checks if there's a component nearby and if they're connected (assumes the connection is legal)
+            if (board[x][y] != null && board[x][y].getConnectorAt(d.getOpposite()) != ConnectorType.PLAIN) {
                 return true;
             }
         }
