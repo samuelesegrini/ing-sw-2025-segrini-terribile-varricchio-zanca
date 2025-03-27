@@ -6,6 +6,9 @@ import it.polimi.ingsw.model.enums.resource.GoodType;
 import it.polimi.ingsw.model.enums.ship.ComponentType;
 
 import it.polimi.ingsw.model.domain.ship.components.Battery;
+import it.polimi.ingsw.model.domain.ship.components.Shield;
+import it.polimi.ingsw.model.domain.ship.components.Cannon;
+import it.polimi.ingsw.model.enums.ship.Direction;
 
 import java.util.Set;
 import java.util.Map;
@@ -51,11 +54,11 @@ public class NewShip {
         if (forbiddenPositions.contains(position)) {
             throw new IllegalArgumentException("Forbidden position");
         }
-        else if (board[x][y] != null) {
+        else if (board[y][x] != null) {
             throw new IllegalArgumentException("Occupied position");
         }
         else {
-            board[x][y] = component;
+            board[y][x] = component;
             component.setPosition(position);
         }
 
@@ -72,12 +75,12 @@ public class NewShip {
         if (forbiddenPositions.contains(position)) {
             throw new IllegalArgumentException("Forbidden position");
         }
-        else if (board[x][y] != null) {
+        else if (board[y][x] != null) {
             throw new IllegalArgumentException("Occupied position");
         }
         else {
-            board[x][y].setPosition(null);    // Spostare il component in lista dei "rifiuti"?
-            board[x][y] = null;
+            board[y][x].setPosition(null);    // Spostare il component in lista dei "rifiuti"?
+            board[y][x] = null;
         }
     }
 
@@ -336,5 +339,136 @@ public class NewShip {
 
         // In teoria se si arriva a questo punto deletingNumber > 0 ma per ora lascio la condizione per sicurezza
         return deletingNumber <= 0;
+    }
+
+
+    /**
+     * Finds the first non-empty component along a line specified by a fixed coordinate.
+     * <p>
+     * For UP and DOWN directions, the fixed coordinate represents the column index.
+     * The method iterates through the rows (starting from the top for UP or the bottom for DOWN)
+     * until it finds a non-empty component in that column.
+     * </p>
+     * <p>
+     * For LEFT and RIGHT directions, the fixed coordinate represents the row index.
+     * The method iterates through the columns (starting from the left for LEFT or the right for RIGHT)
+     * until it finds a non-empty component in that row.
+     * </p>
+     *
+     * @param direction  The direction.
+     * @param fixedIndex The column index if the direction is UP or DOWN, or the row index if the direction is LEFT or RIGHT.
+     * @return A map containing the position and the component that is hit, or an empty map if no component is found.
+     */
+    public Position findFirstComponent(Direction direction, int fixedIndex) {
+        Position result = null;
+
+        switch (direction) {
+            // For a shot from the top, fixedIndex is the column.
+            // Iterate rows from top (0) to bottom.
+            case Direction.UP:
+                for (int row = 0; row < board.length; row++) {
+                    if (board[row][fixedIndex] != null) {
+                        return new Position(row, fixedIndex);
+                    }
+                }
+            // For a shot from the bottom, fixedIndex is the column.
+            // Iterate rows from bottom to top.
+            case Direction.DOWN:
+                for (int row = board.length - 1; row >= 0; row--) {
+                    if (board[row][fixedIndex] != null) {
+                        return new Position(row, fixedIndex);
+                    }
+                }
+            // For a shot from the left, fixedIndex is the row.
+            // Iterate columns from left (0) to right.
+            case Direction.LEFT:
+                for (int col = 0; col < board[0].length; col++) {
+                    if (board[fixedIndex][col] != null) {
+                        return new Position(fixedIndex, col);
+                    }
+                }
+            // For a shot from the left, fixedIndex is the row.
+            // Iterate columns from left (0) to right.
+            case Direction.RIGHT:
+                for (int col = board[0].length - 1; col >= 0; col--) {
+                    if (board[fixedIndex][col] != null) {
+                        return new Position(fixedIndex, col);
+                    }
+                }
+        }
+
+        throw new NullPointerException("No element found");
+    }
+
+    public boolean protectedByShield(Direction direction) {
+        for (int row = 0; row < board.length; row++) {
+            for (int col = 0; col < board[0].length; col++) {
+                if (board[row][col] != null && board[row][col].getType() == ComponentType.SHIELD) {
+                    if (((Shield) board[row][col]).getProtectedDirections().contains(direction)) {
+                        System.out.println("Shield found, check battery presence");
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Checks if there is a cannon protecting the specified row or column.
+     * <p>
+     * For the directions {@code UP} or {@code DOWN}, the method checks the entire column (fixedIndex).
+     * For the directions {@code LEFT} or {@code RIGHT}, the method checks the specified row (fixedIndex)
+     * as well as the adjacent rows.
+     * <p>
+     * The method returns {@code true} as soon as a single cannon is found.
+     * If no single cannon is found but a double cannon is detected,
+     * it prints "Double cannon found, check battery presence" and returns {@code true}.
+     * If no cannon is found, it returns {@code false}.
+     *
+     * @param direction  the direction of the shot (UP, DOWN, LEFT, or RIGHT)
+     * @param fixedIndex the fixed index representing the column (for UP/DOWN) or row (for LEFT/RIGHT)
+     * @return {@code true} if a cannon (single or double) is found; {@code false} otherwise
+     */
+    public boolean protectedByCannon(Direction direction, int fixedIndex) {
+        boolean foundDouble = false;
+
+        if ((direction == Direction.UP) || (direction == Direction.DOWN)) {
+            for (int row = 0; row < board.length; row++) {
+                if (board[row][fixedIndex] != null) {
+                    if (board[row][fixedIndex].getType() == ComponentType.CANNON_SINGLE && board[row][fixedIndex].getDirection() == direction) {
+                        return true;
+                    }
+                    else if (board[row][fixedIndex].getType() == ComponentType.CANNON_DOUBLE && board[row][fixedIndex].getDirection() == direction) {
+                        foundDouble = true;
+                    }
+                }
+            }
+        }
+        else if ((direction == Direction.LEFT) || (direction == Direction.RIGHT)) {
+            int[] rowsToCheck = {fixedIndex, fixedIndex - 1, fixedIndex + 1};
+            for (int row : rowsToCheck) {
+                if (row >= 0 && row < board.length) {
+                    for (int col = 0; col < board[0].length; col++) {
+                        if (board[row][col] != null) {
+                            if (board[row][fixedIndex].getType() == ComponentType.CANNON_SINGLE && board[row][fixedIndex].getDirection() == direction) {
+                                return true;
+                            }
+                            else if (board[row][fixedIndex].getType() == ComponentType.CANNON_DOUBLE && board[row][fixedIndex].getDirection() == direction) {
+                                foundDouble = true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        if (foundDouble) {
+            System.out.println("Double cannon found, check battery presence");
+            return true;
+        }
+        else {
+            return false;
+        }
     }
 }

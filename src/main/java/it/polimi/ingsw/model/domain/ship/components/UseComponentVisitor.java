@@ -21,6 +21,11 @@ public class UseComponentVisitor implements ComponentVisitor {
     }
 
     @Override
+    public void useCannon(Cannon cannon) {
+        // TODO
+    }
+
+    @Override
     public void useEngine(Engine engine) {
         // TODO
     }
