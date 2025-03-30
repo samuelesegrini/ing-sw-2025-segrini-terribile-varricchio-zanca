@@ -57,16 +57,16 @@ public class CombatCheck {
         }
         else if(attribute == CombatAttributeType.CANNON_STRENGTH){
             for(Player player : playersOrdered){
-                if (player.getShip().getCannonStrength() < count) {
-                    count = player.getShip().getCannonStrength();
+                if (player.getShip().getCannons() < count) {
+                    count = player.getShip().getCannons();
                     combatLoser = player;
                 }
             }
         }
         else if (attribute == CombatAttributeType.ENGINE_POWER){
             for (Player player : playersOrdered) {
-                if(player.getShip().getEngineStrength() < count){
-                    count = player.getShip().getEngineStrength();
+                if(player.getShip().getEngines() < count){
+                    count = player.getShip().getEngines();
                     combatLoser = player;
                 }
             }

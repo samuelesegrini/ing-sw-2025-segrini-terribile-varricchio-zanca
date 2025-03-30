@@ -42,7 +42,7 @@ public class AdventureCardVisitor {
         List<Player> playersOrdered = flightBoard.getCurrentOrder();
 
         for(Player player : playersOrdered ) {
-            if ((!card.isVisited()) && (player.getShip().getCrewNumber() >= card.getCrewLost())) {
+            if ((!card.isVisited()) && (player.getShip().getCrew() >= card.getCrewLost())) {
                 flightBoard.movePlayer(player, card.getLostDays(), false);
                 player.addCredits(card.getCreditsGained());
                 player.updateCrewMember(card.getCrewLost(), true);
@@ -78,8 +78,8 @@ public class AdventureCardVisitor {
             int index = dice.nextInt(6) + 1;
 
             for(Player player : playersOrdered){
-                Position impactPosition = player.getShip().getGrid().findFirstComponet(meteor.getApproach(), index);
-                Component impactComponent = player.getShip().getGrid().get(impactPosition);
+                Position impactPosition = player.getShip().findFirstComponent(meteor.getApproach(), index);
+                Component impactComponent = player.getShip().getBoard()[impactPosition.getX()][impactPosition.getY()];
 
                 if(meteor.getShotIntensity() == ShotIntensity.LIGHT){
                     if(impactComponent.getConnectorAt(meteor.getApproach())== ConnectorType.PLAIN){
@@ -87,7 +87,7 @@ public class AdventureCardVisitor {
                                 +card.getMeteorPattern().indexOf(meteor));
                         break;
                     }
-                    else if(player.getShip().getGrid().protectedByShield(meteor.getApproach())){
+                    else if(player.getShip().protectedByShield(meteor.getApproach())){
                         System.out.println(player.getId().getNickname()+ " has activated a shield against meteor number"
                                 +card.getMeteorPattern().indexOf(meteor));
                         break;
@@ -95,7 +95,7 @@ public class AdventureCardVisitor {
                 }
 
                 else {
-                    if(player.getShip().getGrid().protectedByCannon(meteor.getApproach(), index)){
+                    if(player.getShip().protectedByCannon(meteor.getApproach(), index)){
                         System.out.println(player.getId().getNickname()+ " has shot meteor number"
                                 +card.getMeteorPattern().indexOf(meteor));
                         break;
@@ -124,14 +124,14 @@ public class AdventureCardVisitor {
         List<Player> defeated = new ArrayList<>();
 
         for(Player player : playersOrdered ) {
-            if(player.getShip().getCannonStrength()>card.getPowerLevel()){
+            if(player.getShip().getCannons()>card.getPowerLevel()){
                 player.addCredits(card.getCreditReward());
                 flightBoard.movePlayer(player, card.getMovementPenalty(), false);
             }
-            else if(player.getShip().getCannonStrength()==card.getPowerLevel()){
+            else if(player.getShip().getCannons()==card.getPowerLevel()){
                 continue;
             }
-            else if(player.getShip().getCannonStrength()<card.getPowerLevel()){
+            else if(player.getShip().getCannons()<card.getPowerLevel()){
                 defeated.add(player);
             }
         }
@@ -145,10 +145,10 @@ public class AdventureCardVisitor {
                     int index2 = dice2.nextInt(6) + 1;
                     int index = index1 + index2;
 
-                    Position impactPosition = player.getShip().getGrid().findFirstComponet(cannonFire.getApproach(), index);
-                    Component impactComponent = player.getShip().getGrid().get(impactPosition);
+                    Position impactPosition = player.getShip().findFirstComponent(cannonFire.getApproach(), index);
+                    Component impactComponent = player.getShip().getBoard()[impactPosition.getX()][impactPosition.getY()];
 
-                    if(cannonFire.isBlockable() && player.getShip().getGrid().protectedByShield(cannonFire.getApproach())){
+                    if(cannonFire.isBlockable() && player.getShip().protectedByShield(cannonFire.getApproach())){
                         System.out.println(player.getId().getNickname()+ " has activated a shield against cannon fire number "
                         +card.getAttackPattern().indexOf(cannonFire));
                     } else {
@@ -205,8 +205,8 @@ public class AdventureCardVisitor {
         List<Player> defeated = new ArrayList<>();
 
         for(Player player : playersOrdered){
-            flightBoard.movePlayer(player, (int)player.getShip().getEngineStrength(), true);
-            if(player.getShip().getEngineStrength() <= 0){
+            flightBoard.movePlayer(player, (int)player.getShip().getEngines(), true);
+            if(player.getShip().getEngines() <= 0){
                 defeated.add(player);
             }
         }
@@ -253,13 +253,13 @@ public class AdventureCardVisitor {
         List<Player> playersOrdered = flightBoard.getCurrentOrder();
 
         for(Player player: playersOrdered){
-            if(player.getShip().getCannonStrength() == card.getPowerLevel()){
+            if(player.getShip().getCannons() == card.getPowerLevel()){
                 continue;
             }
-            else if(player.getShip().getCannonStrength() < card.getPowerLevel()){
+            else if(player.getShip().getCannons() < card.getPowerLevel()){
                 player.updateCrewMember(card.getCrewLossAmount(), true);
             }
-            else if(player.getShip().getCannonStrength() > card.getPowerLevel()){
+            else if(player.getShip().getCannons() > card.getPowerLevel()){
                 card.setDefeated();
                 //The player CAN claim the reward losing flying days
                 player.addCredits(card.getCreditReward());
@@ -288,7 +288,7 @@ public class AdventureCardVisitor {
 
         double powerLevel = card.getPowerLevel();
         for(Player player: playersOrdered){
-            double cannonStrength = player.getShip().getCannonStrength();
+            double cannonStrength = player.getShip().getCannons();
             if(powerLevel == cannonStrength){
                 continue;
             }
@@ -356,10 +356,10 @@ public class AdventureCardVisitor {
                         int index2 = dice2.nextInt(6) + 1;
                         int index = index1 + index2;
 
-                        Position impactPosition = combatLoser.getShip().getGrid().findFirstComponet(cannonFire.getApproach(), index);
-                        Component impactComponent = combatLoser.getShip().getGrid().get(impactPosition);
+                        Position impactPosition = combatLoser.getShip().findFirstComponent(cannonFire.getApproach(), index);
+                        Component impactComponent = combatLoser.getShip().getBoard()[impactPosition.getX()][impactPosition.getY()];
 
-                        if(cannonFire.isBlockable() && combatLoser.getShip().getGrid().protectedByShield(cannonFire.getApproach()){
+                        if(cannonFire.isBlockable() && combatLoser.getShip().protectedByShield(cannonFire.getApproach())) {
                             System.out.println(combatLoser.getId().getNickname()+ " has activated a shield against cannon fire number "
                                     +check.getCannonFires().indexOf(cannonFire));
                         } else {
@@ -405,7 +405,7 @@ public class AdventureCardVisitor {
         List<Player> playersOrdered = flightBoard.getCurrentOrder();
 
         for (Player player : playersOrdered) {
-            if ((!card.isVisited()) && (player.getShip().getCrewNumber() >= card.getMinCrewRequired())) {
+            if ((!card.isVisited()) && (player.getShip().getCrew() >= card.getMinCrewRequired())) {
                 //se il giocatore sceglie di prendere le risorse e perdere giorni di volo
                 card.setVisited();
                 flightBoard.movePlayer(player, card.getLostDays(), false);
