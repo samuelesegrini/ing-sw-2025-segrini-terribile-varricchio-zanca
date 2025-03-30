@@ -1,12 +1,10 @@
 package it.polimi.ingsw.model.domain.flight;
 
-import it.polimi.ingsw.model.domain.player.Player;
+import it.polimi.ingsw.model.domain.ship.Ship;
 import it.polimi.ingsw.model.enums.GameLevel;
 import it.polimi.ingsw.model.enums.resource.GoodType;
-import it.polimi.ingsw.model.domain.ship.Ship;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 public class RewardSystem {

@@ -3,7 +3,6 @@ package it.polimi.ingsw.model.domain.ship.components;
 import it.polimi.ingsw.model.domain.ship.Ship;
 import it.polimi.ingsw.model.enums.resource.GoodType;
 
-import java.util.List;
 import java.util.Map;
 
 public class CargoHold extends Component {

@@ -1,11 +1,11 @@
 package it.polimi.ingsw.model.domain.ship.components;
 
-import it.polimi.ingsw.model.domain.ship.NewShip;
+import it.polimi.ingsw.model.domain.ship.Ship;
 import it.polimi.ingsw.model.domain.ship.Position;
 import it.polimi.ingsw.model.enums.ship.ConnectorType;
 import it.polimi.ingsw.model.enums.ship.Direction;
 
-public class Engine extends NewComponent {
+public class Engine extends Component {
     private boolean isDouble;
 
     @Override
@@ -14,7 +14,7 @@ public class Engine extends NewComponent {
     }
 
     @Override
-    public void count(NewShip s) {
+    public void count(Ship s) {
         int power;
         // Chi verifica che venga usata una batteria?
         if (isDouble) {
@@ -28,8 +28,8 @@ public class Engine extends NewComponent {
     }
 
     @Override
-    public boolean check(NewShip s) {
-        NewComponent[][] board = s.getBoard();
+    public boolean check(Ship s) {
+        Component[][] board = s.getBoard();
         boolean result = false;
 
         for (Direction d : Direction.values()) {

@@ -1,15 +1,13 @@
 package it.polimi.ingsw.model.domain.ship.components;
 
-import it.polimi.ingsw.model.domain.ship.NewShip;
+import it.polimi.ingsw.model.domain.ship.Ship;
 import it.polimi.ingsw.model.domain.ship.Position;
 import it.polimi.ingsw.model.enums.crew.CrewType;
 import it.polimi.ingsw.model.enums.ship.ComponentType;
 import it.polimi.ingsw.model.enums.ship.ConnectorType;
 import it.polimi.ingsw.model.enums.ship.Direction;
 
-import java.util.Map;
-
-public class Cabin extends NewComponent {
+public class Cabin extends Component {
     private CrewType currentCrew;
     private int crewCount;
 
@@ -20,7 +18,7 @@ public class Cabin extends NewComponent {
     }
 
     @Override
-    public void count(NewShip s) {
+    public void count(Ship s) {
         s.setCrew(s.getCrew() + crewCount);
 
         // TODO: SE CANNONS È ZERO, IL BONUS DELL'ALIENO NON CONTA
@@ -34,8 +32,8 @@ public class Cabin extends NewComponent {
 
     // Also checks in the case of an alien if there is the corresponding life support system
     @Override
-    public boolean check(NewShip s) {
-        NewComponent[][] board = s.getBoard();
+    public boolean check(Ship s) {
+        Component[][] board = s.getBoard();
 
         for (Direction d :  Direction.values()) {
             Position neighbor = this.getPosition().offsetBy(d);

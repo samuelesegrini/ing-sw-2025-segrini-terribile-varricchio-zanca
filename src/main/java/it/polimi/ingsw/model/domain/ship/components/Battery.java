@@ -1,8 +1,8 @@
 package it.polimi.ingsw.model.domain.ship.components;
 
-import it.polimi.ingsw.model.domain.ship.NewShip;
+import it.polimi.ingsw.model.domain.ship.Ship;
 
-public class Battery extends NewComponent {
+public class Battery extends Component {
     private int maxBatteries;
     private int currentBatteries;
 
@@ -13,7 +13,7 @@ public class Battery extends NewComponent {
     }
 
     @Override
-    public void count(NewShip s) {
+    public void count(Ship s) {
         s.setBatteries(s.getBatteries() + currentBatteries);
     }
 

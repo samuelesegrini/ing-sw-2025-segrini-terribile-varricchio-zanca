@@ -4,7 +4,7 @@ import it.polimi.ingsw.model.enums.ship.Direction;
 
 import java.util.Set;
 
-public class Shield extends NewComponent{
+public class Shield extends Component {
     private Set<Direction> protectedDirections;
 
     @Override
