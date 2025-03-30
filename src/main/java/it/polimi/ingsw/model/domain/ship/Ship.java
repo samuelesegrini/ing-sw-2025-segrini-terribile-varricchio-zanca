@@ -100,6 +100,10 @@ public class Ship {
     }
 
 
+    public Player getPlayer() {
+        return player;
+    }
+
     public Component[][] getBoard() {
         return board;
     }

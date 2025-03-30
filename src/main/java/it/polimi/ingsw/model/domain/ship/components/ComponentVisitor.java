@@ -4,10 +4,10 @@ import it.polimi.ingsw.model.enums.resource.GoodType;
 import java.util.Map;
 
 public interface ComponentVisitor {
-    public void useBattery(Battery battery, int quantity);
-    public void useCabin(Cabin cabin, int quantity);
-    public void useCargoHold(CargoHold cargoHold, Map<GoodType, Integer> goods);
-    public void useCannon(Cannon cannon);
-    public void useEngine(Engine engine);
-    public void useShield(Shield shield);
+    void useBattery(Battery battery, int quantity);
+    void useCabin(Cabin cabin, int quantity);
+    void useCargoHold(CargoHold cargoHold, Map<GoodType, Integer> goods);
+    void useCannon(Cannon cannon);
+    void useEngine(Engine engine);
+    void useShield(Shield shield);
 }

@@ -1,6 +1,12 @@
 package it.polimi.ingsw.model.enums.resource;
 
+// NON CAMBIARE ORDINE
 public enum GoodType {
+    /**
+     * Good is red.
+     */
+    RED,
+
     /**
      * Good is blue.
      */
@@ -14,10 +20,5 @@ public enum GoodType {
     /**
      * Good is yellow.
      */
-    YELLOW,
-
-    /**
-     * Good is red.
-     */
-    RED;
+    YELLOW;
 }

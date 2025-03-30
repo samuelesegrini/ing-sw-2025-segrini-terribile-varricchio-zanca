@@ -8,8 +8,9 @@ import it.polimi.ingsw.model.enums.ship.ConnectorType;
 import it.polimi.ingsw.model.enums.ship.Direction;
 
 public class Cabin extends Component {
-    private CrewType currentCrew;
-    private int crewCount;
+    private CrewType currentCrewType;
+    private int maxCrew;
+    private int currentCrew;
 
     @Override
     public void accept(ComponentVisitor v) {
@@ -19,13 +20,13 @@ public class Cabin extends Component {
 
     @Override
     public void count(Ship s) {
-        s.setCrew(s.getCrew() + crewCount);
+        s.setCrew(s.getCrew() + currentCrew);
 
         // TODO: SE CANNONS È ZERO, IL BONUS DELL'ALIENO NON CONTA
-        if (currentCrew == CrewType.ALIEN_PURPLE) {
+        if (currentCrewType == CrewType.ALIEN_PURPLE) {
             s.setCannons(s.getCannons() + 2);
         }
-        else if (currentCrew == CrewType.ALIEN_BROWN) {
+        else if (currentCrewType == CrewType.ALIEN_BROWN) {
             s.setEngines(s.getEngines() + 2);
         }
     }
@@ -41,13 +42,13 @@ public class Cabin extends Component {
             int y = neighbor.getY();
 
             if (board[x][y] != null && board[x][y].getConnectorAt(d.getOpposite()) != ConnectorType.PLAIN) {
-                if (currentCrew == CrewType.HUMAN) {
+                if (currentCrewType == CrewType.HUMAN) {
                     return true;
                 }
-                else if (currentCrew == CrewType.ALIEN_PURPLE && board[x][y].getType() == ComponentType.LIFE_SUPPORT_PURPLE) {
+                else if (currentCrewType == CrewType.ALIEN_PURPLE && board[x][y].getType() == ComponentType.LIFE_SUPPORT_PURPLE) {
                     return true;
                 }
-                else if (currentCrew == CrewType.ALIEN_BROWN && board[x][y].getType() == ComponentType.LIFE_SUPPORT_BROWN) {
+                else if (currentCrewType == CrewType.ALIEN_BROWN && board[x][y].getType() == ComponentType.LIFE_SUPPORT_BROWN) {
                     return true;
                 }
             }
@@ -56,20 +57,35 @@ public class Cabin extends Component {
     }
 
 
-    public CrewType getCurrentCrew() {
+    public CrewType getCurrentCrewType() {
+        return currentCrewType;
+    }
+
+    public void setCurrentCrewType(CrewType currentCrewType) {
+        this.currentCrewType = currentCrewType;
+
+        if (currentCrewType == CrewType.HUMAN) {
+            this.maxCrew = 2;
+        }
+        else {
+            this.maxCrew = 1;
+        }
+    }
+
+    public int getMaxCrew() {
+        return maxCrew;
+    }
+
+    public void setMaxCrew(int maxCrew) {
+        this.maxCrew = maxCrew;
+    }
+
+    public int getCurrentCrew() {
         return currentCrew;
     }
 
-    public void setCurrentCrew(CrewType currentCrew) {
+    public void setCurrentCrew(int currentCrew) {
         this.currentCrew = currentCrew;
-    }
-
-    public int getCrewCount() {
-        return crewCount;
-    }
-
-    public void setCrewCount(int crewCount) {
-        this.crewCount = crewCount;
     }
 }
 
