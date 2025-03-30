@@ -7,6 +7,7 @@ import it.polimi.ingsw.model.enums.ship.ComponentType;
 
 import it.polimi.ingsw.model.domain.ship.components.Battery;
 import it.polimi.ingsw.model.domain.ship.components.Shield;
+import it.polimi.ingsw.model.enums.ship.ConnectorType;
 import it.polimi.ingsw.model.enums.ship.Direction;
 
 import java.util.Set;
@@ -469,5 +470,24 @@ public class Ship {
         else {
             return false;
         }
+    }
+
+    public int getExposedConnectors() {
+        int counter = 0;
+        for(int row = 0; row < board.length; row++) {
+            for(int col = 0; col < board[0].length; col++) {
+                if (board[row][col] != null) {
+                    for(Direction direction : Direction.values()) {
+                        Position position = new Position(row, col);
+                        Position offset = position.offsetBy(direction);
+                        if((board[offset.getX()][offset.getY()] == null) &&
+                                (board[position.getX()][position.getY()].getConnectorAt(direction) != ConnectorType.PLAIN)){
+                            counter++;
+                        }
+                    }
+                }
+            }
+        }
+        return counter;
     }
 }
