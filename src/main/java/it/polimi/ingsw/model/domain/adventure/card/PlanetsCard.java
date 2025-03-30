@@ -46,10 +46,9 @@ public class PlanetsCard extends AdventureCard {
      *
      * @param visitor The visitor implementing which will perform actions on the card.
      * @param state The current game state.
-     * @param <T> The return type of the visitor's action.
      * @return The result of the visitor's action on the PlanetsCard.
      */
-    public <T> T accept(AdventureCardVisitor<T> visitor, GameModel state){
+    public boolean accept(AdventureCardVisitor visitor, GameModel state){
         return visitor.visitPlanetsCard(this,state);
     }
 }

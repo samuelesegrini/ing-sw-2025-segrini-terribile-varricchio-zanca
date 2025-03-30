@@ -52,9 +52,9 @@ public class AdventureDeck {
      */
     public AdventureDeck(GameLevel gameLevel, List<List<AdventureCard>> uncoveredPiles, List<AdventureCard> coveredPile) {
         this.gameLevel = gameLevel;
-        this.uncoveredPiles = uncoveredPiles;
         this.coveredPile = coveredPile;
         this.currentIndex = 0;
+        this.uncoveredPiles = uncoveredPiles;
         this.playerViewing = new HashMap<PlayerId, PileIdentifier>();
         this.isFlightPhase = false;
     }

@@ -46,7 +46,7 @@ public class CombatCheck {
 
         if(attribute == CombatAttributeType.CREW_COUNT) {
             for (Player player : playersOrdered) {
-                //il giocatore pù in vantaggio paga la penalità in caso di pareggio
+                //il giocatore più in vantaggio paga la penalità in caso di pareggio
                 // faccio il confronto con minore stretto e copro anche il caso di pareggio
                 // ( in playersOrdered i giocatori sono ordinati dal primo all'ultimo )
                 if (player.getTotalCrewMember() < count) {

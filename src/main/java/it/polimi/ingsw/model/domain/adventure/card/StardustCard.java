@@ -19,8 +19,8 @@ public class StardustCard extends AdventureCard {
      * @param level The level of the card.
      * @param description A description explaining the event and its effects on the player's actions.
      */
-    public StardustCard(String id, CardLevel level, String description) {
-        super(id, level, description, AdventureType.SPACE_DUST);
+    public StardustCard(String id, CardLevel level, String description, AdventureType type ) {
+        super(id, level, description, AdventureType.STARDUST);
     }
 
     /**

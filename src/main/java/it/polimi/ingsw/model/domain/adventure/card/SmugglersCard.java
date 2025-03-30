@@ -47,10 +47,9 @@ public class SmugglersCard extends EnemyCard {
      *
      * @param visitor The visitor handling the card logic.
      * @param state The current game state, which may affect the behavior of the visitor.
-     * @param <T> The type of the result returned by the visitor.
      * @return The result of the visitor's action on the Smugglers card.
      */
-    public <T> T accept(AdventureCardVisitor<T> visitor, GameModel state){
+    public boolean accept(AdventureCardVisitor visitor, GameModel state){
         return visitor.visitSmugglersCard(this, state);
     }
 }

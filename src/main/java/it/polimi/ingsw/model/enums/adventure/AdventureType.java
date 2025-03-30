@@ -48,9 +48,9 @@ public enum AdventureType {
     ABANDONED_STATION,
 
     /**
-     * Adventure type is Space Dust.
+     * Adventure type is Stardust.
      */
-    SPACE_DUST,
+    STARDUST,
 
     /**
      * Adventure type is Epidemic.
