@@ -1,6 +1,7 @@
 package it.polimi.ingsw.model.domain.adventure;
 
 import it.polimi.ingsw.model.enums.GameLevel;
+import it.polimi.ingsw.model.enums.flight.FlightStatus;
 import it.polimi.ingsw.model.util.PileIdentifier;
 import it.polimi.ingsw.model.domain.adventure.card.AdventureCard;
 import it.polimi.ingsw.model.domain.player.PlayerId;
@@ -75,9 +76,16 @@ public class AdventureDeck {
      * @throws IllegalArgumentException if playerId or pileId is null
      */
     public boolean canPlayerViewPile(PlayerId playerId, PileIdentifier pileId) {
-        if(playerViewing.containsKey(PileIdentifier)) {
-            return false;
+        // Check if the pile is being viewed by someone else, but not the player itself
+        if (playerViewing.containsValue(pileId)) {
+            // Check if the pile is associated with the given player
+            for (Map.Entry<PlayerId, PileIdentifier> entry : playerViewing.entrySet()) {
+                if (entry.getValue().equals(pileId) && !entry.getKey().equals(playerId)) {
+                    return false; // The pile is already being viewed by someone else
+                }
+            }
         }
+        // If no one else is viewing it or the player is already viewing it, allow viewing
         return true;
     }
     
@@ -98,8 +106,13 @@ public class AdventureDeck {
      * @see #stopViewingPile(PlayerId)
      */
     public List<AdventureCard> viewPile(PlayerId playerId, PileIdentifier pileId) {
-        // Implementation would go here
-        return null;
+        if(canPlayerViewPile(playerId, pileId)) {
+            playerViewing.put(playerId, pileId);
+            return uncoveredPiles.get(pileId.getIndex());
+        }
+        else{
+            throw new IllegalStateException();
+        }
     }
     
     /**
@@ -109,7 +122,7 @@ public class AdventureDeck {
      * @return The updated adventure deck state
      */
     public AdventureDeck stopViewingPile(PlayerId playerId) {
-        // Implementation would go here
+        playerViewing.remove(playerId);
         return this;
     }
     
@@ -119,8 +132,11 @@ public class AdventureDeck {
      * @return The current card, or empty if no card is active
      */
     public Optional<AdventureCard> getCurrentCard() {
-        // Implementation would go here
-        return Optional.empty();
+        if (currentIndex < coveredPile.size()) {
+            return Optional.ofNullable(coveredPile.get(currentIndex));
+        } else {
+            return Optional.empty();
+        }
     }
     
     /**
@@ -133,8 +149,13 @@ public class AdventureDeck {
      *           may result in the same card being returned multiple times.
      */
     public Optional<AdventureCard> drawNextCard() {
-        // Implementation would go here
-        return Optional.empty();
+        if (currentIndex < coveredPile.size()) {
+            AdventureCard card = coveredPile.get(currentIndex);
+            this.currentIndex++;
+            return Optional.ofNullable(card);
+        } else {
+            return Optional.empty();
+        }
     }
     
     /**
@@ -147,7 +168,7 @@ public class AdventureDeck {
      * @throws IllegalStateException if the flight phase has already started
      */
     public AdventureDeck startFlightPhase() {
-        // Implementation would go here
+        this.isFlightPhase = true;
         return this;
     }
     
@@ -157,7 +178,9 @@ public class AdventureDeck {
      * @return true if the deck is exhausted, false otherwise
      */
     public boolean isExhausted() {
-        // Implementation would go here
+        if(currentIndex == coveredPile.size()) {
+            return true;
+        }
         return false;
     }
     
@@ -167,8 +190,7 @@ public class AdventureDeck {
      * @return Array of valid pile identifiers
      */
     public PileIdentifier[] getValidPileIdentifiers() {
-        // Implementation would go here
-        return null;
+        return PileIdentifier.getPredictablePiles(gameLevel);
     }
     
     /**
@@ -177,7 +199,6 @@ public class AdventureDeck {
      * @return The game level
      */
     public GameLevel getGameLevel() {
-        // Implementation would go here
-        return null;
+        return this.gameLevel;
     }
 }
