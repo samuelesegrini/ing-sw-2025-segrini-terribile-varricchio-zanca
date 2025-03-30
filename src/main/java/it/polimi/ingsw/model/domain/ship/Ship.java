@@ -490,4 +490,82 @@ public class Ship {
         }
         return counter;
     }
+
+
+    /**
+     * Counts all connected cabins in the ship's grid, ensuring that each group of connected cabins
+     * is counted exactly once.
+     *
+     * @param board The 2D grid of ship components
+     * @return The total number of connected cabins across all groups
+     *
+     */
+    public int countAllConnectedCabins(Component[][] board) {
+        boolean[][] visited = new boolean[board.length][board[0].length];
+        int totalCabins = 0;
+
+        for (int x = 0; x < board.length; x++) {
+            for (int y = 0; y < board[x].length; y++) {
+                Position pos = new Position(x, y);
+                Component component = board[x][y];
+
+                // Controlla solo celle non visitate e di tipo CABIN/CABIN_START
+                if (!visited[x][y] && (component.getType() == ComponentType.CABIN || component.getType() == ComponentType.CABIN_START)) {
+                    totalCabins += checkAdjacentCabin(pos, board, visited);
+                }
+            }
+        }
+        return totalCabins;
+    }
+
+    /**
+     * Recursively counts all cabins connected to a starting position,
+     * using a shared visited matrix to avoid reprocessing.
+     *
+     * @param position The starting position for traversal
+     * @param board The 2D grid of ship components
+     * @param visited A boolean matrix tracking processed positions
+     * @return The number of cabins connected to the starting position (including the starting cabin itself)
+     *
+     */
+    private int checkAdjacentCabin(Position position, Component[][] board, boolean[][] visited) {
+        int x = position.getX();
+        int y = position.getY();
+
+        // Controllo dei limiti o già visitato
+        if (x < 0 || x >= board.length || y < 0 || y >= board[0].length || visited[x][y]) {
+            return 0;
+        }
+
+        Component current = board[x][y];
+        if (current.getType() != ComponentType.CABIN && current.getType() != ComponentType.CABIN_START) {
+            return 0;
+        }
+
+        visited[x][y] = true; // Segna come visitato
+        int count = 1; // Conta questa cabina
+
+        for (Direction direction : Direction.values()) {
+            Position neighbor = position.offsetBy(direction);
+            int xn = neighbor.getX();
+            int yn = neighbor.getY();
+
+            if (xn < 0 || xn >= board.length || yn < 0 || yn >= board[0].length) {
+                continue;
+            }
+
+            Component neighborCell = board[xn][yn];
+            if (neighborCell == null) {
+                continue;
+            }
+
+            // Controlla connettore nella direzione opposta
+            if ((neighborCell.getType() == ComponentType.CABIN || neighborCell.getType() == ComponentType.CABIN_START) &&
+                    neighborCell.getConnectorAt(direction.getOpposite()) != ConnectorType.PLAIN) {
+                count += checkAdjacentCabin(neighbor, board, visited);
+            }
+        }
+
+        return count;
+    }
 }

@@ -9,11 +9,15 @@ import it.polimi.ingsw.model.domain.adventure.entity.Planet;
 import it.polimi.ingsw.model.domain.flight.FlightBoard;
 import it.polimi.ingsw.model.domain.player.Player;
 import it.polimi.ingsw.model.domain.ship.Position;
+import it.polimi.ingsw.model.domain.ship.Ship;
 import it.polimi.ingsw.model.domain.ship.components.Component;
 import it.polimi.ingsw.model.enums.adventure.CombatAttributeType;
 import it.polimi.ingsw.model.enums.adventure.PenaltyType;
 import it.polimi.ingsw.model.enums.adventure.ShotIntensity;
+import it.polimi.ingsw.model.enums.player.PlayerColor;
+import it.polimi.ingsw.model.enums.ship.ComponentType;
 import it.polimi.ingsw.model.enums.ship.ConnectorType;
+import it.polimi.ingsw.model.enums.ship.Direction;
 
 import java.util.*;
 
@@ -334,10 +338,10 @@ public class AdventureCardVisitor {
             CombatAttributeType attributeType = check.getAttribute();
             Player combatLoser = check.getCombatLoser(playersOrdered);
 
-            if(combatLoser == null){
-                throw new IllegalStateException("No combat losing player found.");
-                return false;
-            }
+            // if(combatLoser == null){
+            //    throw new IllegalStateException("No combat losing player found.");
+            //    return false;
+            //}
 
             PenaltyType penalty = check.getPenaltyType();
             switch (penalty){
@@ -370,6 +374,7 @@ public class AdventureCardVisitor {
                     }
             }
         }
+        return true;
     }
 
 
@@ -385,12 +390,21 @@ public class AdventureCardVisitor {
 
         FlightBoard flightBoard = state.getFlightBoard();
         List<Player> playersOrdered = flightBoard.getCurrentOrder();
+        int connectedCabin = 0;
 
         for(Player player : playersOrdered ) {
-            //perde un membro dell'equipaggio per ogni cabina collegata ad un'altra
-            break;  // passa al giocatore successivo
+            Ship ship = player.getShip();
+            Component[][] board = player.getShip().getBoard();
+            connectedCabin = ship.countAllConnectedCabins(board);
+            int crewUpdated = ship.getCrew() - connectedCabin;
+            ship.setCrew(crewUpdated);
         }
+        if(connectedCabin == 0){
+            return false;
+        }
+        return true;
     }
+        
     
     /**
      * Visits an AbandonedStationCard.
