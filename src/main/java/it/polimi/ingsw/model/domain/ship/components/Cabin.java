@@ -30,37 +30,39 @@ public class Cabin extends Component {
     }
 
     @Override
-    public void count(Ship s) {
-        s.setCrew(s.getCrew() + currentCrew);
+    public void count(Ship ship) {
+        ship.setCrew(ship.getCrew() + currentCrew);
 
         // TODO: SE CANNONS È ZERO, IL BONUS DELL'ALIENO NON CONTA
         if (currentCrewType == CrewType.ALIEN_PURPLE) {
-            s.setCannons(s.getCannons() + 2);
+            ship.setCannons(ship.getCannons() + 2);
         }
         else if (currentCrewType == CrewType.ALIEN_BROWN) {
-            s.setEngines(s.getEngines() + 2);
+            ship.setEngines(ship.getEngines() + 2);
         }
     }
 
     // Also checks in the case of an alien if there is the corresponding life support system
     @Override
-    public boolean check(Ship s) {
-        Component[][] board = s.getBoard();
+    public boolean check(Ship ship) {
+        Component[][] board = ship.getBoard();
 
         for (Direction d :  Direction.values()) {
             Position neighbor = this.getPosition().offsetBy(d);
             int x = neighbor.getX();
             int y = neighbor.getY();
 
-            if (board[x][y] != null && board[x][y].getConnectorAt(d.getOpposite()) != ConnectorType.PLAIN) {
-                if (currentCrewType == CrewType.HUMAN) {
-                    return true;
-                }
-                else if (currentCrewType == CrewType.ALIEN_PURPLE && board[x][y].getType() == ComponentType.LIFE_SUPPORT_PURPLE) {
-                    return true;
-                }
-                else if (currentCrewType == CrewType.ALIEN_BROWN && board[x][y].getType() == ComponentType.LIFE_SUPPORT_BROWN) {
-                    return true;
+            if (x >= 0 && x < board.length && y >= 0 && y < board[0].length) {
+                if (board[x][y] != null && board[x][y].getConnectorAt(d.getOpposite()) != ConnectorType.PLAIN) {
+                    if (currentCrewType == CrewType.HUMAN) {
+                        return true;
+                    }
+                    else if (currentCrewType == CrewType.ALIEN_PURPLE && board[x][y].getType() == ComponentType.LIFE_SUPPORT_PURPLE) {
+                        return true;
+                    }
+                    else if (currentCrewType == CrewType.ALIEN_BROWN && board[x][y].getType() == ComponentType.LIFE_SUPPORT_BROWN) {
+                        return true;
+                    }
                 }
             }
         }

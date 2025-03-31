@@ -24,7 +24,7 @@ public class Cannon extends Component {
     }
 
     @Override
-    public void count(Ship s) {
+    public void count(Ship ship) {
         int power;
 
         if (super.getType() == ComponentType.CANNON_DOUBLE && charged) {
@@ -36,12 +36,12 @@ public class Cannon extends Component {
             power = 0;
         }
 
-        s.setCannons(s.getCannons() + power);
+        ship.setCannons(ship.getCannons() + power);
     }
 
     @Override
-    public boolean check(Ship s) {
-        Component[][] board = s.getBoard();
+    public boolean check(Ship ship) {
+        Component[][] board = ship.getBoard();
         boolean result = false;
 
         for (Direction d : Direction.values()) {
@@ -49,8 +49,10 @@ public class Cannon extends Component {
             int x = neighbor.getX();
             int y = neighbor.getY();
 
-            if (board[x][y] != null && board[x][y].getConnectorAt(d.getOpposite()) != ConnectorType.PLAIN) {
-                result = true;
+            if (x >= 0 && x < board.length && y >= 0 && y < board[0].length) {
+                if (board[x][y] != null && board[x][y].getConnectorAt(d.getOpposite()) != ConnectorType.PLAIN) {
+                    result = true;
+                }
             }
         }
 

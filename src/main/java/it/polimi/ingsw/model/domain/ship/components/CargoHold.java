@@ -34,19 +34,19 @@ public class CargoHold extends Component {
     }
 
     @Override
-    public void count(Ship s) {
-        Map<GoodType, Integer> goods = s.getResources();
+    public void count(Ship ship) {
+        Map<GoodType, Integer> goods = ship.getResources();
 
         for (GoodType type : GoodType.values()) {
             goods.put(type, goods.get(type) + storedGoods.get(type));
         }
-        s.setResources(goods);
+        ship.setResources(goods);
 
         // Updates specialGoods and normalGoods in Ship
-        s.setSpecialGoods(s.getSpecialGoods() + storedGoods.get(GoodType.RED));
-        s.setNormalGoods(s.getNormalGoods() + storedGoods.get(GoodType.BLUE));
-        s.setNormalGoods(s.getNormalGoods() + storedGoods.get(GoodType.GREEN));
-        s.setNormalGoods(s.getNormalGoods() + storedGoods.get(GoodType.YELLOW));
+        ship.setSpecialGoods(ship.getSpecialGoods() + storedGoods.get(GoodType.RED));
+        ship.setNormalGoods(ship.getNormalGoods() + storedGoods.get(GoodType.BLUE));
+        ship.setNormalGoods(ship.getNormalGoods() + storedGoods.get(GoodType.GREEN));
+        ship.setNormalGoods(ship.getNormalGoods() + storedGoods.get(GoodType.YELLOW));
     }
 
 

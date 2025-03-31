@@ -80,11 +80,11 @@ public abstract class Component {
     // These methods are overridden by the subclasses
 
     // Updates the ship's stats adding this component's contributions
-    public void count(Ship s) {}
+    public void count(Ship ship) {}
 
     // Checks if the component is still connected to at least one other component, and other specific conditions
-    public boolean check(Ship s) {
-        Component[][] board = s.getBoard();
+    public boolean check(Ship ship) {
+        Component[][] board = ship.getBoard();
 
         for (Direction d : Direction.values()) {
             Position neighbor = this.getPosition().offsetBy(d);
@@ -92,8 +92,10 @@ public abstract class Component {
             int y = neighbor.getY();
 
             // Checks if there's a component nearby and if they're connected (assumes the connection is legal)
-            if (board[x][y] != null && board[x][y].getConnectorAt(d.getOpposite()) != ConnectorType.PLAIN) {
-                return true;
+            if (x >= 0 && x < board.length && y >= 0 && y < board[0].length) {
+                if (board[x][y] != null && board[x][y].getConnectorAt(d.getOpposite()) != ConnectorType.PLAIN) {
+                    return true;
+                }
             }
         }
         return false;

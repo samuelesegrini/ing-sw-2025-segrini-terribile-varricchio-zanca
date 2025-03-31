@@ -27,8 +27,8 @@ public class Battery extends Component {
     }
 
     @Override
-    public void count(Ship s) {
-        s.setBatteries(s.getBatteries() + currentBatteries);
+    public void count(Ship ship) {
+        ship.setBatteries(ship.getBatteries() + currentBatteries);
     }
 
 

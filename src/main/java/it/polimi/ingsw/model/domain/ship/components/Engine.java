@@ -24,7 +24,7 @@ public class Engine extends Component {
     }
 
     @Override
-    public void count(Ship s) {
+    public void count(Ship ship) {
         int power;
 
         if (super.getType() == ComponentType.ENGINE_DOUBLE && charged) {
@@ -36,12 +36,12 @@ public class Engine extends Component {
             power = 0;
         }
 
-        s.setEngines(s.getEngines() + power);
+        ship.setEngines(ship.getEngines() + power);
     }
 
     @Override
-    public boolean check(Ship s) {
-        Component[][] board = s.getBoard();
+    public boolean check(Ship ship) {
+        Component[][] board = ship.getBoard();
         boolean result = false;
 
         for (Direction d : Direction.values()) {
