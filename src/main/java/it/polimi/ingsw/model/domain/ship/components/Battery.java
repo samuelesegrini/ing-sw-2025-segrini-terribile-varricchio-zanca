@@ -1,10 +1,24 @@
 package it.polimi.ingsw.model.domain.ship.components;
 
+import it.polimi.ingsw.model.domain.ship.Position;
 import it.polimi.ingsw.model.domain.ship.Ship;
+import it.polimi.ingsw.model.enums.ship.ComponentType;
+import it.polimi.ingsw.model.enums.ship.ConnectorType;
+import it.polimi.ingsw.model.enums.ship.Direction;
+
+import java.util.Map;
 
 public class Battery extends Component {
     private int maxBatteries;
     private int currentBatteries;
+
+
+    public Battery(ComponentType type, Map<Direction, ConnectorType> connectors, int maxBatteries) {
+        super(type, connectors);
+        this.maxBatteries = maxBatteries;
+        this.currentBatteries = maxBatteries;
+    }
+
 
     @Override
     public void accept(ComponentVisitor v) {

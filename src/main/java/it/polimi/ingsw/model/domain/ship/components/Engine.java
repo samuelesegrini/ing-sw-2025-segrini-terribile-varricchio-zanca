@@ -6,8 +6,17 @@ import it.polimi.ingsw.model.enums.ship.ComponentType;
 import it.polimi.ingsw.model.enums.ship.ConnectorType;
 import it.polimi.ingsw.model.enums.ship.Direction;
 
+import java.util.Map;
+
 public class Engine extends Component {
     private boolean charged;
+
+
+    public Engine(ComponentType type, Map<Direction, ConnectorType> connectors) {
+        super(type, connectors);
+        this.charged = false;
+    }
+
 
     @Override
     public void accept(ComponentVisitor v) {

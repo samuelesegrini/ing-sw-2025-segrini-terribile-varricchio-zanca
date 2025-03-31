@@ -6,6 +6,7 @@ import it.polimi.ingsw.model.enums.ship.ComponentType;
 import it.polimi.ingsw.model.enums.ship.ConnectorType;
 import it.polimi.ingsw.model.enums.ship.Direction;
 
+import java.util.HashMap;
 import java.util.Map;
 
 public abstract class Component {
@@ -14,6 +15,15 @@ public abstract class Component {
     protected Position position;
     protected Map<Direction, ConnectorType> connectors;
     protected Ship ship;
+
+
+    public Component(ComponentType type, Map<Direction, ConnectorType> connectors) {
+        this.type = type;
+        this.direction = Direction.UP;
+        this.position = null;
+        this.connectors = connectors;
+        this.ship = null;
+    }
 
 
     public ComponentType getType() {
@@ -56,6 +66,11 @@ public abstract class Component {
      */
     public void rotate() {
         direction = direction.rotateClockwise();
+
+        Map<Direction, ConnectorType> temp = new HashMap<>(connectors);
+        for (Direction d : Direction.values()) {
+            connectors.put(d, temp.get(d.rotateCounterClockwise()));
+        }
     }
 
 

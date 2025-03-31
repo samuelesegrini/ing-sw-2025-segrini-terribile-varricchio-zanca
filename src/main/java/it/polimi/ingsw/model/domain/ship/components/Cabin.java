@@ -7,10 +7,21 @@ import it.polimi.ingsw.model.enums.ship.ComponentType;
 import it.polimi.ingsw.model.enums.ship.ConnectorType;
 import it.polimi.ingsw.model.enums.ship.Direction;
 
+import java.util.Map;
+
 public class Cabin extends Component {
     private CrewType currentCrewType;
     private int maxCrew;
     private int currentCrew;
+
+
+    public Cabin(ComponentType type, Map<Direction, ConnectorType> connectors) {
+        super(type, connectors);
+        this.maxCrew = 2;
+        this.currentCrew = this.maxCrew;
+        this.currentCrewType = CrewType.HUMAN;
+    }
+
 
     @Override
     public void accept(ComponentVisitor v) {

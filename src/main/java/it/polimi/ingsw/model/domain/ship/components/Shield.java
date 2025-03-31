@@ -1,12 +1,26 @@
 package it.polimi.ingsw.model.domain.ship.components;
 
+import it.polimi.ingsw.model.enums.ship.ComponentType;
+import it.polimi.ingsw.model.enums.ship.ConnectorType;
 import it.polimi.ingsw.model.enums.ship.Direction;
 
+import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 public class Shield extends Component {
     private Set<Direction> protectedDirections;
     boolean charged;
+
+
+    public Shield(ComponentType type, Map<Direction, ConnectorType> connectors) {
+        super(type, connectors);
+        this.charged = false;
+
+        this.protectedDirections = new HashSet<>();
+        this.protectedDirections.addAll(connectors.keySet());
+    }
+
 
     @Override
     public void accept(ComponentVisitor v) {

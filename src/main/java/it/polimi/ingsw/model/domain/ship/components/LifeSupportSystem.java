@@ -1,9 +1,19 @@
 package it.polimi.ingsw.model.domain.ship.components;
 
 import it.polimi.ingsw.model.enums.crew.AlienColor;
+import it.polimi.ingsw.model.enums.ship.ComponentType;
+import it.polimi.ingsw.model.enums.ship.ConnectorType;
+import it.polimi.ingsw.model.enums.ship.Direction;
+
+import java.util.Map;
 
 public class LifeSupportSystem extends Component {
     private AlienColor supportedAlienColor;
+
+
+    public LifeSupportSystem(ComponentType type, Map<Direction, ConnectorType> connectors) {
+        super(type, connectors);
+    }
 
 
     public AlienColor getSupportedAlienColor() {

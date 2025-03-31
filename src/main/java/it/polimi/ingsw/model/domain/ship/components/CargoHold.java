@@ -2,13 +2,30 @@ package it.polimi.ingsw.model.domain.ship.components;
 
 import it.polimi.ingsw.model.domain.ship.Ship;
 import it.polimi.ingsw.model.enums.resource.GoodType;
+import it.polimi.ingsw.model.enums.ship.ComponentType;
+import it.polimi.ingsw.model.enums.ship.ConnectorType;
+import it.polimi.ingsw.model.enums.ship.Direction;
 
+import java.util.HashMap;
 import java.util.Map;
 
 public class CargoHold extends Component {
     private int capacity;
     private int occupiedCapacity;
     private Map<GoodType, Integer> storedGoods;
+
+
+    public CargoHold(ComponentType type, Map<Direction, ConnectorType> connectors, int capacity) {
+        super(type, connectors);
+        this.capacity = capacity;
+        this.occupiedCapacity = capacity;
+
+        this.storedGoods = new HashMap<>();
+        for (GoodType goodType : GoodType.values()) {
+            storedGoods.put(goodType, 0);
+        }
+    }
+
 
     @Override
     public void accept(ComponentVisitor v) {
