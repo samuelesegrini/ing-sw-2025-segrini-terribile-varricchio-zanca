@@ -1,11 +1,8 @@
 package it.polimi.ingsw.model.domain.flight;
 
 import it.polimi.ingsw.model.domain.adventure.AdventureDeck;
-import it.polimi.ingsw.model.domain.flight.PlayerFlightData;
 import it.polimi.ingsw.model.domain.player.Player;
-import it.polimi.ingsw.model.domain.player.PlayerId;
 import it.polimi.ingsw.model.enums.GameLevel;
-import it.polimi.ingsw.model.domain.flight.Route;
 import it.polimi.ingsw.model.enums.flight.FlightStatus;
 
 import java.util.*;
@@ -34,8 +31,9 @@ public class FlightBoard {
                 startingPositions.add(0);
                 startingPositions.add(1);
                 startingPositions.add(2);
-                startingPositions.add(4); //forse dovrei farlo in level
+                startingPositions.add(4);
                 this.route=new Route(level, 18, startingPositions, new RewardSystem(level) );
+                break;
             case LEVEL_II:
                 List<Integer> startingPositionII=new ArrayList<>();
                 startingPositions.add(0);
@@ -43,6 +41,7 @@ public class FlightBoard {
                 startingPositions.add(3);
                 startingPositions.add(6);
                 this.route=new Route(level, 24 , startingPositions, new RewardSystem(level) );
+                break;
         }
     }
 
@@ -59,6 +58,8 @@ public class FlightBoard {
     public List<Player> getFinishOrder() {
         return finishOrder;
     }
+
+    public Route getRoute() { return route; }
 
     public int getPlayerCount() { return playerCount; }
 
@@ -101,36 +102,40 @@ public class FlightBoard {
         }
     }
 
-    public List<Player> getPlayersAhead(Player player){
+    public List<Player> getPlayersAhead(Player player, int distance) {
         List<Player> playersAhead = new ArrayList<Player>();
+        int playerPosition = player.getFlightData().getPosition();
         for(Player p: playerDataMap.keySet()){
-            if(p.getFlightData().getPosition() > player.getFlightData().getPosition()){
+            int aheadPosition = p.getFlightData().getPosition();
+            if(aheadPosition > playerPosition && (playerPosition + distance) >= aheadPosition){
                 playersAhead.add(p);
             }
         }
         return playersAhead;
     }
 
-    public List<Player> getPlayersBehind (Player player){
+    public List<Player> getPlayersBehind (Player player, int distance){
         List<Player> playersBehind = new ArrayList<Player>();
+        int playerPosition = player.getFlightData().getPosition();
         for(Player p: playerDataMap.keySet()){
-            if(p.getFlightData().getPosition() < player.getFlightData().getPosition()){
+            int behindPosition = p.getFlightData().getPosition();
+            if(behindPosition < playerPosition && (playerPosition - distance) <= behindPosition){
                 playersBehind.add(p);
             }
         }
         return playersBehind;
     }
 
-    public void movePlayer(Player player, Integer spaces, boolean forward){
+    public void movePlayer(Player player, int spaces, boolean forward){
         Integer playerPosition = player.getFlightData().getPosition();
-        Integer newPlayerPosition;
+        Integer newPosition;
         if(forward) {
-            newPlayerPosition = playerPosition + spaces + getPlayersAhead(player).size();
-            player.getFlightData().setPosition(newPlayerPosition, route.getLength());
+            newPosition = playerPosition + spaces + getPlayersAhead(player, spaces).size();
+            player.getFlightData().setPosition(newPosition, route.getLength());
         }
         else{
-            newPlayerPosition = playerPosition - spaces - getPlayersBehind(player).size();
-            player.getFlightData().setPosition(newPlayerPosition, route.getLength());
+            newPosition = playerPosition - spaces - getPlayersBehind(player, spaces).size();
+            player.getFlightData().setPosition(newPosition, route.getLength());
         }
     }
 
@@ -156,9 +161,9 @@ public class FlightBoard {
     public void registerPlayer(Player player){
         PlayerFlightData playerFlightData = new PlayerFlightData(route.getFirstAvailableStartingPosition());
         playerDataMap.put(player, playerFlightData);
+        playerDataMap.get(player).setStatus(FlightStatus.RACING);
         playerCount++;
         currentOrder.add(player);
-        playerDataMap.get(player).setStatus(FlightStatus.RACING);
     }
 
 
@@ -167,10 +172,10 @@ public class FlightBoard {
      * @param player The ID of the player to abandon.
      */
     public void abandonPlayer(Player player){
-        playerDataMap.remove(player);
+        playerDataMap.get(player).setStatus(FlightStatus.ABANDONED);
         playerCount--;
         currentOrder.remove(player);
-        playerDataMap.get(player).setStatus(FlightStatus.ABANDONED);
+        playerDataMap.remove(player);
     }
 
     /**
