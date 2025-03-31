@@ -204,6 +204,19 @@ public class Ship {
         this.lostComponents = lostComponents;
     }
 
+    public int getSpecialGoodsCapacity() {
+        return specialGoodsCapacity;
+    }
+    public void setSpecialGoodsCapacity(int specialGoodsCapacity) {
+        this.specialGoodsCapacity = specialGoodsCapacity;
+    }
+    public int getNormalGoodsCapacity() {
+        return normalGoodsCapacity;
+    }
+    public void setNormalGoodsCapacity(int normalGoodsCapacity) {
+        this.normalGoodsCapacity = normalGoodsCapacity;
+    }
+
     /**
      * Adds resources to the ship's cargo holds, following these rules:
      * 1. If there is enough free space in the cargo holds, the resources are added.
