@@ -2,6 +2,7 @@ package it.polimi.ingsw.model.domain.flight;
 
 import it.polimi.ingsw.model.enums.GameLevel;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class Route {
@@ -14,8 +15,8 @@ public class Route {
      * Constructor that initializes the Route based on the game level.
      * @param level game level
      */
-    public Route(GameLevel level, int length, List<Integer> startingPositions, RewardSystem rewardSystem) {
-        this.length = length;
+    public Route(GameLevel level, int lenght, List<Integer> startingPositions, RewardSystem rewardSystem ) {
+        this.length = lenght;
         this.startingPositions = startingPositions;
         this.availableStartingPositions = startingPositions;
         this.rewardSystem = rewardSystem;
@@ -30,7 +31,7 @@ public class Route {
      * Provides a list of all players' starting positions from first to last.
      * @return players' starting positions
      */
-    public List<Integer> getAllStartingPositions() {
+    public List<Integer> getStartingPositions() {
         return startingPositions;
     }
 
@@ -57,7 +58,7 @@ public class Route {
      * @param position player's position
      * @return player's normalized position
      */
-    public int getNormalizedPosition(int position){ return position%(length-1); }
+    public int getNormalizedPosition(int position){ return position%(length); }
 
 }
 

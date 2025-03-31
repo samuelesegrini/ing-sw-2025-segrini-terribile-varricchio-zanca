@@ -61,13 +61,8 @@ public class PlayerFlightData {
      * @see it.polimi.ingsw.model.domain.flight.Route
      */
     public void setPosition(int position, int routeLength){
-        if(position%routeLength !=0){
-            this.lapsCompleted++;
-            this.position = position%routeLength;
-        }
-        else{
-            this.position = position;
-        }
+        this.lapsCompleted = position/routeLength;
+        this.position = position%routeLength;
     }
 
     /**
