@@ -107,11 +107,12 @@ public class Ship {
         int x = position.getX();
         int y = position.getY();
 
+        // Checks if position is illegal or empty, otherwise removes Component and updates its position attribute
         if (forbiddenPositions.contains(position)) {
             throw new IllegalArgumentException("Forbidden position");
         }
-        else if (board[y][x] != null) {
-            throw new IllegalArgumentException("Occupied position");
+        else if (board[y][x] == null) {
+            throw new IllegalArgumentException("Empty position");
         }
         else {
             board[y][x].setPosition(null);    // Spostare il component in lista dei "rifiuti"?
