@@ -6,10 +6,11 @@ import java.util.Set;
 
 public class Shield extends Component {
     private Set<Direction> protectedDirections;
+    boolean charged;
 
     @Override
     public void accept(ComponentVisitor v) {
-        v.useShield(this);
+        v.useShield(super.ship, this);
     }
 
 
@@ -20,28 +21,12 @@ public class Shield extends Component {
     public void setProtectedDirections(Set<Direction> protectedDirections) {
         this.protectedDirections = protectedDirections;
     }
+
+    public boolean isCharged() {
+        return charged;
+    }
+
+    public void setCharged(boolean charged) {
+        this.charged = charged;
+    }
 }
-
-
-
-
-
-
-
-
-
-
-/*
-/**
-     * Indicates the directions in which the shield provides protection.
-     * @return the shielded directions
-
-public Set<Direction> getProtectedDirections(){ return Set.of(); }
-
-/**
- * Checks if the shield protects in a specific direction.
- * @param d direction
- * @return {@code true} if the shield cover the specified direction, {@code false} otherwise
-
-public boolean protectsFromDirection(Direction d){ return false; }
- */

@@ -1,112 +1,143 @@
 package it.polimi.ingsw.model.domain.ship.components;
 
+import it.polimi.ingsw.model.domain.ship.Ship;
 import it.polimi.ingsw.model.enums.resource.GoodType;
 import it.polimi.ingsw.model.enums.ship.ComponentType;
 
 import java.util.HashMap;
 import java.util.Map;
 
+// Removes batteries to charge cannons/engines/shields
 public class UseComponentVisitor implements ComponentVisitor {
-    // TODO: Restituisci e sistema le batterie rimanenti se ci sono & Chiama count()?
     @Override
-    public void useBattery(Battery battery, int quantity) {
-        int result = battery.getCurrentBatteries() + quantity;
+    public void useBattery(Ship ship, Battery battery, int quantity) {
+        int result = battery.getCurrentBatteries() - quantity;
 
         if (result < 0) {
             System.out.println("Not enough batteries to use");
-
-            while (battery.getCurrentBatteries() > 0) {
-                battery.setCurrentBatteries(battery.getCurrentBatteries() - 1);
-            }
+            return;
         }
-        // Serve poter aggiungere batterie?
-        else if (result > battery.getMaxBatteries()) {
-            System.out.println("Not enough space for all the batteries");
 
-            while (battery.getCurrentBatteries() < battery.getMaxBatteries()) {
-                battery.setCurrentBatteries(battery.getCurrentBatteries() + 1);
-            }
-        } else {
-            battery.setCurrentBatteries(result);
-        }
+        battery.setCurrentBatteries(battery.getCurrentBatteries() - quantity);
+        ship.setBatteries(ship.getBatteries() - quantity);
+        ship.setChargingBatteries(ship.getChargingBatteries() + quantity);
     }
 
-    // TODO: Restituisci e sistema l'equipaggio rimanente se c'è & Chiama count()?
     @Override
-    public void useCabin(Cabin cabin, int quantity) {
-        int result = cabin.getCurrentCrew() + quantity;
+    public void useCabin(Ship ship, Cabin cabin, int quantity) {
+        int result = cabin.getCurrentCrew() - quantity;
 
         if (result < 0) {
             System.out.println("Not enough crew to use");
-
-            while (cabin.getCurrentCrew() > 0) {
-                cabin.setCurrentCrew(cabin.getCurrentCrew() - 1);
-            }
+            return;
         }
-        // Serve poter aggiungere batterie?
-        else if (result > cabin.getMaxCrew()) {
-            System.out.println("Not enough space for all the batteries");
 
-            while (cabin.getCurrentCrew() < cabin.getMaxCrew()) {
-                cabin.setCurrentCrew(cabin.getCurrentCrew() + 1);
-            }
-        } else {
-            cabin.setCurrentCrew(result);
-        }
+        cabin.setCurrentCrew(cabin.getCurrentCrew() - quantity);
+        ship.setCrew(ship.getCrew() - quantity);
     }
 
-    // Assumes that all values of goods have the same sign (positive to store, negative to remove)
-    // TODO: Restituisci e sistema le merci rimanenti se c'è & Chiama count()?
+    // Assumes all values have the same sign (positive to store, negative to remove)
     @Override
-    public void useCargoHold(CargoHold cargoHold, Map<GoodType, Integer> goods) {
+    public void useCargoHold(Ship ship, CargoHold cargoHold, Map<GoodType, Integer> goods) {
         // Checks if cargoHold is compatible with goods
-        if (goods.get(GoodType.RED) != 0 && ((Component) cargoHold).type == ComponentType.CARGO_HOLD) {
+        if (goods.get(GoodType.RED) != 0 && cargoHold.type == ComponentType.CARGO_HOLD) {
             System.out.println("This Cargo Hold is not special, red goods can't be used");
-        } else {
-            int result = 0;
-            for (GoodType goodType : GoodType.values()) {
-                result += goods.get(goodType);
-            }
+            return;
+        }
 
-            // Stores goods
-            if (result > cargoHold.getOccupiedCapacity()) {
-                if (result > cargoHold.getCapacity()) {
-                    System.out.println("Not enough free capacity for all the goods");
+        int result = 0;
+        for (GoodType goodType : GoodType.values()) {
+            result += goods.get(goodType);
+        }
+
+        if (result > cargoHold.getCapacity()) {
+            System.out.println("Not enough free capacity for all the goods");
+            return;
+        }
+        else if (result < 0) {
+            System.out.println("Not enough goods to use");
+            return;
+        }
+
+        // Stores goods
+        if (result > cargoHold.getOccupiedCapacity()) {
+            for (GoodType type : GoodType.values()) {
+                cargoHold.storeGoodsOfType(type, goods.get(type));
+
+                // Update ship's resources
+                ship.getResources().put(type, ship.getResources().get(type) + goods.get(type));
+
+                if (type == GoodType.RED) {
+                    ship.setSpecialGoods(ship.getSpecialGoods() + goods.get(type));
                 }
-                for (GoodType type : GoodType.values()) {
-                    while (cargoHold.getOccupiedCapacity() < cargoHold.getCapacity() && goods.get(type) > 0) {
-                        cargoHold.storeGood(type);
-                        goods.put(type, goods.get(type) - 1);
-                    }
+                else {
+                    ship.setNormalGoods(ship.getNormalGoods() + goods.get(type));
                 }
             }
-            // Removes goods
-            else if (result < cargoHold.getOccupiedCapacity()) {
-                if (result < 0) {
-                    System.out.println("Not enough goods to use");
+        }
+        // Removes goods
+        else if (result < cargoHold.getOccupiedCapacity()) {
+            for (GoodType type : GoodType.values()) {
+                cargoHold.removeGoodsOfType(type, goods.get(type));
+
+                // Update ship's resources
+                ship.getResources().put(type, ship.getResources().get(type) - goods.get(type));
+
+                if (type == GoodType.RED) {
+                    ship.setSpecialGoods(ship.getSpecialGoods() - goods.get(type));
                 }
-                for (GoodType type : GoodType.values()) {
-                    while (cargoHold.getOccupiedCapacity() > 0 && goods.get(type) < 0) {
-                        cargoHold.removeGood(type);
-                        goods.put(type, goods.get(type) + 1);
-                    }
+                else {
+                    ship.setNormalGoods(ship.getNormalGoods() - goods.get(type));
                 }
             }
         }
     }
 
     @Override
-    public void useCannon(Cannon cannon) {
-        // TODO
+    public void useCannon(Ship ship, Cannon cannon) {
+        if (cannon.getType() == ComponentType.CANNON_SINGLE) {
+            System.out.println("This cannon is single, it cannot be charged");
+            return;
+        }
+
+        if (ship.getChargingBatteries() > 0) {
+            ship.setChargingBatteries(ship.getChargingBatteries() - 1);
+            cannon.setCharged(true);
+            cannon.count(ship);
+            // Spengo qui il cannone?
+        }
+        else {
+            System.out.println("There is no charging battery to use");
+        }
     }
 
     @Override
-    public void useEngine(Engine engine) {
-        // TODO
+    public void useEngine(Ship ship, Engine engine) {
+        if (engine.getType() == ComponentType.ENGINE_SINGLE) {
+            System.out.println("This engine is single, it cannot be charged");
+            return;
+        }
+
+        if (ship.getChargingBatteries() > 0) {
+            ship.setChargingBatteries(ship.getChargingBatteries() - 1);
+            engine.setCharged(true);
+            engine.count(ship);
+            // Spengo qui il motore?
+        }
+        else {
+            System.out.println("There is no charging battery to use");
+        }
     }
 
     @Override
-    public void useShield(Shield shield) {
-        // TODO
+    public void useShield(Ship ship, Shield shield) {
+        if (ship.getChargingBatteries() > 0) {
+            ship.setChargingBatteries(ship.getChargingBatteries() - 1);
+            shield.setCharged(true);
+            // Spengo qui lo scudo?
+        }
+        else {
+            System.out.println("There is no charging battery to use");
+        }
     }
 }
