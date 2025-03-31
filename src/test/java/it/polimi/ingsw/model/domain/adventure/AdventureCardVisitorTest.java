@@ -42,8 +42,8 @@ class AdventureCardVisitorTest {
         player1 = new Player(playerId1);
         player2 = new Player(playerId2);
 
-        ship1 = new Ship(player1);
-        ship2 = new Ship(player2);
+        ship1 = new Ship(player1, GameLevel.TEST_FLIGHT);
+        ship2 = new Ship(player2, GameLevel.TEST_FLIGHT);
         player1.setShip(ship1);
         player2.setShip(ship2);
 

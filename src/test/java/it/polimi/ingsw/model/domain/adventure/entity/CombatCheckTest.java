@@ -3,6 +3,7 @@ package it.polimi.ingsw.model.domain.adventure.entity;
 import it.polimi.ingsw.model.domain.player.Player;
 import it.polimi.ingsw.model.domain.player.PlayerId;
 import it.polimi.ingsw.model.domain.ship.Ship;
+import it.polimi.ingsw.model.enums.GameLevel;
 import it.polimi.ingsw.model.enums.adventure.CombatAttributeType;
 import it.polimi.ingsw.model.enums.adventure.PenaltyType;
 import it.polimi.ingsw.model.enums.adventure.ShotIntensity;
@@ -36,9 +37,9 @@ class CombatCheckTest {
         player2 = new Player (playerId2);
         player3 = new Player(playerId3);
 
-        player1.setShip(new Ship(player1));
-        player2.setShip(new Ship(player2));
-        player3.setShip(new Ship(player3));
+        player1.setShip(new Ship(player1, GameLevel.TEST_FLIGHT));
+        player2.setShip(new Ship(player2, GameLevel.TEST_FLIGHT));
+        player3.setShip(new Ship(player3, GameLevel.TEST_FLIGHT));
 
         player1.getShip().setCrew(1); // Caso limite: valore minimo
         player2.getShip().setCrew(3);
