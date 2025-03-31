@@ -33,10 +33,15 @@ public class Ship {
     private int specialGoodsCapacity;
     private int normalGoodsCapacity;
 
+    // Batteries set to be used by the player to charge cannons/engines/shields
+    private int chargingBatteries;
+
     private int lostComponents;
 
 
-    public Ship(Player player) { this.player = player; }
+    public Ship(Player player) {
+        this.player = player;
+    }
 
 
     /**
@@ -107,7 +112,7 @@ public class Ship {
     }
 
 
-    // Calls the count() for each component on the board
+    // Calls count() for each component on the board
     public void updateStats() {
         // Set all stats to zero
         cannons = 0.0;
@@ -183,6 +188,14 @@ public class Ship {
         this.normalGoods = normalGoods;
     }
 
+    public int getChargingBatteries() {
+        return chargingBatteries;
+    }
+
+    public void setChargingBatteries(int chargingBatteries) {
+        this.chargingBatteries = chargingBatteries;
+    }
+
     public int getLostComponents() {
         return lostComponents;
     }
@@ -190,11 +203,6 @@ public class Ship {
     public void setLostComponents(int lostComponents) {
         this.lostComponents = lostComponents;
     }
-
-    public int getSpecialGoodsCapacity(){ return specialGoodsCapacity; }
-    public int getNormalGoodsCapacity(){ return normalGoodsCapacity; }
-    public void setSpecialGoodsCapacity(int specialGoodsCapacity){ this.specialGoodsCapacity = specialGoodsCapacity; }
-    public void setNormalGoodsCapacity(int normalGoodsCapacity) { this.normalGoodsCapacity = normalGoodsCapacity; }
 
     /**
      * Adds resources to the ship's cargo holds, following these rules:

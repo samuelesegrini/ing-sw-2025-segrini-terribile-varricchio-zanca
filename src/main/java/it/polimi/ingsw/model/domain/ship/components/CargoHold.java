@@ -13,7 +13,7 @@ public class CargoHold extends Component {
     @Override
     public void accept(ComponentVisitor v) {
         Map<GoodType, Integer> goods = null;
-        v.useCargoHold(this, goods);
+        v.useCargoHold(super.ship, this, goods);
     }
 
     @Override
@@ -58,23 +58,23 @@ public class CargoHold extends Component {
     }
 
 
-    public void storeGood(GoodType type) {
-        if (occupiedCapacity < capacity) {
-            storedGoods.put(type, storedGoods.get(type) + 1);
-            occupiedCapacity++;
+    public void storeGoodsOfType(GoodType type, int quantity) {
+        if (occupiedCapacity + quantity <= capacity) {
+            storedGoods.put(type, storedGoods.get(type) + quantity);
+            occupiedCapacity += quantity;
         }
         else {
             System.out.println("Not enough free capacity");
         }
     }
 
-    public void removeGood(GoodType type) {
-        if (storedGoods.get(type) > 0) {
-            storedGoods.put(type, storedGoods.get(type) - 1);
-            occupiedCapacity--;
+    public void removeGoodsOfType(GoodType type, int quantity) {
+        if (storedGoods.get(type) - quantity >= 0) {
+            storedGoods.put(type, storedGoods.get(type) - quantity);
+            occupiedCapacity -= quantity;
         }
         else {
-            System.out.println("There is no good of this type");
+            System.out.println("Not enough goods of this type");
         }
     }
 }

@@ -2,25 +2,29 @@ package it.polimi.ingsw.model.domain.ship.components;
 
 import it.polimi.ingsw.model.domain.ship.Ship;
 import it.polimi.ingsw.model.domain.ship.Position;
+import it.polimi.ingsw.model.enums.ship.ComponentType;
 import it.polimi.ingsw.model.enums.ship.ConnectorType;
 import it.polimi.ingsw.model.enums.ship.Direction;
 
 public class Cannon extends Component {
-    private boolean isDouble;
+    private boolean charged;
 
     @Override
     public void accept(ComponentVisitor v) {
-        v.useCannon(this);
+        v.useCannon(super.ship, this);
     }
 
     @Override
     public void count(Ship s) {
         int power;
-        // Chi verifica che venga usata una batteria?
-        if (isDouble) {
+
+        if (super.getType() == ComponentType.CANNON_DOUBLE && charged) {
             power = 2;
-        } else {
+        } else if (super.getType() == ComponentType.CANNON_SINGLE) {
             power = 1;
+        }
+        else {
+            power = 0;
         }
 
         s.setCannons(s.getCannons() + power);
@@ -53,11 +57,11 @@ public class Cannon extends Component {
     }
 
 
-    public boolean isDouble() {
-        return isDouble;
+    public boolean isCharged() {
+        return charged;
     }
 
-    public void setDouble(boolean isDouble) {
-        this.isDouble = isDouble;
+    public void setCharged(boolean charged) {
+        this.charged = charged;
     }
 }

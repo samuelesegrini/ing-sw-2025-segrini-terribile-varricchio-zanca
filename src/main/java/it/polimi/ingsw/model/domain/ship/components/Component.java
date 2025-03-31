@@ -13,6 +13,7 @@ public abstract class Component {
     protected Direction direction;
     protected Position position;
     protected Map<Direction, ConnectorType> connectors;
+    protected Ship ship;
 
 
     public ComponentType getType() {
