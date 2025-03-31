@@ -49,8 +49,8 @@ public class CombatCheck {
                 //il giocatore più in vantaggio paga la penalità in caso di pareggio
                 // faccio il confronto con minore stretto e copro anche il caso di pareggio
                 // ( in playersOrdered i giocatori sono ordinati dal primo all'ultimo )
-                if (player.getTotalCrewMember() < count) {
-                    count = player.getTotalCrewMember();
+                if (player.getShip().getCrew() < count) {
+                    count = player.getShip().getCrew();
                     combatLoser = player;
                 }
             }

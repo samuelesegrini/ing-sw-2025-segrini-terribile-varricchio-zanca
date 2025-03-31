@@ -49,7 +49,8 @@ public class GameModel {
         if (playerCount < 2 || playerCount > 4) {
             throw new IllegalArgumentException("Player count must be between 2 and 4");
         }
-        
+
+        this.flightBoard = new FlightBoard(level);
         this.gameId = UUID.randomUUID().toString();
         this.level = level;
         this.configManager = configManager;

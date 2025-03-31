@@ -80,10 +80,6 @@ public class Player {
         this.color = color;
     }
 
-    public int getCredits() {
-        return this.credits;
-    }
-
     public Ship getShip() {
         return this.ship;
     }
@@ -95,6 +91,9 @@ public class Player {
         this.ship = ship;
     }
 
+    public int getCredits() {
+        return this.credits;
+    }
     /**
      * Adds the specified credits to the player's total.
      *
@@ -122,71 +121,6 @@ public class Player {
             throw new IllegalArgumentException("Cannot subtract more credits than available");
         }
         this.credits -= credits;
-    }
-
-    /**
-     * Returns the number of the player's crew members
-     *
-     * @return number of the crew members
-     */
-    public int getTotalCrewMember() {
-        return this.crewMembers;
-    }
-
-    /**
-     * Updates the total number of crew members
-     * 
-     * @param crewMembers number of crew members to add/subtract
-     * @param penalty true if subtracting members, false if adding
-     * @throws IllegalArgumentException if resulting crew members would be negative
-     */
-    public void updateCrewMember(int crewMembers, boolean penalty) {
-        int newTotal = penalty ? this.crewMembers - crewMembers : this.crewMembers + crewMembers;
-        if (newTotal < 0) {
-            throw new IllegalArgumentException("Total crew members cannot be negative");
-        }
-        this.crewMembers = newTotal;
-    }
-
-    /**
-     * Updates the number of crew members of a specific type.
-     *
-     * @param type type of the crew members
-     * @param members number of crew members to add
-     * @throws IllegalArgumentException if type is null or members is negative
-     * @return the new total of crew members of that type
-     */
-    public int addCrewMember(CrewType type, int members) {
-        if (type == null) {
-            throw new IllegalArgumentException("CrewType cannot be null");
-        }
-        if (members < 0) {
-            throw new IllegalArgumentException("Members to add cannot be negative");
-        }
-        int newTotal = crew.getOrDefault(type, 0) + members;
-        crew.put(type, newTotal);
-        return newTotal;
-    }
-
-    /**
-     * Subtracts crew members of a specific type
-     * 
-     * @param type type of the crew members
-     * @param members number of crew members to subtract
-     * @throws IllegalArgumentException if type is null, members is negative, or would result in negative crew
-     */
-    public void subtractCrewMember(CrewType type, int members) {
-        if (type == null) {
-            throw new IllegalArgumentException("CrewType cannot be null");
-        }
-        if (members < 0) {
-            throw new IllegalArgumentException("Members to subtract cannot be negative");
-        }
-        int currentMembers = crew.getOrDefault(type, 0);
-        if (members > currentMembers) {
-            throw new IllegalArgumentException("Cannot subtract more crew members than available");
-        }
-        crew.put(type, currentMembers - members);
     }
 
     @Override

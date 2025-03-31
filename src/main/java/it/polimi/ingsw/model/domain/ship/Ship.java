@@ -36,9 +36,7 @@ public class Ship {
     private int lostComponents;
 
 
-    public Ship(Player player) {
-        this.player = player;
-    }
+    public Ship(Player player) { this.player = player; }
 
 
     /**
@@ -193,6 +191,10 @@ public class Ship {
         this.lostComponents = lostComponents;
     }
 
+    public int getSpecialGoodsCapacity(){ return specialGoodsCapacity; }
+    public int getNormalGoodsCapacity(){ return normalGoodsCapacity; }
+    public void setSpecialGoodsCapacity(int specialGoodsCapacity){ this.specialGoodsCapacity = specialGoodsCapacity; }
+    public void setNormalGoodsCapacity(int normalGoodsCapacity) { this.normalGoodsCapacity = normalGoodsCapacity; }
 
     /**
      * Adds resources to the ship's cargo holds, following these rules:

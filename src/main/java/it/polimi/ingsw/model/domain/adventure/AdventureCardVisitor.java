@@ -49,7 +49,7 @@ public class AdventureCardVisitor {
             if ((!card.isVisited()) && (player.getShip().getCrew() >= card.getCrewLost())) {
                 flightBoard.movePlayer(player, card.getLostDays(), false);
                 player.addCredits(card.getCreditsGained());
-                player.updateCrewMember(card.getCrewLost(), true);
+                player.getShip().setCrew(player.getShip().getCrew() - card.getCrewLost());
 
                 card.setVisited();
                 System.out.println(player.getId().getNickname() + " has repaired the ship and sold it to part of their crew. ");
@@ -172,7 +172,7 @@ public class AdventureCardVisitor {
      *
      * @param card The planets card to process
      * @param state Current game state
-     * @return Result of processing the card
+     * @return Returns {code @true} f at least one player has landed on a planet, {code @false} otherwise.
      */
     public boolean visitPlanetsCard(PlanetsCard card, GameModel state){
         System.out.println("Resolving planet: " + card.getType());
@@ -191,7 +191,12 @@ public class AdventureCardVisitor {
                 }
             }
         }
-        return true;
+        for(Planet planet : card.getPlanets()){
+            if(planet.isVisited()){
+                return true;
+            }
+        }
+        return false;
     }
     
     /**
@@ -261,7 +266,7 @@ public class AdventureCardVisitor {
                 continue;
             }
             else if(player.getShip().getCannons() < card.getPowerLevel()){
-                player.updateCrewMember(card.getCrewLossAmount(), true);
+                player.getShip().setCrew(player.getShip().getCrew()- card.getCrewLossAmount());
             }
             else if(player.getShip().getCannons() > card.getPowerLevel()){
                 card.setDefeated();
@@ -346,8 +351,8 @@ public class AdventureCardVisitor {
             PenaltyType penalty = check.getPenaltyType();
             switch (penalty){
                 case CREW_LOSS:
-                    combatLoser.updateCrewMember(check.getPenaltyValue(), true);
-                    if(combatLoser.getTotalCrewMember() >= 0){
+                    combatLoser.getShip().setCrew(combatLoser.getShip().getCrew() - check.getPenaltyValue());
+                    if(combatLoser.getShip().getCrew() >= 0){
                         flightBoard.abandonPlayer(combatLoser); //controllo che andrebbe fatto direttamente in updateCrew
                     }
                 case FLIGHT_DAYS_LOSS:
