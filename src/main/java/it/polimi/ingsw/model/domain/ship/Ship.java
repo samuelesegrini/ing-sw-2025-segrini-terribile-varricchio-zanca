@@ -2,6 +2,7 @@ package it.polimi.ingsw.model.domain.ship;
 
 import it.polimi.ingsw.model.domain.player.Player;
 import it.polimi.ingsw.model.domain.ship.components.Component;
+import it.polimi.ingsw.model.enums.GameLevel;
 import it.polimi.ingsw.model.enums.resource.GoodType;
 import it.polimi.ingsw.model.enums.ship.ComponentType;
 
@@ -10,14 +11,16 @@ import it.polimi.ingsw.model.domain.ship.components.Shield;
 import it.polimi.ingsw.model.enums.ship.ConnectorType;
 import it.polimi.ingsw.model.enums.ship.Direction;
 
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.Map;
 
 public class Ship {
-    private Player player;
+    private final Player player;
 
     private Component[][] board;
-    private static Set<Position> forbiddenPositions;
+    private Set<Position> forbiddenPositions;
 
     private Set<Component> reservedComponents;
 
@@ -39,8 +42,37 @@ public class Ship {
     private int lostComponents;
 
 
-    public Ship(Player player) {
+    public Ship(Player player, GameLevel level) {
         this.player = player;
+        board = new Component[5][7];
+        reservedComponents = new HashSet<>();
+        resources = new HashMap<>() {{
+            put(GoodType.RED, 0);
+            put(GoodType.BLUE, 0);
+            put(GoodType.GREEN, 0);
+            put(GoodType.YELLOW, 0);
+        }};
+
+        if (level == GameLevel.TEST_FLIGHT) {
+            forbiddenPositions = new HashSet<>() {{
+                add(new Position(0, 0)); add(new Position(0, 1)); add(new Position(0, 2));
+                add(new Position(0, 4)); add(new Position(0, 5)); add(new Position(0, 6));
+                add(new Position(1, 0)); add(new Position(1, 1));
+                add(new Position(1, 5)); add(new Position(1, 6));
+                add(new Position(2, 0)); add(new Position(2, 6));
+                add(new Position(3, 0)); add(new Position(3, 6));
+                add(new Position(4, 0)); add(new Position(4, 3)); add(new Position(4, 6));
+            }};
+        }
+        else if (level == GameLevel.LEVEL_II) {
+            forbiddenPositions = new HashSet<>() {{
+                add(new Position(0, 0)); add(new Position(0, 1));
+                add(new Position(0, 3));
+                add(new Position(0, 5)); add(new Position(0, 6));
+                add(new Position(1, 0)); add(new Position(1, 6));
+                add(new Position(4, 3));
+            }};
+        }
     }
 
 
