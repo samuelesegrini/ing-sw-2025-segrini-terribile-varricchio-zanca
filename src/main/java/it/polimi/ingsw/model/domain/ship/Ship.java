@@ -20,7 +20,7 @@ public class Ship {
     private final Player player;
 
     private Component[][] board;
-    private Set<Position> forbiddenPositions;
+    public Set<Position> forbiddenPositions;
 
     private Set<Component> reservedComponents;
 
@@ -82,18 +82,18 @@ public class Ship {
      * @param position  The position on the grid where the component should be placed.
      */
     public void addComponent(Component component, Position position) {
-        int x = position.getX();
-        int y = position.getY();
+        int row = position.getRow();
+        int col = position.getCol();
 
         // Checks if position is illegal, otherwise adds Component and updates its position attribute
         if (forbiddenPositions.contains(position)) {
             throw new IllegalArgumentException("Forbidden position");
         }
-        else if (board[y][x] != null) {
+        else if (board[row][col] != null) {
             throw new IllegalArgumentException("Occupied position");
         }
         else {
-            board[y][x] = component;
+            board[row][col] = component;
             component.setPosition(position);
         }
 
@@ -104,19 +104,19 @@ public class Ship {
      * @param position The position on the grid from which the component should be removed.
      */
     public void removeComponent(Position position) {
-        int x = position.getX();
-        int y = position.getY();
+        int row = position.getRow();
+        int col = position.getCol();
 
         // Checks if position is illegal or empty, otherwise removes Component and updates its position attribute
         if (forbiddenPositions.contains(position)) {
             throw new IllegalArgumentException("Forbidden position");
         }
-        else if (board[y][x] == null) {
+        else if (board[row][col] == null) {
             throw new IllegalArgumentException("Empty position");
         }
         else {
-            board[y][x].setPosition(null);    // Spostare il component in lista dei "rifiuti"?
-            board[y][x] = null;
+            board[row][col].setPosition(null);    // Spostare il component in lista dei "rifiuti"?
+            board[row][col] = null;
         }
     }
 
@@ -420,8 +420,6 @@ public class Ship {
      * @return A map containing the position and the component that is hit, or an empty map if no component is found.
      */
     public Position findFirstComponent(Direction direction, int fixedIndex) {
-        Position result = null;
-
         switch (direction) {
             // For a shot from the top, fixedIndex is the column.
             // Iterate rows from top (0) to bottom.
@@ -540,8 +538,8 @@ public class Ship {
                     for(Direction direction : Direction.values()) {
                         Position position = new Position(row, col);
                         Position offset = position.offsetBy(direction);
-                        if((board[offset.getX()][offset.getY()] == null) &&
-                                (board[position.getX()][position.getY()].getConnectorAt(direction) != ConnectorType.PLAIN)){
+                        if((board[offset.getRow()][offset.getCol()] == null) &&
+                                (board[position.getRow()][position.getCol()].getConnectorAt(direction) != ConnectorType.PLAIN)){
                             counter++;
                         }
                     }
@@ -564,13 +562,13 @@ public class Ship {
         boolean[][] visited = new boolean[board.length][board[0].length];
         int totalCabins = 0;
 
-        for (int x = 0; x < board.length; x++) {
-            for (int y = 0; y < board[x].length; y++) {
-                Position pos = new Position(x, y);
-                Component component = board[x][y];
+        for (int row = 0; row < board.length; row++) {
+            for (int col = 0; col < board[row].length; col++) {
+                Position pos = new Position(row, col);
+                Component component = board[row][col];
 
                 // Controlla solo celle non visitate e di tipo CABIN/CABIN_START
-                if (!visited[x][y] && (component.getType() == ComponentType.CABIN || component.getType() == ComponentType.CABIN_START)) {
+                if (!visited[row][col] && (component.getType() == ComponentType.CABIN || component.getType() == ComponentType.CABIN_START)) {
                     totalCabins += checkAdjacentCabin(pos, board, visited);
                 }
             }
@@ -589,32 +587,32 @@ public class Ship {
      *
      */
     private int checkAdjacentCabin(Position position, Component[][] board, boolean[][] visited) {
-        int x = position.getX();
-        int y = position.getY();
+        int row = position.getRow();
+        int col = position.getCol();
 
         // Controllo dei limiti o già visitato
-        if (x < 0 || x >= board.length || y < 0 || y >= board[0].length || visited[x][y]) {
+        if (row < 0 || row >= board.length || col < 0 || col >= board[0].length || visited[row][col]) {
             return 0;
         }
 
-        Component current = board[x][y];
+        Component current = board[row][col];
         if (current.getType() != ComponentType.CABIN && current.getType() != ComponentType.CABIN_START) {
             return 0;
         }
 
-        visited[x][y] = true; // Segna come visitato
+        visited[row][col] = true; // Segna come visitato
         int count = 1; // Conta questa cabina
 
         for (Direction direction : Direction.values()) {
             Position neighbor = position.offsetBy(direction);
-            int xn = neighbor.getX();
-            int yn = neighbor.getY();
+            int rown = neighbor.getRow();
+            int coln = neighbor.getCol();
 
-            if (xn < 0 || xn >= board.length || yn < 0 || yn >= board[0].length) {
+            if (rown < 0 || rown >= board.length || coln < 0 || coln >= board[0].length) {
                 continue;
             }
 
-            Component neighborCell = board[xn][yn];
+            Component neighborCell = board[rown][coln];
             if (neighborCell == null) {
                 continue;
             }
