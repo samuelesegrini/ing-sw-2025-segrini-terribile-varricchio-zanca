@@ -83,7 +83,7 @@ public class AdventureCardVisitor {
 
             for(Player player : playersOrdered){
                 Position impactPosition = player.getShip().findFirstComponent(meteor.getApproach(), index);
-                Component impactComponent = player.getShip().getBoard()[impactPosition.getX()][impactPosition.getY()];
+                Component impactComponent = player.getShip().getBoard()[impactPosition.getRow()][impactPosition.getCol()];
 
                 if(meteor.getShotIntensity() == ShotIntensity.LIGHT){
                     if(impactComponent.getConnectorAt(meteor.getApproach())== ConnectorType.PLAIN){
@@ -150,7 +150,7 @@ public class AdventureCardVisitor {
                     int index = index1 + index2;
 
                     Position impactPosition = player.getShip().findFirstComponent(cannonFire.getApproach(), index);
-                    Component impactComponent = player.getShip().getBoard()[impactPosition.getX()][impactPosition.getY()];
+                    Component impactComponent = player.getShip().getBoard()[impactPosition.getRow()][impactPosition.getCol()];
 
                     if(cannonFire.isBlockable() && player.getShip().protectedByShield(cannonFire.getApproach())){
                         System.out.println(player.getId().getNickname()+ " has activated a shield against cannon fire number "
@@ -370,7 +370,7 @@ public class AdventureCardVisitor {
                         int index = index1 + index2;
 
                         Position impactPosition = combatLoser.getShip().findFirstComponent(cannonFire.getApproach(), index);
-                        Component impactComponent = combatLoser.getShip().getBoard()[impactPosition.getX()][impactPosition.getY()];
+                        Component impactComponent = combatLoser.getShip().getBoard()[impactPosition.getRow()][impactPosition.getCol()];
 
                         if(cannonFire.isBlockable() && combatLoser.getShip().protectedByShield(cannonFire.getApproach())) {
                             System.out.println(combatLoser.getId().getNickname()+ " has activated a shield against cannon fire number "

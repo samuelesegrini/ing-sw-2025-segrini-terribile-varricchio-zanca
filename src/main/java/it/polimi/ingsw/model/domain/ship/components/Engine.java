@@ -46,19 +46,19 @@ public class Engine extends Component {
 
         for (Direction d : Direction.values()) {
             Position neighbor = this.getPosition().offsetBy(d);
-            int x = neighbor.getX();
-            int y = neighbor.getY();
+            int row = neighbor.getRow();
+            int col = neighbor.getCol();
 
-            if (board[x][y] != null && board[x][y].getConnectorAt(d.getOpposite()) != ConnectorType.PLAIN) {
+            if (board[row][col] != null && board[row][col].getConnectorAt(d.getOpposite()) != ConnectorType.PLAIN) {
                 result = true;
             }
         }
 
         Direction exhaust = direction.getOpposite();
-        int x = position.offsetBy(exhaust).getX();
-        int y = position.offsetBy(exhaust).getY();
+        int row = position.offsetBy(exhaust).getRow();
+        int col = position.offsetBy(exhaust).getCol();
 
-        if (board[x][y] != null) {
+        if (board[row][col] != null) {
             result = false;    // Exhaust pipe is blocked
         }
 

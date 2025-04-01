@@ -88,12 +88,12 @@ public abstract class Component {
 
         for (Direction d : Direction.values()) {
             Position neighbor = this.getPosition().offsetBy(d);
-            int x = neighbor.getX();
-            int y = neighbor.getY();
+            int row = neighbor.getRow();
+            int col = neighbor.getCol();
 
             // Checks if there's a component nearby and if they're connected (assumes the connection is legal)
-            if (x >= 0 && x < board.length && y >= 0 && y < board[0].length) {
-                if (board[x][y] != null && board[x][y].getConnectorAt(d.getOpposite()) != ConnectorType.PLAIN) {
+            if (row >= 0 && row < board.length && col >= 0 && col < board[0].length) {
+                if (board[row][col] != null && board[row][col].getConnectorAt(d.getOpposite()) != ConnectorType.PLAIN) {
                     return true;
                 }
             }

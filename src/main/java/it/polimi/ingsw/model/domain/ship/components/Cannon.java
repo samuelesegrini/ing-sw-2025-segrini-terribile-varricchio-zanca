@@ -46,21 +46,21 @@ public class Cannon extends Component {
 
         for (Direction d : Direction.values()) {
             Position neighbor = this.getPosition().offsetBy(d);
-            int x = neighbor.getX();
-            int y = neighbor.getY();
+            int row = neighbor.getRow();
+            int col = neighbor.getCol();
 
-            if (x >= 0 && x < board.length && y >= 0 && y < board[0].length) {
-                if (board[x][y] != null && board[x][y].getConnectorAt(d.getOpposite()) != ConnectorType.PLAIN) {
+            if (row >= 0 && row < board.length && col >= 0 && col < board[0].length) {
+                if (board[row][col] != null && board[row][col].getConnectorAt(d.getOpposite()) != ConnectorType.PLAIN) {
                     result = true;
                 }
             }
         }
 
         Direction barrel = direction;
-        int x = position.offsetBy(barrel).getX();
-        int y = position.offsetBy(barrel).getY();
+        int row = position.offsetBy(barrel).getRow();
+        int col = position.offsetBy(barrel).getCol();
 
-        if (board[x][y] != null) {
+        if (board[row][col] != null) {
             result = false;    // Barrel is blocked
         }
 
