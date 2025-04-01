@@ -10,8 +10,8 @@ public class Position {
 
     /**
      * Constructor defined by user.
-     * @param x Horizontal coordinate.
-     * @param y Vertical coordinate.
+     * @param x row coordinate.
+     * @param y column coordinate.
      */
     public Position(int x, int y) {
         this.x = x;
@@ -19,7 +19,7 @@ public class Position {
     }
 
     /**
-     * Returns the horizontal coordinate.
+     * Returns the vertical (row) coordinate.
      * @return The x-coordinate.
      */
     public int getX() {
@@ -27,7 +27,7 @@ public class Position {
     }
 
     /**
-     * Returns the vertical coordinate.
+     * Returns the horizontal (column) coordinate.
      * @return The y-coordinate.
      */
     public int getY() {
@@ -35,10 +35,26 @@ public class Position {
     }
 
     /**
-     * Returns a new Position offset by the specified direction.
-     * @param direction The direction to offset the position.
-     * @return A new Position with the offset applied.
-     * @throws IllegalArgumentException If the direction is {@code null}.
+     * Returns a new Position that is offset from the current position in the specified direction.
+     *
+     * In our coordinate system:
+     * - The origin (0,0) is in the top-left corner of the board
+     * - The x-coordinate represents rows and increases as we move down
+     * - The y-coordinate represents columns and increases as we move right
+     *
+     * This implementation follows standard 2D array indexing in Java where:
+     * - The first index [x] represents the row (vertical position)
+     * - The second index [y] represents the column (horizontal position)
+     *
+     * Therefore:
+     * - UP decreases the row index (x-1)
+     * - DOWN increases the row index (x+1)
+     * - LEFT decreases the column index (y-1)
+     * - RIGHT increases the column index (y+1)
+     *
+     * @param direction the direction to offset in (UP, DOWN, LEFT, or RIGHT)
+     * @return a new Position that is one unit away from the current position in the specified direction
+     * @throws IllegalArgumentException if the direction is null
      */
     public Position offsetBy(Direction direction) throws IllegalArgumentException {
         if (direction == null) {
@@ -46,10 +62,10 @@ public class Position {
         }
 
         return switch (direction) {
-            case UP -> new Position(x, y + 1);
-            case DOWN -> new Position(x, y - 1);
-            case LEFT -> new Position(x - 1, y);
-            case RIGHT -> new Position(x + 1, y);
+            case UP -> new Position(x - 1, y);
+            case DOWN -> new Position(x + 1, y);
+            case LEFT -> new Position(x, y - 1);
+            case RIGHT -> new Position(x, y + 1);
         };
     }
 
