@@ -265,6 +265,10 @@ public class AdventureCardVisitor {
             if(player.getShip().getCannons() == card.getPowerLevel()){
                 continue;
             }
+            if(player.getShip().getCannons() > card.getPowerLevel()){
+                player.addCredits(card.getCreditReward());
+                flightBoard.movePlayer(player, card.getMovementPenalty(), false);
+            }
             else if(player.getShip().getCannons() < card.getPowerLevel()){
                 player.getShip().setCrew(player.getShip().getCrew()- card.getCrewLossAmount());
             }
@@ -301,17 +305,17 @@ public class AdventureCardVisitor {
             if(powerLevel == cannonStrength){
                 continue;
             }
-            else if(powerLevel < cannonStrength){
-                if(!(player.getShip().removeValuableResources(card.getGoodsLostIfDefeated()))){
-                    throw new IllegalArgumentException("Not enough resources available!");
-                }
-            }
-            else if (powerLevel > cannonStrength){
+            else if (powerLevel < cannonStrength){
                 card.setDefeated();
                 //The player CAN claim the reward losing flying days
                 player.getShip().addResources(card.getAvailableGoods());
                 flightBoard.movePlayer(player, card.getMovementPenalty(), false);
                 break;
+            }
+            else if(powerLevel > cannonStrength){
+                if(!(player.getShip().removeValuableResources(card.getGoodsLostIfDefeated()))){
+                    throw new IllegalArgumentException("Not enough resources available!");
+                }
             }
         }
         if (card.isDefeated()){
@@ -400,7 +404,7 @@ public class AdventureCardVisitor {
         for(Player player : playersOrdered ) {
             Ship ship = player.getShip();
             Component[][] board = player.getShip().getBoard();
-            connectedCabin = ship.countAllConnectedCabins(board);
+            connectedCabin = ship.countAllAdjacentCabins(board);
             int crewUpdated = ship.getCrew() - connectedCabin;
             ship.setCrew(crewUpdated);
         }
