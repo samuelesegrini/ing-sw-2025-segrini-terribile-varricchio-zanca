@@ -40,23 +40,23 @@ class AdventureDeckTest {
 
         uncoveredPiles = Arrays.asList(
                 Arrays.asList(
-                        new EpidemicCard("A1", CardLevel.LEVEL_II, "Prima carta", AdventureType.EPIDEMIC),
-                        new EpidemicCard("A2", CardLevel.LEVEL_II, "Seconda carta", AdventureType.EPIDEMIC)
+                        new EpidemicCard("A1", CardLevel.LEVEL_II, "Prima carta"),
+                        new EpidemicCard("A2", CardLevel.LEVEL_II, "Seconda carta")
                 ),
                 Arrays.asList(
-                        new EpidemicCard("B1", CardLevel.LEVEL_II, "Prima carta", AdventureType.EPIDEMIC),
-                        new EpidemicCard("B2", CardLevel.LEVEL_II, "Seconda carta", AdventureType.EPIDEMIC)
+                        new EpidemicCard("B1", CardLevel.LEVEL_II, "Prima carta"),
+                        new EpidemicCard("B2", CardLevel.LEVEL_II, "Seconda carta")
                 ),
                 Arrays.asList(
-                        new EpidemicCard("C1", CardLevel.LEVEL_II, "Prima carta", AdventureType.EPIDEMIC),
-                        new EpidemicCard("C2", CardLevel.LEVEL_II, "Seconda carta", AdventureType.EPIDEMIC)
+                        new EpidemicCard("C1", CardLevel.LEVEL_II, "Prima carta"),
+                        new EpidemicCard("C2", CardLevel.LEVEL_II, "Seconda carta")
                 )
 
         );
 
         coveredPile = Arrays.asList(
-            new EpidemicCard("D1", CardLevel.LEVEL_II, "Carta coperta 1", AdventureType.EPIDEMIC),
-                new EpidemicCard("D2", CardLevel.LEVEL_II, "Carta coperta 2", AdventureType.EPIDEMIC)
+            new EpidemicCard("D1", CardLevel.LEVEL_II, "Carta coperta 1"),
+                new EpidemicCard("D2", CardLevel.LEVEL_II, "Carta coperta 2")
         );
 
         adventureDeck = new AdventureDeck(GameLevel.LEVEL_II, uncoveredPiles, coveredPile);
