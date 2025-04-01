@@ -16,11 +16,10 @@ public class EpidemicCard extends AdventureCard {
      *
      * @param id The unique identifier for the Epidemic card.
      * @param level The card's level.
-     * @param description A brief description of the Epidemic card effects and consequences.
-     * @param type The type of adventure associated with this Epidemic event card.
+     * @param description A brief description of the Epidemic card effects and consequences..
      */
-    public EpidemicCard(String id, CardLevel level, String description, AdventureType type) {
-        super(id, level, description, type);
+    public EpidemicCard(String id, CardLevel level, String description) {
+        super(id, level, description, AdventureType.EPIDEMIC);
     }
 
     /**

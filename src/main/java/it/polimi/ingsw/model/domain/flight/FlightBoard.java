@@ -175,7 +175,7 @@ public class FlightBoard {
         playerDataMap.get(player).setStatus(FlightStatus.ABANDONED);
         playerCount--;
         currentOrder.remove(player);
-        playerDataMap.remove(player);
+        //playerDataMap.remove(player);
     }
 
     /**

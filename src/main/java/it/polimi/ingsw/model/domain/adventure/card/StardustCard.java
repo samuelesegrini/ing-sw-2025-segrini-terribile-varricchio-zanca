@@ -19,7 +19,7 @@ public class StardustCard extends AdventureCard {
      * @param level The level of the card.
      * @param description A description explaining the event and its effects on the player's actions.
      */
-    public StardustCard(String id, CardLevel level, String description, AdventureType type ) {
+    public StardustCard(String id, CardLevel level, String description) {
         super(id, level, description, AdventureType.STARDUST);
     }
 
@@ -30,7 +30,7 @@ public class StardustCard extends AdventureCard {
      * @param state The current game state.
      * @return The result of the visitor's action on the StardustCard.
      */
-    private boolean accept(AdventureCardVisitor visitor, GameModel state){
+    public boolean accept(AdventureCardVisitor visitor, GameModel state){
         return visitor.visitStardustCard(this, state);
     }
 }

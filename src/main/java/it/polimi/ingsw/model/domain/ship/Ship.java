@@ -554,13 +554,13 @@ public class Ship {
      * Counts all connected cabins in the ship's grid, ensuring that each group of connected cabins
      * is counted exactly once.
      *
-     * @param board The 2D grid of ship components
      * @return The total number of connected cabins across all groups
      *
      */
-    public int countAllConnectedCabins(Component[][] board) {
+    public int countAllAdjacentCabins() {
         boolean[][] visited = new boolean[board.length][board[0].length];
-        int totalCabins = 0;
+        int cabins = 0;
+        int totCabins = 0;
 
         for (int row = 0; row < board.length; row++) {
             for (int col = 0; col < board[row].length; col++) {
@@ -568,12 +568,15 @@ public class Ship {
                 Component component = board[row][col];
 
                 // Controlla solo celle non visitate e di tipo CABIN/CABIN_START
-                if (!visited[row][col] && (component.getType() == ComponentType.CABIN || component.getType() == ComponentType.CABIN_START)) {
-                    totalCabins += checkAdjacentCabin(pos, board, visited);
+                if (component != null && !visited[row][col] && (component.getType() == ComponentType.CABIN || component.getType() == ComponentType.CABIN_START)) {
+                    cabins = checkAdjacentCabin(pos, board, visited);
+                    if(cabins>=2){
+                        totCabins += cabins;
+                    }
                 }
             }
         }
-        return totalCabins;
+        return totCabins;
     }
 
     /**

@@ -10,7 +10,15 @@ import it.polimi.ingsw.model.enums.adventure.AdventureType;
 import it.polimi.ingsw.model.enums.adventure.CardLevel;
 import it.polimi.ingsw.model.enums.resource.GoodType;
 
-public class SmugglersCard extends EnemyCard {
+/**
+ * Represents a Smugglers Card, where players face enemy ships in order.
+ *
+ * - Win: If the player's cannon strength exceeds the Smugglers' power, they gain goods but lose flight days.
+ * - Lose: If weaker, they lose valuable goods.
+ * - Tie: Nothing happens, and the next player is attacked.
+ * - Once defeated, the Smugglers do not attack further players.
+ */
+ public class SmugglersCard extends EnemyCard {
 
     private Map<GoodType, Integer> availableGoods;
     private int goodsLostIfDefeated;

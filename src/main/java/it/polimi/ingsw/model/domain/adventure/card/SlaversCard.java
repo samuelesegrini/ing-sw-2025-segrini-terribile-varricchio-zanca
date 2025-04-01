@@ -6,7 +6,20 @@ import it.polimi.ingsw.model.domain.general.GameModel;
 import it.polimi.ingsw.model.enums.adventure.AdventureType;
 import it.polimi.ingsw.model.enums.adventure.CardLevel;
 
-public class SlaversCard extends EnemyCard {
+/**
+ * Represents a Slavers Card in the game.
+ *
+ * During the flight, players may encounter Slavers. If they defeat them:
+ * - They gain cosmic credits instead of goods.
+ * - Their ship moves back the indicated number of empty spaces.
+ * - Alternatively, they can refuse the credits and remain in place.
+ * - Once defeated, no other player can claim the reward.
+ *
+ * If the player loses to the Slavers:
+ * - They must surrender part of their crew (humans or aliens) in exchange for their freedom.
+ *
+ */
+ public class SlaversCard extends EnemyCard {
     private int creditReward;
     private int crewLossAmount;
 
