@@ -46,7 +46,7 @@ public class AdventureCardVisitor {
         List<Player> playersOrdered = flightBoard.getCurrentOrder();
 
         for(Player player : playersOrdered ) {
-            if ((!card.isVisited()) && (player.getShip().getCrew() >= card.getCrewLost())) {
+            if ((!card.isVisited()) && (player.getShip().getCrew() > card.getCrewLost())) {
                 flightBoard.movePlayer(player, card.getLostDays(), false);
                 player.addCredits(card.getCreditsGained());
                 player.getShip().setCrew(player.getShip().getCrew() - card.getCrewLost());
@@ -265,10 +265,6 @@ public class AdventureCardVisitor {
             if(player.getShip().getCannons() == card.getPowerLevel()){
                 continue;
             }
-            if(player.getShip().getCannons() > card.getPowerLevel()){
-                player.addCredits(card.getCreditReward());
-                flightBoard.movePlayer(player, card.getMovementPenalty(), false);
-            }
             else if(player.getShip().getCannons() < card.getPowerLevel()){
                 player.getShip().setCrew(player.getShip().getCrew()- card.getCrewLossAmount());
             }
@@ -399,17 +395,14 @@ public class AdventureCardVisitor {
 
         FlightBoard flightBoard = state.getFlightBoard();
         List<Player> playersOrdered = flightBoard.getCurrentOrder();
-        int connectedCabin = 0;
 
         for(Player player : playersOrdered ) {
+            int connectedCabin = 0;
             Ship ship = player.getShip();
             Component[][] board = player.getShip().getBoard();
-            connectedCabin = ship.countAllAdjacentCabins(board);
+            connectedCabin = ship.countAllAdjacentCabins();
             int crewUpdated = ship.getCrew() - connectedCabin;
             ship.setCrew(crewUpdated);
-        }
-        if(connectedCabin == 0){
-            return false;
         }
         return true;
     }

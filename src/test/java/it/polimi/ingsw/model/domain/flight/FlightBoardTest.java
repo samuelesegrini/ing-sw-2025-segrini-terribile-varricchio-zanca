@@ -67,6 +67,9 @@ class FlightBoardTest {
     @Test
     void testStartingPositionsForTestFlight() {
         // Verifica che le posizioni di partenza siano corrette per TEST_FLIGHT
+        gameLevel = GameLevel.TEST_FLIGHT;
+        flightBoard = new FlightBoard(gameLevel);
+
         if (gameLevel == GameLevel.TEST_FLIGHT) {
             List<Integer> expectedStartingPositions = Arrays.asList(0, 1, 2, 4);
             List<Integer> actualStartingPositions = flightBoard.getRoute().getStartingPositions();
@@ -111,14 +114,8 @@ class FlightBoardTest {
 
     @Test
     void testPlayerOrder() {
-        Player player1 = new Player(new PlayerId(UUID.randomUUID(), "Player1"));
-        Player player2 = new Player(new PlayerId(UUID.randomUUID(), "Player2"));
-
-        flightBoard.registerPlayer(player1);
-        flightBoard.registerPlayer(player2);
-
         // Verifica che i giocatori siano nell'ordine corretto
-        assertEquals(2, flightBoard.getCurrentOrder().size(), "Dovrebbero esserci due giocatori registrati.");
+        assertEquals(3, flightBoard.getCurrentOrder().size(), "Dovrebbero esserci due giocatori registrati.");
         assertEquals(player1, flightBoard.getCurrentOrder().get(0), "Il primo giocatore nell'ordine dovrebbe essere Player1.");
         assertEquals(player2, flightBoard.getCurrentOrder().get(1), "Il secondo giocatore nell'ordine dovrebbe essere Player2.");
     }

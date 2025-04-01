@@ -77,6 +77,8 @@ class AdventureCardVisitorTest {
 
     @Test
     void testVisitAbandonedShipCard_PlayerWithoutEnoughCrew_CannotRepair() {
+        player1.getShip().setCrew(3);
+        player2.getShip().setCrew(5);
         AbandonedShipCard card = new AbandonedShipCard("X2", CardLevel.TEST_FLIGHT, "Nave abbandonata",
                 6, 10, 2);
 
@@ -300,7 +302,8 @@ class AdventureCardVisitorTest {
         player1.getFlightData().setPosition(10, 18);
         player2.getFlightData().setPosition(0, 18);
 
-        SlaversCard slaversCard = new SlaversCard("S1", CardLevel.LEVEL_II, "Encounter with Slavers", 4, 2, 10, 2);
+        SlaversCard slaversCard = new SlaversCard("S1", CardLevel.LEVEL_II, "Encounter with Slavers",
+                4, 2, 10, 2);
         boolean result = slaversCard.accept(visitor, gameModel);
 
         assertTrue(result, "Il risultato dovrebbe essere true");
@@ -445,7 +448,7 @@ class AdventureCardVisitorTest {
 
         ship1.addComponent(component1, new Position(2, 3));
         ship1.addComponent(component2, new Position(2, 4));
-        ship1.addComponent(component3, new Position(1, 5));
+        ship1.addComponent(component3, new Position(1, 4));
 
         EpidemicCard epidemicCard = new EpidemicCard("E1", CardLevel.LEVEL_II, "Epidemic event");
         boolean result = epidemicCard.accept(visitor, gameModel);
@@ -453,6 +456,7 @@ class AdventureCardVisitorTest {
         assertTrue(result, "Il risultato dovrebbe essere true");
         assertEquals(0, ship1.getCrew(), "Il giocatore 1 dovrebbe perdere tutto l'equipaggio");
     }
+
     @Test
     void testVisitEpidemicCard_PlayerWithoutAdjacentCabin() {
         player1.getFlightData().setPosition(0, 18);
@@ -478,7 +482,7 @@ class AdventureCardVisitorTest {
 
         Cabin component1 = new Cabin(ComponentType.CABIN, connectors1);
         Engine component2 = new Engine(ComponentType.ENGINE_SINGLE, connectors2);
-        Cannon component3 = new Cannon(ComponentType.CANNON_DOUBLE, connectors3);
+        Cabin component3 = new Cabin(ComponentType.CABIN, connectors3);
         component1.setPosition(new Position(2, 3));
         component2.setPosition(new Position(2, 4));
         component3.setPosition(new Position(1, 4));
@@ -490,8 +494,8 @@ class AdventureCardVisitorTest {
         EpidemicCard epidemicCard = new EpidemicCard("E1", CardLevel.LEVEL_II, "Epidemic event");
         boolean result = epidemicCard.accept(visitor, gameModel);
 
-        assertFalse(result, "Il risultato dovrebbe essere true");
-        assertEquals(3, ship1.getCrew(), "Il giocatore 1 dovrebbe perdere tutto l'equipaggio");
+        assertTrue(result, "Il risultato dovrebbe essere true");
+        assertEquals(3, ship1.getCrew(), "Il giocatore dovrebbe mantenere tutto l'equipaggio");
     }
 
     //ABANDONED STATION TESTS
@@ -540,5 +544,6 @@ class AdventureCardVisitorTest {
         assertEquals(0,ship1.getResources().get(GoodType.BLUE), "Il giocatore 1 non dovrebbe ottenere merci blu");
         assertEquals(0, player1.getFlightData().getPosition(), "Il giocatore 1 non dovrebbe perdere giorni di volo");
     }
+
 }
 
