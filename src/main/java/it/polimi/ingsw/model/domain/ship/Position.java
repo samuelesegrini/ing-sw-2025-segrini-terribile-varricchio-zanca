@@ -1,5 +1,6 @@
 package it.polimi.ingsw.model.domain.ship;
 
+import it.polimi.ingsw.model.domain.ship.components.Component;
 import it.polimi.ingsw.model.enums.ship.Direction;
 
 import java.util.Objects;
@@ -74,5 +75,21 @@ public class Position {
     public int hashCode() {
         // Combines col, row in a single and unique value that contains both the information about col and row
         return Objects.hash(row, col);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        Position other = (Position) obj;
+        if (row != other.row)
+            return false;
+        if (col != other.col)
+            return false;
+        return true;
     }
 }

@@ -7,9 +7,11 @@ import it.polimi.ingsw.model.enums.GameLevel;
 import it.polimi.ingsw.model.enums.ship.ComponentType;
 import it.polimi.ingsw.model.enums.ship.ConnectorType;
 import it.polimi.ingsw.model.enums.ship.Direction;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -42,16 +44,21 @@ class ShipTest {
         position2 = new Position(1, 1);
 
         ship1 = new Ship(null, GameLevel.LEVEL_II);
+        //System.out.println(Arrays.toString(ship1.forbiddenPositions.toArray()));
     }
 
     @Test
     void testAddComponent() {
-        //TODO: assertTrue(ship1.forbiddenPositions.contains(position1));
-        ship1.addComponent(battery1, position1);
-        // TODO: assertNull(ship1.getBoard()[position1.getRow()][position1.getCol()]);
+        assertTrue(ship1.forbiddenPositions.contains(position1));
+
+
+        IllegalArgumentException exception1 = Assertions.assertThrows(IllegalArgumentException.class, () -> ship1.addComponent(battery1, position1));
+        assertEquals("Forbidden position", exception1.getMessage());
+
         ship1.addComponent(cannon1, position2);
         assertNotNull(ship1.getBoard()[position2.getRow()][position2.getCol()]);
-        ship1.addComponent(cannon1, position2);
+
+        //ship1.addComponent(cannon1, position2);
         //GIUSTO assertEquals(battery1, ship1.getBoard()[position2.getRow()][position2.getCol()]);
     }
 
