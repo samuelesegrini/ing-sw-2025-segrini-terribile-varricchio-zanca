@@ -1,6 +1,7 @@
 package it.polimi.ingsw.model.domain.ship;
 
 import it.polimi.ingsw.model.domain.player.Player;
+import it.polimi.ingsw.model.domain.ship.components.CargoHold;
 import it.polimi.ingsw.model.domain.ship.components.Component;
 import it.polimi.ingsw.model.enums.GameLevel;
 import it.polimi.ingsw.model.enums.resource.GoodType;
@@ -52,32 +53,48 @@ public class Ship {
             put(GoodType.GREEN, 0);
             put(GoodType.YELLOW, 0);
         }};
+        normalGoodsCapacity = 0;
+        specialGoodsCapacity = 0;
+        normalGoods = 0;
+        specialGoods = 0;
 
         if (level == GameLevel.TEST_FLIGHT) {
             forbiddenPositions = new HashSet<>() {{
-                add(new Position(0, 0)); add(new Position(0, 1)); add(new Position(0, 2));
-                add(new Position(0, 4)); add(new Position(0, 5)); add(new Position(0, 6));
-                add(new Position(1, 0)); add(new Position(1, 1));
-                add(new Position(1, 5)); add(new Position(1, 6));
-                add(new Position(2, 0)); add(new Position(2, 6));
-                add(new Position(3, 0)); add(new Position(3, 6));
-                add(new Position(4, 0)); add(new Position(4, 3)); add(new Position(4, 6));
+                add(new Position(0, 0));
+                add(new Position(0, 1));
+                add(new Position(0, 2));
+                add(new Position(0, 4));
+                add(new Position(0, 5));
+                add(new Position(0, 6));
+                add(new Position(1, 0));
+                add(new Position(1, 1));
+                add(new Position(1, 5));
+                add(new Position(1, 6));
+                add(new Position(2, 0));
+                add(new Position(2, 6));
+                add(new Position(3, 0));
+                add(new Position(3, 6));
+                add(new Position(4, 0));
+                add(new Position(4, 3));
+                add(new Position(4, 6));
             }};
-        }
-        else if (level == GameLevel.LEVEL_II) {
+        } else if (level == GameLevel.LEVEL_II) {
             forbiddenPositions = new HashSet<>() {{
-                add(new Position(0, 0)); add(new Position(0, 1));
+                add(new Position(0, 0));
+                add(new Position(0, 1));
                 add(new Position(0, 3));
-                add(new Position(0, 5)); add(new Position(0, 6));
-                add(new Position(1, 0)); add(new Position(1, 6));
+                add(new Position(0, 5));
+                add(new Position(0, 6));
+                add(new Position(1, 0));
+                add(new Position(1, 6));
                 add(new Position(4, 3));
             }};
         }
     }
 
-
     /**
      * Adds a component to the ship at the specified position on the board.
+     *
      * @param component The component to add.
      * @param position  The position on the grid where the component should be placed.
      */
@@ -88,19 +105,17 @@ public class Ship {
         // Checks if position is illegal, otherwise adds Component and updates its position attribute
         if (forbiddenPositions.contains(position)) {
             throw new IllegalArgumentException("Forbidden position");
-        }
-        else if (board[row][col] != null) {
+        } else if (board[row][col] != null) {
             throw new IllegalArgumentException("Occupied position");
-        }
-        else {
+        } else {
             board[row][col] = component;
             component.setPosition(position);
         }
-
     }
 
     /**
      * Removes the component from the ship at the specified position on the board.
+     *
      * @param position The position on the grid from which the component should be removed.
      */
     public void removeComponent(Position position) {
@@ -110,11 +125,9 @@ public class Ship {
         // Checks if position is illegal or empty, otherwise removes Component and updates its position attribute
         if (forbiddenPositions.contains(position)) {
             throw new IllegalArgumentException("Forbidden position");
-        }
-        else if (board[row][col] == null) {
+        } else if (board[row][col] == null) {
             throw new IllegalArgumentException("Empty position");
-        }
-        else {
+        } else {
             board[row][col].setPosition(null);    // Spostare il component in lista dei "rifiuti"?
             board[row][col] = null;
         }
@@ -129,8 +142,7 @@ public class Ship {
     public void reserveComponent(Component component) {
         if (reservedComponents.size() < 2) {
             reservedComponents.add(component);
-        }
-        else {
+        } else {
             throw new IllegalArgumentException("Too many reserved components");
         }
     }
@@ -206,7 +218,7 @@ public class Ship {
     }
 
     public int getSpecialGoods() {
-        return specialGoods;
+        return this.specialGoods;
     }
 
     public void setSpecialGoods(int specialGoods) {
@@ -214,7 +226,7 @@ public class Ship {
     }
 
     public int getNormalGoods() {
-        return normalGoods;
+        return this.normalGoods;
     }
 
     public void setNormalGoods(int normalGoods) {
@@ -237,170 +249,228 @@ public class Ship {
         this.lostComponents = lostComponents;
     }
 
-    public int getSpecialGoodsCapacity() {
-        return specialGoodsCapacity;
+    public int calculateSpecialGoodsCapacity() {
+        this.specialGoodsCapacity = 0;
+        for (Component[] components : board) {
+            for (Component component : components) {
+                if (component != null && component.getType() == ComponentType.CARGO_HOLD_SPECIAL) {
+                    this.specialGoodsCapacity += ((CargoHold) component).getCapacity();
+                }
+            }
+        }
+        return this.specialGoodsCapacity;
+    }
+
+    public int calculateNormalGoodsCapacity() {
+        this.normalGoodsCapacity = 0;
+        for (Component[] components : board) {
+            for (Component component : components) {
+                if (component != null && component.getType() == ComponentType.CARGO_HOLD) {
+                    this.normalGoodsCapacity += ((CargoHold) component).getCapacity();
+                }
+            }
+        }
+        return this.normalGoodsCapacity;
+    }
+
+    public void setNormalGoodsCapacity(int normalGoodsCapacity) {
+            this.normalGoodsCapacity = normalGoodsCapacity;
     }
     public void setSpecialGoodsCapacity(int specialGoodsCapacity) {
-        this.specialGoodsCapacity = specialGoodsCapacity;
-    }
-    public int getNormalGoodsCapacity() {
-        return normalGoodsCapacity;
-    }
-    public void setNormalGoodsCapacity(int normalGoodsCapacity) {
-        this.normalGoodsCapacity = normalGoodsCapacity;
+            this.specialGoodsCapacity = specialGoodsCapacity;
     }
 
     /**
      * Adds resources to the ship's cargo holds, following these rules:
      * 1. If there is enough free space in the cargo holds, the resources are added.
      * 2. If the total cargo capacity is sufficient but some space is occupied,
-     *    old resources are removed (as needed) to make space for the new ones.
+     * old resources are removed (as needed) to make space for the new ones.
      * 3. If there is not enough space, the addition fails.
      *
      * @param newResources A map containing the resources (GoodType) and their respective quantities to add.
      * @return {@code true} if resources were successfully added, {@code false} if there was insufficient space.
      */
     public boolean addResources(Map<GoodType, Integer> newResources) {
-        // Good capacities and good quantities are updated by updateStats
+        updateStats();
+        boolean allResourcesAdded = true;
 
-        // Available space in cargo holds
-        int freeSpecialGoodsCapacity = specialGoodsCapacity - specialGoods;
-        int freeNormalGoodsCapacity = normalGoodsCapacity - normalGoods;
+        // Calcola lo spazio disponibile prima di iniziare
+        int freeSpecialGoodsCapacity = calculateSpecialGoodsCapacity() - specialGoods;
+        int freeNormalGoodsCapacity = calculateNormalGoodsCapacity() - normalGoods;
 
-        // Adding new resources
+        int totalRedGoods = 0;
+        int totalNormalGoods = 0;
+
         for (Map.Entry<GoodType, Integer> entry : newResources.entrySet()) {
             GoodType type = entry.getKey();
             int amount = entry.getValue();
 
             if (type == GoodType.RED) {
-                if (freeSpecialGoodsCapacity >= amount) {
-                    resources.put(type, resources.getOrDefault(type, 0) + amount);
-                    freeSpecialGoodsCapacity -= amount;
-                }
-                // Not enough space for special goods
-                else {
-                    return false;
-                }
+                totalRedGoods += amount;
+            } else {
+                totalNormalGoods += amount;
             }
-            else {
-                if (freeNormalGoodsCapacity >= amount) {
-                    resources.put(type, resources.getOrDefault(type, 0) + amount);
-                    freeNormalGoodsCapacity -= amount;
+        }
+
+        // Verifica per merci rosse (speciali)
+        if (totalRedGoods > freeSpecialGoodsCapacity) {
+            System.out.println("Not enough special cargo space for red goods");
+            return false;
+        }
+
+        // Verifica per merci normali
+        if (totalNormalGoods > freeNormalGoodsCapacity + (freeSpecialGoodsCapacity - totalRedGoods)) {
+            System.out.println("Not enough total cargo space for normal goods");
+            return false;
+        }
+
+        // Se arriviamo qui, abbiamo verificato che c'è abbastanza spazio per tutte le merci
+        // Procediamo con l'aggiunta
+        for (Map.Entry<GoodType, Integer> entry : newResources.entrySet()) {
+            GoodType type = entry.getKey();
+            int amount = entry.getValue();
+
+            if (type == GoodType.RED) {
+                // Le merci rosse vanno solo nei cargo speciali
+                int remaining = addToSpecificCargoType(type, amount, ComponentType.CARGO_HOLD_SPECIAL);
+                if (remaining > 0) {
+                    allResourcesAdded = false;
                 }
-                // If no space in normal cargo, try special cargo
-                else if (specialGoodsCapacity - specialGoods >= amount) {
-                    resources.put(type, resources.getOrDefault(type, 0) + amount);
-                    freeSpecialGoodsCapacity -= amount;
-                }
-                // Not enough space for normal goods
-                else {
-                    return false;
+            } else {
+                // Per le merci normali (blu, gialle, verdi)
+                // Prima prova a riempire i cargo normali
+                int remainingAmount = addToSpecificCargoType(type, amount, ComponentType.CARGO_HOLD);
+
+                // Se non c'è abbastanza spazio nei cargo normali, usa anche quelli speciali
+                if (remainingAmount > 0) {
+                    remainingAmount = addToSpecificCargoType(type, remainingAmount, ComponentType.CARGO_HOLD_SPECIAL);
+                    if (remainingAmount > 0) {
+                        allResourcesAdded = false;
+                    }
                 }
             }
         }
-        return true;    // Resources added successfully
+
+        updateStats();
+        return allResourcesAdded;
     }
 
-    public boolean removeValuableResources(int deletingNumber) {
-        // Good capacities and good quantities are updated by updateStats
+    /**
+     * Adds resources to a specific type of cargo hold
+     * @param type The type of goods
+     * @param amount The quantity to add
+     * @param cargoType The type of cargo hold (normal or special)
+     * @return The remaining quantity that could not be added
+     */
+    public int addToSpecificCargoType(GoodType type, int amount, ComponentType cargoType) {
+        int remainingAmount = amount;
 
-        // Elimino prima tutte le merci rosse
-        if (deletingNumber > 0) {
-            if (resources.containsKey(GoodType.RED)) {
-                while (specialGoods > 0 && deletingNumber > 0 && resources.get(GoodType.RED) > 0) {
-                    resources.put(GoodType.RED, resources.get(GoodType.RED) - 1);
-                    deletingNumber--;
-                    specialGoods--;
+        // Cerca i cargo hold del tipo specificato
+        for (int x = 0; x < board.length && remainingAmount > 0; x++) {
+            for (int y = 0; y < board[x].length && remainingAmount > 0; y++) {
+                if (board[x][y] != null && board[x][y].getType() == cargoType) {
+                    CargoHold cargoHold = (CargoHold) board[x][y];
+                    int freeSpace = cargoHold.getCapacity() - cargoHold.getOccupiedCapacity();
 
-                    // Rimuovo il record se il valore diventa 0
-                    if (resources.get(GoodType.RED) == 0) {
-                        resources.remove(GoodType.RED);
-                    }
+                    if (freeSpace > 0) {
+                        int amountToAdd = Math.min(freeSpace, remainingAmount);
 
-                    if (deletingNumber == 0) {
-                        return true;
-                    }
-                }
-            }
-        }
-        // Elimino altre merci in ordine decrescente di valore (BLUE, GREEN, YELLOW)
-        if (deletingNumber > 0) {
-            if (resources.containsKey(GoodType.BLUE)) {
-                while (normalGoods > 0 && deletingNumber > 0 && resources.get(GoodType.BLUE) > 0) {
-                    resources.put(GoodType.BLUE, resources.get(GoodType.BLUE) - 1);
-                    deletingNumber--;
-                    normalGoods--;
-
-                    // Rimuovo il record se il valore diventa 0
-                    if (resources.get(GoodType.BLUE) == 0) {
-                        resources.remove(GoodType.BLUE);
-                    }
-
-                    if (deletingNumber == 0) {
-                        return true;
-                    }
-                }
-            }
-        }
-        if (deletingNumber > 0) {
-            if (resources.containsKey(GoodType.GREEN)) {
-                while (normalGoods > 0 && deletingNumber > 0 && resources.get(GoodType.GREEN) > 0) {
-                    resources.put(GoodType.GREEN, resources.get(GoodType.GREEN) - 1);
-                    deletingNumber--;
-                    normalGoods--;
-
-                    // Rimuovo il record se il valore diventa 0
-                    if (resources.get(GoodType.GREEN) == 0) {
-                        resources.remove(GoodType.GREEN);
-                    }
-
-                    if (deletingNumber == 0) {
-                        return true;
-                    }
-                }
-            }
-        }
-        if (deletingNumber > 0) {
-            if (resources.containsKey(GoodType.YELLOW)) {
-                while (normalGoods > 0 && resources.get(GoodType.YELLOW) > 0) {
-                    resources.put(GoodType.YELLOW, resources.get(GoodType.YELLOW) - 1);
-                    deletingNumber--;
-                    normalGoods--;
-
-                    // Rimuovo il record se il valore diventa 0
-                    if (resources.get(GoodType.YELLOW) == 0) {
-                        resources.remove(GoodType.YELLOW);
-                    }
-
-                    if (deletingNumber == 0) {
-                        return true;
+                        cargoHold.storeGoodsOfType(type, amountToAdd);
+                        remainingAmount -= amountToAdd;
                     }
                 }
             }
         }
 
-        // Removes batteries if there are no more goods (TODO: Dovrebbe scegliere il giocatore da dove?)
-        if (deletingNumber > 0) {
-            for (Component[] components : board) {
-                for (Component component : components) {
-                    if (component != null && component.getType() == ComponentType.BATTERY) {
-                        while (((Battery) component).getCurrentBatteries() > 0) {
-                            ((Battery) component).setCurrentBatteries(((Battery) component).getCurrentBatteries() - 1);    // TODO: Chi aggiorna Ship.batteries?
-                            deletingNumber--;
+        // Se non siamo riusciti ad aggiungere tutte le risorse, mostra un messaggio
+        if (remainingAmount > 0) {
+            System.out.println("Could not add " + remainingAmount + " units of " + type + " to cargo holds of type " + cargoType);
+        }
 
-                            if (deletingNumber == 0) {
-                                return true;
-                            }
+        return remainingAmount;
+    }
+
+    /**
+     * Removes a specified number of resources from the ship, starting with the most valuable ones.
+     * The order of removal is: RED, BLUE, GREEN, YELLOW, and finally batteries.
+     *
+     * @param deletingNumber The number of resources to remove
+     * @return true if all requested resources were successfully removed, false otherwise
+     */
+    public boolean removeValuableResources (int deletingNumber) {
+        updateStats();
+        int remainingToDelete = deletingNumber;
+
+        // List of goods sorted by decreasing value
+        GoodType[] goodsByValue = {GoodType.RED, GoodType.BLUE, GoodType.GREEN, GoodType.YELLOW};
+
+        // Remove goods in priority order
+        for (GoodType goodType : goodsByValue) {
+            if (resources.containsKey(goodType) && remainingToDelete > 0) {
+                // Determine which cargo holds to check
+                ComponentType[] cargoTypes = (goodType == GoodType.RED)
+                        ? new ComponentType[]{ComponentType.CARGO_HOLD_SPECIAL}  // Only special cargo for RED
+                        : new ComponentType[]{ComponentType.CARGO_HOLD, ComponentType.CARGO_HOLD_SPECIAL};  // All cargo for others
+
+                // Remove from all appropriate cargo holds
+                for (ComponentType cargoType : cargoTypes) {
+                    if (remainingToDelete <= 0) break;
+
+                    remainingToDelete = removeFromCargoHoldType(goodType, remainingToDelete, cargoType);
+                }
+            }
+        }
+
+        // If there are still resources to remove, remove batteries
+        // TODO: Chi aggiorna Ship.batteries?
+        if (remainingToDelete > 0) {
+            for (int x = 0; x < board.length && remainingToDelete > 0; x++) {
+                for (int y = 0; y < board[x].length && remainingToDelete > 0; y++) {
+                    if (board[x][y] != null && board[x][y].getType() == ComponentType.BATTERY) {
+                        Battery battery = (Battery) board[x][y];
+                        int amount = Math.min(battery.getCurrentBatteries(), remainingToDelete);
+                        battery.setCurrentBatteries(battery.getCurrentBatteries() - amount);
+                        remainingToDelete -= amount;
+                    }
+                }
+            }
+        }
+        updateStats();
+        return remainingToDelete <= 0;
+    }
+
+    /**
+     * Removes resources of a specific type from a specific type of cargo hold.
+     *
+     * @param goodType Type of good to remove
+     * @param amountToRemove Amount to remove
+     * @param cargoType Type of cargo hold to remove from
+     * @return Remaining amount that could not be removed
+     */
+    public int removeFromCargoHoldType(GoodType goodType, int amountToRemove, ComponentType cargoType) {
+        int remaining = amountToRemove;
+
+        for (int x = 0; x < board.length && remaining > 0; x++) {
+            for (int y = 0; y < board[x].length && remaining > 0; y++) {
+                if (board[x][y] != null && board[x][y].getType() == cargoType) {
+                    CargoHold cargoHold = (CargoHold) board[x][y];
+
+                    // Check if this cargo hold contains goods of the requested type
+                    if (cargoHold.getStoredGoods().containsKey(goodType)) {
+                        int available = cargoHold.getStoredGoods().get(goodType);
+                        int toRemove = Math.min(remaining, available);
+
+                        if (toRemove > 0) {
+                            cargoHold.removeGoodsOfType(goodType, toRemove);
+                            remaining -= toRemove;
                         }
                     }
                 }
             }
         }
 
-        // In teoria se si arriva a questo punto deletingNumber > 0 ma per ora lascio la condizione per sicurezza
-        return deletingNumber <= 0;
+        return remaining;
     }
-
 
     /**
      * Finds the first non-empty component along a line specified by a fixed coordinate.
@@ -420,6 +490,19 @@ public class Ship {
      * @return A map containing the position and the component that is hit, or an empty map if no component is found.
      */
     public Position findFirstComponent(Direction direction, int fixedIndex) {
+
+        if (direction == Direction.UP || direction == Direction.DOWN) {
+            // For UP and DOWN directions, fixedIndex represents a column
+            if (fixedIndex < 0 || fixedIndex >= board[0].length) {
+                throw new IllegalArgumentException("Column index out of bounds: " + fixedIndex);
+            }
+        } else {
+            // For LEFT and RIGHT directions, fixedIndex represents a row
+            if (fixedIndex < 0 || fixedIndex >= board.length) {
+                throw new IllegalArgumentException("Row index out of bounds: " + fixedIndex);
+            }
+        }
+
         switch (direction) {
             // For a shot from the top, fixedIndex is the column.
             // Iterate rows from top (0) to bottom.
@@ -454,15 +537,16 @@ public class Ship {
                     }
                 }
         }
-
         throw new NullPointerException("No element found");
     }
 
     public boolean protectedByShield(Direction direction) {
         for (int row = 0; row < board.length; row++) {
             for (int col = 0; col < board[0].length; col++) {
-                if (board[row][col] != null && board[row][col].getType() == ComponentType.SHIELD) {
-                    if (((Shield) board[row][col]).getProtectedDirections().contains(direction)) {
+                Component component = board[row][col];
+                if (component != null && component.getType() == ComponentType.SHIELD) {
+                    Shield shield = (Shield) component;
+                    if (shield.getProtectedDirections().contains(direction)) {
                         System.out.println("Shield found, check battery presence");
                         return true;
                     }
@@ -496,14 +580,12 @@ public class Ship {
                 if (board[row][fixedIndex] != null) {
                     if (board[row][fixedIndex].getType() == ComponentType.CANNON_SINGLE && board[row][fixedIndex].getDirection() == direction) {
                         return true;
-                    }
-                    else if (board[row][fixedIndex].getType() == ComponentType.CANNON_DOUBLE && board[row][fixedIndex].getDirection() == direction) {
+                    } else if (board[row][fixedIndex].getType() == ComponentType.CANNON_DOUBLE && board[row][fixedIndex].getDirection() == direction) {
                         foundDouble = true;
                     }
                 }
             }
-        }
-        else if ((direction == Direction.LEFT) || (direction == Direction.RIGHT)) {
+        } else if ((direction == Direction.LEFT) || (direction == Direction.RIGHT)) {
             int[] rowsToCheck = {fixedIndex, fixedIndex - 1, fixedIndex + 1};
             for (int row : rowsToCheck) {
                 if (row >= 0 && row < board.length) {
@@ -511,8 +593,7 @@ public class Ship {
                         if (board[row][col] != null) {
                             if (board[row][fixedIndex].getType() == ComponentType.CANNON_SINGLE && board[row][fixedIndex].getDirection() == direction) {
                                 return true;
-                            }
-                            else if (board[row][fixedIndex].getType() == ComponentType.CANNON_DOUBLE && board[row][fixedIndex].getDirection() == direction) {
+                            } else if (board[row][fixedIndex].getType() == ComponentType.CANNON_DOUBLE && board[row][fixedIndex].getDirection() == direction) {
                                 foundDouble = true;
                             }
                         }
@@ -524,13 +605,11 @@ public class Ship {
         if (foundDouble) {
             System.out.println("Double cannon found, check battery presence");
             return true;
-        }
-        else {
+        } else {
             return false;
         }
     }
-
-    public int getExposedConnectors() {
+    public int getExposedConnectors(){
         int counter = 0;
         for(int row = 0; row < board.length; row++) {
             for(int col = 0; col < board[0].length; col++) {
@@ -626,7 +705,6 @@ public class Ship {
                 count += checkAdjacentCabin(neighbor, board, visited);
             }
         }
-
         return count;
     }
 }

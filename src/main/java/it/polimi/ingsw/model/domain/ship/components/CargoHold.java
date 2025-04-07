@@ -18,7 +18,7 @@ public class CargoHold extends Component {
     public CargoHold(ComponentType type, Map<Direction, ConnectorType> connectors, int capacity) {
         super(type, connectors);
         this.capacity = capacity;
-        this.occupiedCapacity = capacity;
+        this.occupiedCapacity = 0;
 
         this.storedGoods = new HashMap<>();
         for (GoodType goodType : GoodType.values()) {
@@ -47,6 +47,7 @@ public class CargoHold extends Component {
         ship.setNormalGoods(ship.getNormalGoods() + storedGoods.get(GoodType.BLUE));
         ship.setNormalGoods(ship.getNormalGoods() + storedGoods.get(GoodType.GREEN));
         ship.setNormalGoods(ship.getNormalGoods() + storedGoods.get(GoodType.YELLOW));
+
     }
 
 
@@ -74,10 +75,10 @@ public class CargoHold extends Component {
         this.storedGoods = storedGoods;
     }
 
-
     public void storeGoodsOfType(GoodType type, int quantity) {
         if (occupiedCapacity + quantity <= capacity) {
-            storedGoods.put(type, storedGoods.get(type) + quantity);
+            Integer currentAmount = storedGoods.getOrDefault(type, 0);
+            storedGoods.put(type, currentAmount + quantity);
             occupiedCapacity += quantity;
         }
         else {
@@ -87,7 +88,8 @@ public class CargoHold extends Component {
 
     public void removeGoodsOfType(GoodType type, int quantity) {
         if (storedGoods.get(type) - quantity >= 0) {
-            storedGoods.put(type, storedGoods.get(type) - quantity);
+            Integer currentAmount = storedGoods.getOrDefault(type, 0);
+            storedGoods.put(type, currentAmount - quantity);
             occupiedCapacity -= quantity;
         }
         else {

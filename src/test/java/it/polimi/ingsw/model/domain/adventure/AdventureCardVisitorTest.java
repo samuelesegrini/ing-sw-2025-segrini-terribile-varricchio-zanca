@@ -1,6 +1,7 @@
 package it.polimi.ingsw.model.domain.adventure;
 
 import it.polimi.ingsw.model.domain.adventure.card.*;
+import it.polimi.ingsw.model.domain.adventure.entity.Meteor;
 import it.polimi.ingsw.model.domain.adventure.entity.Planet;
 import it.polimi.ingsw.model.domain.flight.FlightBoard;
 import it.polimi.ingsw.model.domain.general.GameModel;
@@ -9,13 +10,11 @@ import it.polimi.ingsw.model.domain.player.Player;
 import it.polimi.ingsw.model.domain.player.PlayerId;
 import it.polimi.ingsw.model.domain.ship.Position;
 import it.polimi.ingsw.model.domain.ship.Ship;
-import it.polimi.ingsw.model.domain.ship.components.Cabin;
-import it.polimi.ingsw.model.domain.ship.components.Cannon;
-import it.polimi.ingsw.model.domain.ship.components.Component;
-import it.polimi.ingsw.model.domain.ship.components.Engine;
+import it.polimi.ingsw.model.domain.ship.components.*;
 import it.polimi.ingsw.model.enums.GameLevel;
 import it.polimi.ingsw.model.enums.adventure.AdventureType;
 import it.polimi.ingsw.model.enums.adventure.CardLevel;
+import it.polimi.ingsw.model.enums.adventure.ShotIntensity;
 import it.polimi.ingsw.model.enums.flight.FlightStatus;
 import it.polimi.ingsw.model.enums.resource.GoodType;
 import it.polimi.ingsw.model.enums.ship.ComponentType;
@@ -545,5 +544,29 @@ class AdventureCardVisitorTest {
         assertEquals(0, player1.getFlightData().getPosition(), "Il giocatore 1 non dovrebbe perdere giorni di volo");
     }
 
+    //METEOR SWARM CARD TESTS
+    @Test
+    void testVisitMeteorSwarmCard_ShipProtectedByShield() {
+        player1.getFlightData().setPosition(0, 18);
+
+        Map<Direction, ConnectorType> connectors = new HashMap<>() {{
+            put(Direction.UP, ConnectorType.UNIVERSAL);
+            put(Direction.DOWN, ConnectorType.UNIVERSAL);
+            put(Direction.RIGHT, ConnectorType.UNIVERSAL);
+            put(Direction.LEFT, ConnectorType.UNIVERSAL);
+        }};
+        Shield shield = new Shield(ComponentType.SHIELD, connectors);
+        shield.setPosition(new Position(2, 3));
+        ship1.addComponent(shield, new Position(2, 3));
+
+        List<Meteor> meteorPattern = List.of(
+                new Meteor(ShotIntensity.LIGHT, Direction.UP)
+        );
+
+        MeteorSwarmCard meteorSwarmCard = new MeteorSwarmCard("M1", CardLevel.LEVEL_II, "Meteor Swarm", meteorPattern);
+        boolean result = meteorSwarmCard.accept(visitor, gameModel);
+
+        assertNotNull((ship1.getBoard()[2][3]), "Il componente non dovrebbe essere rimosso");
+    }
 }
 
