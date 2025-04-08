@@ -42,7 +42,7 @@ public class CombatZoneCard extends AdventureCard {
      * @param state The current game state.
      * @return The result of the visitor's processing.
      */
-    private boolean accept(AdventureCardVisitor visitor, GameModel state){
+    public boolean accept(AdventureCardVisitor visitor, GameModel state){
         return visitor.visitCombatZoneCard(this, state);
     }
 }

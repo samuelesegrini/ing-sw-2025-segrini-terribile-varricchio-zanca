@@ -312,7 +312,6 @@ public class Ship {
             }
         }
 
-        // Verifica per merci rosse (speciali)
         if (totalRedGoods > freeSpecialGoodsCapacity) {
             System.out.println("Not enough special cargo space for red goods");
             return false;
@@ -491,53 +490,64 @@ public class Ship {
      */
     public Position findFirstComponent(Direction direction, int fixedIndex) {
 
+        if (board == null) {
+            System.out.println("Board is null");
+            return null;
+        }
+
         if (direction == Direction.UP || direction == Direction.DOWN) {
             // For UP and DOWN directions, fixedIndex represents a column
             if (fixedIndex < 0 || fixedIndex >= board[0].length) {
-                throw new IllegalArgumentException("Column index out of bounds: " + fixedIndex);
+                System.out.println("Column index out of bounds: " + fixedIndex);
+                return null;
             }
         } else {
             // For LEFT and RIGHT directions, fixedIndex represents a row
             if (fixedIndex < 0 || fixedIndex >= board.length) {
-                throw new IllegalArgumentException("Row index out of bounds: " + fixedIndex);
+                System.out.println("Row index out of bounds: " + fixedIndex);
+                return null;
             }
         }
 
         switch (direction) {
             // For a shot from the top, fixedIndex is the column.
             // Iterate rows from top (0) to bottom.
-            case Direction.UP:
+            case UP:
                 for (int row = 0; row < board.length; row++) {
                     if (board[row][fixedIndex] != null) {
                         return new Position(row, fixedIndex);
                     }
                 }
+                break;
             // For a shot from the bottom, fixedIndex is the column.
             // Iterate rows from bottom to top.
-            case Direction.DOWN:
+            case DOWN:
                 for (int row = board.length - 1; row >= 0; row--) {
                     if (board[row][fixedIndex] != null) {
                         return new Position(row, fixedIndex);
                     }
                 }
+                break;
             // For a shot from the left, fixedIndex is the row.
             // Iterate columns from left (0) to right.
-            case Direction.LEFT:
+            case LEFT:
                 for (int col = 0; col < board[0].length; col++) {
                     if (board[fixedIndex][col] != null) {
                         return new Position(fixedIndex, col);
                     }
                 }
+                break;
             // For a shot from the left, fixedIndex is the row.
             // Iterate columns from left (0) to right.
-            case Direction.RIGHT:
+            case RIGHT:
                 for (int col = board[0].length - 1; col >= 0; col--) {
                     if (board[fixedIndex][col] != null) {
                         return new Position(fixedIndex, col);
                     }
                 }
+                break;
         }
-        throw new NullPointerException("No element found");
+        return null;
     }
 
     public boolean protectedByShield(Direction direction) {
@@ -575,12 +585,28 @@ public class Ship {
     public boolean protectedByCannon(Direction direction, int fixedIndex) {
         boolean foundDouble = false;
 
+        if (direction == Direction.UP || direction == Direction.DOWN) {
+            // For UP and DOWN directions, fixedIndex represents a column
+            if (fixedIndex < 0 || fixedIndex >= board[0].length) {
+                System.out.println("Column index out of bounds: " + fixedIndex);
+                return true;
+            }
+        } else {
+            // For LEFT and RIGHT directions, fixedIndex represents a row
+            if (fixedIndex < 0 || fixedIndex >= board.length) {
+                System.out.println("Row index out of bounds: " + fixedIndex);
+                return true;
+            }
+        }
+
         if ((direction == Direction.UP) || (direction == Direction.DOWN)) {
             for (int row = 0; row < board.length; row++) {
                 if (board[row][fixedIndex] != null) {
-                    if (board[row][fixedIndex].getType() == ComponentType.CANNON_SINGLE && board[row][fixedIndex].getDirection() == direction) {
+                    if (board[row][fixedIndex].getType() == ComponentType.CANNON_SINGLE
+                            && board[row][fixedIndex].getDirection() == direction) {
                         return true;
-                    } else if (board[row][fixedIndex].getType() == ComponentType.CANNON_DOUBLE && board[row][fixedIndex].getDirection() == direction) {
+                    } else if (board[row][fixedIndex].getType() == ComponentType.CANNON_DOUBLE
+                            && board[row][fixedIndex].getDirection() == direction) {
                         foundDouble = true;
                     }
                 }
@@ -591,9 +617,11 @@ public class Ship {
                 if (row >= 0 && row < board.length) {
                     for (int col = 0; col < board[0].length; col++) {
                         if (board[row][col] != null) {
-                            if (board[row][fixedIndex].getType() == ComponentType.CANNON_SINGLE && board[row][fixedIndex].getDirection() == direction) {
+                            if (board[row][fixedIndex].getType() == ComponentType.CANNON_SINGLE
+                                    && board[row][fixedIndex].getDirection() == direction) {
                                 return true;
-                            } else if (board[row][fixedIndex].getType() == ComponentType.CANNON_DOUBLE && board[row][fixedIndex].getDirection() == direction) {
+                            } else if (board[row][fixedIndex].getType() == ComponentType.CANNON_DOUBLE
+                                    && board[row][fixedIndex].getDirection() == direction) {
                                 foundDouble = true;
                             }
                         }
@@ -618,7 +646,8 @@ public class Ship {
                         Position position = new Position(row, col);
                         Position offset = position.offsetBy(direction);
                         if((board[offset.getRow()][offset.getCol()] == null) &&
-                                (board[position.getRow()][position.getCol()].getConnectorAt(direction) != ConnectorType.PLAIN)){
+                                (board[position.getRow()][position.getCol()].getConnectorAt(direction)
+                                        != ConnectorType.PLAIN)){
                             counter++;
                         }
                     }

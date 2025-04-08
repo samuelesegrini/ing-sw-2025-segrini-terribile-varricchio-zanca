@@ -10,6 +10,7 @@ import it.polimi.ingsw.model.domain.flight.FlightBoard;
 import it.polimi.ingsw.model.domain.player.Player;
 import it.polimi.ingsw.model.domain.ship.Position;
 import it.polimi.ingsw.model.domain.ship.Ship;
+import it.polimi.ingsw.model.domain.ship.components.Cannon;
 import it.polimi.ingsw.model.domain.ship.components.Component;
 import it.polimi.ingsw.model.enums.adventure.CombatAttributeType;
 import it.polimi.ingsw.model.enums.adventure.PenaltyType;
@@ -55,7 +56,7 @@ public class AdventureCardVisitor {
                 System.out.println(player.getId().getNickname() + " has repaired the ship and sold it to part of their crew. ");
             }
         }
-        return card.isVisited();
+        return true;
     }
 
     /**
@@ -79,20 +80,28 @@ public class AdventureCardVisitor {
 
         for(Meteor meteor: card.getMeteorPattern()){
             Random dice = new Random();
-            int index = dice.nextInt(6) + 1;
+            int index = dice.nextInt(6);
+            System.out.println(index);
+            System.out.println(meteor.getApproach());
 
             for(Player player : playersOrdered){
                 Position impactPosition = player.getShip().findFirstComponent(meteor.getApproach(), index);
-                Component impactComponent = player.getShip().getBoard()[impactPosition.getRow()][impactPosition.getCol()];
+                System.out.println("impactPosition: " + impactPosition);
 
+                if(impactPosition == null){
+                    System.out.println("Meteor number " +card.getMeteorPattern().indexOf(meteor)+ " missed " +player.getId().getNickname()+ "'s ship");
+                    break;
+                }
+
+                Component impactComponent = player.getShip().getBoard()[impactPosition.getRow()][impactPosition.getCol()];
                 if(meteor.getShotIntensity() == ShotIntensity.LIGHT){
                     if(impactComponent.getConnectorAt(meteor.getApproach())== ConnectorType.PLAIN){
-                        System.out.println(player.getId().getNickname()+ " has deflected meteor number"
+                        System.out.println(player.getId().getNickname()+ " has deflected meteor number "
                                 +card.getMeteorPattern().indexOf(meteor));
                         break;
                     }
                     else if(player.getShip().protectedByShield(meteor.getApproach())){
-                        System.out.println(player.getId().getNickname()+ " has activated a shield against meteor number"
+                        System.out.println(player.getId().getNickname()+ " has activated a shield against meteor number "
                                 +card.getMeteorPattern().indexOf(meteor));
                         break;
                     }
@@ -100,13 +109,13 @@ public class AdventureCardVisitor {
 
                 else {
                     if(player.getShip().protectedByCannon(meteor.getApproach(), index)){
-                        System.out.println(player.getId().getNickname()+ " has shot meteor number"
+                        System.out.println(player.getId().getNickname()+ " has shot meteor number "
                                 +card.getMeteorPattern().indexOf(meteor));
                         break;
                     }
                 }
 
-                System.out.println(player.getId().getNickname()+ " has no protection against meteor number"
+                System.out.println(player.getId().getNickname()+ " has no protection against meteor number "
                         +card.getMeteorPattern().indexOf(meteor));
                 player.getShip().removeComponent(impactPosition);
             }
@@ -131,6 +140,8 @@ public class AdventureCardVisitor {
             if(player.getShip().getCannons()>card.getPowerLevel()){
                 player.addCredits(card.getCreditReward());
                 flightBoard.movePlayer(player, card.getMovementPenalty(), false);
+                System.out.println("Player " + player.getId().getNickname() +
+                        " has defeated the pirates and received a reward of " + card.getCreditReward());
             }
             else if(player.getShip().getCannons()==card.getPowerLevel()){
                 continue;
@@ -149,7 +160,27 @@ public class AdventureCardVisitor {
                     int index2 = dice2.nextInt(6) + 1;
                     int index = index1 + index2;
 
+                    Component[][] board = player.getShip().getBoard();
+                    if ( cannonFire.getApproach() == Direction.UP || cannonFire.getApproach() == Direction.DOWN) {
+                        // For UP and DOWN directions, fixedIndex represents a column
+                        if (index < 0 || index >= board[0].length) {
+                            System.out.println("Column index out of bounds: " + index);
+                            continue;
+                        }
+                    } else {
+                        // For LEFT and RIGHT directions, fixedIndex represents a row
+                        if (index < 0 || index >= board.length) {
+                            System.out.println("Row index out of bounds: " + index);
+                            continue;
+                        }
+                    }
+
+                    System.out.println("Direction: " + cannonFire.getApproach()+ " index: " + index);
                     Position impactPosition = player.getShip().findFirstComponent(cannonFire.getApproach(), index);
+                    if(impactPosition==null){
+                        System.out.println("Player " + player.getId().getNickname() + " has no component in the impact position");
+                        continue;
+                    }
                     Component impactComponent = player.getShip().getBoard()[impactPosition.getRow()][impactPosition.getCol()];
 
                     if(cannonFire.isBlockable() && player.getShip().protectedByShield(cannonFire.getApproach())){
@@ -159,6 +190,8 @@ public class AdventureCardVisitor {
                         System.out.println(player.getId().getNickname()+ " has no protection against cannon fire number "
                                 +card.getAttackPattern().indexOf(cannonFire));
                         player.getShip().removeComponent(impactPosition);
+                        System.out.println("Player " + player.getId().getNickname() + " has lost the component in position ("
+                                + impactPosition.getRow()+ "," + impactPosition.getCol() + ")");
                     }
                 }
             }
@@ -191,12 +224,7 @@ public class AdventureCardVisitor {
                 }
             }
         }
-        for(Planet planet : card.getPlanets()){
-            if(planet.isVisited()){
-                return true;
-            }
-        }
-        return false;
+        return true;
     }
     
     /**
@@ -276,10 +304,7 @@ public class AdventureCardVisitor {
                 break;
             }
         }
-        if(card.isDefeated()){
-            return true;
-        }
-        return false;
+        return true;
     }
     
     /**
@@ -309,15 +334,13 @@ public class AdventureCardVisitor {
                 break;
             }
             else if(powerLevel > cannonStrength){
+                System.out.println("Power level: " + powerLevel+ " cannon strength: " + cannonStrength);
                 if(!(player.getShip().removeValuableResources(card.getGoodsLostIfDefeated()))){
                     throw new IllegalArgumentException("Not enough resources available!");
                 }
             }
         }
-        if (card.isDefeated()){
-            return true;
-        }
-        return false;
+        return true;
     }
     
     /**
@@ -342,30 +365,48 @@ public class AdventureCardVisitor {
         for(CombatCheck check : card.getCombatChecks()){
             CombatAttributeType attributeType = check.getAttribute();
             Player combatLoser = check.getCombatLoser(playersOrdered);
-
-            // if(combatLoser == null){
-            //    throw new IllegalStateException("No combat losing player found.");
-            //    return false;
-            //}
+            System.out.println("Combat loser: " + combatLoser.getId().getNickname());
 
             PenaltyType penalty = check.getPenaltyType();
             switch (penalty){
                 case CREW_LOSS:
                     combatLoser.getShip().setCrew(combatLoser.getShip().getCrew() - check.getPenaltyValue());
-                    if(combatLoser.getShip().getCrew() >= 0){
+                    System.out.println(combatLoser.getId().getNickname() + " has lost " + check.getPenaltyValue() + " crew members");
+                    if(combatLoser.getShip().getCrew() == 0){
                         flightBoard.abandonPlayer(combatLoser); //controllo che andrebbe fatto direttamente in updateCrew
                     }
+                    break;
                 case FLIGHT_DAYS_LOSS:
                     flightBoard.movePlayer(combatLoser, check.getPenaltyValue(), false);
+                    System.out.println(combatLoser.getId().getNickname() + " has lost " + check.getPenaltyValue() + " flight days");
+                    break;
                 case CANNON_FIRE:
                     for(CannonFire cannonFire : check.getCannonFires()){
                         Random dice1 = new Random();
                         Random dice2 = new Random();
-                        int index1 = dice1.nextInt(6) + 1;
-                        int index2 = dice2.nextInt(6) + 1;
+                        int index1 = dice1.nextInt(6);
+                        int index2 = dice2.nextInt(6);
                         int index = index1 + index2;
 
+                        Component[][] board = combatLoser.getShip().getBoard();
+                        if ( cannonFire.getApproach() == Direction.UP || cannonFire.getApproach() == Direction.DOWN) {
+                            // For UP and DOWN directions, fixedIndex represents a column
+                            if (index < 0 || index >= board[0].length) {
+                                System.out.println("Column index out of bounds: " + index);
+                                continue;
+                            }
+                        } else {
+                            // For LEFT and RIGHT directions, fixedIndex represents a row
+                            if (index < 0 || index >= board.length) {
+                                System.out.println("Row index out of bounds: " + index);
+                                continue;
+                            }
+                        }
                         Position impactPosition = combatLoser.getShip().findFirstComponent(cannonFire.getApproach(), index);
+                        if(impactPosition==null){
+                            System.out.println("Player " + combatLoser.getId().getNickname() + " has no component in the impact position");
+                            continue;
+                        }
                         Component impactComponent = combatLoser.getShip().getBoard()[impactPosition.getRow()][impactPosition.getCol()];
 
                         if(cannonFire.isBlockable() && combatLoser.getShip().protectedByShield(cannonFire.getApproach())) {
@@ -377,6 +418,7 @@ public class AdventureCardVisitor {
                             combatLoser.getShip().removeComponent(impactPosition);
                         }
                     }
+                    break;
             }
         }
         return true;
@@ -429,9 +471,6 @@ public class AdventureCardVisitor {
                 System.out.println(player.getId().getNickname() + " looted the abandoned station.");
                 }
             }
-            if(card.isVisited()){
-                return true;
-            }
-            return false;
+         return true;
     }
 }
