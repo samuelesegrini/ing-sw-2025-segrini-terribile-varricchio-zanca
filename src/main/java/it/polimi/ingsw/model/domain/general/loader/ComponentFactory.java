@@ -2,6 +2,11 @@ package it.polimi.ingsw.model.domain.general.loader;
 
 import it.polimi.ingsw.model.domain.general.config.ComponentConfig;
 import it.polimi.ingsw.model.domain.ship.components.Component;
+import it.polimi.ingsw.model.domain.ship.components.Cannon;
+import it.polimi.ingsw.model.domain.ship.components.Shield;
+import it.polimi.ingsw.model.enums.ship.ComponentType;
+import it.polimi.ingsw.model.enums.ship.ConnectorType;
+import it.polimi.ingsw.model.enums.ship.Direction;
 
 import java.util.HashMap;
 import java.util.List;
@@ -53,6 +58,24 @@ public class ComponentFactory {
     }
 
     /**
+     * Creates a cannon component
+     */
+    private Component createCannon(ComponentConfig config) {
+        Map<Direction, ConnectorType> connectors = parseConnectors(config.connectors());
+        ComponentType type = ComponentType.valueOf(config.type());
+        return new Cannon(type, connectors);
+    }
+
+    /**
+     * Creates a shield component
+     */
+    private Component createShield(ComponentConfig config) {
+        Map<Direction, ConnectorType> connectors = parseConnectors(config.connectors());
+        ComponentType type = ComponentType.valueOf(config.type());
+        return new Shield(type, connectors);
+    }
+
+    /**
      * Configures the sides of an abstract component
      */
     private void configureSides(Component component, List<String> sides) {
@@ -60,10 +83,30 @@ public class ComponentFactory {
         throw new UnsupportedOperationException("Not implemented yet");
     }
 
+    /**
+     * Parses connector strings from the configuration into a map of Direction to ConnectorType
+     */
+    private Map<Direction, ConnectorType> parseConnectors(List<String> connectorStrings) {
+        Map<Direction, ConnectorType> connectors = new HashMap<>();
+        
+        for (String connectorString : connectorStrings) {
+            String[] parts = connectorString.split(":");
+            if (parts.length == 2) {
+                Direction direction = Direction.valueOf(parts[0]);
+                ConnectorType connectorType = ConnectorType.valueOf(parts[1]);
+                connectors.put(direction, connectorType);
+            }
+        }
+        
+        return connectors;
+    }
+
     private void initializeCreators() {
         // Register creators for different component types
         registerCreator("CABIN", this::createCabin);
         registerCreator("ENGINE", this::createEngine);
+        registerCreator("CANNON_SINGLE", this::createCannon);
+        registerCreator("SHIELD", this::createShield);
         // Add more component type creators as needed
     }
 } 

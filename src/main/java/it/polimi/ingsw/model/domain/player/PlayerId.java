@@ -12,27 +12,27 @@ public class PlayerId {
     }
 
     /**
-     * Concatenate the player's nickname and UUID into a single string.
-     @return A new string which is the result of concatenating {@code value} and {@code nickname}
-     */
-    public String stringToString(){
-        return value.toString().concat(nickname);
-    }
-
-    /**
-     * Generate a Universally Unique Identifier for each player.
-     * @return a 36-character string that includes numbers and letters
-     */
-    public static PlayerId generatePlayerId(){
-        UUID uniqueId = UUID.randomUUID();
-        return new PlayerId(uniqueId, uniqueId.toString());
-    }
-
-    /**
      * Return a String corresponding to the player's username
      * @return player's nickname
      */
     public String getNickname(){
         return this.nickname;
+    }
+
+    /**
+     * Creates a PlayerId instance from a nickname string.
+     * Generates a new UUID for the internal value.
+     * Assumes the nickname is the primary identifier for lookup/comparison purposes.
+     *
+     * @param nickname The player's nickname.
+     * @return A new PlayerId instance.
+     * @throws IllegalArgumentException if nickname is null or empty.
+     */
+    public static PlayerId fromString(String nickname) {
+        if (nickname == null || nickname.trim().isEmpty()) {
+            throw new IllegalArgumentException("Nickname cannot be null or empty");
+        }
+        // Generate a new UUID, as the original UUID isn't recoverable from just the nickname
+        return new PlayerId(UUID.randomUUID(), nickname.trim());
     }
 }

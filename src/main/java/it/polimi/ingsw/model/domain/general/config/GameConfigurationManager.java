@@ -2,6 +2,7 @@ package it.polimi.ingsw.model.domain.general.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import it.polimi.ingsw.model.domain.adventure.card.AdventureCard;
 import it.polimi.ingsw.model.domain.general.loader.AdventureCardFactory;
 import it.polimi.ingsw.model.domain.adventure.AdventureDeck;
@@ -32,6 +33,7 @@ public class GameConfigurationManager {
         this.componentFactory = new ComponentFactory();
         this.cardFactory = new AdventureCardFactory();
         this.jsonMapper = new ObjectMapper();
+        this.jsonMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         this.allComponents = new ArrayList<>();
         this.cardRegistry = new HashMap<>();
         this.levelConfigs = new HashMap<>();
