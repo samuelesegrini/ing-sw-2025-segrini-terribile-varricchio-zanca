@@ -332,6 +332,14 @@ public class GameModel {
     }
 
     /**
+     * Sets the component deck for the game.
+     * @param componentDeck The component deck to set.
+     */
+    public void setComponentDeck(ComponentDeck componentDeck) {
+        this.componentDeck = componentDeck;
+    }
+
+    /**
      * Returns the current player index.
      * @return The index of the current player in the players list.
      */
