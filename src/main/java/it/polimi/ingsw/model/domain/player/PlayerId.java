@@ -35,4 +35,9 @@ public class PlayerId {
         // Generate a new UUID, as the original UUID isn't recoverable from just the nickname
         return new PlayerId(UUID.randomUUID(), nickname.trim());
     }
+
+    @Override
+    public String toString() {
+        return nickname;
+    }
 }
