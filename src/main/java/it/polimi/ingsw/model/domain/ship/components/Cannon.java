@@ -19,8 +19,8 @@ public class Cannon extends Component {
 
 
     @Override
-    public void accept(ComponentVisitor v) {
-        v.useCannon(super.ship, this);
+    public void use(UseComponentVisitor v) {
+        v.useCannon(this.getShip(), this);
     }
 
     @Override

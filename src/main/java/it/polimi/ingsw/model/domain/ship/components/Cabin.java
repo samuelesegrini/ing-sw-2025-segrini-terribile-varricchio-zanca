@@ -24,9 +24,8 @@ public class Cabin extends Component {
 
 
     @Override
-    public void accept(ComponentVisitor v) {
-        int quantity = 0;
-        v.useCabin(super.ship, this, quantity);
+    public void use(UseComponentVisitor v) {
+        v.useCabin(this.getShip(), this, v.getQuantity());
     }
 
     @Override

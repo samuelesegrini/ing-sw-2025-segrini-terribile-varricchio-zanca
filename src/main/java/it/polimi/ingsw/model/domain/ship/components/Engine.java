@@ -19,8 +19,8 @@ public class Engine extends Component {
 
 
     @Override
-    public void accept(ComponentVisitor v) {
-        v.useEngine(super.ship, this);
+    public void use(UseComponentVisitor v) {
+        v.useEngine(this.getShip(), this);
     }
 
     @Override

@@ -28,9 +28,8 @@ public class CargoHold extends Component {
 
 
     @Override
-    public void accept(ComponentVisitor v) {
-        Map<GoodType, Integer> goods = null;
-        v.useCargoHold(super.ship, this, goods);
+    public void use(UseComponentVisitor v) {
+        v.useCargoHold(this.getShip(), this, v.getGoods());
     }
 
     @Override
@@ -71,13 +70,19 @@ public class CargoHold extends Component {
         return storedGoods;
     }
 
-    public void setStoredGoods(Map<GoodType, Integer> storedGoods) {
-        this.storedGoods = storedGoods;
+    public void setStoredGoods(Map<GoodType, Integer> goods) {
+        storedGoods = goods;
+
+        occupiedCapacity = 0;
+        for (GoodType type : GoodType.values()) {
+            occupiedCapacity += goods.get(type);
+        }
     }
 
     public void storeGoodsOfType(GoodType type, int quantity) {
         if (occupiedCapacity + quantity <= capacity) {
             Integer currentAmount = storedGoods.getOrDefault(type, 0);
+            //System.out.println(currentAmount);
             storedGoods.put(type, currentAmount + quantity);
             occupiedCapacity += quantity;
         }

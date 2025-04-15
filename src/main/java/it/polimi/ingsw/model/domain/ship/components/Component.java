@@ -51,6 +51,14 @@ public abstract class Component {
         return connectors;
     }
 
+    public Ship getShip() {
+        return ship;
+    }
+
+    public void setShip(Ship ship) {
+        this.ship = ship;
+    }
+
     /**
      * Given a direction it returns the connector type.
      * @param direction direction of interest
@@ -74,7 +82,7 @@ public abstract class Component {
     }
 
 
-    public void accept(ComponentVisitor visitor) {}
+    public void use(UseComponentVisitor v) {}
 
 
     // These methods are overridden by the subclasses

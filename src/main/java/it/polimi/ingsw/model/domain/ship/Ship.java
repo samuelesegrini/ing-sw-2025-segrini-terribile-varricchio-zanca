@@ -110,6 +110,7 @@ public class Ship {
         } else {
             board[row][col] = component;
             component.setPosition(position);
+            component.setShip(this);
         }
     }
 

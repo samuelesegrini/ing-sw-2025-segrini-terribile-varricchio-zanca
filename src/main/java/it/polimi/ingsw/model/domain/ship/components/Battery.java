@@ -21,9 +21,8 @@ public class Battery extends Component {
 
 
     @Override
-    public void accept(ComponentVisitor v) {
-        int quantity = 0;    // Input da utente
-        v.useBattery(super.ship, this, quantity);
+    public void use(UseComponentVisitor v) {
+        v.useBattery(this.getShip(), this, v.getQuantity());
     }
 
     @Override

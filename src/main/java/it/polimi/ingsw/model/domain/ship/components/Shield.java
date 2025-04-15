@@ -23,8 +23,8 @@ public class Shield extends Component {
 
 
     @Override
-    public void accept(ComponentVisitor v) {
-        v.useShield(super.ship, this);
+    public void use(UseComponentVisitor v) {
+        v.useShield(this.getShip(), this);
     }
 
 

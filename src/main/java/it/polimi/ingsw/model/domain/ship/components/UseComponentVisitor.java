@@ -9,6 +9,10 @@ import java.util.Map;
 
 // Removes batteries to charge cannons/engines/shields
 public class UseComponentVisitor implements ComponentVisitor {
+    private int quantity;
+    private Map<GoodType, Integer> goods;
+
+
     @Override
     public void useBattery(Ship ship, Battery battery, int quantity) {
         int result = battery.getCurrentBatteries() - quantity;
@@ -139,5 +143,22 @@ public class UseComponentVisitor implements ComponentVisitor {
         else {
             System.out.println("There is no charging battery to use");
         }
+    }
+
+
+    public int getQuantity() {
+        return quantity;
+    }
+
+    public void setQuantity(int quantity) {
+        this.quantity = quantity;
+    }
+
+    public Map<GoodType, Integer> getGoods() {
+        return goods;
+    }
+
+    public void setGoods(Map<GoodType, Integer> goods) {
+        this.goods = goods;
     }
 }
