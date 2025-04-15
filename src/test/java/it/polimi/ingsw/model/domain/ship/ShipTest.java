@@ -381,8 +381,9 @@ class ShipTest {
 
     @Test
     void testFindFirstComponent_NoComponentFound() {
-        Ship ship =new Ship(null, GameLevel.LEVEL_II);
-        assertThrows(NullPointerException.class, () -> ship.findFirstComponent(Direction.UP, 3));
+        Ship ship = new Ship(null, GameLevel.LEVEL_II);
+        Position result = ship.findFirstComponent(Direction.UP, 3);
+        assertNull(result, "Expected null when no component is found");
     }
 
     @Test
