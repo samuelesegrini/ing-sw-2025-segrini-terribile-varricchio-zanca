@@ -128,10 +128,14 @@ public class AdventureCardFactory {
 
     /**
      * Creates a deck for the specified game level
+     * 
+     * @param gameLevel The game level to create a deck for
+     * @return A new AdventureDeck with empty piles
+     * @throws UnsupportedOperationException since this method is not yet implemented
      */
     public AdventureDeck createDeckForGameLevel(GameLevel gameLevel) {
-        // This method is not implemented yet
-        throw new UnsupportedOperationException("createDeckForGameLevel is not implemented yet");
+        // This method is not yet implemented
+        throw new UnsupportedOperationException("createDeckForGameLevel is not yet implemented");
     }
 
     /**

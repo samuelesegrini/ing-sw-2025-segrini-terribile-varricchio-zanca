@@ -54,9 +54,26 @@ class AdventureCardVisitorTest {
         player2.setShip(ship2);
 
         gameModel = new GameModel(GameLevel.LEVEL_II, configManager, 2);
-        flightBoard = gameModel.getFlightBoard();
+        
+        // Add players to the game model
+        gameModel.addPlayer(playerId1, "Manuela");
+        gameModel.addPlayer(playerId2, "Diego");
+        
+        // Create a mock FlightBoard for testing
+        flightBoard = new FlightBoard(GameLevel.LEVEL_II);
+        
+        // Register players with the flight board
         flightBoard.registerPlayer(player1);
         flightBoard.registerPlayer(player2);
+        
+        // Set the flight board in the game model using reflection to avoid initialization
+        try {
+            java.lang.reflect.Field flightBoardField = GameModel.class.getDeclaredField("flightBoard");
+            flightBoardField.setAccessible(true);
+            flightBoardField.set(gameModel, flightBoard);
+        } catch (Exception e) {
+            fail("Failed to set flight board in game model: " + e.getMessage());
+        }
     }
 
     //ABANDONED SHIP TESTS
@@ -514,7 +531,7 @@ class AdventureCardVisitorTest {
         Cabin component3 = new Cabin(ComponentType.CABIN, connectors3);
         component1.setPosition(new Position(2, 3));
         component2.setPosition(new Position(2, 4));
-        component3.setPosition(new Position(1, 4));
+        component3.setPosition(new Position(1, 5));
 
         ship1.addComponent(component1, new Position(2, 3));
         ship1.addComponent(component2, new Position(2, 4));

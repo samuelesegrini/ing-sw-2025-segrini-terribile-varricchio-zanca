@@ -37,6 +37,7 @@ public class GameModel {
     private FlightBoard flightBoard;
     private int currentPlayerIndex;
     private Player leadPlayer;
+    private boolean isInitialized;
 
     /**
      * Creates a new game model with the specified difficulty level, configuration, and number of players.
@@ -51,7 +52,6 @@ public class GameModel {
             throw new IllegalArgumentException("Player count must be between 2 and 4");
         }
 
-        this.flightBoard = new FlightBoard(level);
         this.gameId = UUID.randomUUID().toString();
         this.level = level;
         this.configManager = configManager;
@@ -60,6 +60,7 @@ public class GameModel {
         this.currentPhase = GamePhase.SETUP;
         this.currentPlayerIndex = 0;
         this.maxPlayers = playerCount;
+        this.isInitialized = false;
     }
 
     /**
@@ -107,7 +108,7 @@ public class GameModel {
         if (players.size() < 2) {
             throw new IllegalStateException("Not enough players to start the game");
         }
-        if (flightBoard != null) {
+        if (isInitialized) {
             throw new IllegalStateException("Game already initialized");
         }
 
@@ -119,6 +120,8 @@ public class GameModel {
         for (Player player : players) {
             flightBoard.registerPlayer(player);
         }
+        
+        isInitialized = true;
     }
 
     /**
@@ -126,7 +129,7 @@ public class GameModel {
      * @throws IllegalStateException if game not initialized or already started
      */
     public void startGame() {
-        if (flightBoard == null) {
+        if (!isInitialized) {
             throw new IllegalStateException("Game not initialized");
         }
         if (currentPhase != GamePhase.SETUP) {
