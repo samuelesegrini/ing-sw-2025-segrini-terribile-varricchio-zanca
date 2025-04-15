@@ -29,6 +29,7 @@ public class GameModel {
     private final GameConfig config;
     private final List<Player> players;
     private final GameConfigurationManager configManager;
+    private final int maxPlayers;
     
     private GamePhase currentPhase;
     private ComponentDeck componentDeck;
@@ -58,6 +59,7 @@ public class GameModel {
         this.players = new ArrayList<>();
         this.currentPhase = GamePhase.SETUP;
         this.currentPlayerIndex = 0;
+        this.maxPlayers = playerCount;
     }
 
     /**
@@ -72,7 +74,7 @@ public class GameModel {
         if (currentPhase != GamePhase.SETUP) {
             throw new IllegalStateException("Cannot add players after game has started");
         }
-        if (players.size() >= 4) {
+        if (players.size() >= maxPlayers) {
             throw new IllegalStateException("Maximum number of players reached");
         }
         if (getPlayerById(playerId) != null) {
@@ -353,5 +355,20 @@ public class GameModel {
      */
     public Player getLeadPlayer() {
         return leadPlayer;
+    }
+
+    /**
+     * Removes a player from the game.
+     * 
+     * @param playerId The ID of the player to remove.
+     * @return true if the player was removed, false if the player was not found.
+     */
+    public boolean removePlayer(PlayerId playerId) {
+        Player player = getPlayerById(playerId);
+        if (player != null) {
+            players.remove(player);
+            return true;
+        }
+        return false;
     }
 }

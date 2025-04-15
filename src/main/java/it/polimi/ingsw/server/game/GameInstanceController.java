@@ -1,6 +1,7 @@
 package it.polimi.ingsw.server.game;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -107,6 +108,12 @@ public class GameInstanceController {
      * @return A CompletableFuture containing the CommandResult of the placement action.
      */
     public CompletableFuture<CommandResult> processPlacementRequest(String playerIdString, ComponentDTO componentDTO, Position position) {
+        // Check if componentDTO is null
+        if (componentDTO == null) {
+            logger.log(Level.WARNING, "Processing placement request from {0} with null component at {1}", new Object[]{playerIdString, position});
+            return CompletableFuture.completedFuture(CommandResult.failure("Component cannot be null."));
+        }
+        
         logger.log(Level.FINER, "Processing placement request from {0} for component {1} at {2}", new Object[]{playerIdString, componentDTO.getType(), position});
         PlayerId playerId = findPlayerIdFromString(playerIdString);
         if (playerId == null) {
@@ -149,6 +156,10 @@ public class GameInstanceController {
      * @return A CompletableFuture<Boolean> indicating if the player was successfully added.
      */
     public CompletableFuture<Boolean> addPlayer(PlayerId playerId, ServerClientHandler clientHandler) {
+        if (clientHandler == null) {
+            logger.log(Level.WARNING, "Cannot add player {0} to game {1}: client handler is null", new Object[]{playerId, gameId});
+            return CompletableFuture.completedFuture(false);
+        }
         logger.log(Level.INFO, "Attempting to add player {0} to game {1}", new Object[]{playerId, gameId});
 
         // Pass PlayerId directly to the command constructor
@@ -189,18 +200,17 @@ public class GameInstanceController {
             ServerClientHandler removedHandler = clientHandlers.remove(targetPlayerId);
             if (removedHandler != null) {
                 logger.log(Level.INFO, "Removed client handler for player {0} from game {1}", new Object[]{playerIdString, gameId});
-                // Consider closing connection via removedHandler.closeConnection();
-
-                // TODO: Process a RemovePlayerCommand via commandProcessor
-
+                removedHandler.closeConnection();
+                
+                // Remove the player from the GameModel using the new method
+                if (model.removePlayer(targetPlayerId)) {
+                    logger.log(Level.INFO, "Removed player {0} from game model", new Object[]{playerIdString});
+                }
+                
                 if (broadcast) {
                     broadcastPlayerRemoval(playerIdString);
                 }
-            } else {
-                logger.log(Level.WARNING, "Attempted to remove non-existent handler (found PlayerId but not handler) for player {0} from game {1}", new Object[]{playerIdString, gameId});
             }
-        } else {
-            logger.log(Level.WARNING, "Attempted to remove handler for unknown player ID {0} from game {1}", new Object[]{playerIdString, gameId});
         }
     }
 
@@ -215,27 +225,37 @@ public class GameInstanceController {
     public CompletableFuture<Boolean> processReconnectionRequest(PlayerId playerId, String sessionToken, ServerClientHandler clientHandler) {
         logger.log(Level.INFO, "Processing reconnection request for player {0} in game {1}", new Object[]{playerId, gameId});
 
-        // PlayerId already validated by MultiGameCoordinator using sessionManager.validateReconnectionAttempt
+        // Validate inputs
+        if (playerId == null || clientHandler == null) {
+            logger.log(Level.WARNING, "Null playerId or clientHandler in reconnection request");
+            return CompletableFuture.completedFuture(false);
+        }
 
-        clientHandler.setPlayerId(playerId.toString()); // Set handler ID as String
+        // Validate session token
+        if (!sessionManager.validateReconnectionAttempt(playerId, sessionToken)) {
+            logger.log(Level.WARNING, "Invalid session token for player {0}", playerId);
+            return CompletableFuture.completedFuture(false);
+        }
+
+        // Set up the client handler
+        clientHandler.setPlayerId(playerId.toString());
         ServerClientHandler oldHandler = clientHandlers.put(playerId, clientHandler);
         if (oldHandler != null && oldHandler != clientHandler) {
             logger.log(Level.WARNING, "Replacing existing handler for reconnecting player {0}", playerId);
-            // Consider closing oldHandler.closeConnection();
+            oldHandler.closeConnection();
         }
 
         // Mark as connected in SessionManager
         sessionManager.registerConnection(playerId);
 
         // Send full game state and broadcast status update
-        return sendFullGameState(playerId.toString()) // Send state using String ID
-                .thenComposeAsync(v -> broadcastPlayerStatusUpdate(playerId.toString(), FlightStatus.RACING), networkExecutor) // Broadcast using String ID
+        return sendFullGameState(playerId.toString())
+                .thenComposeAsync(v -> broadcastPlayerStatusUpdate(playerId.toString(), FlightStatus.RACING), networkExecutor)
                 .thenApply(v -> true)
                 .exceptionally(ex -> {
                     logger.log(Level.SEVERE, "Failed to process reconnection for player " + playerId, ex);
-                    // Revert connection status on failure?
                     sessionManager.registerDisconnection(playerId);
-                    clientHandlers.remove(playerId, clientHandler); // Remove the new handler if setup failed
+                    clientHandlers.remove(playerId, clientHandler);
                     return false;
                 });
     }
@@ -244,7 +264,13 @@ public class GameInstanceController {
     // --- Broadcasting Methods (Run on Network Executor) ---
 
     private CompletableFuture<Void> broadcast(CompletableFuture<?>... futures) {
-        return CompletableFuture.allOf(futures);
+        CompletableFuture<?>[] handledFutures = Arrays.stream(futures)
+                .map(future -> future.exceptionally(ex -> {
+                    logger.log(Level.WARNING, "Broadcast operation failed for a client", ex);
+                    return null;
+                }))
+                .toArray(CompletableFuture<?>[]::new);
+        return CompletableFuture.allOf(handledFutures);
     }
 
     public CompletableFuture<Void> broadcastGameState(GameStateDTO state) {
@@ -321,6 +347,17 @@ public class GameInstanceController {
                 return CompletableFuture.completedFuture(null);
             }
         } else {
+            // Try to find the handler directly by the string ID
+            for (ServerClientHandler handler : clientHandlers.values()) {
+                if (playerIdString.equals(handler.getPlayerId())) {
+                    return sendAction.apply(handler)
+                            .exceptionally(ex -> {
+                                logger.log(Level.WARNING, "Failed to send message to player " + playerIdString, ex);
+                                return null;
+                            });
+                }
+            }
+            
             logger.log(Level.WARNING, "Cannot send message, unknown player ID {0}", playerIdString);
             return CompletableFuture.completedFuture(null);
         }
@@ -333,11 +370,19 @@ public class GameInstanceController {
     }
 
     public CompletableFuture<Void> sendErrorToPlayer(String playerIdString, String message, boolean isFatal) {
+        if (message == null) {
+            logger.log(Level.WARNING, "Attempted to send null error message to player {0}", playerIdString);
+            return CompletableFuture.completedFuture(null);
+        }
         logger.log(Level.WARNING, "Sending error to player {0}: {1} (Fatal: {2})", new Object[]{playerIdString, message, isFatal});
         return sendToPlayer(playerIdString, handler -> handler.sendError(message, isFatal));
     }
 
     public CompletableFuture<Void> sendActionResultToPlayer(String playerIdString, ActionResultDTO result) {
+        if (result == null) {
+            logger.log(Level.WARNING, "Attempted to send null action result to player {0}", playerIdString);
+            return CompletableFuture.completedFuture(null);
+        }
         logger.log(Level.FINE, "Sending action result to player {0}: Success={1}", new Object[]{playerIdString, result.isSuccess()});
         return sendToPlayer(playerIdString, handler -> handler.sendActionResult(result));
     }
@@ -346,21 +391,19 @@ public class GameInstanceController {
 
     private void transitionToPhase(it.polimi.ingsw.model.enums.GamePhase newPhase) {
         logger.log(Level.INFO, "Transitioning game {0} to phase {1}", new Object[]{gameId, newPhase});
-        // TODO: Create TransitionPhaseCommand
-        // TransitionPhaseCommand command = new TransitionPhaseCommand(newPhase);
-        // commandProcessor.process(command).thenRunAsync(() -> {
-        //    GamePhaseDTO phaseDTO = new GamePhaseDTO(newPhase.name());
-        //    // Add current player info if needed
-        //    broadcastPhaseTransition(phaseDTO);
-        // }, networkExecutor);
-
-        // Placeholder broadcast
+        model.setCurrentPhase(newPhase);
         GamePhaseDTO phaseDTO = new GamePhaseDTO(newPhase.name());
         broadcastPhaseTransition(phaseDTO);
     }
 
     public void startGame() {
         logger.log(Level.INFO, "Starting game {0}", gameId);
+        // Check if there are enough players to start the game
+        if (clientHandlers.size() < 2) {
+            logger.log(Level.WARNING, "Cannot start game {0} with insufficient players. Required: 2, Current: {1}", 
+                new Object[]{gameId, clientHandlers.size()});
+            return;
+        }
         // TODO: Process StartGameCommand if needed (e.g., to initialize decks)
         // GameModel already initializes decks/board in its constructor/initializeGame()
         // We just need to set the phase.
@@ -435,11 +478,31 @@ public class GameInstanceController {
      */
     private PlayerId findPlayerIdFromString(String playerIdString) {
         if (playerIdString == null) return null;
+        
+        // First try exact match
         for (PlayerId pid : clientHandlers.keySet()) {
-            if (pid.toString().equals(playerIdString)) { // TODO: Verify PlayerId.toString() format
+            if (pid.toString().equals(playerIdString)) {
                 return pid;
             }
         }
+        
+        // Then try matching by nickname
+        for (PlayerId pid : clientHandlers.keySet()) {
+            if (pid.getNickname().equals(playerIdString)) {
+                return pid;
+            }
+        }
+        
+        // Try to parse the string as a PlayerId
+        try {
+            PlayerId parsedId = PlayerId.fromString(playerIdString);
+            if (clientHandlers.containsKey(parsedId)) {
+                return parsedId;
+            }
+        } catch (Exception e) {
+            // Ignore parsing errors
+        }
+        
         logger.log(Level.FINEST, "Could not find PlayerId object for string: {0}", playerIdString);
         return null; // Not found
     }
@@ -456,9 +519,6 @@ public class GameInstanceController {
         // 1. Convert Game Phase
         if (model.getCurrentPhase() != null) {
             GamePhaseDTO phaseDTO = new GamePhaseDTO(model.getCurrentPhase().name());
-            if (model.getCurrentPlayer() != null && model.getCurrentPlayer().getId() != null) {
-                // phaseDTO.setCurrentPlayerId(model.getCurrentPlayer().getId().toString());
-            }
             dto.setGamePhase(phaseDTO);
         }
 
@@ -478,7 +538,8 @@ public class GameInstanceController {
         dto.setFlightBoard(boardDTO);
 
         // 5. Add other relevant top-level state
-        if (model.getCurrentPlayer() != null && model.getCurrentPlayer().getId() != null) {
+        // Check if there are any players before trying to get the current player
+        if (!model.getPlayers().isEmpty() && model.getCurrentPlayer() != null && model.getCurrentPlayer().getId() != null) {
             dto.setCurrentTurnPlayerId(model.getCurrentPlayer().getId().toString());
         }
 
@@ -647,5 +708,7 @@ public class GameInstanceController {
         clientHandlers.values().forEach(ServerClientHandler::closeConnection);
         clientHandlers.clear();
         commandProcessor.shutdown();
+        gameLogicExecutor.shutdown();
+        networkExecutor.shutdown();
     }
 }
