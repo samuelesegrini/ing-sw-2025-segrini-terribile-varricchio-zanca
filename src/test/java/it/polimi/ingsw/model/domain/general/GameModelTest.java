@@ -1,16 +1,13 @@
 package it.polimi.ingsw.model.domain.general;
 
-import it.polimi.ingsw.model.domain.adventure.AdventureDeck;
-import it.polimi.ingsw.model.domain.flight.FlightBoard;
-import it.polimi.ingsw.model.domain.general.config.GameConfig;
-import it.polimi.ingsw.model.domain.general.config.GameConfigurationManager;
-import it.polimi.ingsw.model.domain.player.PlayerId;
-import it.polimi.ingsw.model.enums.GameLevel;
-import it.polimi.ingsw.model.enums.GamePhase;
+import it.polimi.ingsw.server.model.domain.general.GameModel;
+import it.polimi.ingsw.server.model.domain.general.config.GameConfig;
+import it.polimi.ingsw.server.model.domain.general.config.GameConfigurationManager;
+import it.polimi.ingsw.server.model.domain.player.PlayerId;
+import it.polimi.ingsw.server.model.enums.GameLevel;
+import it.polimi.ingsw.server.model.enums.GamePhase;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 

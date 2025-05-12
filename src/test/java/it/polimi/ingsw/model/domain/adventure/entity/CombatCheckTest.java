@@ -1,19 +1,20 @@
 package it.polimi.ingsw.model.domain.adventure.entity;
 
-import it.polimi.ingsw.model.domain.player.Player;
-import it.polimi.ingsw.model.domain.player.PlayerId;
-import it.polimi.ingsw.model.domain.ship.Ship;
-import it.polimi.ingsw.model.enums.GameLevel;
-import it.polimi.ingsw.model.enums.adventure.CombatAttributeType;
-import it.polimi.ingsw.model.enums.adventure.PenaltyType;
-import it.polimi.ingsw.model.enums.adventure.ShotIntensity;
-import it.polimi.ingsw.model.enums.ship.Direction;
+import it.polimi.ingsw.server.model.domain.adventure.entity.CannonFire;
+import it.polimi.ingsw.server.model.domain.adventure.entity.CombatCheck;
+import it.polimi.ingsw.server.model.domain.player.Player;
+import it.polimi.ingsw.server.model.domain.player.PlayerId;
+import it.polimi.ingsw.server.model.domain.ship.Ship;
+import it.polimi.ingsw.server.model.enums.GameLevel;
+import it.polimi.ingsw.server.model.enums.adventure.CombatAttributeType;
+import it.polimi.ingsw.server.model.enums.adventure.PenaltyType;
+import it.polimi.ingsw.server.model.enums.adventure.ShotIntensity;
+import it.polimi.ingsw.server.model.enums.ship.Direction;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.junit.jupiter.api.Assertions.*;
+
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;

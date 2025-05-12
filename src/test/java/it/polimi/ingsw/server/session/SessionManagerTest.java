@@ -1,7 +1,7 @@
 package it.polimi.ingsw.server.session;
 
-import it.polimi.ingsw.model.domain.player.PlayerId;
-import it.polimi.ingsw.model.enums.flight.FlightStatus;
+import it.polimi.ingsw.server.model.domain.player.PlayerId;
+import it.polimi.ingsw.server.model.enums.flight.FlightStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

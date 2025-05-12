@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Font?>
+
+<BorderPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="it.polimi.ingsw.client.view.GameLobbyController"
+            prefHeight="400.0" prefWidth="600.0">
+    <top>
+        <VBox spacing="10" alignment="CENTER">
+            <padding>
+                <Insets top="15" right="15" bottom="5" left="15"/>
+            </padding>
+            <Label fx:id="gameNameLabel" text="Game Lobby" style="-fx-font-weight: bold;">
+                <font>
+                    <Font size="20.0"/>
+                </font>
+            </Label>
+            <Label fx:id="gameLevelLabel" text="Level: Standard"/>
+            <Label fx:id="playersCountLabel" text="Players: 1/4"/>
+        </VBox>
+    </top>
+    
+    <center>
+        <VBox spacing="10">
+            <padding>
+                <Insets top="15" right="15" bottom="15" left="15"/>
+            </padding>
+            <Label text="Players in Lobby:" style="-fx-font-weight: bold;"/>
+            <TableView fx:id="playersTable" VBox.vgrow="ALWAYS">
+                <columns>
+                    <TableColumn fx:id="colPlayerNickname" text="Nickname" prefWidth="200"/>
+                    <TableColumn fx:id="colPlayerStatus" text="Status" prefWidth="100"/>
+                    <TableColumn fx:id="colPlayerIsHost" text="Host" prefWidth="50"/>
+                </columns>
+            </TableView>
+        </VBox>
+    </center>
+    
+    <bottom>
+        <HBox spacing="10" alignment="CENTER">
+            <padding>
+                <Insets top="10" right="15" bottom="15" left="15"/>
+            </padding>
+            <!-- Host-only button -->
+            <Button fx:id="startGameButton" text="Start Game" onAction="#handleStartGameButton" disable="true" visible="false"/>
+            
+            <!-- Non-host button -->
+            <Button fx:id="readyButton" text="I'm Ready" onAction="#handleReadyButton"/>
+            
+            <!-- Common buttons -->
+            <Button fx:id="leaveGameButton" text="Leave Lobby" onAction="#handleLeaveGameButton"/>
+            <Region HBox.hgrow="ALWAYS"/> <!-- Spacer -->
+            <Label fx:id="statusLabel" text="Waiting for more players..."/>
+        </HBox>
+    </bottom>
+</BorderPane>

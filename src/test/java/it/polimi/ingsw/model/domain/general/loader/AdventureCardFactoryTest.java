@@ -1,9 +1,10 @@
 package it.polimi.ingsw.model.domain.general.loader;
 
-import it.polimi.ingsw.model.domain.adventure.AdventureDeck;
-import it.polimi.ingsw.model.domain.adventure.card.AdventureCard;
-import it.polimi.ingsw.model.domain.general.config.CardConfig;
-import it.polimi.ingsw.model.enums.GameLevel;
+import it.polimi.ingsw.server.model.domain.adventure.card.AdventureCard;
+import it.polimi.ingsw.server.model.domain.general.config.CardConfig;
+import it.polimi.ingsw.server.model.domain.general.loader.AdventureCardCreator;
+import it.polimi.ingsw.server.model.domain.general.loader.AdventureCardFactory;
+import it.polimi.ingsw.server.model.enums.GameLevel;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

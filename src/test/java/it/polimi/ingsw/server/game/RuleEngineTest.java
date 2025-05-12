@@ -1,18 +1,18 @@
 package it.polimi.ingsw.server.game;
 
-import it.polimi.ingsw.model.domain.ship.Ship;
-import it.polimi.ingsw.model.domain.ship.Position;
-import it.polimi.ingsw.model.domain.ship.components.Component;
-import it.polimi.ingsw.model.domain.ship.components.Engine;
-import it.polimi.ingsw.model.domain.general.GameModel;
-import it.polimi.ingsw.model.domain.general.config.GameConfigurationManager;
-import it.polimi.ingsw.model.domain.player.Player;
-import it.polimi.ingsw.model.domain.player.PlayerId;
-import it.polimi.ingsw.model.enums.GameLevel;
-import it.polimi.ingsw.model.enums.GamePhase;
-import it.polimi.ingsw.model.enums.ship.ComponentType;
-import it.polimi.ingsw.model.enums.ship.ConnectorType;
-import it.polimi.ingsw.model.enums.ship.Direction;
+import it.polimi.ingsw.server.model.domain.ship.Ship;
+import it.polimi.ingsw.server.model.domain.ship.Position;
+import it.polimi.ingsw.server.model.domain.ship.components.Component;
+import it.polimi.ingsw.server.model.domain.ship.components.Engine;
+import it.polimi.ingsw.server.model.domain.general.GameModel;
+import it.polimi.ingsw.server.model.domain.general.config.GameConfigurationManager;
+import it.polimi.ingsw.server.model.domain.player.Player;
+import it.polimi.ingsw.server.model.domain.player.PlayerId;
+import it.polimi.ingsw.server.model.enums.GameLevel;
+import it.polimi.ingsw.server.model.enums.GamePhase;
+import it.polimi.ingsw.server.model.enums.ship.ComponentType;
+import it.polimi.ingsw.server.model.enums.ship.ConnectorType;
+import it.polimi.ingsw.server.model.enums.ship.Direction;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

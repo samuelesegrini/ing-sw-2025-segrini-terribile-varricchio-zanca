@@ -1,16 +1,17 @@
 package it.polimi.ingsw.model.domain.ship;
 
-import it.polimi.ingsw.model.domain.ship.components.*;
-import it.polimi.ingsw.model.enums.GameLevel;
-import it.polimi.ingsw.model.enums.resource.GoodType;
-import it.polimi.ingsw.model.enums.ship.ComponentType;
-import it.polimi.ingsw.model.enums.ship.ConnectorType;
-import it.polimi.ingsw.model.enums.ship.Direction;
+import it.polimi.ingsw.server.model.domain.ship.Position;
+import it.polimi.ingsw.server.model.domain.ship.Ship;
+import it.polimi.ingsw.server.model.domain.ship.components.*;
+import it.polimi.ingsw.server.model.enums.GameLevel;
+import it.polimi.ingsw.server.model.enums.resource.GoodType;
+import it.polimi.ingsw.server.model.enums.ship.ComponentType;
+import it.polimi.ingsw.server.model.enums.ship.ConnectorType;
+import it.polimi.ingsw.server.model.enums.ship.Direction;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;

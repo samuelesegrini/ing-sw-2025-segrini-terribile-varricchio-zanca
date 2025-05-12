@@ -1,11 +1,13 @@
 package it.polimi.ingsw.model.domain.general.config;
 
-import it.polimi.ingsw.model.domain.adventure.card.AdventureCard;
-import it.polimi.ingsw.model.domain.ship.components.Component;
-import it.polimi.ingsw.model.enums.GameLevel;
-import it.polimi.ingsw.model.enums.ship.ComponentType;
-import it.polimi.ingsw.model.enums.adventure.AdventureType;
-import it.polimi.ingsw.model.enums.adventure.CardLevel;
+import it.polimi.ingsw.server.model.domain.adventure.card.AdventureCard;
+import it.polimi.ingsw.server.model.domain.general.config.GameConfig;
+import it.polimi.ingsw.server.model.domain.general.config.GameConfigurationManager;
+import it.polimi.ingsw.server.model.domain.ship.components.Component;
+import it.polimi.ingsw.server.model.enums.GameLevel;
+import it.polimi.ingsw.server.model.enums.ship.ComponentType;
+import it.polimi.ingsw.server.model.enums.adventure.AdventureType;
+import it.polimi.ingsw.server.model.enums.adventure.CardLevel;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;

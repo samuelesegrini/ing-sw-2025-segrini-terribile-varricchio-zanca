@@ -1,17 +1,14 @@
 package it.polimi.ingsw.server.game;
 
-import it.polimi.ingsw.model.domain.general.GameModel;
-import it.polimi.ingsw.model.domain.player.PlayerId;
-import it.polimi.ingsw.model.enums.GameLevel;
-import it.polimi.ingsw.model.domain.general.config.GameConfigurationManager;
-import it.polimi.ingsw.model.enums.GamePhase;
-import it.polimi.ingsw.model.enums.flight.FlightStatus;
-import it.polimi.ingsw.model.domain.ship.Position;
-import it.polimi.ingsw.network.dto.*;
+import it.polimi.ingsw.server.model.domain.general.GameModel;
+import it.polimi.ingsw.server.model.domain.player.PlayerId;
+import it.polimi.ingsw.server.model.enums.GameLevel;
+import it.polimi.ingsw.server.model.domain.general.config.GameConfigurationManager;
+import it.polimi.ingsw.server.model.enums.GamePhase;
+import it.polimi.ingsw.server.model.enums.flight.FlightStatus;
+import it.polimi.ingsw.server.model.domain.ship.Position;
 import it.polimi.ingsw.server.commands.CommandProcessor;
 import it.polimi.ingsw.server.commands.CommandResult;
-import it.polimi.ingsw.server.network.ServerClientHandler;
-import it.polimi.ingsw.server.session.SessionManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -22,11 +19,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import static org.junit.jupiter.api.Assertions.*;
-
-import it.polimi.ingsw.model.domain.ship.components.Component;
-import it.polimi.ingsw.model.enums.ship.ComponentType;
-import it.polimi.ingsw.model.domain.general.ComponentDeck;
-import it.polimi.ingsw.model.domain.flight.FlightBoard;
 
 class GameInstanceControllerTest {
 

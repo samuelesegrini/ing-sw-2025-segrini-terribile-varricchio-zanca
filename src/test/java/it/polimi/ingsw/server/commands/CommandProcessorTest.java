@@ -1,10 +1,10 @@
 package it.polimi.ingsw.server.commands;
 
-import it.polimi.ingsw.model.domain.general.GameModel;
-import it.polimi.ingsw.model.domain.general.config.GameConfigurationManager;
-import it.polimi.ingsw.model.domain.player.PlayerId;
-import it.polimi.ingsw.model.enums.GameLevel;
-import it.polimi.ingsw.model.enums.GamePhase;
+import it.polimi.ingsw.server.model.domain.general.GameModel;
+import it.polimi.ingsw.server.model.domain.general.config.GameConfigurationManager;
+import it.polimi.ingsw.server.model.domain.player.PlayerId;
+import it.polimi.ingsw.server.model.enums.GameLevel;
+import it.polimi.ingsw.server.model.enums.GamePhase;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

@@ -1,5 +1,6 @@
 package it.polimi.ingsw.model.domain.flight;
 
+import it.polimi.ingsw.server.model.domain.flight.PlayerFlightData;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

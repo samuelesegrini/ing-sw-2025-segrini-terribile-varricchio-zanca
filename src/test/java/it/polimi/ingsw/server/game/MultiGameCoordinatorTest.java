@@ -1,12 +1,7 @@
 package it.polimi.ingsw.server.game;
 
-import it.polimi.ingsw.model.domain.general.GameModel;
-import it.polimi.ingsw.model.domain.player.PlayerId;
-import it.polimi.ingsw.model.enums.flight.FlightStatus;
-import it.polimi.ingsw.network.dto.*;
-import it.polimi.ingsw.server.network.ServerClientHandler;
-import it.polimi.ingsw.server.session.SessionInfo;
-import it.polimi.ingsw.server.session.SessionManager;
+import it.polimi.ingsw.server.model.domain.player.PlayerId;
+import it.polimi.ingsw.server.model.enums.flight.FlightStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

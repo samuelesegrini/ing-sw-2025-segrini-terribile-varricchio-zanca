@@ -1,21 +1,18 @@
 package it.polimi.ingsw.model.domain.adventure;
 
-import it.polimi.ingsw.model.domain.adventure.card.AdventureCard;
-import it.polimi.ingsw.model.domain.adventure.card.EpidemicCard;
-import it.polimi.ingsw.model.domain.adventure.card.StardustCard;
-import it.polimi.ingsw.model.domain.player.Player;
-import it.polimi.ingsw.model.domain.player.PlayerId;
-import it.polimi.ingsw.model.enums.GameLevel;
-import it.polimi.ingsw.model.enums.adventure.AdventureType;
-import it.polimi.ingsw.model.enums.adventure.CardLevel;
-import it.polimi.ingsw.model.util.PileIdentifier;
+import it.polimi.ingsw.server.model.domain.adventure.AdventureDeck;
+import it.polimi.ingsw.server.model.domain.adventure.card.AdventureCard;
+import it.polimi.ingsw.server.model.domain.adventure.card.EpidemicCard;
+import it.polimi.ingsw.server.model.domain.player.Player;
+import it.polimi.ingsw.server.model.domain.player.PlayerId;
+import it.polimi.ingsw.server.model.enums.GameLevel;
+import it.polimi.ingsw.server.model.enums.adventure.CardLevel;
+import it.polimi.ingsw.server.model.util.PileIdentifier;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.*;
 
