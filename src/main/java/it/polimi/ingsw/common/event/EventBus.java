@@ -103,6 +103,13 @@ public class EventBus {
         Objects.requireNonNull(event, "Event cannot be null.");
         LOGGER.log(Level.FINER, "Posting event: {0}", event.getClass().getSimpleName());
 
+        // Check if executor service is shut down
+        if (asyncEventExecutor.isShutdown()) {
+            LOGGER.log(Level.WARNING, "Cannot post event: {0} - EventBus executor service is shut down", 
+                event.getClass().getSimpleName());
+            return;
+        }
+
         List<HandlerMethodSubscription> applicableHandlers = findApplicableHandlers(event.getClass());
 
         if (applicableHandlers.isEmpty()) {

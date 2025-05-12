@@ -41,7 +41,7 @@ public class CreateGameResponseEvent extends BaseMessage {
         this.success = true;
         this.sessionId = Objects.requireNonNull(sessionId, "sessionId cannot be null for a successful creation");
         this.newGameInfo = Objects.requireNonNull(newGameInfo, "newGameInfo cannot be null for a successful creation");
-        this.playersInLobby = Objects.requireNonNull(playersInLobby, "playersInLobby cannot be null, use empty list if none");
+        this.playersInLobby = new ArrayList<>(Objects.requireNonNull(playersInLobby, "playersInLobby cannot be null, use empty list if none"));
         this.errorMessage = null;
     }
 

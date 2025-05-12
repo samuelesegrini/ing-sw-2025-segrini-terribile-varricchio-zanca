@@ -16,4 +16,11 @@ public class ServerGameListUpdateNotification extends BaseMessage {
         super(); // Call BaseMessage constructor to initialize timestamp
         // Empty constructor - notification has no payload
     }
+    
+    @Override
+    public String toString() {
+        return "ServerGameListUpdateNotification{" +
+                "timestamp=" + getTimestamp() +
+                '}';
+    }
 } 

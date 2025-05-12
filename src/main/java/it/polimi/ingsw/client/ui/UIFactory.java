@@ -41,9 +41,13 @@ public class UIFactory {
      * 
      * @param mode The UI mode (GUI or TUI)
      * @return A UIThreadHandler implementation (JavaFXThreadHandler for GUI, DirectThreadHandler for TUI)
-     * @throws IllegalArgumentException if an unsupported mode is provided
+     * @throws IllegalArgumentException if an unsupported mode is provided or if mode is null
      */
     public static UIThreadHandler createThreadHandler(GameClientController.UIMode mode) {
+        if (mode == null) {
+            throw new IllegalArgumentException("UI mode cannot be null");
+        }
+        
         switch (mode) {
             case GUI:
                 return new it.polimi.ingsw.client.ui.gui.JavaFXThreadHandler();
