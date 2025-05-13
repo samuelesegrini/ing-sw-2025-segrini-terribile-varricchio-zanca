@@ -1,5 +1,6 @@
 package it.polimi.ingsw.common.message.building;
 
+
 import it.polimi.ingsw.common.dto.PenaltyDTO;
 import it.polimi.ingsw.common.dto.ShipBoardDTO;
 import it.polimi.ingsw.common.message.BaseMessage;

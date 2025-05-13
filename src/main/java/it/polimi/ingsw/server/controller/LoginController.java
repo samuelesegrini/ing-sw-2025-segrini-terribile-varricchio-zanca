@@ -338,4 +338,8 @@ public class LoginController {
             LOGGER.warning("Disconnected network client " + networkClientId + " was not mapped to a gamePlayerId (perhaps never fully logged in).");
         }
     }
+
+    public void handleClientConnect(String networkClientId) {
+        LOGGER.info("Network connection established with ID: " + networkClientId + ". Awaiting login request.");
+    }
 }

@@ -5,6 +5,7 @@ import it.polimi.ingsw.client.model.ClientViewModel;
 import it.polimi.ingsw.client.network.ClientNetworkInterface;
 import it.polimi.ingsw.client.network.ClientNetworkManager;
 import it.polimi.ingsw.client.network.SocketClientAdapter;
+import it.polimi.ingsw.client.network.RMIClientAdapter;
 import it.polimi.ingsw.client.ui.UIFactory;
 import it.polimi.ingsw.client.ui.UserInterface;
 import it.polimi.ingsw.common.event.EventBus;
@@ -13,6 +14,7 @@ import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.stage.Stage;
 
+import java.rmi.RemoteException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -21,172 +23,147 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
 
-/**
- * Main client controller responsible for orchestrating the Galaxy Trucker client application.
- * Manages the lifecycle of core client components including UI, network, and event systems.
- * Extends JavaFX Application to enable GUI functionality when in GUI mode.
- */
 public class GameClientController extends Application {
     private static final Logger ROOT_LOGGER = Logger.getLogger("it.polimi.ingsw.client");
-    
+
     private EventBus clientEventBus;
     private ClientViewModel clientViewModel;
-    private ClientNetworkManager networkManager;
+    private ClientNetworkManager networkManager; // Will hold the manager with the chosen adapter
     private ClientLoginHandler clientLoginHandler;
     private UserInterface userInterface;
     private ExecutorService backgroundTaskExecutor;
-    private static UIMode requestedUIMode = UIMode.GUI;
-    
-    /**
-     * Enum defining the available user interface modes for the application.
-     */
-    public enum UIMode {
-        GUI, TUI
-    }
-    
-    /**
-     * Sets the UI mode to use for the application.
-     * Must be called before starting the application.
-     * 
-     * @param mode The UI mode to use (GUI or TUI)
-     */
+    private static UIMode requestedUIMode = UIMode.GUI; // Default
+
+    public enum UIMode { GUI, TUI }
+
     public static void setUIMode(UIMode mode) {
         requestedUIMode = mode;
-        ClientViewModel.setGUIMode(mode == UIMode.GUI);
+        ClientViewModel.setGUIMode(mode == UIMode.GUI); // Inform ViewModel
     }
-    
-    /**
-     * Returns the currently selected UI mode.
-     * 
-     * @return The current UI mode setting
-     */
+
     public static UIMode getUIMode() {
         return requestedUIMode;
     }
-    
-    /**
-     * JavaFX application lifecycle method - called when the application starts.
-     * Initializes all client components and starts the appropriate UI.
-     * 
-     * @param primaryStage The primary JavaFX stage (only used in GUI mode)
-     * @throws Exception If initialization fails
-     */
+
     @Override
     public void start(Stage primaryStage) throws Exception {
         setupLogging();
-        
+
         this.backgroundTaskExecutor = Executors.newCachedThreadPool(r -> {
-            Thread t = new Thread(r);
-            t.setName("client-background-task");
-            t.setDaemon(true);
-            return t;
+            Thread t = new Thread(r); t.setName("client-bg-task"); t.setDaemon(true); return t;
         });
-        
+
         clientEventBus = new EventBus(2, "client-main-eb");
         clientViewModel = new ClientViewModel(clientEventBus);
         clientLoginHandler = new ClientLoginHandler(clientEventBus, clientViewModel);
-        
+
         clientViewModel.setBackgroundTaskExecutor(backgroundTaskExecutor);
         clientLoginHandler.setBackgroundTaskExecutor(backgroundTaskExecutor);
-        
+
         userInterface = UIFactory.createUserInterface(requestedUIMode, primaryStage);
-        
-        userInterface.setClientController(this);
+
+        userInterface.setClientController(this); // Pass this GameClientController instance
         userInterface.setViewModel(clientViewModel);
         userInterface.initialize();
-        
-        userInterface.start();
+        userInterface.start(); // This should show the initial connection/login screen
     }
-    
-    /**
-     * Configures application-wide logging settings.
-     * Sets up appropriate log levels for different components.
-     */
+
     private void setupLogging() {
         ROOT_LOGGER.setLevel(Level.INFO);
         ConsoleHandler logHandler = new ConsoleHandler();
         logHandler.setFormatter(new SimpleFormatter());
         logHandler.setLevel(Level.INFO);
-        ROOT_LOGGER.addHandler(logHandler);
+        if (ROOT_LOGGER.getHandlers().length == 0) {
+            ROOT_LOGGER.addHandler(logHandler);
+        }
         ROOT_LOGGER.setUseParentHandlers(false);
-        
         Logger.getLogger(EventBus.class.getName()).setLevel(Level.INFO);
         Logger.getLogger(ClientViewModel.class.getName()).setLevel(Level.INFO);
         Logger.getLogger(ClientLoginHandler.class.getName()).setLevel(Level.INFO);
         Logger.getLogger(ClientNetworkManager.class.getName()).setLevel(Level.INFO);
         Logger.getLogger(SocketClientAdapter.class.getName()).setLevel(Level.INFO);
+        Logger.getLogger(RMIClientAdapter.class.getName()).setLevel(Level.INFO);
     }
-    
-    /**
-     * Establishes the network connection based on user input and initiates the login process.
-     * Creates the appropriate network adapter based on the selected technology.
-     * 
-     * @param host The server hostname or IP address
-     * @param port The server port
-     * @param nickname The user's desired nickname
-     * @param technology The network technology to use ("Socket" or "RMI")
-     */
+
     public void setupNetworkAndConnect(String host, int port, String nickname, String technology) {
-        ClientNetworkInterface adapter;
+        ClientNetworkInterface selectedAdapter;
+
+        ROOT_LOGGER.info("Attempting to set up network with technology: " + technology);
+
         if ("Socket".equalsIgnoreCase(technology)) {
-            adapter = new SocketClientAdapter();
+            selectedAdapter = new SocketClientAdapter();
+            ROOT_LOGGER.info("Using Socket network adapter.");
         } else if ("RMI".equalsIgnoreCase(technology)) {
-            clientViewModel.setStatusMessage("RMI not supported yet.");
-            clientViewModel.handleConnectionFailed("RMI not supported.");
-            ROOT_LOGGER.warning("RMI connection attempt, but RMI is not implemented.");
-            return;
+            try {
+                selectedAdapter = new RMIClientAdapter(); // Can throw RemoteException
+                ROOT_LOGGER.info("Using RMI network adapter.");
+            } catch (RemoteException e) {
+                String errorMsg = "Failed to initialize RMI Client Adapter: " + e.getMessage();
+                ROOT_LOGGER.log(Level.SEVERE, errorMsg, e);
+                if (clientViewModel != null) { // ViewModel should exist by now
+                    clientViewModel.handleConnectionFailed(errorMsg);
+                }
+                return; // Stop further processing
+            }
         } else {
-            clientViewModel.setStatusMessage("Unsupported network technology: " + technology);
-            clientViewModel.handleConnectionFailed("Unsupported technology.");
-            ROOT_LOGGER.warning("Unsupported network technology selected: " + technology);
+            String errorMsg = "Unsupported network technology requested: " + technology;
+            ROOT_LOGGER.warning(errorMsg);
+            if (clientViewModel != null) {
+                clientViewModel.handleConnectionFailed(errorMsg);
+            }
             return;
         }
-        
-        if (networkManager != null && networkManager.isConnected()) {
-            networkManager.disconnect();
+
+        // If there was an old network manager (e.g., due to reconnect attempt), disconnect it.
+        if (this.networkManager != null && this.networkManager.isConnected()) {
+            ROOT_LOGGER.info("Disconnecting existing network manager before creating a new one.");
+            this.networkManager.disconnect();
         }
-        
-        networkManager = new ClientNetworkManager(adapter, clientEventBus);
-        clientViewModel.setNetworkManager(networkManager);
-        clientLoginHandler.setNetworkManager(networkManager);
-        
-        clientLoginHandler.initiateConnectionAndLogin(host, port, nickname);
+
+        // Create new NetworkManager with the selected adapter
+        this.networkManager = new ClientNetworkManager(selectedAdapter, clientEventBus);
+
+        // Inject the new networkManager into components that need it
+        if (clientViewModel != null) {
+            clientViewModel.setNetworkManager(this.networkManager);
+        }
+        if (clientLoginHandler != null) {
+            clientLoginHandler.setNetworkManager(this.networkManager);
+        }
+
+        // Now, proceed with connection and login using the newly configured networkManager
+        if (clientLoginHandler != null) {
+            clientLoginHandler.initiateConnectionAndLogin(host, port, nickname);
+        } else {
+            ROOT_LOGGER.severe("ClientLoginHandler is null, cannot initiate connection.");
+            if (clientViewModel != null) {
+                clientViewModel.handleConnectionFailed("Internal error: Login handler not available.");
+            }
+        }
     }
-    
-    /**
-     * Requests application shutdown, which can be called from any component.
-     * Initiates graceful termination of all resources.
-     */
+
     public void requestShutdown() {
-        ROOT_LOGGER.info("Shutdown requested");
-        shutdown();
-        
-        if (requestedUIMode == UIMode.GUI) {
-            Platform.exit();
-        }
-        
-        System.exit(0);
+        ROOT_LOGGER.info("Shutdown requested by UI or other component.");
+        // Platform.runLater is important if called from non-FX thread to allow GUI cleanup
+        Platform.runLater(this::shutdown);
     }
-    
-    /**
-     * Performs the actual shutdown operations by cleaning up all resources.
-     * Shuts down network connections, event bus, and thread pools.
-     */
-    public void shutdown() {
-        ROOT_LOGGER.info("GameClientController shutting down...");
-        
+
+    // Actual shutdown logic
+    private void shutdown() {
+        ROOT_LOGGER.info("GameClientController performing shutdown...");
+
         if (userInterface != null) {
-            userInterface.shutdown();
+            userInterface.shutdown(); // UI specific cleanup (e.g. close stage)
         }
-        
+
         if (networkManager != null && networkManager.isConnected()) {
             networkManager.disconnect();
         }
-        
+
         if (clientEventBus != null) {
             clientEventBus.shutdown();
         }
-        
+
         if (backgroundTaskExecutor != null) {
             backgroundTaskExecutor.shutdown();
             try {
@@ -198,25 +175,52 @@ public class GameClientController extends Application {
                 Thread.currentThread().interrupt();
             }
         }
+        ROOT_LOGGER.info("GameClientController shutdown complete.");
+        // For GUI mode, Platform.exit() ensures JavaFX thread terminates.
+        // For TUI, System.exit(0) might be needed if daemon threads are still running.
+        if (requestedUIMode == UIMode.GUI) {
+            Platform.exit(); // Ensure JavaFX application thread exits if in GUI mode
+        }
+        System.exit(0); // Force exit if other non-daemon threads prevent JVM shutdown
     }
-    
-    /**
-     * Main entry point for the JavaFX GUI application.
-     * Only used when running in GUI mode.
-     * 
-     * @param args Command line arguments
-     */
+
+    @Override
+    public void stop() throws Exception {
+        // This is the JavaFX Application stop method, called when the last window is closed
+        // or Platform.exit() is invoked.
+        ROOT_LOGGER.info("JavaFX Application stop() method called. Initiating client shutdown.");
+        shutdown(); // Call the general shutdown logic
+        super.stop();
+    }
+
+    // Main method for launching JavaFX application if GUI mode is chosen by Launcher
     public static void main(String[] args) {
-        for (String arg : args) {
-            if (arg.equalsIgnoreCase("--tui") || arg.equalsIgnoreCase("-t")) {
-                setUIMode(UIMode.TUI);
+        // Launcher should handle UI mode selection and call Application.launch()
+        // This main method here is primarily for JavaFX's launch mechanism.
+        // If called directly, it defaults to GUI unless TUI is specified by arg for this main.
+        boolean tuiMode = false;
+        for(String arg : args) {
+            if(arg.equalsIgnoreCase("--tui") || arg.equalsIgnoreCase("-t")) {
+                tuiMode = true;
+                break;
             }
         }
-        
-        if (requestedUIMode == UIMode.GUI) {
-            launch(args);
+        if(tuiMode) {
+            // This path is problematic if GameClientController.main is the entry point for TUI.
+            // Launcher.java is the better entry point for TUI.
+            System.err.println("Error: TUI mode should be launched via Launcher.java. GameClientController.main is for GUI.");
+            System.err.println("Attempting TUI launch via GameClientController instance (not recommended practice)...");
+            setUIMode(UIMode.TUI);
+            GameClientController tuiApp = new GameClientController();
+            try {
+                // Stage is null for TUI mode, start() method should handle this.
+                tuiApp.start(null);
+            } catch (Exception e) {
+                ROOT_LOGGER.log(Level.SEVERE, "Failed to start TUI mode from GameClientController.main", e);
+            }
         } else {
-            System.err.println("For TUI mode, use Launcher.startTUIMode() instead of GameClientController.main()");
+            setUIMode(UIMode.GUI); // Ensure GUI mode if not TUI
+            Application.launch(args); // Standard JavaFX launch
         }
     }
-} 
+}

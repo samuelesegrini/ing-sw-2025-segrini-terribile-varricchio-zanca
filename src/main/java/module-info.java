@@ -1,26 +1,41 @@
+// In src/main/java/module-info.java (or wherever your module descriptor is)
+
 module it.polimi.ingsw2025segriniterribilevarricchiozanca {
     requires javafx.controls;
     requires javafx.fxml;
     requires javafx.graphics;
-
-    requires org.controlsfx.controls;
-    requires com.fasterxml.jackson.databind;
     requires java.logging;
 
-    // Export packages needed by Jackson for reflection
-    exports it.polimi.ingsw.server.model.domain.general.config to com.fasterxml.jackson.databind;
-    exports it.polimi.ingsw.server.model.domain.general.loader to com.fasterxml.jackson.databind;
-    
-    // Open packages for Jackson to use reflection
-    opens it.polimi.ingsw.server.model.domain.general.config to com.fasterxml.jackson.databind;
-    opens it.polimi.ingsw.server.model.domain.general.loader to com.fasterxml.jackson.databind;
+    // --- RMI Requirements ---
+    requires java.rmi;
+    requires com.fasterxml.jackson.databind;
 
-    // Open DTO packages to JavaFX for TableView and property bindings
-    opens it.polimi.ingsw.common.dto to javafx.base, javafx.controls;
-    opens it.polimi.ingsw.common.model to javafx.base;
-    opens it.polimi.ingsw.server.model.enums to javafx.base;
-    
-    exports it.polimi.ingsw.client to javafx.graphics;
-    exports it.polimi.ingsw.client.core to javafx.graphics;
+    // --- Exports and Opens for RMI ---
+    exports it.polimi.ingsw.common.network.rmi to java.rmi;
+
+    exports it.polimi.ingsw.common.message;
+    exports it.polimi.ingsw.common.dto;
+
+    opens it.polimi.ingsw.common.network.rmi to java.rmi;
+    opens it.polimi.ingsw.common.message to java.rmi;
+    opens it.polimi.ingsw.common.dto to java.rmi;
+
+    opens it.polimi.ingsw.common.message.system to java.rmi;
+    exports it.polimi.ingsw.common.message.system;
+
+    opens it.polimi.ingsw.common.message.setup to java.rmi;
+    exports it.polimi.ingsw.common.message.setup;
+    opens it.polimi.ingsw.common.message.building to java.rmi;
+    exports it.polimi.ingsw.common.message.building;
+
+
+    // --- Your application's main packages that need to be opened for FXML ---
+    opens it.polimi.ingsw.client.core to javafx.fxml;
+    exports it.polimi.ingsw.client.core;
+
     opens it.polimi.ingsw.client.view to javafx.fxml;
+    exports it.polimi.ingsw.client.view;
+
+    opens it.polimi.ingsw.client.model to javafx.base;
+    exports it.polimi.ingsw.client.model;
 }
