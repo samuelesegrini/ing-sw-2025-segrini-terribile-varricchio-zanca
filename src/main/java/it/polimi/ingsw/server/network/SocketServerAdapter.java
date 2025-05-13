@@ -44,7 +44,7 @@ public class SocketServerAdapter implements ServerNetworkInterface {
 
     public SocketServerAdapter(int port) { // Legacy, prefer startServer(port)
         this.port = port; // Port will be used by startServer
-        this.clientHandlingExecutor = Executors.newCachedThreadPool( // Or newFixedThreadPool if you prefer
+        this.clientHandlingExecutor = Executors.newCachedThreadPool(
                 r -> {
                     Thread t = new Thread(r);
                     t.setName("socket-client-handler-" + t.getId());
@@ -193,10 +193,6 @@ public class SocketServerAdapter implements ServerNetworkInterface {
             this.clientSocket = socket;
             this.clientId = clientId;
             try {
-                // IMPORTANT: Create ObjectOutputStream first, then ObjectInputStream on the other side.
-                // And vice-versa. If both sides create InputStream first, they can deadlock.
-                // Generally, server creates OOS then OIS. Client creates OIS then OOS.
-                // Or, ensure one side flushes the OOS header immediately after creation.
                 this.oos = new ObjectOutputStream(socket.getOutputStream());
                 this.oos.flush(); // Flush header to prevent deadlock with client's OIS creation
                 this.ois = new ObjectInputStream(socket.getInputStream());
@@ -222,8 +218,6 @@ public class SocketServerAdapter implements ServerNetworkInterface {
                         }
                     } catch (ClassNotFoundException e) {
                         LOGGER.log(Level.SEVERE, "Could not deserialize message from client " + clientId + ". Class not found.", e);
-                        // Optionally, send an error message back to client if possible
-                        // Or just disconnect
                         disconnect();
                     } catch (EOFException | SocketException e) {
                         LOGGER.info("Client " + clientId + " disconnected (" + e.getMessage() + ").");
@@ -247,10 +241,10 @@ public class SocketServerAdapter implements ServerNetworkInterface {
                 return false;
             }
             try {
-                synchronized (oos) { // Synchronize access to OOS if multiple threads could send
+                synchronized (oos) {
                     oos.writeObject(message);
                     oos.flush();
-                    oos.reset(); // Helps with object caching issues if sending same object multiple times with changes
+                    oos.reset();
                 }
                 return true;
             } catch (SocketException se) {
@@ -259,7 +253,6 @@ public class SocketServerAdapter implements ServerNetworkInterface {
                 return false;
             } catch (IOException e) {
                 LOGGER.log(Level.SEVERE, "IOException sending message to client " + clientId, e);
-                // Potentially disconnect if it's a persistent error
                 return false;
             }
         }
