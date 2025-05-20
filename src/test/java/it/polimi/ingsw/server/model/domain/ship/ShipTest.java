@@ -4,6 +4,7 @@ import it.polimi.ingsw.server.model.domain.ship.Position;
 import it.polimi.ingsw.server.model.domain.ship.Ship;
 import it.polimi.ingsw.server.model.domain.ship.components.*;
 import it.polimi.ingsw.server.model.enums.GameLevel;
+import it.polimi.ingsw.server.model.enums.GamePhase;
 import it.polimi.ingsw.server.model.enums.resource.GoodType;
 import it.polimi.ingsw.server.model.enums.ship.ComponentType;
 import it.polimi.ingsw.server.model.enums.ship.ConnectorType;
@@ -13,6 +14,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -469,5 +471,124 @@ class ShipTest {
         int adjacentCabins = ship.countAllAdjacentCabins();
 
         assertEquals(3, adjacentCabins, "Il numero di cabine adiacenti dovrebbe essere 3");
+    }
+
+    @Test
+    void testSplitBoard_ConnectedShip() {
+        // Aggiungi componenti collegati
+        Map<Direction, ConnectorType> connectors = new HashMap<>() {{
+            put(Direction.UP, ConnectorType.UNIVERSAL);
+            put(Direction.RIGHT, ConnectorType.UNIVERSAL);
+            put(Direction.DOWN, ConnectorType.UNIVERSAL);
+            put(Direction.LEFT, ConnectorType.UNIVERSAL);
+        }};
+        Ship ship = new Ship(null, GameLevel.LEVEL_II);
+
+        Component cabin1 = new Cabin(ComponentType.CABIN, connectors);
+        Component cabin2 = new Cabin(ComponentType.CABIN, connectors);
+        Component cabin3 = new Cabin(ComponentType.CABIN, connectors);
+
+
+        ship.addComponent(cabin1, new Position(2, 2));
+        ship.addComponent(cabin2, new Position(2, 3));
+        ship.addComponent(cabin3, new Position(3, 3));
+
+        // Esegui splitShip
+        List<Ship> result = ship.splitBoard(cabin3);
+
+        // Verifica che ci sia solo un gruppo e che contenga tutte le posizioni
+        assertEquals(1, result.size(), "La nave dovrebbe essere completamente collegata");
+        //assertTrue(result.get(0).getBoard().contains(cabin1));
+        //assertTrue(result.get(0).getBoard().contains(cabin2));
+    }
+
+    @Test
+    void testSplitBoard_DisconnectedShip() {
+        // Aggiungi componenti non collegati
+        Map<Direction, ConnectorType> connectors = new HashMap<>() {{
+            put(Direction.UP, ConnectorType.UNIVERSAL);
+            put(Direction.RIGHT, ConnectorType.UNIVERSAL);
+            put(Direction.DOWN, ConnectorType.UNIVERSAL);
+            put(Direction.LEFT, ConnectorType.UNIVERSAL);
+        }};
+        Ship ship = new Ship(null, GameLevel.LEVEL_II);
+        Component cabin1 = new Cabin(ComponentType.CABIN, connectors);
+        Component cabin2 = new Cabin(ComponentType.CABIN, connectors);
+        Component cabin3 = new Cabin(ComponentType.CABIN, connectors);
+
+        ship.addComponent(cabin1, new Position(2, 2));
+        ship.addComponent(cabin2, new Position(2, 3));
+        ship.addComponent(cabin3, new Position(3, 3));
+
+        // Esegui splitShip
+        List<Ship> result = ship.splitBoard(cabin2);
+
+        // Verifica che ci siano due gruppi distinti
+        assertEquals(2, result.size(), "La nave dovrebbe essere divisa in due gruppi");
+    }
+
+    @Test
+    void testCheckPlacingErrors_EngineError() {
+        Ship ship = new Ship(null, GameLevel.LEVEL_II);
+        Map<Direction, ConnectorType> connectors = new HashMap<>() {{
+            put(Direction.UP, ConnectorType.UNIVERSAL);
+            put(Direction.RIGHT, ConnectorType.UNIVERSAL);
+            put(Direction.DOWN, ConnectorType.UNIVERSAL);
+            put(Direction.LEFT, ConnectorType.UNIVERSAL);
+        }};
+        Component engine = new Engine(ComponentType.ENGINE_SINGLE, connectors);
+        Component cabin = new Cabin(ComponentType.CABIN, connectors);
+        ship.addComponent(engine, new Position(2, 3));
+        ship.addComponent(cabin, new Position(3, 3));
+
+        List<Component> placingErrors = ship.checkPlacingErrors(cabin, GamePhase.BUILDING);
+        assertTrue(placingErrors.contains(engine), "There should be placement errors");
+    }
+
+    @Test
+    void testCheckConnectingErrors_NoErrors() {
+        Ship ship = new Ship(null, GameLevel.LEVEL_II);
+        Map<Direction, ConnectorType> connectors = new HashMap<>() {{
+            put(Direction.UP, ConnectorType.UNIVERSAL);
+            put(Direction.RIGHT, ConnectorType.UNIVERSAL);
+            put(Direction.DOWN, ConnectorType.UNIVERSAL);
+            put(Direction.LEFT, ConnectorType.UNIVERSAL);
+        }};
+        Component cabin1 = new Cabin(ComponentType.CABIN, connectors);
+        Component cabin2 = new Cabin(ComponentType.CABIN, connectors);
+
+        ship.addComponent(cabin1, new Position(2, 3));
+        ship.addComponent(cabin2, new Position(2, 4));
+
+        List<Component> connectingErrors = ship.checkConnectingErrors();
+
+        assertTrue(connectingErrors.isEmpty(), "There should be no connection errors");
+    }
+
+    @Test
+    void testCheckConnectingErrors_WithErrors() {
+        Ship ship = new Ship(null, GameLevel.LEVEL_II);
+        Map<Direction, ConnectorType> connectors1 = new HashMap<>() {{
+            put(Direction.UP, ConnectorType.UNIVERSAL);
+            put(Direction.RIGHT, ConnectorType.PLAIN); // Incompatible connector
+            put(Direction.DOWN, ConnectorType.UNIVERSAL);
+            put(Direction.LEFT, ConnectorType.UNIVERSAL);
+        }};
+        Map<Direction, ConnectorType> connectors2 = new HashMap<>() {{
+            put(Direction.UP, ConnectorType.UNIVERSAL);
+            put(Direction.RIGHT, ConnectorType.UNIVERSAL);
+            put(Direction.DOWN, ConnectorType.UNIVERSAL);
+            put(Direction.LEFT, ConnectorType.UNIVERSAL);
+        }};
+        Component cabin1 = new Cabin(ComponentType.CABIN, connectors1);
+        Component cabin2 = new Cabin(ComponentType.CABIN, connectors2);
+
+        ship.addComponent(cabin1, new Position(2, 3));
+        ship.addComponent(cabin2, new Position(2, 4));
+
+        List<Component> connectingErrors = ship.checkConnectingErrors();
+
+        assertFalse(connectingErrors.isEmpty(), "There should be connection errors");
+        assertTrue(connectingErrors.contains(cabin1), "Cabin 1 should be flagged as a connection error");
     }
 }

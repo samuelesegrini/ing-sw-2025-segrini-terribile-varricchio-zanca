@@ -4,6 +4,7 @@ import it.polimi.ingsw.server.model.domain.player.Player;
 import it.polimi.ingsw.server.model.domain.ship.components.CargoHold;
 import it.polimi.ingsw.server.model.domain.ship.components.Component;
 import it.polimi.ingsw.server.model.enums.GameLevel;
+import it.polimi.ingsw.server.model.enums.GamePhase;
 import it.polimi.ingsw.server.model.enums.resource.GoodType;
 import it.polimi.ingsw.server.model.enums.ship.ComponentType;
 
@@ -12,10 +13,8 @@ import it.polimi.ingsw.server.model.domain.ship.components.Shield;
 import it.polimi.ingsw.server.model.enums.ship.ConnectorType;
 import it.polimi.ingsw.server.model.enums.ship.Direction;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.Map;
+import javax.swing.*;
+import java.util.*;
 
 public class Ship {
     private final Player player;
@@ -41,7 +40,7 @@ public class Ship {
     private int chargingBatteries;
 
     private int lostComponents;
-
+    private GameLevel level;
 
     public Ship(Player player, GameLevel level) {
         this.player = player;
@@ -58,6 +57,7 @@ public class Ship {
         normalGoods = 0;
         specialGoods = 0;
 
+        this.level = level;
         if (level == GameLevel.TEST_FLIGHT) {
             forbiddenPositions = new HashSet<>() {{
                 add(new Position(0, 0));
@@ -249,6 +249,8 @@ public class Ship {
     public void setLostComponents(int lostComponents) {
         this.lostComponents = lostComponents;
     }
+
+    public GameLevel getLevel() { return level; }
 
     public int calculateSpecialGoodsCapacity() {
         this.specialGoodsCapacity = 0;
@@ -737,4 +739,241 @@ public class Ship {
         }
         return count;
     }
+
+    /**
+     * Checks if the component at the given position is correctly linked to its neighbors.
+     * A component is considered correctly linked if all its connectors are connected to compatible connectors
+     * of neighboring components.
+     *
+     * @param component The component to check
+     * @return {@code true} if the component is correctly linked, {@code false} otherwise
+     */
+    public boolean isCorrectlyConnected(Component component) {
+        // Se non c'è componente in questa posizione, non ci sono connessioni da verificare
+        if (component == null) {
+            return true;
+        }
+
+        for (Direction direction : Direction.values()) {
+            Position position = component.getPosition();
+            Position neighbour = position.offsetBy(direction);
+
+            // Se la posizione del vicino è fuori dai limiti della griglia, non c'è connessione da controllare
+            if (neighbour.getRow() < 0 || neighbour.getRow() >= board.length ||
+                    neighbour.getCol() < 0 || neighbour.getCol() >= board[0].length) {
+                continue;
+            }
+
+            // Se la posizione del vicino è vuota, non c'è connessione da controllare
+            Component neighbourComponent = board[neighbour.getRow()][neighbour.getCol()];
+            if (neighbourComponent == null) {
+                continue;
+            }
+
+            // Verifica la compatibilità dei connettori
+            boolean isCorrect = component.getConnectorAt(direction).canConnectTo(
+                    neighbourComponent.getConnectorAt(direction.getOpposite())
+            );
+
+            if (!isCorrect) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Checks for connection errors in the ship's components.
+     * A connection error occurs when a component is not correctly linked to its neighbors.
+     *
+     * @return A list of components that have connection errors
+     */
+    public List<Component> checkConnectingErrors() {
+        List<Component> wrongConnections = new ArrayList<>();
+
+        for (int row = 0; row < board.length; row++) {
+            for (int col = 0; col < board[0].length; col++) {
+                if (board[row][col] != null) {
+                    Component component = board[row][col];
+                    Position position = component.getPosition();
+                    if (!isCorrectlyConnected(component)) {
+                        wrongConnections.add(component);
+                    }
+                }
+            }
+        }
+        return wrongConnections;
+    }
+
+    /**
+     * Checks if the component is correctly placed on the board.
+     * A component is considered correctly placed if its exhaust direction is DOWN and
+     * it is not adjacent to another component in the direction of its exhaust.
+     *
+     * @param component The component to check
+     * @param phase The current game phase
+     * @return A list of components that are incorrectly placed
+     */
+    public List<Component> checkPlacingErrors (Component component, GamePhase phase) {
+        Position position = component.getPosition();
+        List<Component> wrongPlacing = new ArrayList<>();
+        if(component == null){
+            return wrongPlacing;
+        }
+
+        switch (component.getType()) {
+            case ENGINE_SINGLE, ENGINE_DOUBLE -> {
+                Direction exhaust = component.getDirection().getOpposite();
+                if(exhaust != Direction.DOWN){
+                    wrongPlacing.add(component);
+                    break;
+                }
+                Position neighbour = position.offsetBy(exhaust);
+                if (neighbour.getRow() < 0 || neighbour.getRow() >= board.length ||
+                        neighbour.getCol() < 0 || neighbour.getCol() >= board[0].length) {
+                    break;
+                }
+                Component neighbourComponent = board[neighbour.getRow()][neighbour.getCol()];
+                if (neighbourComponent!= null) {
+                    wrongPlacing.add(component);
+                }
+            }
+            case CANNON_SINGLE, CANNON_DOUBLE -> {
+                Direction cannonDirection = component.getDirection();
+                Position neighbour = position.offsetBy(cannonDirection);
+                if (neighbour.getRow() < 0 || neighbour.getRow() >= board.length ||
+                        neighbour.getCol() < 0 || neighbour.getCol() >= board[0].length) {
+                    break;
+                }
+                Component neighbourComponent = board[neighbour.getRow()][neighbour.getCol()];
+                if (neighbourComponent!= null) {
+                    wrongPlacing.add(component);
+                }
+            }
+        }
+        // Se un errore viene scoperto quando la nave è già in volo, il giocatore, oltre a correggere l’errore
+        // deve pagare alla banca 1 credito cosmico
+        if(phase == GamePhase.FLIGHT) {
+            getPlayer().subtractCredits(1);
+        }
+        return wrongPlacing;
+    }
+
+    /**
+     * Performs a flood fill algorithm to find all connected components in the ship's grid.
+     * It marks visited positions and adds them to the connected group.
+     *
+     * @param position The starting position for the flood fill
+     * @param visited  A boolean matrix tracking processed positions
+     * @param connectedGroup A set to store all positions in the connected group
+     */
+    private void floodFill(Position position, boolean[][] visited, Set<Position> connectedGroup) {
+    int row = position.getRow();
+    int col = position.getCol();
+
+    // Verifica se la posizione è valida
+    if (row < 0 || row >= board.length || col < 0 || col >= board[0].length ||
+            visited[row][col] || board[row][col] == null) {
+        return;
+    }
+
+    // Marca come visitata e aggiungi al gruppo connesso
+    visited[row][col] = true;
+    connectedGroup.add(position);
+
+    // Esplora nelle quattro direzioni, verificando la compatibilità dei connettori
+     for (Direction direction : Direction.values()) {
+        Position neighborPos = position.offsetBy(direction);
+        int nRow = neighborPos.getRow();
+        int nCol = neighborPos.getCol();
+
+        // Verifica se la posizione del vicino è valida
+        if (nRow < 0 || nRow >= board.length || nCol < 0 || nCol >= board[0].length ||
+                visited[nRow][nCol] || board[nRow][nCol] == null) {
+            continue;
+        }
+
+        Component currentComponent = board[row][col];
+        Component neighborComponent = board[nRow][nCol];
+
+        boolean cantConnect = currentComponent.getConnectorAt(direction) == ConnectorType.PLAIN &&
+                neighborComponent.getConnectorAt(direction.getOpposite()) == ConnectorType.PLAIN;
+
+        // Se i connettori sono compatibili, esplora da quella posizione
+        if (!cantConnect) {
+            floodFill(neighborPos, visited, connectedGroup);
+            }
+        }
+    }
+
+    /**
+     * Splits the ship into multiple ships based on the connected components.
+     * If the specified component is not on the board, it returns a list containing only this ship.
+     *
+     * @param component The component to check for splitting
+     * @return A list of ships created from the connected components
+     */
+    public List<Ship> splitBoard(Component component) {
+        Position componentPosition = component.getPosition();
+
+        // Se il componente non è nella board, restituisci solo questa nave
+        if (componentPosition == null ||
+                componentPosition.getRow() < 0 || componentPosition.getRow() >= board.length ||
+                componentPosition.getCol() < 0 || componentPosition.getCol() >= board[0].length) {
+            return List.of(this);
+        }
+
+        // Rimuovi temporaneamente il componente
+        board[componentPosition.getRow()][componentPosition.getCol()] = null;
+
+        // Mappa per tenere traccia delle celle visitate durante il flood fill
+        boolean[][] visited = new boolean[board.length][board[0].length];
+
+        // Lista per memorizzare tutti i gruppi di componenti connessi trovati
+        List<Set<Position>> connectedGroups = new ArrayList<>();
+
+        // Cerca gruppi di componenti connessi
+        for (int row = 0; row < board.length; row++) {
+            for (int col = 0; col < board[0].length; col++) {
+                if (board[row][col] != null && !visited[row][col]) {
+                    // Trovato un nuovo gruppo connesso
+                    Set<Position> connectedGroup = new HashSet<>();
+                    floodFill(new Position(row, col), visited, connectedGroup);
+                    connectedGroups.add(connectedGroup);
+                }
+            }
+        }
+
+        // Se c'è solo un gruppo connesso o nessun gruppo, non c'è divisione
+        if (connectedGroups.size() <= 1) {
+            // Ripristina il componente rimosso
+            board[componentPosition.getRow()][componentPosition.getCol()] = component;
+            return List.of(this);
+        }
+
+        // Altrimenti, crea nuove navi per ogni gruppo connesso
+        List<Ship> ships = new ArrayList<>();
+
+        for (Set<Position> group : connectedGroups) {
+            // Crea una nuova nave con le stesse caratteristiche di questa
+            Ship newShip = new Ship(this.player, getLevel());
+
+            // Copia i componenti rilevanti nella nuova nave
+            for (Position pos : group) {
+                Component comp = board[pos.getRow()][pos.getCol()];
+                newShip.board[pos.getRow()][pos.getCol()] = comp;
+            }
+
+            // Aggiorna le statistiche della nuova nave
+            newShip.updateStats();
+
+            ships.add(newShip);
+        }
+
+        // Il componente rimosso non fa parte di nessuna delle nuove navi
+        return ships;
+    }
+
+    //TODO :  pezzi scartati perchè rimasti nella pila dei componenti riservati al termine dell'assemblaggio
+    //        o perchè eliminati per rendere la nave corretta  vanno inseriti nella pila degli scarti
 }

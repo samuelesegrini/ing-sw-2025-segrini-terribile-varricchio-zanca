@@ -28,6 +28,17 @@ public enum ConnectorType {
      * {@code false} otherwise.
      */
     public boolean canConnectTo(ConnectorType other) {
-        return false;
+        // PLAIN can only connect to PLAIN
+        if (this == PLAIN || other == PLAIN) {
+            return this == other;
+        }
+
+        // UNIVERSAL connects to anything except PLAIN
+        if (this == UNIVERSAL || other == UNIVERSAL) {
+            return true;
+        }
+
+        // Same type connectors can connect
+        return this == other;
     }
 }
