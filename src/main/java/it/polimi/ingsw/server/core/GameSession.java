@@ -356,6 +356,7 @@ public class GameSession {
                 .allMatch(p -> p.isReady);
     }
 
+    //Abort event still need to be implemented
     private synchronized boolean checkAndHandleGameSuspensionOrAbortion() {
         if (currentState == GameSessionState.FINISHED || currentState == GameSessionState.ABORTED) {
             return false;
@@ -364,30 +365,31 @@ public class GameSession {
         long activePlayers = getActivePlayerCount();
         boolean stateChanged = false;
 
-        if (activePlayers == 0) {
-            LOGGER.info("SessID " + sessionId + ": All players inactive/disconnected. Aborting game.");
-            stateChanged = transitionToState(GameSessionState.ABORTED);
-        } else if (activePlayers == 1 && (currentState == GameSessionState.SHIP_BUILDING || currentState == GameSessionState.FLIGHT || currentState == GameSessionState.FLIGHT_PREPARATION)) {
-            PlayerInSessionStatus lastPlayer = playersByGameId.values().stream()
-                    .filter(PlayerInSessionStatus::isActive).findFirst().orElse(null);
-            if (lastPlayer != null) {
-                LOGGER.info("SessID " + sessionId + ": Only one player (" + lastPlayer.nickname + ") active. Suspending game logic (no state change).");
-                serverEventBus.post(new InternalGameSuspendedEvent(sessionId, lastPlayer.nickname));
-            }
-        }
+//        if (activePlayers == 0) {
+//            LOGGER.info("SessID " + sessionId + ": All players inactive/disconnected. Aborting game.");
+//            stateChanged = transitionToState(GameSessionState.ABORTED);
+//        } else if (activePlayers == 1 && (currentState == GameSessionState.SHIP_BUILDING || currentState == GameSessionState.FLIGHT || currentState == GameSessionState.FLIGHT_PREPARATION)) {
+//            PlayerInSessionStatus lastPlayer = playersByGameId.values().stream()
+//                    .filter(PlayerInSessionStatus::isActive).findFirst().orElse(null);
+//            if (lastPlayer != null) {
+//                LOGGER.info("SessID " + sessionId + ": Only one player (" + lastPlayer.nickname + ") active. Suspending game logic (no state change).");
+//                serverEventBus.post(new InternalGameSuspendedEvent(sessionId, lastPlayer.nickname));
+//            }
+//        }
         return stateChanged;
     }
 
+    //Resume event still need to be implemented
     private synchronized boolean checkAndHandleGameResumption() {
         if (currentState == GameSessionState.ABORTED || currentState == GameSessionState.FINISHED) {
             return false;
         }
         long activePlayerCount = getActivePlayerCount();
-        if (activePlayerCount > 1) {
-            LOGGER.info("SessID " + sessionId + ": Active player count is " + activePlayerCount + ". Broadcasting game resume signal.");
-            serverEventBus.post(new InternalGameResumedEvent(sessionId, getActivePlayersInfoDTOs()));
-            return true;
-        }
+//        if (activePlayerCount > 1) {
+//            LOGGER.info("SessID " + sessionId + ": Active player count is " + activePlayerCount + ". Broadcasting game resume signal.");
+//            serverEventBus.post(new InternalGameResumedEvent(sessionId, getActivePlayersInfoDTOs()));
+//            return true;
+//        }
         return false;
     }
 
