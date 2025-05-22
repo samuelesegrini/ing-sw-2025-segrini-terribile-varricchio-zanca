@@ -1,8 +1,10 @@
 package it.polimi.ingsw.common.message.system;
 
 import it.polimi.ingsw.common.message.BaseMessage;
+import it.polimi.ingsw.common.message.Command;
+import it.polimi.ingsw.common.message.Message;
 
-public class ClientLoginRequest extends BaseMessage /* implements Message, Serializable */ {
+public class ClientLoginRequest extends BaseMessage implements Command {
     private static final long serialVersionUID = 1L; // Important for Serializable
 
     private final String nickname;

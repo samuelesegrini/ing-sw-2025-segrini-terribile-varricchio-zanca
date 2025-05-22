@@ -1,13 +1,14 @@
 package it.polimi.ingsw.common.message.setup;
 
 import it.polimi.ingsw.common.message.BaseMessage;
+import it.polimi.ingsw.common.message.Command;
 
 import java.util.Objects;
 
 /**
  * Command sent by a client to update their ready status in a game lobby.
  */
-public class SetPlayerReadyCommand extends BaseMessage {
+public class SetPlayerReadyCommand extends BaseMessage implements Command {
     private static final long serialVersionUID = 1L;
 
     private final String sessionId;

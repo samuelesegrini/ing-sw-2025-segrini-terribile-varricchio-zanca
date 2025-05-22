@@ -1,11 +1,12 @@
 package it.polimi.ingsw.common.message.setup;
 
+import it.polimi.ingsw.common.message.Command;
 import it.polimi.ingsw.common.message.Message;
 
 /**
  * Client-to-server command to request leaving a game session.
  */
-public class LeaveGameRequestCommand implements Message {
+public class LeaveGameRequestCommand implements Message, Command {
     private static final long serialVersionUID = 1L;
     
     private final String sessionId;

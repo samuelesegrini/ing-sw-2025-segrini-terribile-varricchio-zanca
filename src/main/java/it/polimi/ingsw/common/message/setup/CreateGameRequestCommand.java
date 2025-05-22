@@ -2,13 +2,14 @@ package it.polimi.ingsw.common.message.setup;
 
 import it.polimi.ingsw.common.dto.GameSettingsDTO;
 import it.polimi.ingsw.common.message.BaseMessage;
+import it.polimi.ingsw.common.message.Command;
 
 import java.util.Objects;
 
 /**
  * Command sent by a client to request the creation of a new game session.
  */
-public class CreateGameRequestCommand extends BaseMessage {
+public class CreateGameRequestCommand extends BaseMessage implements Command {
     private static final long serialVersionUID = 1L;
 
     private final GameSettingsDTO settings;

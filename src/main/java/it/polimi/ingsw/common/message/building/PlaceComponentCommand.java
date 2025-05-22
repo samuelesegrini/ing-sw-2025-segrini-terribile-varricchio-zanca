@@ -3,6 +3,7 @@ package it.polimi.ingsw.common.message.building;
 import it.polimi.ingsw.common.dto.ComponentDTO;
 import it.polimi.ingsw.common.dto.PositionDTO;
 import it.polimi.ingsw.common.message.BaseMessage;
+import it.polimi.ingsw.common.message.Command;
 import it.polimi.ingsw.server.model.enums.ship.Direction; // Assuming common access
 
 import java.util.Objects;
@@ -10,7 +11,7 @@ import java.util.Objects;
 /**
  * Command sent by a client to place a component they are holding onto their ship board.
  */
-public class PlaceComponentCommand extends BaseMessage {
+public class PlaceComponentCommand extends BaseMessage implements Command {
     private static final long serialVersionUID = 1L;
 
     private final String componentInstanceId; // ID of the component instance the player is trying to place
