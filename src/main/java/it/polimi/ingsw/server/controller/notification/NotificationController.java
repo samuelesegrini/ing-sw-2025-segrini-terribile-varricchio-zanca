@@ -252,7 +252,6 @@ public class NotificationController {
         networkManager.sendMessageToClient(event.requestingNetworkClientId(), errorMsg);
     }
 
-    // Add to NotificationController.java
     @MessageHandler
     public void onInternalSessionActualStateChanged(InternalSessionActualStateChangedEvent event) {
         LOGGER.info("NC: Session " + event.sessionId() + " actual state changed from " + event.oldState() + " to " + event.newState());
