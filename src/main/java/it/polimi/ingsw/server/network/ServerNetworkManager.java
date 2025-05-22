@@ -1,7 +1,10 @@
 package it.polimi.ingsw.server.network;
 
 import it.polimi.ingsw.common.event.EventBus;
+import it.polimi.ingsw.common.message.Command;
 import it.polimi.ingsw.common.message.Message;
+import it.polimi.ingsw.common.message.system.ErrorMessage;
+import it.polimi.ingsw.server.controller.CommandDispatcher;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -14,120 +17,164 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Manages the server-side network operations, using a specific
- * ServerNetworkInterface implementation (e.g., SocketServerAdapter).
- * It bridges between the raw network events and the server's EventBus.
+ * Manages server-side network adapters (e.g., Socket, RMI), and routes incoming
+ * client commands to a CommandDispatcher. It also provides methods for sending
+ * messages to clients.
  */
 public class ServerNetworkManager {
     private static final Logger LOGGER = Logger.getLogger(ServerNetworkManager.class.getName());
 
-    // Store multiple network interfaces
     private final List<ServerNetworkInterface> networkAdapters = new ArrayList<>();
     private final EventBus serverEventBus;
+    private CommandDispatcher commandDispatcher;
+
+    // Maps a networkClientId to the specific adapter that handles it.
     private final Map<String, ServerNetworkInterface> clientToAdapterMap = new ConcurrentHashMap<>();
 
-    // Callbacks from network adapters (these will be set on each adapter)
-    private Consumer<String> globalOnClientConnectedHandler = clientId -> {};
-    private Consumer<String> globalOnClientDisconnectedHandler = clientId -> {};
+    private Consumer<String> globalOnClientConnectedHandler = clientId -> {
+        LOGGER.finer("Default onClientConnected called for: " + clientId);
+    };
+    private Consumer<String> globalOnClientDisconnectedHandler = clientId -> {
+        LOGGER.finer("Default onClientDisconnected called for: " + clientId);
+    };
 
     /**
-     * Wrapper message to post to the EventBus, including the clientId.
+     * Constructs a ServerNetworkManager.
+     * @param serverEventBus The main server event bus, potentially for system-level or non-command messages.
      */
-    public static class IncomingClientMessage implements Message {
-        private static final long serialVersionUID = 1L;
-        private final String clientId;
-        private final Message originalMessage;
-        private final long timestamp;
-
-        public IncomingClientMessage(String clientId, Message originalMessage) {
-            this.clientId = clientId;
-            this.originalMessage = originalMessage;
-            this.timestamp = System.currentTimeMillis();
-        }
-        public String getClientId() { return clientId; }
-        public Message getOriginalMessage() { return originalMessage; }
-        public long getTimestamp() { return timestamp; }
-
-        @Override
-        public String toString() {
-            return "IncomingClientMessage{" +
-                    "clientId='" + clientId + '\'' +
-                    ", originalMessage=" + originalMessage.getClass().getSimpleName() +
-                    ", timestamp=" + timestamp +
-                    '}';
-        }
-    }
-
     public ServerNetworkManager(EventBus serverEventBus) {
         this.serverEventBus = Objects.requireNonNull(serverEventBus, "Server EventBus cannot be null");
     }
 
+    /**
+     * Sets the CommandDispatcher that will handle incoming client commands.
+     * This should be called after CommandDispatcher is initialized.
+     * @param commandDispatcher The CommandDispatcher instance.
+     */
+    public void setCommandDispatcher(CommandDispatcher commandDispatcher) {
+        this.commandDispatcher = Objects.requireNonNull(commandDispatcher, "CommandDispatcher cannot be null");
+        LOGGER.info("CommandDispatcher has been set for ServerNetworkManager.");
+    }
+
+    /**
+     * Adds a network adapter (e.g., SocketServerAdapter, RMIServerAdapter) to be managed.
+     * @param adapter The network adapter instance.
+     */
     public void addNetworkAdapter(ServerNetworkInterface adapter) {
         Objects.requireNonNull(adapter, "Network adapter cannot be null");
         this.networkAdapters.add(adapter);
-        setupAdapterCallbacks(adapter);
+        setupAdapterCallbacks(adapter); // Configure how this adapter interacts with SNM
         LOGGER.info("Added network adapter: " + adapter.getClass().getSimpleName());
     }
 
+    /**
+     * Sets up the necessary callbacks for a given network adapter.
+     * This tells the adapter what to do when it connects/disconnects a client
+     * or receives a message.
+     * @param specificAdapter The adapter to configure.
+     */
     private void setupAdapterCallbacks(ServerNetworkInterface specificAdapter) {
-        specificAdapter.setOnClientConnected(clientId -> {
-            LOGGER.info("ServerNetworkManager: Client connected via " + specificAdapter.getClass().getSimpleName() + " - ID: " + clientId);
-            clientToAdapterMap.put(clientId, specificAdapter); // Store the mapping
+        // When an adapter connects a client:
+        specificAdapter.setOnClientConnected(networkClientId -> {
+            LOGGER.info("Client connected via " + specificAdapter.getClass().getSimpleName() + ". Assigned Network ID: " + networkClientId);
+            clientToAdapterMap.put(networkClientId, specificAdapter);
             if (globalOnClientConnectedHandler != null) {
-                globalOnClientConnectedHandler.accept(clientId); // Call the globally set handler
+                globalOnClientConnectedHandler.accept(networkClientId);
             }
         });
 
-        specificAdapter.setOnClientDisconnected(clientId -> {
-            LOGGER.info("ServerNetworkManager: Client disconnected via " + specificAdapter.getClass().getSimpleName() + " - ID: " + clientId);
-            clientToAdapterMap.remove(clientId); // Remove the mapping
+        specificAdapter.setOnClientDisconnected(networkClientId -> {
+            LOGGER.info("Client disconnected via " + specificAdapter.getClass().getSimpleName() + ". Network ID: " + networkClientId);
+            clientToAdapterMap.remove(networkClientId);
             if (globalOnClientDisconnectedHandler != null) {
-                globalOnClientDisconnectedHandler.accept(clientId); // Call the globally set handler
+                globalOnClientDisconnectedHandler.accept(networkClientId);
             }
         });
 
-        specificAdapter.setOnMessageReceived((clientId, message) -> {
-            LOGGER.finer("ServerNetworkManager: Message received via " + specificAdapter.getClass().getSimpleName() + " from " + clientId + ": " + message.getClass().getSimpleName());
-            serverEventBus.post(new IncomingClientMessage(clientId, message));
+        // When an adapter receives a message:
+        specificAdapter.setOnMessageReceived((networkClientId, message) -> {
+            LOGGER.finer("Message received by ServerNetworkManager via " +
+                    specificAdapter.getClass().getSimpleName() + " from " + networkClientId +
+                    ": " + message.getClass().getSimpleName());
+
+            if (message instanceof Command) {
+                if (this.commandDispatcher != null) {
+                    this.commandDispatcher.dispatch((Command) message, networkClientId);
+                } else {
+                    LOGGER.severe("CommandDispatcher is not set in ServerNetworkManager. " +
+                            "Cannot dispatch command: " + message.getClass().getSimpleName() + " from " + networkClientId);
+                    specificAdapter.sendMessageToClient(networkClientId,
+                            new ErrorMessage("Server internal configuration error: Command dispatcher not available.",
+                                    ErrorMessage.ErrorType.SERVER_INTERNAL));
+                }
+            } else {
+                LOGGER.warning("Received non-Command message from client " + networkClientId +
+                        ": " + message.getClass().getSimpleName() + ". Current policy is to ignore or log.");
+            }
         });
     }
 
+    /**
+     * Starts all configured network adapters.
+     * @param socketPort The port for Socket-based adapters.
+     * @param rmiPort The port for RMI-based adapters.
+     * @throws IOException if any adapter fails to start.
+     */
     public void startAdapters(int socketPort, int rmiPort) throws IOException {
+        if (networkAdapters.isEmpty()){
+            LOGGER.warning("ServerNetworkManager: No network adapters configured to start.");
+            return;
+        }
         boolean startedAtLeastOne = false;
+        List<String> errors = new ArrayList<>();
         for (ServerNetworkInterface adapter : networkAdapters) {
             try {
                 if (adapter instanceof SocketServerAdapter) {
-                    LOGGER.info("ServerNetworkManager starting Socket adapter on port " + socketPort);
+                    LOGGER.info("Starting Socket adapter on port " + socketPort);
                     adapter.startServer(socketPort);
                     startedAtLeastOne = true;
                 } else if (adapter instanceof RMIServerAdapter) {
-                    LOGGER.info("ServerNetworkManager starting RMI adapter on port " + rmiPort);
+                    LOGGER.info("Starting RMI adapter on port " + rmiPort);
                     adapter.startServer(rmiPort);
                     startedAtLeastOne = true;
+                } else {
+                    LOGGER.warning("Unknown adapter type, cannot determine port: " + adapter.getClass().getSimpleName());
                 }
             } catch (IOException e) {
-                LOGGER.log(Level.SEVERE, "Failed to start adapter " + adapter.getClass().getSimpleName(), e);
-                throw e;
+                String errorMsg = "Failed to start adapter " + adapter.getClass().getSimpleName() + ": " + e.getMessage();
+                LOGGER.log(Level.SEVERE, errorMsg, e);
+                errors.add(errorMsg);
             }
         }
         if (!startedAtLeastOne && !networkAdapters.isEmpty()) {
-            throw new IOException("No suitable adapters were started, but adapters were configured.");
+            throw new IOException("No network adapters were successfully started. Errors: " + String.join("; ", errors));
         }
-        if (networkAdapters.isEmpty()){
-            LOGGER.warning("ServerNetworkManager: No network adapters configured to start.");
+        if (!errors.isEmpty()) {
+            LOGGER.warning("Some network adapters failed to start: " + String.join("; ", errors));
         }
     }
 
+    /**
+     * Sets the global handler to be called when any client connects through any adapter.
+     * @param handler The consumer for the networkClientId.
+     */
     public void setGlobalOnClientConnected(Consumer<String> handler) {
         this.globalOnClientConnectedHandler = Objects.requireNonNull(handler);
     }
 
+    /**
+     * Sets the global handler to be called when any client disconnects from any adapter.
+     * @param handler The consumer for the networkClientId.
+     */
     public void setGlobalOnClientDisconnected(Consumer<String> handler) {
         this.globalOnClientDisconnectedHandler = Objects.requireNonNull(handler);
     }
 
+    /**
+     * Stops all managed network adapters and clears internal mappings.
+     */
     public void stop() {
-        LOGGER.info("ServerNetworkManager stopping all network adapters.");
+        LOGGER.info("ServerNetworkManager stopping all network adapters...");
         for (ServerNetworkInterface adapter : networkAdapters) {
             try {
                 if (adapter.isRunning()) {
@@ -138,55 +185,73 @@ public class ServerNetworkManager {
             }
         }
         networkAdapters.clear();
-        clientToAdapterMap.clear(); // Clear the mapping on stop
+        clientToAdapterMap.clear();
+        LOGGER.info("All network adapters stopped and resources cleared.");
     }
 
     /**
-     * Sends a message to a specific client using the adapter that originally handled their connection.
-     * @param clientId The unique ID of the target client.
+     * Sends a message to a specific client.
+     * It uses the adapter that originally handled the client's connection.
+     * @param networkClientId The unique ID of the target client.
      * @param message The message to send.
+     * @return true if the message was successfully queued/sent by an adapter, false otherwise.
      */
-    public void sendMessageToClient(String clientId, Message message) {
-        ServerNetworkInterface adapter = clientToAdapterMap.get(clientId);
+    public boolean sendMessageToClient(String networkClientId, Message message) {
+        Objects.requireNonNull(networkClientId, "networkClientId cannot be null for sendMessageToClient");
+        Objects.requireNonNull(message, "message cannot be null for sendMessageToClient");
+
+        ServerNetworkInterface adapter = clientToAdapterMap.get(networkClientId);
 
         if (adapter != null) {
             if (adapter.isRunning()) {
-                LOGGER.finer("ServerNetworkManager: Sending message to " + clientId + " via " + adapter.getClass().getSimpleName());
-                boolean sent = adapter.sendMessageToClient(clientId, message);
-                if (!sent) {
-                    LOGGER.warning("ServerNetworkManager: Adapter " + adapter.getClass().getSimpleName() +
-                            " reported failure sending message to client " + clientId);
-                    // The adapter itself should handle client removal from its internal list if sending fails due to disconnect
-                    // The onClientDisconnected callback from the adapter would then trigger removal from clientToAdapterMap
-                }
+                LOGGER.finer("Sending message to " + networkClientId + " (" + message.getClass().getSimpleName() + ") via " + adapter.getClass().getSimpleName());
+                return adapter.sendMessageToClient(networkClientId, message);
             } else {
-                LOGGER.warning("ServerNetworkManager: Adapter for client " + clientId + " (" +
-                        adapter.getClass().getSimpleName() + ") is not running. Message not sent.");
-                // Client might have disconnected and adapter stopped, but mapping not yet cleared.
-                // Or adapter failed to start.
+                LOGGER.warning("Adapter for client " + networkClientId + " (" + adapter.getClass().getSimpleName() + ") is not running. Message not sent.");
             }
         } else {
-            LOGGER.warning("ServerNetworkManager: No adapter mapping found for client ID: " + clientId +
-                    ". Message not sent. Client might have already disconnected.");
+            LOGGER.warning("No adapter mapping found for client ID: " + networkClientId + ". Message not sent. Client might have disconnected.");
         }
+        return false;
     }
 
     /**
      * Broadcasts a message to all currently connected clients, using their respective adapters.
      * @param message The message to broadcast.
      */
-    public void broadcastMessage(Message message) {
-        LOGGER.finer("ServerNetworkManager: Broadcasting message to " + clientToAdapterMap.size() + " clients: " + message.getClass().getSimpleName());
-        for (Map.Entry<String, ServerNetworkInterface> entry : clientToAdapterMap.entrySet()) {
-            String clientId = entry.getKey();
-            ServerNetworkInterface adapter = entry.getValue();
-            if (adapter.isRunning()) {
-                // The adapter's sendMessageToClient will handle the specifics for that client
-                adapter.sendMessageToClient(clientId, message);
-            }
+    public void broadcastMessageToAllClients(Message message) {
+        Objects.requireNonNull(message, "message cannot be null for broadcastMessageToAllClients");
+        LOGGER.finer("Broadcasting message to " + clientToAdapterMap.size() + " clients: " + message.getClass().getSimpleName());
+        if (clientToAdapterMap.isEmpty()) {
+            LOGGER.info("No clients connected to broadcast message to.");
+            return;
+        }
+        for (String clientId : List.copyOf(clientToAdapterMap.keySet())) {
+            sendMessageToClient(clientId, message);
         }
     }
 
+    /**
+     * Broadcasts a message to all clients connected to a specific game session.
+     * Requires external mapping of session to clients.
+     * @param message The message to send.
+     * @param targetClientIds A list of networkClientIds who are in the target session.
+     */
+    public void broadcastMessageToSessionClients(Message message, List<String> targetClientIds) {
+        Objects.requireNonNull(message, "message cannot be null for broadcastMessageToSessionClients");
+        Objects.requireNonNull(targetClientIds, "targetClientIds cannot be null");
+        if (targetClientIds.isEmpty()) return;
+
+        LOGGER.finer("Broadcasting message to " + targetClientIds.size() + " clients in a session: " + message.getClass().getSimpleName());
+        for (String clientId : targetClientIds) {
+            sendMessageToClient(clientId, message);
+        }
+    }
+
+    /**
+     * Checks if the ServerNetworkManager has any adapter currently running.
+     * @return true if at least one adapter is running, false otherwise.
+     */
     public boolean isRunning() {
         for (ServerNetworkInterface adapter : networkAdapters) {
             if (adapter.isRunning()) {
