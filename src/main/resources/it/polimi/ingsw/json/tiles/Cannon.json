@@ -1,0 +1,398 @@
+[
+  {
+    "image": "/assets/tiles/single-cannon_D-D_01.png",
+    "type": "CANNON_SINGLE",
+    "direction": "UP",
+    "connectors": {
+      "UP": "PLAIN",
+      "RIGHT": "PLAIN",
+      "DOWN": "DOUBLE",
+      "LEFT": "PLAIN"
+    }
+  },
+  {
+    "image": "/assets/tiles/single-cannon_D-D_02.png",
+    "type": "CANNON_SINGLE",
+    "direction": "UP",
+    "connectors": {
+      "UP": "PLAIN",
+      "RIGHT": "PLAIN",
+      "DOWN": "DOUBLE",
+      "LEFT": "PLAIN"
+    }
+  },
+  {
+    "image": "/assets/tiles/single-cannon_DL-DS.png",
+    "type": "CANNON_SINGLE",
+    "direction": "UP",
+    "connectors": {
+      "UP": "PLAIN",
+      "RIGHT": "PLAIN",
+      "DOWN": "DOUBLE",
+      "LEFT": "SINGLE"
+    }
+  },
+  {
+    "image": "/assets/tiles/single-cannon_DL-DU.png",
+    "type": "CANNON_SINGLE",
+    "direction": "UP",
+    "connectors": {
+      "UP": "PLAIN",
+      "RIGHT": "PLAIN",
+      "DOWN": "DOUBLE",
+      "LEFT": "UNIVERSAL"
+    }
+  },
+  {
+    "image": "/assets/tiles/single-cannon_DL-UD.png",
+    "type": "CANNON_SINGLE",
+    "direction": "UP",
+    "connectors": {
+      "UP": "PLAIN",
+      "RIGHT": "PLAIN",
+      "DOWN": "UNIVERSAL",
+      "LEFT": "DOUBLE"
+    }
+  },
+  {
+    "image": "/assets/tiles/single-cannon_DL-US.png",
+    "type": "CANNON_SINGLE",
+    "direction": "UP",
+    "connectors": {
+      "UP": "PLAIN",
+      "RIGHT": "PLAIN",
+      "DOWN": "UNIVERSAL",
+      "LEFT": "SINGLE"
+    }
+  },
+  {
+    "image": "/assets/tiles/single-cannon_D-S_01.png",
+    "type": "CANNON_SINGLE",
+    "direction": "UP",
+    "connectors": {
+      "UP": "PLAIN",
+      "RIGHT": "PLAIN",
+      "DOWN": "SINGLE",
+      "LEFT": "PLAIN"
+    }
+  },
+  {
+    "image": "/assets/tiles/single-cannon_D-S_02.png",
+    "type": "CANNON_SINGLE",
+    "direction": "UP",
+    "connectors": {
+      "UP": "PLAIN",
+      "RIGHT": "PLAIN",
+      "DOWN": "SINGLE",
+      "LEFT": "PLAIN"
+    }
+  },
+  {
+    "image": "/assets/tiles/single-cannon_L-D_01.png",
+    "type": "CANNON_SINGLE",
+    "direction": "UP",
+    "connectors": {
+      "UP": "PLAIN",
+      "RIGHT": "PLAIN",
+      "DOWN": "PLAIN",
+      "LEFT": "DOUBLE"
+    }
+  },
+  {
+    "image": "/assets/tiles/single-cannon_L-D_02.png",
+    "type": "CANNON_SINGLE",
+    "direction": "UP",
+    "connectors": {
+      "UP": "PLAIN",
+      "RIGHT": "PLAIN",
+      "DOWN": "PLAIN",
+      "LEFT": "DOUBLE"
+    }
+  },
+  {
+    "image": "/assets/tiles/single-cannon_L-S.png",
+    "type": "CANNON_SINGLE",
+    "direction": "UP",
+    "connectors": {
+      "UP": "PLAIN",
+      "RIGHT": "PLAIN",
+      "DOWN": "PLAIN",
+      "LEFT": "SINGLE"
+    }
+  },
+  {
+    "image": "/assets/tiles/single-cannon_R-S.png",
+    "type": "CANNON_SINGLE",
+    "direction": "UP",
+    "connectors": {
+      "UP": "PLAIN",
+      "RIGHT": "SINGLE",
+      "DOWN": "PLAIN",
+      "LEFT": "PLAIN"
+    }
+  },
+  {
+    "image": "/assets/tiles/single-cannon_R-D.png",
+    "type": "CANNON_SINGLE",
+    "direction": "UP",
+    "connectors": {
+      "UP": "PLAIN",
+      "RIGHT": "DOUBLE",
+      "DOWN": "PLAIN",
+      "LEFT": "PLAIN"
+    }
+  },
+  {
+    "image": "/assets/tiles/single-cannon_RD-DS.png",
+    "type": "CANNON_SINGLE",
+    "direction": "UP",
+    "connectors": {
+      "UP": "PLAIN",
+      "RIGHT": "DOUBLE",
+      "DOWN": "SINGLE",
+      "LEFT": "PLAIN"
+    }
+  },
+  {
+    "image": "/assets/tiles/single-cannon_RD-DU.png",
+    "type": "CANNON_SINGLE",
+    "direction": "UP",
+    "connectors": {
+      "UP": "PLAIN",
+      "RIGHT": "DOUBLE",
+      "DOWN": "UNIVERSAL",
+      "LEFT": "PLAIN"
+    }
+  },
+  {
+    "image": "/assets/tiles/single-cannon_RDL-DDD.png",
+    "type": "CANNON_SINGLE",
+    "direction": "UP",
+    "connectors": {
+      "UP": "PLAIN",
+      "RIGHT": "DOUBLE",
+      "DOWN": "DOUBLE",
+      "LEFT": "DOUBLE"
+    }
+  },
+  {
+    "image": "/assets/tiles/single-cannon_RDL-DUS.png",
+    "type": "CANNON_SINGLE",
+    "direction": "UP",
+    "connectors": {
+      "UP": "PLAIN",
+      "RIGHT": "DOUBLE",
+      "DOWN": "UNIVERSAL",
+      "LEFT": "SINGLE"
+    }
+  },
+  {
+    "image": "/assets/tiles/single-cannon_RDL-SSS.png",
+    "type": "CANNON_SINGLE",
+    "direction": "UP",
+    "connectors": {
+      "UP": "PLAIN",
+      "RIGHT": "SINGLE",
+      "DOWN": "SINGLE",
+      "LEFT": "SINGLE"
+    }
+  },
+  {
+    "image": "/assets/tiles/single-cannon_RDL-SUD.png",
+    "type": "CANNON_SINGLE",
+    "direction": "UP",
+    "connectors": {
+      "UP": "PLAIN",
+      "RIGHT": "SINGLE",
+      "DOWN": "UNIVERSAL",
+      "LEFT": "DOUBLE"
+    }
+  },
+  {
+    "image": "/assets/tiles/single-cannon_RD-SD.png",
+    "type": "CANNON_SINGLE",
+    "direction": "UP",
+    "connectors": {
+      "UP": "PLAIN",
+      "RIGHT": "SINGLE",
+      "DOWN": "DOUBLE",
+      "LEFT": "PLAIN"
+    }
+  },
+  {
+    "image": "/assets/tiles/single-cannon_RD-SU.png",
+    "type": "CANNON_SINGLE",
+    "direction": "UP",
+    "connectors": {
+      "UP": "PLAIN",
+      "RIGHT": "SINGLE",
+      "DOWN": "UNIVERSAL",
+      "LEFT": "PLAIN"
+    }
+  },
+  {
+    "image": "/assets/tiles/single-cannon_RD-US.png",
+    "type": "CANNON_SINGLE",
+    "direction": "UP",
+    "connectors": {
+      "UP": "PLAIN",
+      "RIGHT": "UNIVERSAL",
+      "DOWN": "SINGLE",
+      "LEFT": "PLAIN"
+    }
+  },
+  {
+    "image": "/assets/tiles/single-cannon_RL-DU.png",
+    "type": "CANNON_SINGLE",
+    "direction": "UP",
+    "connectors": {
+      "UP": "PLAIN",
+      "RIGHT": "DOUBLE",
+      "DOWN": "PLAIN",
+      "LEFT": "UNIVERSAL"
+    }
+  },
+  {
+    "image": "/assets/tiles/single-cannon_RL-SD.png",
+    "type": "CANNON_SINGLE",
+    "direction": "UP",
+    "connectors": {
+      "UP": "PLAIN",
+      "RIGHT": "SINGLE",
+      "DOWN": "PLAIN",
+      "LEFT": "DOUBLE"
+    }
+  },
+  {
+    "image": "/assets/tiles/single-cannon_RL-US.png",
+    "type": "CANNON_SINGLE",
+    "direction": "UP",
+    "connectors": {
+      "UP": "PLAIN",
+      "RIGHT": "UNIVERSAL",
+      "DOWN": "PLAIN",
+      "LEFT": "SINGLE"
+    }
+  },
+  {
+    "image": "/assets/tiles/double-cannon_D-D.png",
+    "type": "CANNON_DOUBLE",
+    "direction": "UP",
+    "connectors": {
+      "UP": "PLAIN",
+      "RIGHT": "PLAIN",
+      "DOWN": "DOUBLE",
+      "LEFT": "PLAIN"
+    }
+  },
+  {
+    "image": "/assets/tiles/double-cannon_DL-SU.png",
+    "type": "CANNON_DOUBLE",
+    "direction": "UP",
+    "connectors": {
+      "UP": "PLAIN",
+      "RIGHT": "PLAIN",
+      "DOWN": "SINGLE",
+      "LEFT": "UNIVERSAL"
+    }
+  },
+  {
+    "image": "/assets/tiles/double-cannon_DL-UD.png",
+    "type": "CANNON_DOUBLE",
+    "direction": "UP",
+    "connectors": {
+      "UP": "PLAIN",
+      "RIGHT": "PLAIN",
+      "DOWN": "UNIVERSAL",
+      "LEFT": "DOUBLE"
+    }
+  },
+  {
+    "image": "/assets/tiles/double-cannon_D-S.png",
+    "type": "CANNON_DOUBLE",
+    "direction": "UP",
+    "connectors": {
+      "UP": "PLAIN",
+      "RIGHT": "PLAIN",
+      "DOWN": "SINGLE",
+      "LEFT": "PLAIN"
+    }
+  },
+  {
+    "image": "/assets/tiles/double-cannon_L-U.png",
+    "type": "CANNON_DOUBLE",
+    "direction": "UP",
+    "connectors": {
+      "UP": "PLAIN",
+      "RIGHT": "PLAIN",
+      "DOWN": "PLAIN",
+      "LEFT": "UNIVERSAL"
+    }
+  },
+  {
+    "image": "/assets/tiles/double-cannon_RDL-DSD.png",
+    "type": "CANNON_DOUBLE",
+    "direction": "UP",
+    "connectors": {
+      "UP": "PLAIN",
+      "RIGHT": "DOUBLE",
+      "DOWN": "SINGLE",
+      "LEFT": "DOUBLE"
+    }
+  },
+  {
+    "image": "/assets/tiles/double-cannon_RDL-SDS.png",
+    "type": "CANNON_DOUBLE",
+    "direction": "UP",
+    "connectors": {
+      "UP": "PLAIN",
+      "RIGHT": "SINGLE",
+      "DOWN": "DOUBLE",
+      "LEFT": "SINGLE"
+    }
+  },
+  {
+    "image": "/assets/tiles/double-cannon_RD-SU.png",
+    "type": "CANNON_DOUBLE",
+    "direction": "UP",
+    "connectors": {
+      "UP": "PLAIN",
+      "RIGHT": "SINGLE",
+      "DOWN": "UNIVERSAL",
+      "LEFT": "PLAIN"
+    }
+  },
+  {
+    "image": "/assets/tiles/double-cannon_RD-UD.png",
+    "type": "CANNON_DOUBLE",
+    "direction": "UP",
+    "connectors": {
+      "UP": "PLAIN",
+      "RIGHT": "UNIVERSAL",
+      "DOWN": "DOUBLE",
+      "LEFT": "PLAIN"
+    }
+  },
+  {
+    "image": "/assets/tiles/double-cannon_RL-DS.png",
+    "type": "CANNON_DOUBLE",
+    "direction": "UP",
+    "connectors": {
+      "UP": "PLAIN",
+      "RIGHT": "DOUBLE",
+      "DOWN": "PLAIN",
+      "LEFT": "SINGLE"
+    }
+  },
+  {
+    "image": "/assets/tiles/double-cannon_R-U.png",
+    "type": "CANNON_DOUBLE",
+    "direction": "UP",
+    "connectors": {
+      "UP": "PLAIN",
+      "RIGHT": "UNIVERSAL",
+      "DOWN": "PLAIN",
+      "LEFT": "PLAIN"
+    }
+  }
+]

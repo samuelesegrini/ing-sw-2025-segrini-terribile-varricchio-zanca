@@ -1,0 +1,36 @@
+[
+  {
+    "image": "/assets/cards/smugglers_lvl1.png",
+    "id": "smugglers_lvl1",
+    "level": "LEVEL_I",
+    "description": "A smuggler ship blocks your path. You must defeat it to claim a reward. If you fail, the smugglers take your most valuable goods.",
+    "type": "SMUGGLERS",
+    "powerLevel": 4,
+    "movementPenalty": 1,
+    "defeated": false,
+    "availableGoods": {
+        "RED": 0,
+        "BLUE": 1,
+        "GREEN": 1,
+        "YELLOW": 1
+    },
+    "goodsLostIfDefeated": 2
+  },
+  {
+    "image": "/assets/cards/smugglers_lvl2.png",
+    "id": "smugglers_lvl2",
+    "level": "LEVEL_II",
+    "description": "A smuggler ship blocks your path. You must defeat it to claim a reward. If you fail, the smugglers take your most valuable goods.",
+    "type": "SMUGGLERS",
+    "powerLevel": 8,
+    "movementPenalty": 1,
+    "defeated": false,
+    "availableGoods": {
+      "RED": 1,
+      "BLUE": 0,
+      "GREEN": 0,
+      "YELLOW": 2
+    },
+    "goodsLostIfDefeated": 3
+  }
+]

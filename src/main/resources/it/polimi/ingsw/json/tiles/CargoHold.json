@@ -1,0 +1,290 @@
+[
+  {
+    "image": "/assets/tiles/double-cargo_L-U_01.png",
+    "type": "CARGO_HOLD",
+    "capacity": "2",
+    "direction": "UP",
+    "connectors": {
+      "UP": "PLAIN",
+      "RIGHT": "PLAIN",
+      "DOWN": "PLAIN",
+      "LEFT": "UNIVERSAL"
+    }
+  },
+  {
+    "image": "/assets/tiles/double-cargo_L-U_02.png",
+    "type": "CARGO_HOLD",
+    "capacity": "2",
+    "direction": "UP",
+    "connectors": {
+      "UP": "PLAIN",
+      "RIGHT": "PLAIN",
+      "DOWN": "PLAIN",
+      "LEFT": "UNIVERSAL"
+    }
+  },
+  {
+    "image": "/assets/tiles/double-cargo_RL-DU.png",
+    "type": "CARGO_HOLD",
+    "capacity": "2",
+    "direction": "UP",
+    "connectors": {
+      "UP": "PLAIN",
+      "RIGHT": "DOUBLE",
+      "DOWN": "PLAIN",
+      "LEFT": "UNIVERSAL"
+    }
+  },
+  {
+    "image": "/assets/tiles/double-cargo_RL-SU.png",
+    "type": "CARGO_HOLD",
+    "capacity": "2",
+    "direction": "UP",
+    "connectors": {
+      "UP": "PLAIN",
+      "RIGHT": "SINGLE",
+      "DOWN": "PLAIN",
+      "LEFT": "UNIVERSAL"
+    }
+  },
+  {
+    "image": "/assets/tiles/double-cargo_UL-UU.png",
+    "type": "CARGO_HOLD",
+    "capacity": "2",
+    "direction": "UP",
+    "connectors": {
+      "UP": "UNIVERSAL",
+      "RIGHT": "PLAIN",
+      "DOWN": "PLAIN",
+      "LEFT": "UNIVERSAL"
+    }
+  },
+  {
+    "image": "/assets/tiles/double-cargo_URD-DSU.png",
+    "type": "CARGO_HOLD",
+    "capacity": "2",
+    "direction": "UP",
+    "connectors": {
+      "UP": "DOUBLE",
+      "RIGHT": "SINGLE",
+      "DOWN": "UNIVERSAL",
+      "LEFT": "PLAIN"
+    }
+  },
+  {
+    "image": "/assets/tiles/double-cargo_URDL-DSDU.png",
+    "type": "CARGO_HOLD",
+    "capacity": "2",
+    "direction": "UP",
+    "connectors": {
+      "UP": "DOUBLE",
+      "RIGHT": "SINGLE",
+      "DOWN": "DOUBLE",
+      "LEFT": "UNIVERSAL"
+    }
+  },
+  {
+    "image": "/assets/tiles/double-cargo_URDL-DSUS.png",
+    "type": "CARGO_HOLD",
+    "capacity": "2",
+    "direction": "UP",
+    "connectors": {
+      "UP": "DOUBLE",
+      "RIGHT": "SINGLE",
+      "DOWN": "UNIVERSAL",
+      "LEFT": "SINGLE"
+    }
+  },
+  {
+    "image": "/assets/tiles/double-cargo_URL-DUS.png",
+    "type": "CARGO_HOLD",
+    "capacity": "2",
+    "direction": "UP",
+    "connectors": {
+      "UP": "DOUBLE",
+      "RIGHT": "UNIVERSAL",
+      "DOWN": "PLAIN",
+      "LEFT": "SINGLE"
+    }
+  },
+  {
+    "image": "/assets/tiles/triple-cargo_L-D.png",
+    "type": "CARGO_HOLD",
+    "capacity": "3",
+    "direction": "UP",
+    "connectors": {
+      "UP": "PLAIN",
+      "RIGHT": "PLAIN",
+      "DOWN": "PLAIN",
+      "LEFT": "DOUBLE"
+    }
+  },
+  {
+    "image": "/assets/tiles/triple-cargo_L-S.png",
+    "type": "CARGO_HOLD",
+    "capacity": "3",
+    "direction": "UP",
+    "connectors": {
+      "UP": "PLAIN",
+      "RIGHT": "PLAIN",
+      "DOWN": "PLAIN",
+      "LEFT": "SINGLE"
+    }
+  },
+  {
+    "image": "/assets/tiles/triple-cargo_UD-DD.png",
+    "type": "CARGO_HOLD",
+    "capacity": "3",
+    "direction": "UP",
+    "connectors": {
+      "UP": "DOUBLE",
+      "RIGHT": "PLAIN",
+      "DOWN": "DOUBLE",
+      "LEFT": "PLAIN"
+    }
+  },
+  {
+    "image": "/assets/tiles/triple-cargo_UDL-DSD.png",
+    "type": "CARGO_HOLD",
+    "capacity": "3",
+    "direction": "UP",
+    "connectors": {
+      "UP": "DOUBLE",
+      "RIGHT": "PLAIN",
+      "DOWN": "SINGLE",
+      "LEFT": "DOUBLE"
+    }
+  },
+  {
+    "image": "/assets/tiles/triple-cargo_UDL-SDS.png",
+    "type": "CARGO_HOLD",
+    "capacity": "3",
+    "direction": "UP",
+    "connectors": {
+      "UP": "SINGLE",
+      "RIGHT": "PLAIN",
+      "DOWN": "DOUBLE",
+      "LEFT": "SINGLE"
+    }
+  },
+  {
+    "image": "/assets/tiles/triple-cargo_UD-SS.png",
+    "type": "CARGO_HOLD",
+    "capacity": "3",
+    "direction": "UP",
+    "connectors": {
+      "UP": "SINGLE",
+      "RIGHT": "PLAIN",
+      "DOWN": "SINGLE",
+      "LEFT": "PLAIN"
+    }
+  },
+  {
+    "image": "/assets/tiles/single-cargo-special_RDL-DSU.png",
+    "type": "CARGO_HOLD_SPECIAL",
+    "capacity": "1",
+    "direction": "UP",
+    "connectors": {
+      "UP": "PLAIN",
+      "RIGHT": "DOUBLE",
+      "DOWN": "SINGLE",
+      "LEFT": "UNIVERSAL"
+    }
+  },
+  {
+    "image": "/assets/tiles/single-cargo-special_RL-UU.png",
+    "type": "CARGO_HOLD_SPECIAL",
+    "capacity": "1",
+    "direction": "UP",
+    "connectors": {
+      "UP": "PLAIN",
+      "RIGHT": "UNIVERSAL",
+      "DOWN": "PLAIN",
+      "LEFT": "UNIVERSAL"
+    }
+  },
+  {
+    "image": "/assets/tiles/single-cargo-special_UL-UU.png",
+    "type": "CARGO_HOLD_SPECIAL",
+    "capacity": "1",
+    "direction": "UP",
+    "connectors": {
+      "UP": "UNIVERSAL",
+      "RIGHT": "PLAIN",
+      "DOWN": "PLAIN",
+      "LEFT": "UNIVERSAL"
+    }
+  },
+  {
+    "image": "/assets/tiles/single-cargo-special_URDL-DDDU.png",
+    "type": "CARGO_HOLD_SPECIAL",
+    "capacity": "1",
+    "direction": "UP",
+    "connectors": {
+      "UP": "DOUBLE",
+      "RIGHT": "DOUBLE",
+      "DOWN": "DOUBLE",
+      "LEFT": "UNIVERSAL"
+    }
+  },
+  {
+    "image": "/assets/tiles/single-cargo-special_URDL-SSSU.png",
+    "type": "CARGO_HOLD_SPECIAL",
+    "capacity": "1",
+    "direction": "UP",
+    "connectors": {
+      "UP": "SINGLE",
+      "RIGHT": "SINGLE",
+      "DOWN": "SINGLE",
+      "LEFT": "UNIVERSAL"
+    }
+  },
+  {
+    "image": "/assets/tiles/single-cargo-special_URL-DSU.png",
+    "type": "CARGO_HOLD_SPECIAL",
+    "capacity": "1",
+    "direction": "UP",
+    "connectors": {
+      "UP": "DOUBLE",
+      "RIGHT": "SINGLE",
+      "DOWN": "PLAIN",
+      "LEFT": "UNIVERSAL"
+    }
+  },
+  {
+    "image": "/assets/tiles/double-cargo-special_L-D.png",
+    "type": "CARGO_HOLD_SPECIAL",
+    "capacity": "2",
+    "direction": "UP",
+    "connectors": {
+      "UP": "PLAIN",
+      "RIGHT": "PLAIN",
+      "DOWN": "PLAIN",
+      "LEFT": "DOUBLE"
+    }
+  },
+  {
+    "image": "/assets/tiles/double-cargo-special_L-S.png",
+    "type": "CARGO_HOLD_SPECIAL",
+    "capacity": "2",
+    "direction": "UP",
+    "connectors": {
+      "UP": "PLAIN",
+      "RIGHT": "PLAIN",
+      "DOWN": "PLAIN",
+      "LEFT": "SINGLE"
+    }
+  },
+  {
+    "image": "/assets/tiles/double-cargo-special_RL-DS.png",
+    "type": "CARGO_HOLD_SPECIAL",
+    "capacity": "2",
+    "direction": "UP",
+    "connectors": {
+      "UP": "PLAIN",
+      "RIGHT": "DOUBLE",
+      "DOWN": "PLAIN",
+      "LEFT": "SINGLE"
+    }
+  }
+]

@@ -1,0 +1,162 @@
+[
+  {
+    "image": "/assets/cards/meteor-swarm_lvl1_01.png",
+    "id": "meteor-swarm_lvl1_01",
+    "level": "TEST_FLIGHT",
+    "description": "You encounter a meteor swarm. Use shields and cannons to defend your ship. Some meteors may bounce off, others might miss, but the rest can tear your ship apart.",
+    "type": "METEOR_SWARM",
+    "meteorPattern": [
+      {
+        "intensity": "HEAVY",
+        "approach": "UP"
+      },
+      {
+        "intensity": "LIGHT",
+        "approach": "LEFT"
+      },
+      {
+        "intensity": "LIGHT",
+        "approach": "RIGHT"
+      }
+    ],
+    "isVisited": false
+  },
+  {
+    "image": "/assets/cards/meteor-swarm_lvl1_02.png",
+    "id": "meteor-swarm_lvl1_02",
+    "level": "LEVEL_I",
+    "description": "You encounter a meteor swarm. Use shields and cannons to defend your ship. Some meteors may bounce off, others might miss, but the rest can tear your ship apart.",
+    "type": "METEOR_SWARM",
+    "meteorPattern": [
+      {
+        "intensity": "LIGHT",
+        "approach": "UP"
+      },
+      {
+        "intensity": "LIGHT",
+        "approach": "UP"
+      },
+      {
+        "intensity": "LIGHT",
+        "approach": "LEFT"
+      },
+      {
+        "intensity": "LIGHT",
+        "approach": "RIGHT"
+      },
+      {
+        "intensity": "LIGHT",
+        "approach": "DOWN"
+      }
+    ],
+    "isVisited": false
+  },
+  {
+    "image": "/assets/cards/meteor-swarm_lvl1_03.png",
+    "id": "meteor-swarm_lvl1_03",
+    "level": "LEVEL_I",
+    "description": "You encounter a meteor swarm. Use shields and cannons to defend your ship. Some meteors may bounce off, others might miss, but the rest can tear your ship apart.",
+    "type": "METEOR_SWARM",
+    "meteorPattern": [
+      {
+        "intensity": "HEAVY",
+        "approach": "UP"
+      },
+      {
+        "intensity": "LIGHT",
+        "approach": "UP"
+      },
+      {
+        "intensity": "HEAVY",
+        "approach": "UP"
+      }
+    ],
+    "isVisited": false
+  },
+  {
+    "image": "/assets/cards/meteor-swarm_lvl2_01.png",
+    "id": "meteor-swarm_lvl2_01",
+    "level": "LEVEL_II",
+    "description": "You encounter a meteor swarm. Use shields and cannons to defend your ship. Some meteors may bounce off, others might miss, but the rest can tear your ship apart.",
+    "type": "METEOR_SWARM",
+    "meteorPattern": [
+      {
+        "intensity": "LIGHT",
+        "approach": "UP"
+      },
+      {
+        "intensity": "LIGHT",
+        "approach": "UP"
+      },
+      {
+        "intensity": "HEAVY",
+        "approach": "LEFT"
+      },
+      {
+        "intensity": "LIGHT",
+        "approach": "LEFT"
+      },
+      {
+        "intensity": "LIGHT",
+        "approach": "LEFT"
+      }
+    ],
+    "isVisited": false
+  },
+  {
+    "image": "/assets/cards/meteor-swarm_lvl2_02.png",
+    "id": "meteor-swarm_lvl2_02",
+    "level": "LEVEL_II",
+    "description": "You encounter a meteor swarm. Use shields and cannons to defend your ship. Some meteors may bounce off, others might miss, but the rest can tear your ship apart.",
+    "type": "METEOR_SWARM",
+    "meteorPattern": [
+      {
+        "intensity": "HEAVY",
+        "approach": "UP"
+      },
+      {
+        "intensity": "HEAVY",
+        "approach": "UP"
+      },
+      {
+        "intensity": "LIGHT",
+        "approach": "DOWN"
+      },
+      {
+        "intensity": "LIGHT",
+        "approach": "DOWN"
+      }
+    ],
+    "isVisited": false
+  },
+  {
+    "image": "/assets/cards/meteor-swarm_lvl2_03.png",
+    "id": "meteor-swarm_lvl2_03",
+    "level": "LEVEL_II",
+    "description": "You encounter a meteor swarm. Use shields and cannons to defend your ship. Some meteors may bounce off, others might miss, but the rest can tear your ship apart.",
+    "type": "METEOR_SWARM",
+    "meteorPattern": [
+      {
+        "intensity": "LIGHT",
+        "approach": "UP"
+      },
+      {
+        "intensity": "LIGHT",
+        "approach": "UP"
+      },
+      {
+        "intensity": "HEAVY",
+        "approach": "RIGHT"
+      },
+      {
+        "intensity": "LIGHT",
+        "approach": "RIGHT"
+      },
+      {
+        "intensity": "LIGHT",
+        "approach": "RIGHT"
+      }
+    ],
+    "isVisited": false
+  }
+]

@@ -1,0 +1,206 @@
+[
+  {
+    "image": "/assets/tiles/battery_L-S.png",
+    "type": "BATTERY",
+    "direction": "UP",
+    "maxBatteries": "3",
+    "connectors": {
+      "UP": "PLAIN",
+      "RIGHT": "PLAIN",
+      "DOWN": "PLAIN",
+      "LEFT": "SINGLE"
+    }
+  },
+  {
+    "image": "/assets/tiles/battery_L-U_01.png",
+    "type": "BATTERY",
+    "direction": "UP",
+    "maxBatteries": "2",
+    "connectors": {
+      "UP": "PLAIN",
+      "RIGHT": "PLAIN",
+      "DOWN": "PLAIN",
+      "LEFT": "UNIVERSAL"
+    }
+  },
+  {
+    "image": "/assets/tiles/battery_L-U_02.png",
+    "type": "BATTERY",
+    "direction": "UP",
+    "maxBatteries": "2",
+    "connectors": {
+      "UP": "PLAIN",
+      "RIGHT": "PLAIN",
+      "DOWN": "PLAIN",
+      "LEFT": "UNIVERSAL"
+    }
+  },
+  {
+    "image": "/assets/tiles/battery_RL-UU.png",
+    "type": "BATTERY",
+    "direction": "UP",
+    "maxBatteries": "2",
+    "connectors": {
+      "UP": "PLAIN",
+      "RIGHT": "UNIVERSAL",
+      "DOWN": "PLAIN",
+      "LEFT": "UNIVERSAL"
+    }
+  },
+  {
+    "image": "/assets/tiles/battery_U-D.png",
+    "type": "BATTERY",
+    "direction": "UP",
+    "maxBatteries": "3",
+    "connectors": {
+      "UP": "DOUBLE",
+      "RIGHT": "PLAIN",
+      "DOWN": "PLAIN",
+      "LEFT": "PLAIN"
+    }
+  },
+  {
+    "image": "/assets/tiles/battery_UD-SD.png",
+    "type": "BATTERY",
+    "direction": "UP",
+    "maxBatteries": "2",
+    "connectors": {
+      "UP": "SINGLE",
+      "RIGHT": "PLAIN",
+      "DOWN": "DOUBLE",
+      "LEFT": "PLAIN"
+    }
+  },
+  {
+    "image": "/assets/tiles/battery_UL-US.png",
+    "type": "BATTERY",
+    "direction": "UP",
+    "maxBatteries": "2",
+    "connectors": {
+      "UP": "UNIVERSAL",
+      "RIGHT": "PLAIN",
+      "DOWN": "PLAIN",
+      "LEFT": "SINGLE"
+    }
+  },
+  {
+    "image": "/assets/tiles/battery_UL-UU.png",
+    "type": "BATTERY",
+    "direction": "UP",
+    "maxBatteries": "2",
+    "connectors": {
+      "UP": "UNIVERSAL",
+      "RIGHT": "PLAIN",
+      "DOWN": "PLAIN",
+      "LEFT": "UNIVERSAL"
+    }
+  },
+  {
+    "image": "/assets/tiles/battery_URD-DDS.png",
+    "type": "BATTERY",
+    "direction": "UP",
+    "maxBatteries": "3",
+    "connectors": {
+      "UP": "DOUBLE",
+      "RIGHT": "DOUBLE",
+      "DOWN": "SINGLE",
+      "LEFT": "PLAIN"
+    }
+  },
+  {
+    "image": "/assets/tiles/battery_URDL-DSDS.png",
+    "type": "BATTERY",
+    "direction": "UP",
+    "maxBatteries": "2",
+    "connectors": {
+      "UP": "DOUBLE",
+      "RIGHT": "SINGLE",
+      "DOWN": "DOUBLE",
+      "LEFT": "SINGLE"
+    }
+  },
+  {
+    "image": "/assets/tiles/battery_URDL-UDDD.png",
+    "type": "BATTERY",
+    "direction": "UP",
+    "maxBatteries": "2",
+    "connectors": {
+      "UP": "UNIVERSAL",
+      "RIGHT": "DOUBLE",
+      "DOWN": "DOUBLE",
+      "LEFT": "DOUBLE"
+    }
+  },
+  {
+    "image": "/assets/tiles/battery_URDL-USSS.png",
+    "type": "BATTERY",
+    "direction": "UP",
+    "maxBatteries": "2",
+    "connectors": {
+      "UP": "UNIVERSAL",
+      "RIGHT": "SINGLE",
+      "DOWN": "SINGLE",
+      "LEFT": "SINGLE"
+    }
+  },
+  {
+    "image": "/assets/tiles/battery_UR-DS.png",
+    "type": "BATTERY",
+    "direction": "UP",
+    "maxBatteries": "3",
+    "connectors": {
+      "UP": "DOUBLE",
+      "RIGHT": "SINGLE",
+      "DOWN": "PLAIN",
+      "LEFT": "PLAIN"
+    }
+  },
+  {
+    "image": "/assets/tiles/battery_URD-SSD.png",
+    "type": "BATTERY",
+    "direction": "UP",
+    "maxBatteries": "3",
+    "connectors": {
+      "UP": "SINGLE",
+      "RIGHT": "SINGLE",
+      "DOWN": "DOUBLE",
+      "LEFT": "PLAIN"
+    }
+  },
+  {
+    "image": "/assets/tiles/battery_URD-UDS.png",
+    "type": "BATTERY",
+    "direction": "UP",
+    "maxBatteries": "2",
+    "connectors": {
+      "UP": "UNIVERSAL",
+      "RIGHT": "DOUBLE",
+      "DOWN": "SINGLE",
+      "LEFT": "PLAIN"
+    }
+  },
+  {
+    "image": "/assets/tiles/battery_URD-USD.png",
+    "type": "BATTERY",
+    "direction": "UP",
+    "maxBatteries": "2",
+    "connectors": {
+      "UP": "UNIVERSAL",
+      "RIGHT": "SINGLE",
+      "DOWN": "DOUBLE",
+      "LEFT": "PLAIN"
+    }
+  },
+  {
+    "image": "/assets/tiles/battery_UR-UD.png",
+    "type": "BATTERY",
+    "direction": "UP",
+    "maxBatteries": "2",
+    "connectors": {
+      "UP": "UNIVERSAL",
+      "RIGHT": "DOUBLE",
+      "DOWN": "PLAIN",
+      "LEFT": "PLAIN"
+    }
+  }
+]
