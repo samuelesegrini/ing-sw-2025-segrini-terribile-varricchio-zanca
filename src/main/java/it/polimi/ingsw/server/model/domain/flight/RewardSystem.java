@@ -1,62 +1,51 @@
 package it.polimi.ingsw.server.model.domain.flight;
 
+import it.polimi.ingsw.server.model.domain.player.Player;
 import it.polimi.ingsw.server.model.domain.ship.Ship;
 import it.polimi.ingsw.server.model.enums.GameLevel;
+import it.polimi.ingsw.server.model.enums.player.PlayerOrder;
 import it.polimi.ingsw.server.model.enums.resource.GoodType;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class RewardSystem {
-    private Map<Integer,Integer> positionRewards;
-    private Map<GoodType, Integer> resourceBonus;
-    private int bestLookingShipBonus;
+    private final GameLevel level;
+    private final Map<PlayerOrder,Integer> positionBonus;
+    private final Map<GoodType, Integer> resourceBonus;
+    private final int bestLookingShipBonus;
+    private final int exposedConnectorsPenalty;
 
-    public RewardSystem(GameLevel level){
+    public RewardSystem(GameLevel level, Map<PlayerOrder,Integer> positionBonus, Map<GoodType, Integer> resourceBonus, int bestLookingShipBonus, int exposedConnectorsPenalty) {
+        this.level = level;
+        this.positionBonus = positionBonus;
+        this.resourceBonus = resourceBonus;
+        this.bestLookingShipBonus = bestLookingShipBonus;
+        this.exposedConnectorsPenalty = exposedConnectorsPenalty;
+    }
 
-        positionRewards = new HashMap<>();
-        switch(level){
-            case TEST_FLIGHT:
-                positionRewards.put(0,4);
-                positionRewards.put(1,3);
-                positionRewards.put(2,2);
-                positionRewards.put(3,1);
-                bestLookingShipBonus=2;
-            case LEVEL_II:
-                positionRewards.put(0,8);
-                positionRewards.put(1,6);
-                positionRewards.put(2,4);
-                positionRewards.put(3,2);
-                bestLookingShipBonus=4;
+    /**
+     * Calculates the reward for a player based on their position in the finish order.
+     * The position is determined by the index of the player in the finish order list.
+     * @param finishOrder The list of players in the order they finished.
+     * @param player The player for whom to calculate the reward.
+     * @return The reward amount based on the player's position.
+     */
+    public int calculatePositionBonus (List<Player> finishOrder, Player player) {
+        int position = finishOrder.indexOf(player);
+        if(position < 0 || position >= positionBonus.size()){
+            return 0; // Player not found or position out of bounds
         }
-
-        resourceBonus = new HashMap<>();
-        resourceBonus.put(GoodType.RED, 4);
-        resourceBonus.put(GoodType.YELLOW, 3);
-        resourceBonus.put(GoodType.GREEN, 2);
-        resourceBonus.put(GoodType.BLUE, 1);
+        return positionBonus.get(PlayerOrder.values()[position]);
     }
 
     /**
-     * Grants extra credits based on the final position. The farther ahead a player is
-     * at the end of the flight, the more cosmic credits he earns.
-     * @param position position at the end of the flight
-     * @return number of extra credits earned
+     * Calculates the bonus for resources on a ship based on the resource bonus map.
+     * @param ship The ship to evaluate.
+     * @return The total credits earned from resources on the ship.
      */
-    public int getCreditsForPosition (int position){
-        return positionRewards.get(position);
-    }
-
-    /**
-     * Calculates the credits earned by selling the resource collected during the flight.
-     * @param good type of resource to sell.
-     * @return total credits earned by the player
-     */
-    public int getCreditsForResource(GoodType good){
-        return resourceBonus.get(good);
-    }
-
-    public int getCreditsForAllResources(Ship ship){
+    public int calculateResourceBonus(Ship ship){
         Map<GoodType,Integer> resources = ship.getResources();
         int credits = 0;
         for(GoodType good : resources.keySet()){
@@ -65,28 +54,31 @@ public class RewardSystem {
         return credits;
     }
 
-    //serve in Ship metodo getExposedComponents() che calcoli il numero di componenti esposti
-    //serve in Ship un riferimento al giocatore
-    //public Map<Player,Integer> calculateBeautyBonus (List<Ship> ships){
-    //    int exposedComponents = Integer.MAX_VALUE;
-    //    Player player = null;
-    //    for(Ship ship : ships){
-    //        if(ship.getExposedComponents() < exposedComponents){
-    //            exposedComponents = ship.getExposedComponents();
-    //            player = ship.getPlayer();
-    //        }
-    //    }
-    //    return Map.of(player, bestLookingShipBonus);
-    //}
+   /**
+     * Calculates the bonus for the best looking ship based on the number of exposed connectors.
+     * The ship with the least exposed connectors is considered the best looking.
+     * @param ships The list of ships to evaluate.
+     * @return A map containing the player with the best looking ship and the bonus amount.
+     */
+   public Map<Player,Integer> calculateBestLookingShipBonus(List<Ship> ships) {
+       int exposedConnectors = Integer.MAX_VALUE;
+       Player player = null;
+       for(Ship ship : ships){
+           if(ship.getExposedConnectors() < exposedConnectors){
+               exposedConnectors = ship.getExposedConnectors();
+               player = ship.getPlayer();
+           }
+       }
+       return Map.of(player, this.bestLookingShipBonus);
+    }
 
     /**
-     * Calculates credits lost as a penalty for ship components lost during the flight,
-     * subtracting one credit per lost piece.
-     * @param ship player's ship
-     * @return number of lost credits
+     * Calculates the penalty for exposed connectors on a ship.
+     * @param ship The ship to evaluate.
+     * @return The penalty based on the number of exposed connectors.
      */
-    //public int penaltiesLostComponents (Ship ship){
-    //    return ship.getExposedComponents();
-    //}
+    public int calculateExposedConnectorsPenalty (Ship ship){
+       return (ship.getExposedConnectors() * exposedConnectorsPenalty);
+    }
 }
 

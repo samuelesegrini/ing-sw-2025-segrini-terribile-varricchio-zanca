@@ -11,7 +11,7 @@ import java.util.Map;
 public class Planet {
 
     //which good types are on the planet and in what quantity
-    private String name;
+    private int number;
     private Map<GoodType, Integer> goodQuantities;
     private boolean visited;
 
@@ -20,14 +20,10 @@ public class Planet {
      *
      * @param goodQuantities A map of {@link GoodType} to their corresponding quantities available on the planet.
      */
-    public Planet(String name, Map<GoodType, Integer> goodQuantities) {
-        this.name = name;
+    public Planet(int number, Map<GoodType, Integer> goodQuantities) {
+        this.number = number;
         this.goodQuantities = goodQuantities;
         visited = false;
-    }
-
-    public String getName() {
-        return name;
     }
 
     /**

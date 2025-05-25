@@ -14,5 +14,9 @@ public enum PenaltyType {
     /**
      * Penalty type is Cannon fire.
      */
-    CANNON_FIRE
+    CANNON_FIRE,
+    /**
+     * Penalty type is Good Loss.
+     */
+    GOODS_LOSS
 }

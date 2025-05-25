@@ -8,9 +8,8 @@ import it.polimi.ingsw.server.model.enums.flight.FlightStatus;
 import java.util.*;
 
 public class FlightBoard {
-    private Route route;
+    private final Route route;
     private int playerCount;
-    private AdventureDeck deck;
     private Map <Player, PlayerFlightData> playerDataMap;
     private List<Player> currentOrder;
     private List <Player> finishOrder;
@@ -20,70 +19,30 @@ public class FlightBoard {
      * Initializes the route based on the level and player count.
      * @param level The game level.
      */
-    public FlightBoard(GameLevel level){
-        playerCount=0;
-        playerDataMap=new HashMap<>();
+    public FlightBoard(GameLevel level, Route route, int playerCount) {
+        this.route = route;
+        this.playerCount = playerCount;
+        playerDataMap = new HashMap<>();
         currentOrder = new ArrayList<>();
         finishOrder = new ArrayList<>();
-        List<Integer> startingPositions = new ArrayList<>();
-        switch(level){
-            case TEST_FLIGHT:
-                startingPositions.add(0);
-                startingPositions.add(1);
-                startingPositions.add(2);
-                startingPositions.add(4);
-                this.route=new Route(level, 18, startingPositions, new RewardSystem(level) );
-                break;
-            case LEVEL_II:
-                List<Integer> startingPositionII=new ArrayList<>();
-                startingPositions.add(0);
-                startingPositions.add(1);
-                startingPositions.add(3);
-                startingPositions.add(6);
-                this.route=new Route(level, 24 , startingPositions, new RewardSystem(level) );
-                break;
-        }
-    }
-
-    /**
-     * Returns a list of player names ordered from the first to the last based on their current position
-     * on the flight route. The list is sorted such that the player furthest along the route comes first,
-     * and the player furthest behind comes last.
-     * @return A list of player names.
-     */
-    public List<Player> getCurrentOrder() {
-        return currentOrder;
-    }
-
-    public List<Player> getFinishOrder() {
-        return finishOrder;
     }
 
     public Route getRoute() { return route; }
-
     public int getPlayerCount() { return playerCount; }
-
-    public AdventureDeck getDeck() { return deck; }
-
-    /**
-     * Returns the current position of the player on the flight route.
-     * @param player The player whose position is being queried.
-     * @return The position of the player on the flight route.
-     */
-    public int getPlayerPosition(Player player){
-        return playerDataMap.get(player).getPosition();
+    public List<Player> getCurrentOrder() {
+        return currentOrder;
     }
-
-    /**
-     * Returns the flight data of the specified player, including their current flight state, completed laps, and position.
-     * @param player The player whose flight data is being requested.
-     * @return The flight data of the player.
-     */
+    public List<Player> getFinishOrder() {
+        return finishOrder;
+    }
     public PlayerFlightData getPlayerData(Player player){
         return playerDataMap.get(player);
     }
 
-    //ordinati dal primo all'ultimo
+    /**
+     * Updates the current order of players based on their flight data positions.
+     * This method sorts the players in descending order of their positions.
+     */
     public void updateCurrentOrder() {
         boolean swapped;
         for (int i = 0; i < currentOrder.size() - 1; i++) {
@@ -102,6 +61,12 @@ public class FlightBoard {
         }
     }
 
+    /**
+     * Returns a list of players who are ahead of the specified player within a given distance.
+     * @param player The player to check against.
+     * @param distance The distance within which to find players ahead.
+     * @return A list of players who are ahead of the specified player within the given distance.
+     */
     public List<Player> getPlayersAhead(Player player, int distance) {
         List<Player> playersAhead = new ArrayList<Player>();
         int playerPosition = player.getFlightData().getPosition();
@@ -114,6 +79,12 @@ public class FlightBoard {
         return playersAhead;
     }
 
+    /**
+     * Returns a list of players who are behind the specified player within a given distance.
+     * @param player The player to check against.
+     * @param distance The distance within which to find players behind.
+     * @return A list of players who are behind the specified player within the given distance.
+     */
     public List<Player> getPlayersBehind (Player player, int distance){
         List<Player> playersBehind = new ArrayList<Player>();
         int playerPosition = player.getFlightData().getPosition();
@@ -126,6 +97,13 @@ public class FlightBoard {
         return playersBehind;
     }
 
+    /**
+     * Moves the player forward or backward by the specified number of spaces,
+     * adjusting for the number of players ahead or behind.
+     * @param player The player to move.
+     * @param spaces The number of spaces to move.
+     * @param forward {@code true} to move forward, {@code false} to move backward.
+     */
     public void movePlayer(Player player, int spaces, boolean forward){
         Integer playerPosition = player.getFlightData().getPosition();
         Integer newPosition;
@@ -175,7 +153,6 @@ public class FlightBoard {
         playerDataMap.get(player).setStatus(FlightStatus.ABANDONED);
         playerCount--;
         currentOrder.remove(player);
-        //playerDataMap.remove(player);
     }
 
     /**
@@ -183,7 +160,6 @@ public class FlightBoard {
      * @return {@code true} if the flight is complete, {@code false} otherwise.
      */
     public boolean isFlightComplete() {
-        //quando aggiorno finishOrder? quando finsice il mazzo?
         return (finishOrder.size() == playerCount);
     }
 }

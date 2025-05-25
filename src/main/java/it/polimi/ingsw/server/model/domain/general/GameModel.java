@@ -110,7 +110,7 @@ public class GameModel {
             throw new IllegalStateException("Game already initialized");
         }
 
-        this.flightBoard = new FlightBoard(level);
+        this.flightBoard = new FlightBoard(level, flightBoard.getRoute(), players.size());
         this.adventureDeck = configManager.createAdventureDeck(level);
         this.componentDeck = configManager.createComponentDeck(level);
         

@@ -7,6 +7,7 @@ import it.polimi.ingsw.server.model.domain.adventure.entity.CombatCheck;
 import it.polimi.ingsw.server.model.domain.adventure.entity.Meteor;
 import it.polimi.ingsw.server.model.domain.adventure.entity.Planet;
 import it.polimi.ingsw.server.model.domain.flight.FlightBoard;
+import it.polimi.ingsw.server.model.domain.flight.Route;
 import it.polimi.ingsw.server.model.domain.general.GameModel;
 import it.polimi.ingsw.server.model.domain.general.config.GameConfigurationManager;
 import it.polimi.ingsw.server.model.domain.player.Player;
@@ -62,9 +63,11 @@ class AdventureCardVisitorTest {
         // Add players to the game model
         gameModel.addPlayer(playerId1, "Manuela");
         gameModel.addPlayer(playerId2, "Diego");
+
+        Route routeLevelII = new Route(GameLevel.LEVEL_II, 24, List.of(6,3), null);
         
         // Create a mock FlightBoard for testing
-        flightBoard = new FlightBoard(GameLevel.LEVEL_II);
+        flightBoard = new FlightBoard(GameLevel.LEVEL_II, routeLevelII, 2);
         
         // Register players with the flight board
         flightBoard.registerPlayer(player1);
@@ -161,8 +164,8 @@ class AdventureCardVisitorTest {
         ship2.addComponent(cargoHold4, new Position(3, 3));
 
 
-        Planet planetX = new Planet("PlanetX", Map.of(GoodType.RED, 2, GoodType.BLUE, 3));
-        Planet planetY = new Planet("PlanetY", Map.of(GoodType.GREEN, 1, GoodType.BLUE, 2, GoodType.YELLOW, 1));
+        Planet planetX = new Planet(1, Map.of(GoodType.RED, 2, GoodType.BLUE, 3));
+        Planet planetY = new Planet(2, Map.of(GoodType.GREEN, 1, GoodType.BLUE, 2, GoodType.YELLOW, 1));
         PlanetsCard planetsCard = new PlanetsCard("P1", CardLevel.TEST_FLIGHT, "Visita pianeti",
                 2, List.of(planetX, planetY));
 
@@ -186,7 +189,7 @@ class AdventureCardVisitorTest {
         ship1.setSpecialGoodsCapacity(0);
         ship1.setNormalGoodsCapacity(0);
 
-        Planet planetX = new Planet("PlanetX", Map.of(GoodType.RED, 2, GoodType.BLUE, 3));
+        Planet planetX = new Planet(1, Map.of(GoodType.RED, 2, GoodType.BLUE, 3));
         PlanetsCard planetsCard = new PlanetsCard("P1", CardLevel.TEST_FLIGHT, "Visita pianeti",
                 2, List.of(planetX));
 
@@ -226,7 +229,7 @@ class AdventureCardVisitorTest {
 
         assertTrue(result, "Il risultato dovrebbe essere true");
 
-        assertFalse(flightBoard.getPlayerData(player1).getStatus() == FlightStatus.RACING, "Il giocatore 1 dovrebbe aver abbandonato la partita");
+        assertNotSame(FlightStatus.RACING, flightBoard.getPlayerData(player1).getStatus(), "Il giocatore 1 dovrebbe aver abbandonato la partita");
         assertEquals(6, player2.getFlightData().getPosition(), "Il giocatore 2 dovrebbe essere avanzato di 5 posizioni");
     }
 

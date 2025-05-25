@@ -22,7 +22,8 @@ class FlightBoardTest {
     @BeforeEach
     void setUp() {
         gameLevel = GameLevel.TEST_FLIGHT;
-        flightBoard = new FlightBoard(gameLevel);
+        Route routeTestFlight = new Route(GameLevel.TEST_FLIGHT,18, List.of(4,2,1), null);
+        flightBoard = new FlightBoard(gameLevel, routeTestFlight, 3);
 
         player1 = new Player(new PlayerId(UUID.randomUUID(), "Samuele"));
         player2 = new Player(new PlayerId(UUID.randomUUID(), "Diego"));
@@ -55,7 +56,8 @@ class FlightBoardTest {
     @Test
     void testRouteCreationForLevelII() {
         gameLevel = GameLevel.LEVEL_II;
-        flightBoard = new FlightBoard(gameLevel);
+        Route routeLevelII = new Route(GameLevel.LEVEL_II,24, List.of(6,3,1), null);
+        flightBoard = new FlightBoard(gameLevel, routeLevelII ,3);
 
         // Verifica che la route venga creata correttamente per LEVEL_II
         if (gameLevel == GameLevel.LEVEL_II) {
@@ -66,28 +68,21 @@ class FlightBoardTest {
 
     @Test
     void testStartingPositionsForTestFlight() {
-        // Verifica che le posizioni di partenza siano corrette per TEST_FLIGHT
-        gameLevel = GameLevel.TEST_FLIGHT;
-        flightBoard = new FlightBoard(gameLevel);
+        List<Integer> expectedStartingPositions = Arrays.asList(4, 2, 1);
+        List<Integer> actualStartingPositions = flightBoard.getRoute().getStartingPositions();
+        assertEquals(expectedStartingPositions, actualStartingPositions, "Le posizioni di partenza per TEST_FLIGHT non sono corrette.");
 
-        if (gameLevel == GameLevel.TEST_FLIGHT) {
-            List<Integer> expectedStartingPositions = Arrays.asList(0, 1, 2, 4);
-            List<Integer> actualStartingPositions = flightBoard.getRoute().getStartingPositions();
-            assertEquals(expectedStartingPositions, actualStartingPositions, "Le posizioni di partenza per TEST_FLIGHT non sono corrette.");
-        }
     }
 
     @Test
     void testStartingPositionsForLevelII() {
         gameLevel = GameLevel.LEVEL_II;
-        flightBoard = new FlightBoard(gameLevel);
-
+        Route routeLevelII = new Route(GameLevel.LEVEL_II,24, List.of(6,3,1), null);
+        flightBoard = new FlightBoard(gameLevel, routeLevelII ,3);
         // Verifica che le posizioni di partenza siano corrette per LEVEL_II
-        if (gameLevel == GameLevel.LEVEL_II) {
-            List<Integer> expectedStartingPositions = Arrays.asList(0, 1, 3, 6);
-            List<Integer> actualStartingPositions = flightBoard.getRoute().getStartingPositions();
-            assertEquals(expectedStartingPositions, actualStartingPositions, "Le posizioni di partenza per LEVEL_II non sono corrette.");
-        }
+        List<Integer> expectedStartingPositions = Arrays.asList(6, 3, 1);
+        List<Integer> actualStartingPositions = flightBoard.getRoute().getStartingPositions();
+        assertEquals(expectedStartingPositions, actualStartingPositions, "Le posizioni di partenza per LEVEL_II non sono corrette.");
     }
 
     @Test

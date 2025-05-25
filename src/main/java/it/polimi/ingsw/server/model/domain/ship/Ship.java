@@ -13,14 +13,13 @@ import it.polimi.ingsw.server.model.domain.ship.components.Shield;
 import it.polimi.ingsw.server.model.enums.ship.ConnectorType;
 import it.polimi.ingsw.server.model.enums.ship.Direction;
 
+import javax.swing.*;
 import java.util.*;
 
 public class Ship {
     private final Player player;
-
     private Component[][] board;
     public Set<Position> forbiddenPositions;
-
     private Set<Component> reservedComponents;
 
     // Ship stats
@@ -43,9 +42,9 @@ public class Ship {
 
     public Ship(Player player, GameLevel level) {
         this.player = player;
-        board = new Component[5][7];
+        this.board = new Component[5][7];
         reservedComponents = new HashSet<>();
-        resources = new HashMap<>() {{
+        this.resources = new HashMap<>() {{
             put(GoodType.RED, 0);
             put(GoodType.BLUE, 0);
             put(GoodType.GREEN, 0);
@@ -147,7 +146,6 @@ public class Ship {
         }
     }
 
-
     public Player getPlayer() {
         return player;
     }
@@ -155,7 +153,6 @@ public class Ship {
     public Component[][] getBoard() {
         return board;
     }
-
 
     // Calls count() for each component on the board
     public void updateStats() {
@@ -278,6 +275,7 @@ public class Ship {
     public void setNormalGoodsCapacity(int normalGoodsCapacity) {
             this.normalGoodsCapacity = normalGoodsCapacity;
     }
+
     public void setSpecialGoodsCapacity(int specialGoodsCapacity) {
             this.specialGoodsCapacity = specialGoodsCapacity;
     }
@@ -393,7 +391,7 @@ public class Ship {
 
     /**
      * Removes a specified number of resources from the ship, starting with the most valuable ones.
-     * The order of removal is: RED, BLUE, GREEN, YELLOW, and finally batteries.
+     * The order of removal is: RED, YELLOW, GREEN, BLUE, and finally batteries.
      *
      * @param deletingNumber The number of resources to remove
      * @return true if all requested resources were successfully removed, false otherwise
@@ -403,7 +401,7 @@ public class Ship {
         int remainingToDelete = deletingNumber;
 
         // List of goods sorted by decreasing value
-        GoodType[] goodsByValue = {GoodType.RED, GoodType.BLUE, GoodType.GREEN, GoodType.YELLOW};
+        GoodType[] goodsByValue = {GoodType.RED, GoodType.YELLOW, GoodType.GREEN, GoodType.BLUE};
 
         // Remove goods in priority order
         for (GoodType goodType : goodsByValue) {
@@ -423,7 +421,6 @@ public class Ship {
         }
 
         // If there are still resources to remove, remove batteries
-        // TODO: Chi aggiorna Ship.batteries?
         if (remainingToDelete > 0) {
             for (int x = 0; x < board.length && remainingToDelete > 0; x++) {
                 for (int y = 0; y < board[x].length && remainingToDelete > 0; y++) {
