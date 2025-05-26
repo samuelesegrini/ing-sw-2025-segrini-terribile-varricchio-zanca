@@ -1,9 +1,0 @@
-[
-  {
-    "image": "/assets/cards/epidemic_lvl2.png",
-    "id": "epidemic_lvl2",
-    "level": "LEVEL_II",
-    "description": "A deadly disease spreads through your ship. You must remove one crew member from each occupied cabin that is directly connected to another occupied cabin.",
-    "type": "EPIDEMIC"
-  }
-]
