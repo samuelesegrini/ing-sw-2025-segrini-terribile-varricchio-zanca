@@ -13,7 +13,6 @@ import it.polimi.ingsw.server.model.domain.ship.components.Shield;
 import it.polimi.ingsw.server.model.enums.ship.ConnectorType;
 import it.polimi.ingsw.server.model.enums.ship.Direction;
 
-import javax.swing.*;
 import java.util.*;
 
 public class Ship {
