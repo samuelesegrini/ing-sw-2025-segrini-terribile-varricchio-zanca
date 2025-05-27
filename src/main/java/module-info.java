@@ -7,8 +7,6 @@ module it.polimi.ingsw2025segriniterribilevarricchiozanca {
     requires java.logging;
 
     requires org.jline;
-    requires org.jline.reader;
-    requires org.jline.terminal;
 
     // --- RMI Requirements ---
     requires java.rmi;
