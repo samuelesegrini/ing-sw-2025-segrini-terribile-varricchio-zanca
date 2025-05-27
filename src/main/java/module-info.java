@@ -6,9 +6,14 @@ module it.polimi.ingsw2025segriniterribilevarricchiozanca {
     requires javafx.graphics;
     requires java.logging;
 
+    requires org.jline;
+    requires org.jline.reader;
+    requires org.jline.terminal;
+
     // --- RMI Requirements ---
     requires java.rmi;
     requires com.fasterxml.jackson.databind;
+    requires org.slf4j;
 
     // --- Exports and Opens for RMI ---
     exports it.polimi.ingsw.common.network.rmi to java.rmi;
