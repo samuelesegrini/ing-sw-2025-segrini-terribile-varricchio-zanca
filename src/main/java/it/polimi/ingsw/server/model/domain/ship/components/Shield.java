@@ -13,8 +13,8 @@ public class Shield extends Component {
     boolean charged;
 
 
-    public Shield(ComponentType type, Map<Direction, ConnectorType> connectors) {
-        super(type, connectors);
+    public Shield(ComponentType type, Map<Direction, ConnectorType> connectors, String id) {
+        super(type, connectors, id);
         this.charged = false;
 
         this.protectedDirections = new HashSet<>();

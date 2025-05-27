@@ -1,9 +1,9 @@
 package it.polimi.ingsw.server.model.domain.general.loader;
 
 import it.polimi.ingsw.server.model.domain.general.config.ComponentConfig;
-import it.polimi.ingsw.server.model.domain.ship.components.Component;
-import it.polimi.ingsw.server.model.domain.ship.components.Cannon;
-import it.polimi.ingsw.server.model.domain.ship.components.Shield;
+import it.polimi.ingsw.server.model.domain.ship.components.*;
+import it.polimi.ingsw.server.model.enums.crew.AlienColor;
+import it.polimi.ingsw.server.model.enums.player.PlayerColor;
 import it.polimi.ingsw.server.model.enums.ship.ComponentType;
 import it.polimi.ingsw.server.model.enums.ship.ConnectorType;
 import it.polimi.ingsw.server.model.enums.ship.Direction;
@@ -12,9 +12,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Factory class responsible for creating different types of components
- */
 public class ComponentFactory {
     private final Map<String, ComponentCreator> creators;
 
@@ -23,90 +20,141 @@ public class ComponentFactory {
         initializeCreators();
     }
 
-    /**
-     * Registers a creator for a specific component type
-     */
     public void registerCreator(String type, ComponentCreator creator) {
-        creators.put(type, creator);
+        creators.put(type.toUpperCase(), creator);
     }
 
-    /**
-     * Creates a component from the given configuration
-     */
     public Component createComponent(ComponentConfig config) {
-        ComponentCreator creator = creators.get(config.type());
+        ComponentCreator creator = creators.get(config.type().toUpperCase());
         if (creator == null) {
-            throw new IllegalArgumentException("No creator registered for component type: " + config.type());
+            System.err.println("Warning: No creator registered for component type: " + config.type() + " (ID: " + config.id() + "). Skipping component.");
+            return null; // Or throw an exception
         }
-        return creator.create(config);
+        try {
+            return creator.create(config);
+        } catch (Exception e) {
+            System.err.println("Error creating component ID " + config.id() + " of type " + config.type() + ": " + e.getMessage());
+            e.printStackTrace();
+            return null;
+        }
     }
 
-    /**
-     * Creates a cabin component
-     */
-    private Component createCabin(ComponentConfig config) {
-        // Implementation will depend on your specific component types and requirements
-        throw new UnsupportedOperationException("Not implemented yet");
-    }
-
-    /**
-     * Creates an engine component
-     */
-    private Component createEngine(ComponentConfig config) {
-        // Implementation will depend on your specific component types and requirements
-        throw new UnsupportedOperationException("Not implemented yet");
-    }
-
-    /**
-     * Creates a cannon component
-     */
-    private Component createCannon(ComponentConfig config) {
-        Map<Direction, ConnectorType> connectors = parseConnectors(config.connectors());
-        ComponentType type = ComponentType.valueOf(config.type());
-        return new Cannon(type, connectors);
-    }
-
-    /**
-     * Creates a shield component
-     */
-    private Component createShield(ComponentConfig config) {
-        Map<Direction, ConnectorType> connectors = parseConnectors(config.connectors());
-        ComponentType type = ComponentType.valueOf(config.type());
-        return new Shield(type, connectors);
-    }
-
-    /**
-     * Configures the sides of an abstract component
-     */
-    private void configureSides(Component component, List<String> sides) {
-        // Implementation will depend on your component side configuration requirements
-        throw new UnsupportedOperationException("Not implemented yet");
-    }
-
-    /**
-     * Parses connector strings from the configuration into a map of Direction to ConnectorType
-     */
     private Map<Direction, ConnectorType> parseConnectors(List<String> connectorStrings) {
         Map<Direction, ConnectorType> connectors = new HashMap<>();
-        
-        for (String connectorString : connectorStrings) {
-            String[] parts = connectorString.split(":");
+        if (connectorStrings == null) return connectors;
+
+        for (String cs : connectorStrings) {
+            String[] parts = cs.split(":");
             if (parts.length == 2) {
-                Direction direction = Direction.valueOf(parts[0]);
-                ConnectorType connectorType = ConnectorType.valueOf(parts[1]);
-                connectors.put(direction, connectorType);
+                try {
+                    Direction dir = Direction.valueOf(parts[0].trim().toUpperCase());
+                    ConnectorType ct = ConnectorType.valueOf(parts[1].trim().toUpperCase());
+                    connectors.put(dir, ct);
+                } catch (IllegalArgumentException e) {
+                    System.err.println("Warning: Invalid connector string part in '" + cs + "': " + e.getMessage());
+                }
+            } else {
+                System.err.println("Warning: Malformed connector string: '" + cs + "'");
             }
         }
-        
         return connectors;
     }
 
     private void initializeCreators() {
-        // Register creators for different component types
+        registerCreator("BATTERY", this::createBattery);
         registerCreator("CABIN", this::createCabin);
-        registerCreator("ENGINE", this::createEngine);
-        registerCreator("CANNON_SINGLE", this::createCannon);
+        registerCreator("CABIN_START", this::createCabin);
+        registerCreator("CANNON_SINGLE", this::createCannonSingle);
+        registerCreator("CANNON_DOUBLE", this::createCannonDouble);
+        registerCreator("CARGO_HOLD", this::createCargoHold);
+        registerCreator("CARGO_HOLD_SPECIAL", this::createCargoHoldSpecial);
+        registerCreator("ENGINE_SINGLE", this::createEngineSingle);
+        registerCreator("ENGINE_DOUBLE", this::createEngineDouble);
+        registerCreator("LIFE_SUPPORT_BROWN", this::createLifeSupportBrown);
+        registerCreator("LIFE_SUPPORT_PURPLE", this::createLifeSupportPurple);
         registerCreator("SHIELD", this::createShield);
-        // Add more component type creators as needed
+        registerCreator("STRUCTURAL", this::createStructural);
     }
-} 
+
+    private Battery createBattery(ComponentConfig config) {
+        Map<Direction, ConnectorType> connectors = parseConnectors(config.connectors());
+        int maxBatteries = Integer.parseInt((String) config.properties().get("maxBatteries"));
+        // Assuming ComponentType.BATTERY matches the "BATTERY" string from JSON
+        return new Battery(ComponentType.BATTERY, connectors, maxBatteries, config.id());
+    }
+
+    private Cabin createCabin(ComponentConfig config) {
+        Map<Direction, ConnectorType> connectors = parseConnectors(config.connectors());
+        ComponentType type = ComponentType.CABIN; // Default
+        // Check if it's a starting cabin by playerColor property
+        if (config.properties().containsKey("playerColor")) {
+            // This is a starting cabin. Your Cabin class needs to handle this,
+            // or you need a StartingCabin subclass. For now, assuming Cabin handles it.
+            // PlayerColor color = PlayerColor.valueOf(((String) config.properties().get("playerColor")).toUpperCase());
+            // Cabin cabin = new Cabin(type, connectors);
+            // cabin.setPlayerColor(color); // Example if Cabin has this setter
+            type = ComponentType.CABIN_START; // Or set a flag
+        }
+        return new Cabin(type, connectors, config.id()); // Pass PlayerColor if Cabin constructor supports it
+    }
+
+    private Cannon createCannonSingle(ComponentConfig config) {
+        Map<Direction, ConnectorType> connectors = parseConnectors(config.connectors());
+        return new Cannon(ComponentType.CANNON_SINGLE, connectors, config.id());
+    }
+
+    private Cannon createCannonDouble(ComponentConfig config) {
+        Map<Direction, ConnectorType> connectors = parseConnectors(config.connectors());
+        return new Cannon(ComponentType.CANNON_DOUBLE, connectors, config.id());
+    }
+
+    private CargoHold createCargoHold(ComponentConfig config) {
+        Map<Direction, ConnectorType> connectors = parseConnectors(config.connectors());
+        int capacity = Integer.parseInt((String) config.properties().get("capacity"));
+        String id = config.id();
+        return new CargoHold(ComponentType.CARGO_HOLD, connectors, capacity, id);
+    }
+
+    private CargoHold createCargoHoldSpecial(ComponentConfig config) {
+        Map<Direction, ConnectorType> connectors = parseConnectors(config.connectors());
+        int capacity = Integer.parseInt((String) config.properties().get("capacity"));
+        String id = config.id();
+        return new CargoHold(ComponentType.CARGO_HOLD_SPECIAL, connectors, capacity, id);
+    }
+
+    private Engine createEngineSingle(ComponentConfig config) {
+        Map<Direction, ConnectorType> connectors = parseConnectors(config.connectors());
+        String id = config.id();
+        return new Engine(ComponentType.ENGINE_SINGLE, connectors, id);
+    }
+
+    private Engine createEngineDouble(ComponentConfig config) {
+        Map<Direction, ConnectorType> connectors = parseConnectors(config.connectors());
+        String id = config.id();
+        return new Engine(ComponentType.ENGINE_DOUBLE, connectors, id);
+    }
+
+    private LifeSupportSystem createLifeSupportBrown(ComponentConfig config) {
+        Map<Direction, ConnectorType> connectors = parseConnectors(config.connectors());
+        LifeSupportSystem lss = new LifeSupportSystem(ComponentType.LIFE_SUPPORT_BROWN, connectors, config.id());
+        lss.setSupportedAlienColor(AlienColor.ALIEN_BROWN);
+        return lss;
+    }
+
+    private LifeSupportSystem createLifeSupportPurple(ComponentConfig config) {
+        Map<Direction, ConnectorType> connectors = parseConnectors(config.connectors());
+        LifeSupportSystem lss = new LifeSupportSystem(ComponentType.LIFE_SUPPORT_PURPLE, connectors, config.id());
+        lss.setSupportedAlienColor(AlienColor.ALIEN_PURPLE);
+        return lss;
+    }
+
+    private Shield createShield(ComponentConfig config) {
+        Map<Direction, ConnectorType> connectors = parseConnectors(config.connectors());
+        return new Shield(ComponentType.SHIELD, connectors, config.id());
+    }
+
+    private StructuralModule createStructural(ComponentConfig config) {
+        Map<Direction, ConnectorType> connectors = parseConnectors(config.connectors());
+        return new StructuralModule(ComponentType.STRUCTURAL, connectors, config.id());
+    }
+}

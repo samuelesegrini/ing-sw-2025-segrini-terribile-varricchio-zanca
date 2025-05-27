@@ -12,8 +12,8 @@ public class Cannon extends Component {
     private boolean charged;
 
 
-    public Cannon(ComponentType type, Map<Direction, ConnectorType> connectors) {
-        super(type, connectors);
+    public Cannon(ComponentType type, Map<Direction, ConnectorType> connectors, String id) {
+        super(type, connectors, id);
         this.charged = false;
     }
 

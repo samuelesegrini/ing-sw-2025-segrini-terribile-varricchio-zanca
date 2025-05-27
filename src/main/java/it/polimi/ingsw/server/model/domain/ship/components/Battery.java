@@ -12,8 +12,8 @@ public class Battery extends Component {
     private int currentBatteries;
 
 
-    public Battery(ComponentType type, Map<Direction, ConnectorType> connectors, int maxBatteries) {
-        super(type, connectors);
+    public Battery(ComponentType type, Map<Direction, ConnectorType> connectors, int maxBatteries, String id) {
+        super(type, connectors, id);
         this.maxBatteries = maxBatteries;
         this.currentBatteries = maxBatteries;
     }
