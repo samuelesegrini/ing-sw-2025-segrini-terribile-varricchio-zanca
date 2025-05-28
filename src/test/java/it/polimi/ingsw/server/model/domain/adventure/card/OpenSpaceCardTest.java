@@ -1,6 +1,5 @@
 package it.polimi.ingsw.server.model.domain.adventure.card;
 
-import it.polimi.ingsw.server.model.enums.adventure.AdventureType;
 import it.polimi.ingsw.server.model.enums.adventure.CardLevel;
 import org.junit.jupiter.api.Test;
 
