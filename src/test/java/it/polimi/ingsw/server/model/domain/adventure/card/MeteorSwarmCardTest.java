@@ -5,9 +5,7 @@ import it.polimi.ingsw.server.model.enums.adventure.AdventureType;
 import it.polimi.ingsw.server.model.enums.adventure.CardLevel;
 import it.polimi.ingsw.server.model.enums.adventure.ShotIntensity;
 import it.polimi.ingsw.server.model.enums.ship.Direction;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.platform.engine.TestDescriptor;
 
 import java.util.ArrayList;
 import java.util.List;
