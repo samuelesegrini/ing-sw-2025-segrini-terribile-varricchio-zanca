@@ -2,7 +2,8 @@ package it.polimi.ingsw.client.ui;
 
 import it.polimi.ingsw.client.core.GameClientController;
 import it.polimi.ingsw.client.ui.gui.JavaFXGUI;
-import it.polimi.ingsw.client.ui.tui.TerminalUI;
+import it.polimi.ingsw.client.ui.tui.TUI;
+//import it.polimi.ingsw.client.ui.tui.TerminalUI;
 import javafx.stage.Stage;
 
 /**
@@ -28,7 +29,14 @@ public class UIFactory {
                 return new JavaFXGUI(primaryStage);
                 
             case TUI:
-                return new TerminalUI();
+                //return new TerminalUI();
+                try {
+                    return new TUI();
+                } catch (Exception e) {
+                    System.err.println("Error initializing TUI: " + e.getMessage());
+                    e.printStackTrace();
+                    throw new IllegalArgumentException("Failed to initialize TUI", e);
+                }
                 
             default:
                 throw new IllegalArgumentException("Unsupported UI mode: " + mode);
@@ -59,4 +67,4 @@ public class UIFactory {
                 throw new IllegalArgumentException("Unsupported UI mode: " + mode);
         }
     }
-} 
+}

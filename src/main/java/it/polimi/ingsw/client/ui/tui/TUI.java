@@ -2,10 +2,10 @@ package it.polimi.ingsw.client.ui.tui;
 
 import it.polimi.ingsw.client.core.GameClientController;
 import it.polimi.ingsw.client.model.ClientViewModel;
+import it.polimi.ingsw.client.ui.AbstractUserInterface;
 import it.polimi.ingsw.client.ui.View;
 import it.polimi.ingsw.common.dto.GameSettingsDTO;
 import it.polimi.ingsw.common.dto.PlayerInfoDTO;
-import it.polimi.ingsw.common.message.BaseMessage;
 import it.polimi.ingsw.common.message.building.*;
 import it.polimi.ingsw.common.message.setup.*;
 import it.polimi.ingsw.common.message.system.ErrorMessage;
@@ -19,75 +19,85 @@ import org.jline.utils.InfoCmp;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 
-public class TUI implements Runnable, View {
+public class TUI extends AbstractUserInterface implements Runnable, View {
     private static final Logger logger = LoggerFactory.getLogger(TUI.class);
     private final Terminal terminal;
     private final LineReader reader;
     private boolean isRunning;
 
-    private GameClientController gameClientController;
-    private ClientViewModel clientViewModel;
+    //private final BlockingQueue<String> messageQueue = new LinkedBlockingQueue<>();
 
 
-    public TUI(ClientViewModel clientViewModel) throws Exception {
+    public TUI() throws Exception {
         this.terminal = TerminalBuilder.terminal();
         this.reader = LineReaderBuilder.builder()
                 .terminal(terminal)
                 .build();
+    }
 
-        this.clientViewModel = clientViewModel;
+    // Per uniformità con le interfacce
+    @Override
+    public void initialize() {}
+    @Override
+    public void start() {
+        run();
+    }
+    @Override
+    public void showConnectionPrompt() {
+        if (viewModel != null) {
+            viewModel.setAppStatus(ClientViewModel.AppStatus.LOGIN_SCREEN);
+        }
+    }
+    @Override
+    public void showError(String title, String message) {
+        System.out.println("\n[ERROR] " + title + ": " + message);
+    }
+    @Override
+    public void showInfo(String title, String message) {
+        System.out.println("\n[INFO] " + title + ": " + message);
     }
 
 
     public void configureViewModelListeners() {
-        if (clientViewModel != null) {
-            clientViewModel.appStatusProperty().addListener((obs, oldState, newState) -> {
+        if (viewModel != null) {
+            viewModel.appStatusProperty().addListener((obs, oldState, newState) -> {
                 logger.info("ViewModel status changed: " + oldState + " -> " + newState);
                 clear();
-                showPromptForCurrentState();
+                //showPromptForCurrentState();
+                handleAppStatusChange(newState);
             });
 
-            clientViewModel.statusMessageProperty().addListener((obs, oldMsg, newMsg) -> {
-                show("[STATUS]" + newMsg);
+            viewModel.statusMessageProperty().addListener((obs, oldMsg, newMsg) -> {
+                show("[STATUS] " + newMsg);
             });
         }
     }
-
 
     @Override
-    public void run() {
-        isRunning = true;
+    public void handleAppStatusChange(ClientViewModel.AppStatus newStatus) {
+        logger.info("Terminal UI handling state change to: " + newStatus);
+        // Clear the screen for a better user experience
         clear();
-        show("Welcome to Galaxy Trucker - TUI");
 
-        while (isRunning) {
-            showPromptForCurrentState();
-
-            String input = null;
-            try {
-                input = reader.readLine(">> ");
-                processInput(input);
-            } catch (UserInterruptException e) {
-                stop();
-                close();
-            } catch (Exception e) {
-                logger.error("Failed to process line {}", input, e);
-            }
+        // Show the status message based on the new state
+        show("\n=== Status: " + newStatus + " ===");
+        if (viewModel != null && viewModel.statusMessageProperty().get() != null) {
+            show(viewModel.statusMessageProperty().get());
         }
-    }
 
-    public void showPromptForCurrentState() {
-        ClientViewModel.AppStatus state = clientViewModel.appStatusProperty().get();
+        // Show the appropriate prompt for the new state
+        ClientViewModel.AppStatus state = viewModel.appStatusProperty().get();
         // TODO: Togliere quelli non necessari
         switch (state) {
             case NOT_CONNECTED:
                 break;
             case LOGIN_SCREEN:
                 show("Enter connection details in format: <host> <port> <nickname> <technology>");
-                show("Example: localhost 1234 Player1 Socket");
+                show("Example: login localhost 12345 Player1 Socket");
                 break;
             case CONNECTING:
                 break;
@@ -95,11 +105,9 @@ public class TUI implements Runnable, View {
                 show("Connecting to server... please wait.");
                 break;
             case LOGGED_IN_BROWSING_LOBBIES:
-                show("Game Browser Options:");
                 showHelp();
                 break;
             case GAME_LOBBY:
-                show("Lobby Options:");
                 showHelp();
                 break;
             case GAME_BUILDING:
@@ -113,10 +121,38 @@ public class TUI implements Runnable, View {
         }
     }
 
+
+    @Override
+    public void run() {
+        isRunning = true;
+        clear();
+        show("Welcome to Galaxy Trucker - TUI");
+        showHelp();
+
+        while (isRunning) {
+//            String pendingMessage;
+//            while ((pendingMessage = messageQueue.poll()) != null) {
+//                terminal.writer().println(pendingMessage);
+//                terminal.flush();
+//            }
+
+            String input = null;
+            try {
+                input = getInput();
+                processInput(input);
+            } catch (UserInterruptException e) {
+                stop();
+                close();
+            } catch (Exception e) {
+                logger.error("Failed to process line {}", input, e);
+            }
+        }
+    }
+
     // Command Processing
 
     public void processInput(String input) {
-        if (clientViewModel == null || input == null || input.trim().isEmpty()) {
+        if (viewModel == null || input == null || input.trim().isEmpty()) {
             return;
         }
 
@@ -127,7 +163,7 @@ public class TUI implements Runnable, View {
         } else if (input.equalsIgnoreCase("help")) {
             showHelp();
         } else {
-            ClientViewModel.AppStatus state = clientViewModel.appStatusProperty().get();
+            ClientViewModel.AppStatus state = viewModel.appStatusProperty().get();
             // TODO: Togliere quelli non necessari
             switch (state) {
                 case NOT_CONNECTED:
@@ -162,18 +198,23 @@ public class TUI implements Runnable, View {
 
     public void processLoginCommand(String input) {
         String[] tokens = input.split("\\s+");
-        if (tokens.length != 4) {
-            show("Invalid login command. Expected 4 arguments.");
+        if (tokens.length != 5) {
+            show("Invalid login command. Expected 5 arguments.");
             return;
         }
 
-        String host = tokens[0];
+        if (!tokens[0].equalsIgnoreCase("login")) {
+            show("Invalid login command. Expected 'login' as first argument.");
+            return;
+        }
+
+        String host = tokens[1];
 
         int port;
         try {
-            port = Integer.parseInt(tokens[1]);
+            port = Integer.parseInt(tokens[2]);
         } catch (NumberFormatException e) {
-            show("Invalid port number: " + tokens[1]);
+            show("Invalid port number: " + tokens[2]);
             return;
         }
         if (port < 1024 || port > 65535) {
@@ -181,19 +222,19 @@ public class TUI implements Runnable, View {
             return;
         }
 
-        String nickname = tokens[2];
+        String nickname = tokens[3];
         if (nickname.length() < 3 || nickname.length() > 15) {
             show("Invalid nickname length: " + nickname.length());
         }
 
-        String technology = tokens[3];
+        String technology = tokens[4];
         if (!technology.equalsIgnoreCase("RMI") && !technology.equalsIgnoreCase("Socket")) {
             show("Invalid technology: " + technology);
             return;
         }
 
-        if (gameClientController != null) {
-            gameClientController.setupNetworkAndConnect(host, port, nickname, technology);
+        if (clientController != null) {
+            clientController.setupNetworkAndConnect(host, port, nickname, technology);
         } else {
             logger.warn("GameClientController is null. Cannot connect to server.");
         }
@@ -210,11 +251,13 @@ public class TUI implements Runnable, View {
         String command = tokens[0].toLowerCase();
         switch (command) {
             case "list":
+                processGameListCommand(tokens);
                 break;
             case "create":
-                processCreateGameCommand(input);
+                processCreateGameCommand(tokens);
                 break;
             case "join":
+                processJoinGameCommand(tokens);
                 break;
             case "refresh":
                 break;
@@ -236,8 +279,10 @@ public class TUI implements Runnable, View {
             case "players":
                 break;
             case "start":
+                processStartGameCommand(tokens);
                 break;
             case "leave":
+                processLeaveGameCommand(tokens);
                 break;
             default:
                 show("Unknown command: " + command);
@@ -247,14 +292,22 @@ public class TUI implements Runnable, View {
 
     // Lobby Browser Commands
 
-    public void processCreateGameCommand(String input) {
-        String[] tokens = input.split("\\s+");
-        if (tokens.length != 3) {
-            show("Invalid create game command. Expected 3 arguments.");
+    public void processGameListCommand(String[] tokens) {
+        if (tokens.length > 1) {
+            show("Invalid game list command. Expected 0 arguments.");
             return;
         }
 
-        String name = tokens[0];
+        viewModel.requestGameList();
+    }
+
+    public void processCreateGameCommand(String[] tokens) {
+        if (tokens.length != 4) {
+            show("Invalid create game command. Expected 4 arguments.");
+            return;
+        }
+
+        String name = tokens[1];
         if (name.length() < 3 || name.length() > 15) {
             show("Invalid game name length: " + name.length());
             return;
@@ -262,33 +315,68 @@ public class TUI implements Runnable, View {
 
         int maxPlayers;
         try {
-            maxPlayers = Integer.parseInt(tokens[1]);
+            maxPlayers = Integer.parseInt(tokens[2]);
         } catch (NumberFormatException e) {
-            show("Invalid max players number: " + tokens[1]);
+            show("Invalid max players number: " + tokens[2]);
             return;
         }
 
         GameLevel level;
-        if (tokens[2].equalsIgnoreCase("test_flight"))
+        if (tokens[3].equalsIgnoreCase("test_flight"))
             level = GameLevel.TEST_FLIGHT;
-        else if (tokens[2].equalsIgnoreCase("level_II"))
+        else if (tokens[3].equalsIgnoreCase("level_II"))
             level = GameLevel.LEVEL_II;
         else {
-            show("Invalid game level: " + tokens[2]);
+            show("Invalid game level: " + tokens[3]);
             return;
         }
 
         GameSettingsDTO gameSettings = new GameSettingsDTO(name, maxPlayers, level);
-        CreateGameRequestCommand message = new CreateGameRequestCommand(gameSettings);
+        //CreateGameRequestCommand message = new CreateGameRequestCommand(gameSettings);
 
-        // TODO: Manda messaggio
+        viewModel.createGame(gameSettings);
+    }
+
+    public void processJoinGameCommand(String[] tokens) {
+        if (tokens.length != 2) {
+            show("Invalid join game command. Expected 2 arguments.");
+            return;
+        }
+
+        viewModel.joinGame(tokens[1]);
+    }
+
+    // Game Lobby Commands
+
+    public void processStartGameCommand(String[] tokens) {
+        if (tokens.length != 1) {
+            show("Invalid start game command. Expected 0 arguments.");
+            return;
+        }
+
+        viewModel.startGame();
+    }
+
+    public void processLeaveGameCommand(String[] tokens) {
+        if (tokens.length != 1) {
+            show("Invalid leave game command. Expected 0 arguments.");
+            return;
+        }
+
+        viewModel.leaveGame();
     }
 
     // Basic I/O
 
     public void show(String output) {
         terminal.writer().println(output);
+        //terminal.writer().print(">> ");
         terminal.flush();
+
+//        reader.callWidget(LineReader.REDRAW_LINE);
+//        reader.callWidget(LineReader.REDISPLAY);
+
+        //messageQueue.offer(output);
     }
 
     public void clear() {
@@ -320,7 +408,7 @@ public class TUI implements Runnable, View {
         show("  help - Show this help message");
 
         // TODO: Togliere quelli non necessari
-        switch (clientViewModel.appStatusProperty().get()) {
+        switch (viewModel.appStatusProperty().get()) {
             case NOT_CONNECTED:
                 break;
             case LOGIN_SCREEN:
@@ -332,7 +420,7 @@ public class TUI implements Runnable, View {
                 break;
             case LOGGED_IN_BROWSING_LOBBIES:
                 show("  list - List available games");
-                show("  create <n> <maxPlayers> - Create a new game");
+                show("  create <game name> <max players> <game level> - Create a new game");
                 show("  join <gameId> - Join an existing game");
                 show("  refresh - Refresh game list");
                 break;
@@ -350,13 +438,15 @@ public class TUI implements Runnable, View {
             case DISCONNECTED:
                 break;
             default:
-                logger.warn("Unhandled state: {}. Ignoring help message.", clientViewModel.appStatusProperty().get());
+                logger.warn("Unhandled state: {}. Ignoring help message.", viewModel.appStatusProperty().get());
         }
     }
 
     //
 
 
+
+    // TODO: INUTILI?
 
     // System Messages
 
@@ -365,7 +455,7 @@ public class TUI implements Runnable, View {
 
     @Override
     public void onServerLoginResponse(ServerLoginResponse message) {
-        if (message.getPlayerId().equals(clientViewModel.loggedInPlayerIdProperty().get())) {
+        if (message.getPlayerId().equals(viewModel.loggedInPlayerIdProperty().get())) {
             if (message.isSuccess()) {
                 show("Login successful!");
             } else {
@@ -376,12 +466,11 @@ public class TUI implements Runnable, View {
 
     // Setup Messages
 
-    // TODO: O troppi messaggi o questo dovrebbe avere un playerId?
     @Override
     public void onCreateGameResponseEvent(CreateGameResponseEvent message) {
         if (message.isSuccess()) {
             for (PlayerInfoDTO playerInfo : message.getPlayersInLobby()) {
-                if (playerInfo.getPlayerId().equals(clientViewModel.loggedInPlayerIdProperty().get()) && playerInfo.isHost()) {
+                if (playerInfo.getPlayerId().equals(viewModel.loggedInPlayerIdProperty().get()) && playerInfo.isHost()) {
                     show("Game created successfully.");
                     show("You are the host of the game. Use the 'start' command to start the game.");
                 }
@@ -444,14 +533,4 @@ public class TUI implements Runnable, View {
 
     @Override
     public void onShipValidationResultEvent(ShipValidationResultEvent message) {}
-
-    // Getters & Setters
-
-    public GameClientController getGameClientController() {
-        return gameClientController;
-    }
-
-    public void setGameClientController(GameClientController gameClientController) {
-        this.gameClientController = gameClientController;
-    }
 }
