@@ -3,7 +3,7 @@ Professor: Gianpaolo Saverio Cugola
 
 Components: Samuele Segrini, Manuela Terribile, Alessandra Varricchio, Diego Zanca  
 
-Group 26
+Group: GC26
 
 # The Project  
 This project is a Java-based software adaptation of the board game Galaxy Trucker, developed as the final project for the Software Engineering course.  
