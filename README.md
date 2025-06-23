@@ -10,5 +10,7 @@ The goal of the project is to recreate the board game Galaxy Trucker.
 
 # Implemented Features  
 
+# Execution
+
 
 
