@@ -1,0 +1,23 @@
+package it.polimi.ingsw.common.message;
+
+import java.util.logging.Logger;
+
+/**
+ * Ping message for keep-alive.
+ */
+public class PingMessage extends AbstractMessage {
+    private static final Logger LOGGER = Logger.getLogger(PingMessage.class.getName());
+
+    @Override
+    public void handleOnClient(ClientMessageContext context) {
+        LOGGER.finer("Received ping from server: " + getTimestamp());
+        // Respond with pong
+        context.getNetworkClient().sendMessage(new PongMessage());
+    }
+
+    @Override
+    public String toString() {
+        return "PING";
+    }
+}
+

@@ -1,0 +1,84 @@
+package it.polimi.ingsw.common.message.event;
+
+
+/**
+ * Event broadcast when a player flips the building timer during ship construction.
+ * Notifies all players that more time has been added to the building phase.
+ */
+public class BuildingTimerFlippedEvent extends AbstractEvent {
+    private final String playerId;
+    private final String playerNickname;
+    private final long newTimeRemaining;
+    private final int flipCount;
+
+    public BuildingTimerFlippedEvent(String gameId, String playerId, String playerNickname, 
+                                    long newTimeRemaining, int flipCount) {
+        super(EventType.BUILDING_TIMER_FLIPPED, gameId, playerId);
+        this.playerId = playerId;
+        this.playerNickname = playerNickname;
+        this.newTimeRemaining = newTimeRemaining;
+        this.flipCount = flipCount;
+    }
+
+    public String getPlayerId() {
+        return playerId;
+    }
+
+    public String getPlayerNickname() {
+        return playerNickname;
+    }
+
+    public long getNewTimeRemaining() {
+        return newTimeRemaining;
+    }
+
+    public int getFlipCount() {
+        return flipCount;
+    }
+
+    @Override
+    public void handleOnClient(ClientEventContext context) {
+        context.runOnUIThread(() -> {
+            // Update game state with new timer information
+            if (context.getGameState() != null) {
+                // context.getGameState().setBuildingTimeRemaining(newTimeRemaining);
+                // context.getGameState().setBuildingTimerFlipCount(flipCount);
+            }
+
+            // Show notification
+            if (context.getNotificationService() != null) {
+                String message;
+                
+                if (context.isLocalPlayer(playerId)) {
+                    // Notification for the player who flipped the timer
+                    message = String.format("You flipped the timer! %d seconds remaining", newTimeRemaining / 1000);
+                } else {
+                    // Notification for other players
+                    message = String.format("%s flipped the timer! %d seconds remaining", 
+                            playerNickname, newTimeRemaining / 1000);
+                }
+                
+                // Add warning if timer has been flipped multiple times
+                if (flipCount > 2) {
+                    message += " (Timer flipped " + flipCount + " times)";
+                    context.getNotificationService().showWarning(
+                            "Timer Flipped",
+                            message
+                    );
+                } else {
+                    context.getNotificationService().showInfo(
+                            "Timer Flipped",
+                            message
+                    );
+                }
+            }
+
+            // Update building UI timer display
+            // if (context.getGameUI() != null) {
+            //     // Note: This would need to be implemented based on the actual UI interface
+            //     // context.getGameUI().updateBuildingTimer(newTimeRemaining, flipCount);
+            //     // context.getGameUI().showTimerFlipAnimation(playerId);
+            // }
+        });
+    }
+}
