@@ -6,7 +6,8 @@ Components: Samuele Segrini, Manuela Terribile, Alessandra Varricchio, Diego Zan
 Group 26
 
 # The Project  
-The goal of the project is to recreate the board game Galaxy Trucker.
+The goal of the project is to develope a software version of the board game *Galaxy Trucker*.
+
 
 # Documentation  
 
