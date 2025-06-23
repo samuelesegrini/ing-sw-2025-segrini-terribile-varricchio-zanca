@@ -11,13 +11,15 @@ import java.util.List;
 import java.util.Scanner;
 
 /**
- * TUI view for game lobby where players wait to start the game.
+ * TUI view for the game lobby (where players wait for the game to start).
  * Shows player list, ready status, and provides controls for ready/start/leave.
  */
-public class TuiGameLobbyView extends BaseUIView {
+public class TuiGameLobbyView extends BaseUIView { //CONTROLLA
+    private final TuiConsole console;
     private final Scanner scanner;
 
     public TuiGameLobbyView() {
+        this.console = ((TuiContext) context).getConsole();
         this.scanner = new Scanner(System.in);
     }
 
@@ -31,24 +33,18 @@ public class TuiGameLobbyView extends BaseUIView {
         return "Game Lobby";
     }
 
-    private TuiConsole getConsole() {
-        return ((TuiContext) context).getConsole();
-    }
-
     @Override
     protected void onShow() {
-        displayLobby();
+        displayGameLobby();
         startInputLoop();
     }
 
     @Override
-    protected void onHide() {
-        // TUI views don't need special hiding logic
-    }
+    protected void onHide() {}
 
     @Override
     protected void onRefresh() {
-        displayLobby();
+        displayGameLobby();
     }
 
     @Override
@@ -57,23 +53,22 @@ public class TuiGameLobbyView extends BaseUIView {
             case "playersInLobby":
             case "currentGameInfo":
             case "playerReady":
-                displayLobby();
+                displayGameLobby();
                 break;
             case "currentView":
                 // Handle view transitions
                 if (evt.getNewValue() == ClientModel.ViewState.GAME) {
-                    getConsole().printSuccess("Game started! Transitioning to ship building...");
+                    console.printSuccess("Game started! Transitioning to ship building...");
                 }
                 break;
         }
     }
 
-    private void displayLobby() {
+    private void displayGameLobby() {
         if (context == null || context.getModel() == null) {
             return;
         }
 
-        TuiConsole console = getConsole();
         console.clearScreen();
         console.printSectionHeader("GAME LOBBY");
 
@@ -99,7 +94,6 @@ public class TuiGameLobbyView extends BaseUIView {
     }
 
     private void displayPlayersTable() {
-        TuiConsole console = getConsole();
         console.println("Players in Lobby:");
         
         List<PlayerInfo> players = context.getModel().getPlayersInLobby();
@@ -131,7 +125,6 @@ public class TuiGameLobbyView extends BaseUIView {
     }
 
     private void displayStatus() {
-        TuiConsole console = getConsole();
         String currentPlayerId = context.getController().getPlayerId();
         boolean isHost = currentPlayerId != null && currentPlayerId.equals(getHostPlayerId());
         boolean isReady = context.getModel().isPlayerReady(currentPlayerId);
@@ -152,7 +145,6 @@ public class TuiGameLobbyView extends BaseUIView {
     }
 
     private void displayCommands() {
-        TuiConsole console = getConsole();
         console.println("Available Commands:");
         
         String currentPlayerId = context.getController().getPlayerId();
@@ -178,7 +170,6 @@ public class TuiGameLobbyView extends BaseUIView {
 
     private void startInputLoop() {
         Thread inputThread = new Thread(() -> {
-            TuiConsole console = getConsole();
             while (active) {
                 try {
                     console.println("Enter command: ");
@@ -199,7 +190,6 @@ public class TuiGameLobbyView extends BaseUIView {
         }
 
         String command = input.trim().toLowerCase();
-        TuiConsole console = getConsole();
         
         switch (command) {
             case "r":
@@ -219,7 +209,7 @@ public class TuiGameLobbyView extends BaseUIView {
                 handleLeaveCommand();
                 break;
             case "refresh":
-                displayLobby();
+                displayGameLobby();
                 break;
             case "help":
             case "h":
@@ -232,7 +222,6 @@ public class TuiGameLobbyView extends BaseUIView {
     }
 
     private void handleReadyCommand() {
-        TuiConsole console = getConsole();
         String playerId = context.getController().getPlayerId();
         if (!context.getModel().isPlayerReady(playerId)) {
             context.getController().setPlayerReady(true);
@@ -243,7 +232,6 @@ public class TuiGameLobbyView extends BaseUIView {
     }
 
     private void handleNotReadyCommand() {
-        TuiConsole console = getConsole();
         String playerId = context.getController().getPlayerId();
         if (context.getModel().isPlayerReady(playerId)) {
             context.getController().setPlayerReady(false);
@@ -254,7 +242,6 @@ public class TuiGameLobbyView extends BaseUIView {
     }
 
     private void handleStartCommand() {
-        TuiConsole console = getConsole();
         String currentPlayerId = context.getController().getPlayerId();
         if (!currentPlayerId.equals(getHostPlayerId())) {
             console.printError("Only the host can start the game!");
@@ -271,7 +258,6 @@ public class TuiGameLobbyView extends BaseUIView {
     }
 
     private void handleLeaveCommand() {
-        TuiConsole console = getConsole();
         console.printWarning("Are you sure you want to leave the lobby? (y/n)");
         String confirmation = scanner.nextLine();
         if (confirmation != null && confirmation.toLowerCase().startsWith("y")) {
@@ -287,9 +273,9 @@ public class TuiGameLobbyView extends BaseUIView {
         if (context.getModel().getCurrentGameInfo() != null) {
             return context.getModel().getCurrentGameInfo().getCreatorId();
         }
-        // Fallback to first player if GameInfo is not available
+        // Fallback to the first player if GameInfo is not available
         List<PlayerInfo> players = context.getModel().getPlayersInLobby();
-        return players != null && !players.isEmpty() ? players.get(0).getPlayerId() : null;
+        return players != null && !players.isEmpty() ? players.getFirst().getPlayerId() : null;
     }
 
     private boolean areAllPlayersReady() {

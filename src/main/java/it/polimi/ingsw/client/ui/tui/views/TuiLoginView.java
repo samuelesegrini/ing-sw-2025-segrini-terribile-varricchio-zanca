@@ -9,16 +9,15 @@ import java.util.Scanner;
 import java.util.regex.Pattern;
 
 /**
- * TUI view for user login.
- * Migrated to new unified architecture.
+ * TUI view for login.
  */
 public class TuiLoginView extends BaseUIView {
-    
     private static final Pattern NICKNAME_PATTERN = Pattern.compile("^[a-zA-Z0-9_-]{3,20}$");
-    
+    private final TuiConsole console;
     private final Scanner scanner;
     
     public TuiLoginView(TuiContext context) {
+        this.console = context.getConsole();
         this.scanner = new Scanner(System.in);
         initialize(context);
     }
@@ -33,13 +32,8 @@ public class TuiLoginView extends BaseUIView {
         return "Login";
     }
     
-    private TuiConsole getConsole() {
-        return ((TuiContext) context).getConsole();
-    }
-    
     @Override
     protected void onShow() {
-        TuiConsole console = getConsole();
         console.printSectionHeader("LOGIN");
         console.printSuccess("Connected to server successfully!");
         console.println("Please choose a nickname to continue.");
@@ -57,12 +51,11 @@ public class TuiLoginView extends BaseUIView {
     @Override
     protected void onRefresh() {
         if (context.getModel().isLoggedIn()) {
-            getConsole().printSuccess("Logged in as: " + context.getModel().getCurrentNickname());
+            console.printSuccess("Logged in as: " + context.getModel().getCurrentNickname());
         }
     }
     
     private void promptForLogin() {
-        TuiConsole console = getConsole();
         // Loop as long as this view is active and we are not logged in
         while (isActive() && !context.getModel().isLoggedIn()) {
             System.out.print("Enter nickname: ");
@@ -70,13 +63,12 @@ public class TuiLoginView extends BaseUIView {
 
             if (!NICKNAME_PATTERN.matcher(nickname).matches()) {
                 console.printError("Invalid nickname format. Please try again.");
-                continue; // Ask for nickname again
+                continue;
             }
 
             console.printLoading("Logging in as " + nickname);
 
             try {
-                // Directly call the controller and block for the result
                 boolean success = context.getController().login(nickname).get();
 
                 if (!success) {
@@ -92,9 +84,9 @@ public class TuiLoginView extends BaseUIView {
             }
         }
     }
-    
-    private void promptRetry() {
-        getConsole().println("");
+
+    private void promptRetry() { //CHIEDI
+        console.println("");
         // The login loop will continue automatically
     }
 }

@@ -4,10 +4,7 @@ import it.polimi.ingsw.client.ClientModel;
 import it.polimi.ingsw.client.controller.ClientController;
 import it.polimi.ingsw.client.ui.core.UIView;
 import it.polimi.ingsw.client.ui.core.ViewNavigator;
-import it.polimi.ingsw.client.ui.tui.views.TuiConnectionView;
-import it.polimi.ingsw.client.ui.tui.views.TuiGameLobbyView;
-import it.polimi.ingsw.client.ui.tui.views.TuiLoginView;
-import it.polimi.ingsw.client.ui.tui.views.TuiShipBuildingView;
+import it.polimi.ingsw.client.ui.tui.views.*;
 import it.polimi.ingsw.client.ui.core.UIContextProvider;
 
 import java.util.HashMap;
@@ -47,9 +44,13 @@ public class TuiManager implements ViewNavigator.ViewStateChangeListener, it.pol
         connectionView.initialize(context);
         views.put(ClientModel.ViewState.CONNECTION, connectionView);
         
-        TuiLoginView loginView = new TuiLoginView(context);
+        TuiLoginView loginView = new TuiLoginView(context); //CHIEDI
         views.put(ClientModel.ViewState.LOGIN, loginView);
-        
+
+        TuiLobbyView lobbyView = new TuiLobbyView();
+        lobbyView.initialize(context);
+        views.put(ClientModel.ViewState.LOBBY, lobbyView);
+
         TuiGameLobbyView gameLobbyView = new TuiGameLobbyView();
         gameLobbyView.initialize(context);
         views.put(ClientModel.ViewState.GAME_LOBBY, gameLobbyView);

@@ -9,19 +9,17 @@ import java.beans.PropertyChangeEvent;
 import java.util.Scanner;
 
 /**
- * TUI view for ship building phase.
+ * TUI view for the ship building phase.
  * Complete implementation with ASCII ship grid and command-based building.
  */
-public class TuiShipBuildingView extends BaseUIView {
+public class TuiShipBuildingView extends BaseUIView { //CONTROLLA
+    private final TuiConsole console;
     private final Scanner scanner;
     private volatile boolean refreshNeeded = false;
 
     public TuiShipBuildingView() {
+        this.console = ((TuiContext) context).getConsole();
         this.scanner = new Scanner(System.in);
-    }
-
-    private TuiConsole getConsole() {
-        return ((TuiContext) context).getConsole();
     }
 
     @Override
@@ -41,7 +39,6 @@ public class TuiShipBuildingView extends BaseUIView {
     }
 
     private void displayFullInterface() {
-        TuiConsole console = getConsole();
         console.clearScreen();
         console.printSectionHeader("SHIP BUILDING PHASE");
         
@@ -71,7 +68,6 @@ public class TuiShipBuildingView extends BaseUIView {
     }
 
     private void displayTimer(it.polimi.ingsw.client.core.state.LocalGameState gameState) {
-        TuiConsole console = getConsole();
         long timeRemaining = gameState.getBuildingTimeRemaining();
         boolean flipped = gameState.isBuildingTimerFlipped();
         
@@ -89,7 +85,6 @@ public class TuiShipBuildingView extends BaseUIView {
     }
 
     private void displayShipGrid(it.polimi.ingsw.client.core.state.LocalGameState gameState) {
-        TuiConsole console = getConsole();
         console.printInfo("Your Ship (5x7 grid):");
         
         // Header with column numbers
@@ -134,7 +129,6 @@ public class TuiShipBuildingView extends BaseUIView {
     }
 
     private void displayShipStats(it.polimi.ingsw.client.core.state.LocalGameState gameState) {
-        TuiConsole console = getConsole();
         console.printInfo("Ship Statistics:");
         console.println(String.format("  Engines: %d | Cannons: %d | Crew: %d | Cargo: %d | Batteries: %d | Shields: %d",
             gameState.getShipStats(it.polimi.ingsw.client.core.state.LocalGameState.ComponentStatType.ENGINES),
@@ -159,8 +153,6 @@ public class TuiShipBuildingView extends BaseUIView {
     }
 
     private void displayComponentInventory(it.polimi.ingsw.client.core.state.LocalGameState gameState) {
-        TuiConsole console = getConsole();
-        
         var heldTiles = gameState.getHeldTiles();
         console.printInfo("Held Components (" + heldTiles.size() + "/2):");
         if (heldTiles.isEmpty()) {
@@ -209,7 +201,6 @@ public class TuiShipBuildingView extends BaseUIView {
 
     private void startInputLoop() {
         Thread inputThread = new Thread(() -> {
-            TuiConsole console = getConsole();
             while (active) {
                 try {
                     console.println("Enter command: ");
@@ -231,7 +222,6 @@ public class TuiShipBuildingView extends BaseUIView {
 
         String[] parts = input.trim().split("\\s+");
         String command = parts[0].toLowerCase();
-        TuiConsole console = getConsole();
         
         switch (command) {
             case "help":
@@ -275,7 +265,6 @@ public class TuiShipBuildingView extends BaseUIView {
     }
 
     private void handlePlaceCommand(String[] parts) {
-        TuiConsole console = getConsole();
         if (parts.length < 4) {
             console.printError("Usage: place <row> <col> <component_number>");
             console.printInfo("Example: place 2 3 1 (places held component #1 at row 2, col 3)");
@@ -321,7 +310,6 @@ public class TuiShipBuildingView extends BaseUIView {
     }
 
     private void handleTakeCommand() {
-        TuiConsole console = getConsole();
         var gameState = it.polimi.ingsw.client.core.state.LocalGameState.getInstance();
 
         if (!gameState.canReserveMoreTiles()) {
@@ -337,7 +325,6 @@ public class TuiShipBuildingView extends BaseUIView {
     }
 
     private void handleReturnCommand(String[] parts) {
-        TuiConsole console = getConsole();
         if (parts.length < 2) {
             console.printError("Usage: return <component_number>");
             console.printInfo("Example: return 1 (returns held component #1)");
@@ -368,7 +355,6 @@ public class TuiShipBuildingView extends BaseUIView {
     }
 
     private void handleValidateCommand() {
-        TuiConsole console = getConsole();
         
         // Send validate ship request to server
         if (context != null && context.getController() != null) {
@@ -378,7 +364,6 @@ public class TuiShipBuildingView extends BaseUIView {
     }
 
     private void handleFlipTimerCommand() {
-        TuiConsole console = getConsole();
         
         // Send flip timer request to server
         if (context != null && context.getController() != null) {
@@ -388,7 +373,6 @@ public class TuiShipBuildingView extends BaseUIView {
     }
 
     private void showHelp() {
-        TuiConsole console = getConsole();
         console.println("Available Commands:");
         console.printInfo("Building Commands:");
         console.println("  place <row> <col> <component#> - Place held component on ship grid");
