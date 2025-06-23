@@ -15,13 +15,20 @@ It features a distributed client-server architecture and follows the Model-View-
 * Client-Server Communication Protocol Documentation
 
 # Implemented Features 
-### Core 
+### Game-Specific Requirements
+* Faithful reproduction of the physical board game
+* Automatic validation of ship construction
+* Real-time visibility of all players' ships
+* Full ruleset implemented
+
+### Game-Agnostic Requirements 
 * Complete rule set  
 * Text User Interface (TUI)  
 * Graphical User Interface (GUI)  
 * RMI connection  
-* Socket connection  
-### Advanced  
+* Socket connection
+    
+### Advanced Features  
 
 
 # Execution
