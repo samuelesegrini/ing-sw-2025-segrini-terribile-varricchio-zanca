@@ -1,6 +1,7 @@
 package it.polimi.ingsw.server.model.domain.general.config;
 
 import java.io.Serializable;
+
 import java.util.List;
 
 public record ShipGridConfig(
@@ -10,3 +11,4 @@ public record ShipGridConfig(
         List<PositionConfig> reservedComponentsPositions,
         List<PositionConfig> forbiddenPositions
 ) implements Serializable {}
+

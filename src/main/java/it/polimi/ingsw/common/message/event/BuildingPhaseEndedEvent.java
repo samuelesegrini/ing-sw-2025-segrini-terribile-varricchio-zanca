@@ -48,7 +48,6 @@ public class BuildingPhaseEndedEvent extends AbstractEvent {
             ShipValidationResult localResult = validationResults.get(localPlayerId);
             if (localResult != null) {
                 localGameState.setShipValidation(localResult.isValid(), localResult.getErrors());
-            }
             
             // Update client model
             context.getController().getModel().endBuildingPhase();

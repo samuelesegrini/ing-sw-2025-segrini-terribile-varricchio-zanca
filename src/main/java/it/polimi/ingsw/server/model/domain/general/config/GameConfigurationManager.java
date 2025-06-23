@@ -123,9 +123,9 @@ public class GameConfigurationManager {
             }
         } else {
             System.err.println("Warning: 'levels' array not found or not an array in " + jsonPath);
-        }
-        
+        }        
         System.out.println("Successfully loaded " + levelConfigs.size() + " game configurations: " + levelConfigs.keySet());
+
         return new HashMap<>(levelConfigs);
     }
 
@@ -407,7 +407,6 @@ public class GameConfigurationManager {
 
         return new Route(level, Integer.parseInt(fbCfg.length()), new ArrayList<>(fbCfg.startingPositions()), rewardSystem);
     }
-
 
     public List<Component> getAllComponents() {
         return new ArrayList<>(allComponents);

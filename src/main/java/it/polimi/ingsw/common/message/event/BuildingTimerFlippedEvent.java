@@ -41,9 +41,10 @@ public class BuildingTimerFlippedEvent extends AbstractEvent {
     public void handleOnClient(ClientEventContext context) {
         context.runOnUIThread(() -> {
             // Update game state with new timer information
-            var gameState = it.polimi.ingsw.client.core.state.LocalGameState.getInstance();
+            var gameState = LocalGameState.getInstance();
             gameState.updateBuildingTimer(newTimeRemaining);
             gameState.setBuildingTimerFlipped(true);
+
 
             // Show notification
             if (context.getNotificationService() != null) {
@@ -59,9 +60,9 @@ public class BuildingTimerFlippedEvent extends AbstractEvent {
                 }
                 
                 // Add warning if timer has been flipped multiple times
-                it.polimi.ingsw.client.ui.NotificationType notificationType = 
-                    flipCount > 2 ? it.polimi.ingsw.client.ui.NotificationType.WARNING 
-                                  : it.polimi.ingsw.client.ui.NotificationType.INFO;
+                NotificationType notificationType = 
+                    flipCount > 2 ? NotificationType.WARNING 
+                                  : NotificationType.INFO;
                 
                 if (flipCount > 2) {
                     message += " (Timer flipped " + flipCount + " times)";

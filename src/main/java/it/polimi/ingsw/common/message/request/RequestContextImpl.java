@@ -76,8 +76,7 @@ public class RequestContextImpl implements RequestContext {
             return null;
         }
         return sessionManager.getGameSessionForPlayer(playerId);
-    }
-    
+    }    
     @Override
     public String getGameId() {
         String playerId = getPlayerId();

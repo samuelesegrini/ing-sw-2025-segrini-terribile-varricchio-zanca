@@ -24,7 +24,7 @@ public class GameInfo implements Serializable {
         this.maxPlayers = maxPlayers;
         this.currentPlayers = currentPlayers;
         this.gameLevel = gameLevel;
-        this.players = players != null ? new ArrayList<>(players) : new ArrayList<>();
+        this.players = new ArrayList<>(players);
     }
 
     public String getGameId() {

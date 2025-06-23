@@ -58,8 +58,7 @@ public interface RequestContext {
      * Gets the game session for the current player.
      * @return The game session or null if not in a game
      */
-    GameSession getGameSession();
-    
+    GameSession getGameSession();    
     /**
      * Gets the game ID for the current player.
      * @return The game ID or null if not in a game

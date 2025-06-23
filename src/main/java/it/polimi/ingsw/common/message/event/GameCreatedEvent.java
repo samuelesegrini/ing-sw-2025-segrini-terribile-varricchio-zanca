@@ -55,6 +55,7 @@ public class GameCreatedEvent extends AbstractEvent {
             // Set current game with creator in player list
             context.getController().getModel().setCurrentGame(gameInfo);
             context.getController().getModel().setCurrentView(it.polimi.ingsw.client.ClientModel.ViewState.GAME_LOBBY);
+
         } else {
             // Otherwise, just show a notification to other players.
             context.runOnUIThread(() -> {

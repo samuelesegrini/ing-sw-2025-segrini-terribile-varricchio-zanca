@@ -25,6 +25,7 @@ class CombatCheckTest {
     private CombatCheck combatCheckCannons;
     private CombatCheck combatCheckEngines;
     private Player player1, player2, player3;
+    private List<CannonFire> cannons;
 
     @BeforeEach
     void setUp() {
@@ -55,7 +56,7 @@ class CombatCheckTest {
         player3.getShip().setCannons(60);
 
         //Inizializzo le cannonate
-        List<CannonFire> cannons = new ArrayList<>();
+        cannons = new ArrayList<>();
         CannonFire cannonFire1 = new CannonFire(Direction.UP,ShotIntensity.LIGHT);
         CannonFire cannonFire2 = new CannonFire(Direction.LEFT,ShotIntensity.HEAVY);
         cannons.add(cannonFire1);
@@ -96,4 +97,34 @@ class CombatCheckTest {
         Player loser = combatCheckCrew.getCombatLoser(List.of(player1, player2, player3));
         assertEquals(player1, loser, "In caso di tutti i valori uguali, il primo nella lista dovrebbe perdere");
     }
+
+    @Test
+    void getAttributeTest(){
+
+        assertEquals(CombatAttributeType.CREW_COUNT, combatCheckCrew.getAttribute());
+
+    }
+
+    @Test
+    void getPenaltyTypeTest(){
+
+        assertEquals(PenaltyType.FLIGHT_DAYS_LOSS, combatCheckCrew.getPenaltyType());
+
+    }
+
+    @Test
+    void getPenaltyValueTest(){
+
+        assertEquals(3, combatCheckCrew.getPenaltyValue());
+
+    }
+
+    @Test
+    void getCannonFiresTest(){
+
+        assertEquals(cannons, combatCheckCannons.getCannonFires());
+
+    }
+
+
 }

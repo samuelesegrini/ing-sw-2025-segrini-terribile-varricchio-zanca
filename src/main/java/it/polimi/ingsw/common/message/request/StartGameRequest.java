@@ -92,6 +92,7 @@ public class StartGameRequest extends AbstractRequest {
         java.util.Map<String, java.util.Map<it.polimi.ingsw.server.model.domain.ship.Position, it.polimi.ingsw.server.model.enums.ship.ComponentType>> playerShipGrids = new java.util.HashMap<>();
         java.util.Map<String, java.util.List<it.polimi.ingsw.server.model.enums.ship.ComponentType>> playerAvailableTiles = new java.util.HashMap<>();
         java.util.Map<String, java.util.List<it.polimi.ingsw.server.model.enums.ship.ComponentType>> playerHeldTiles = new java.util.HashMap<>();
+
         java.util.Map<String, java.util.Set<it.polimi.ingsw.server.model.domain.ship.Position>> playerForbiddenPositions = new java.util.HashMap<>();
         java.util.Map<String, Long> playerBuildingTimeRemaining = new java.util.HashMap<>();
         java.util.Map<String, Boolean> playerTimerFlipped = new java.util.HashMap<>();

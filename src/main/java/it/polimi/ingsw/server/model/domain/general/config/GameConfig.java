@@ -9,3 +9,4 @@ public record GameConfig(
         FlightBoardConfig flightBoardConfig,
         ShipGridConfig shipGridConfig
 ) implements Serializable {}
+
