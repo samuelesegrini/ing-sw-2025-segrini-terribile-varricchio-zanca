@@ -9,13 +9,13 @@ The goal of the project is to recreate the board game Galaxy Trucker.
 # Documentation  
 
 # Implemented Features 
-**Core**  
-Complete rule set  
-Text User Interface (TUI)  
-Graphical User Interface (GUI)  
-RMI connection  
-Socket connection  
-**Advanced**  
+### Core 
+* Complete rule set  
+* Text User Interface (TUI)  
+* Graphical User Interface (GUI)  
+* RMI connection  
+* Socket connection  
+### Advanced  
 
 
 # Execution
