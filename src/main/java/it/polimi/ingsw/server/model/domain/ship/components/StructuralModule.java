@@ -7,7 +7,7 @@ import it.polimi.ingsw.server.model.enums.ship.Direction;
 import java.util.Map;
 
 public class StructuralModule extends Component {
-    public StructuralModule(ComponentType type, Map<Direction, ConnectorType> connectors) {
-        super(type, connectors);
+    public StructuralModule(ComponentType type, Map<Direction, ConnectorType> connectors, String id) {
+        super(type, connectors, id);
     }
 }

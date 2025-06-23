@@ -15,8 +15,8 @@ public class CargoHold extends Component {
     private Map<GoodType, Integer> storedGoods;
 
 
-    public CargoHold(ComponentType type, Map<Direction, ConnectorType> connectors, int capacity) {
-        super(type, connectors);
+    public CargoHold(ComponentType type, Map<Direction, ConnectorType> connectors, int capacity, String id) {
+        super(type, connectors, id);
         this.capacity = capacity;
         this.occupiedCapacity = 0;
 

@@ -1,154 +1,175 @@
 package it.polimi.ingsw.server.core;
 
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 /**
- * Manages the association between players (identified by their networkClientId or gamePlayerId)
- * and the game sessions they are currently part of.
+ * Enhanced player session registry that manages player sessions.
  */
 public class PlayerSessionRegistry {
     private static final Logger LOGGER = Logger.getLogger(PlayerSessionRegistry.class.getName());
 
-    // Maps networkClientId to the sessionId they are currently in
-    private final Map<String, String> networkClientToSessionMap = new ConcurrentHashMap<>();
-    // Maps gamePlayerId to the sessionId they are currently in
-    private final Map<String, String> gamePlayerToSessionMap = new ConcurrentHashMap<>();
-    // Maps sessionId to a set of networkClientIds currently in that session
-    private final Map<String, Set<String>> sessionToNetworkClientsMap = new ConcurrentHashMap<>();
+    private final Map<String, PlayerSession> clientToPlayerMap; // clientId -> PlayerSession
+    private final Map<String, String> playerToClientMap; // playerId -> clientId
+    private final Map<String, PlayerSession> playerSessions; // playerId -> PlayerSession
+    private final Set<String> activeNicknames;
+    private final Map<String, String> reconnectTokens; // playerId -> token
 
     public PlayerSessionRegistry() {
-        LOGGER.info("PlayerSessionRegistry initialized.");
+        this.clientToPlayerMap = new ConcurrentHashMap<>();
+        this.playerToClientMap = new ConcurrentHashMap<>();
+        this.playerSessions = new ConcurrentHashMap<>();
+        this.activeNicknames = Collections.newSetFromMap(new ConcurrentHashMap<>());
+        this.reconnectTokens = new ConcurrentHashMap<>();
     }
 
     /**
-     * Registers a player (by networkClientId) into a specific game session.
-     * Also maps the gamePlayerId if provided and distinct.
-     *
-     * @param networkClientId The player's network identifier.
-     * @param gamePlayerId    The player's game-specific identifier (can be same as network ID initially).
-     * @param sessionId       The ID of the session the player is joining.
+     * Registers a new player.
      */
-    public synchronized void registerPlayerInSession(String networkClientId, String gamePlayerId, String sessionId) {
-        Objects.requireNonNull(networkClientId, "networkClientId cannot be null");
-        Objects.requireNonNull(gamePlayerId, "gamePlayerId cannot be null");
-        Objects.requireNonNull(sessionId, "sessionId cannot be null");
+    public boolean registerPlayer(String clientId, String playerId, String nickname) {
+        // Check if nickname is already in use
+        if (!activeNicknames.add(nickname)) {
+            LOGGER.warning("Nickname " + nickname + " already in use");
+            return false;
+        }
 
-        // Clean up old session if player was in one
-        removePlayerMappings(networkClientId, gamePlayerId);
+        PlayerSession session = new PlayerSession(playerId, clientId, nickname);
+        clientToPlayerMap.put(clientId, session);
+        playerToClientMap.put(playerId, clientId);
+        playerSessions.put(playerId, session);
 
-        networkClientToSessionMap.put(networkClientId, sessionId);
-        gamePlayerToSessionMap.put(gamePlayerId, sessionId);
-        sessionToNetworkClientsMap.computeIfAbsent(sessionId, k -> ConcurrentHashMap.newKeySet()).add(networkClientId);
+        // Generate reconnect token
+        String token = UUID.randomUUID().toString();
+        reconnectTokens.put(playerId, token);
 
-        LOGGER.info("Player " + gamePlayerId + " (NetID: " + networkClientId + ") registered in session " + sessionId);
+        LOGGER.info("Registered player " + nickname + " (ID: " + playerId + ")");
+        return true;
     }
 
-
     /**
-     * Removes a player from any session they might be part of, using their networkClientId.
-     *
-     * @param networkClientId The network identifier of the player to remove.
+     * Unregisters a player.
      */
-    public synchronized void removePlayerFromAnySessionByNetworkId(String networkClientId) {
-        Objects.requireNonNull(networkClientId, "networkClientId cannot be null");
-        String sessionId = networkClientToSessionMap.remove(networkClientId);
-        if (sessionId != null) {
-            Set<String> clientsInSession = sessionToNetworkClientsMap.get(sessionId);
-            if (clientsInSession != null) {
-                clientsInSession.remove(networkClientId);
-                if (clientsInSession.isEmpty()) {
-                    sessionToNetworkClientsMap.remove(sessionId);
-                    LOGGER.finer("Session " + sessionId + " is now empty of network clients.");
-                }
-            }
-            // Find and remove associated gamePlayerId mapping only if no other network client uses it for this session
-            gamePlayerToSessionMap.entrySet().removeIf(entry ->
-                    entry.getValue().equals(sessionId) &&
-                            !isGamePlayerAssociatedWithOtherNetworkClientInSession(entry.getKey(), sessionId, networkClientId)
-            );
+    public void unregisterPlayer(String clientId) {
+        PlayerSession session = clientToPlayerMap.remove(clientId);
+        if (session != null) {
+            playerToClientMap.remove(session.playerId);
+            activeNicknames.remove(session.nickname);
 
-            LOGGER.info("Player (NetID: " + networkClientId + ") removed from session " + sessionId);
-        } else {
-            LOGGER.finer("Player (NetID: " + networkClientId + ") was not found in any session via networkClientToSessionMap.");
+            // Keep session for reconnection
+            session.setConnected(false);
+
+            LOGGER.info("Unregistered player " + session.nickname);
         }
     }
 
     /**
-     * Removes all mappings for a given network and game player ID.
+     * Checks if a nickname is in use.
      */
-    private synchronized void removePlayerMappings(String networkClientId, String gamePlayerId) {
-        String oldSessionNet = networkClientToSessionMap.remove(networkClientId);
-        if (oldSessionNet != null) {
-            Set<String> clientsInSession = sessionToNetworkClientsMap.get(oldSessionNet);
-            if (clientsInSession != null) {
-                clientsInSession.remove(networkClientId);
-                if (clientsInSession.isEmpty()) sessionToNetworkClientsMap.remove(oldSessionNet);
+    public boolean isNicknameInUse(String nickname) {
+        return activeNicknames.contains(nickname);
+    }
+
+    /**
+     * Gets player ID for a client.
+     */
+    public String getPlayerIdForClient(String clientId) {
+        PlayerSession session = clientToPlayerMap.get(clientId);
+        return session != null ? session.playerId : null;
+    }
+
+    /**
+     * Gets client ID for a player.
+     */
+    public String getClientIdForPlayer(String playerId) {
+        return playerToClientMap.get(playerId);
+    }
+
+    /**
+     * Gets player nickname.
+     */
+    public String getPlayerNickname(String playerId) {
+        PlayerSession session = playerSessions.get(playerId);
+        return session != null ? session.nickname : null;
+    }
+
+    /**
+     * Validates reconnection attempt.
+     */
+    public boolean validateReconnection(String playerId, String token) {
+        String storedToken = reconnectTokens.get(playerId);
+        return storedToken != null && storedToken.equals(token);
+    }
+
+    /**
+     * Restores a player session after reconnection.
+     */
+    public void restoreSession(String newClientId, String playerId) {
+        PlayerSession session = playerSessions.get(playerId);
+        if (session != null) {
+            // Remove old mapping if exists
+            String oldClientId = playerToClientMap.get(playerId);
+            if (oldClientId != null) {
+                clientToPlayerMap.remove(oldClientId);
             }
+
+            // Create new mapping
+            session.clientId = newClientId;
+            session.setConnected(true);
+            clientToPlayerMap.put(newClientId, session);
+            playerToClientMap.put(playerId, newClientId);
+
+            LOGGER.info("Restored session for player " + session.nickname);
+        }
+    }
+
+    /**
+     * Checks if a player is registered.
+     */
+    public boolean isPlayerRegistered(String clientId) {
+        return clientToPlayerMap.containsKey(clientId);
+    }
+
+    /**
+     * Gets all client IDs.
+     */
+    public Set<String> getAllClientIds() {
+        return new HashSet<>(clientToPlayerMap.keySet());
+    }
+
+    /**
+     * Gets player info.
+     */
+    public Map<String, String> getPlayerInfo(String clientId) {
+        PlayerSession session = clientToPlayerMap.get(clientId);
+        if (session != null) {
+            Map<String, String> info = new HashMap<>();
+            info.put("playerId", session.playerId);
+            info.put("nickname", session.nickname);
+            info.put("connected", String.valueOf(session.isConnected));
+            return info;
+        }
+        return null;
+    }
+
+    /**
+     * Inner class representing a player session.
+     */
+    private static class PlayerSession {
+        private final String playerId;
+        private String clientId;
+        private final String nickname;
+        private volatile boolean isConnected;
+
+        public PlayerSession(String playerId, String clientId, String nickname) {
+            this.playerId = playerId;
+            this.clientId = clientId;
+            this.nickname = nickname;
+            this.isConnected = true;
         }
 
-        String oldSessionGame = gamePlayerToSessionMap.remove(gamePlayerId);
-        if (oldSessionGame != null && (oldSessionNet == null || !oldSessionGame.equals(oldSessionNet))) {
-            // If gamePlayer was in a different session, or network client wasn't mapped
-            // but gamePlayer was, clean up that session's view of network clients
-            // This scenario should be rare with proper login handling
-            Set<String> clientsInGamePlayerSession = sessionToNetworkClientsMap.get(oldSessionGame);
-            if (clientsInGamePlayerSession != null) {
-                // Remove any networkClient that points to this gamePlayerId
-                // This is complex: better to ensure removePlayerFromAllSessions(gamePlayerId) in GameSession clears this.
-                // For now, this keeps it simple: assumes a gamePlayerId is uniquely tied or re-tied on login/join.
-            }
-        }
-    }
-
-
-    private boolean isGamePlayerAssociatedWithOtherNetworkClientInSession(String gamePlayerId, String sessionId, String excludedNetworkClientId) {
-        // This helper is tricky. For simplicity, assume one gamePlayerId maps to one active networkClient
-        // In a rejoin scenario, the old networkClientId would be dissociated first by the Login/Auth Controller.
-        // Thus, if a gamePlayerId exists in gamePlayerToSessionMap, it's for the *current* network client.
-        return false; // Simplified: assume for now a gamePlayerId has one net client active.
-    }
-
-    /**
-     * Retrieves the session ID for a player, given their networkClientId.
-     *
-     * @param networkClientId The player's network identifier.
-     * @return The session ID, or null if the player is not in any session.
-     */
-    public String getSessionIdForNetworkClient(String networkClientId) {
-        return networkClientToSessionMap.get(networkClientId);
-    }
-
-    /**
-     * Retrieves the session ID for a player, given their gamePlayerId.
-     *
-     * @param gamePlayerId The player's game-specific identifier.
-     * @return The session ID, or null if the player is not in any session.
-     */
-    public String getSessionIdForGamePlayer(String gamePlayerId) {
-        return gamePlayerToSessionMap.get(gamePlayerId);
-    }
-
-    /**
-     * Gets all network client IDs associated with a given session.
-     *
-     * @param sessionId The ID of the session.
-     * @return A new Set containing the network client IDs, or an empty set if the session has no players or is unknown.
-     */
-    public Set<String> getNetworkClientIdsForSession(String sessionId) {
-        Set<String> clients = sessionToNetworkClientsMap.get(sessionId);
-        return (clients != null) ? Set.copyOf(clients) : Set.of();
-    }
-
-    public synchronized void removeGamePlayerFromSessionMap(String gamePlayerId, String sessionId) {
-        String currentSession = gamePlayerToSessionMap.get(gamePlayerId);
-        if (Objects.equals(currentSession, sessionId)) {
-            gamePlayerToSessionMap.remove(gamePlayerId);
-            LOGGER.finer("Removed GamePlayerID " + gamePlayerId + " from session map for session " + sessionId);
+        public void setConnected(boolean connected) {
+            this.isConnected = connected;
         }
     }
 }

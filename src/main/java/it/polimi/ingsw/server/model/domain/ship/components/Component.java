@@ -8,8 +8,10 @@ import it.polimi.ingsw.server.model.enums.ship.Direction;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 public abstract class Component {
+    protected String id;
     protected ComponentType type;
     protected Direction direction;
     protected Position position;
@@ -17,12 +19,13 @@ public abstract class Component {
     protected Ship ship;
 
 
-    public Component(ComponentType type, Map<Direction, ConnectorType> connectors) {
+    public Component(ComponentType type, Map<Direction, ConnectorType> connectors, String id) {
         this.type = type;
         this.direction = Direction.UP;
         this.position = null;
         this.connectors = connectors;
         this.ship = null;
+        this.id = id;
     }
 
 
@@ -107,5 +110,9 @@ public abstract class Component {
             }
         }
         return false;
+    }
+
+    public String getId() {
+        return id;
     }
 }

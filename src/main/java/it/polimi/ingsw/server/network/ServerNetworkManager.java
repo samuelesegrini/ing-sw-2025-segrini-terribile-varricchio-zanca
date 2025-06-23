@@ -1,16 +1,18 @@
 package it.polimi.ingsw.server.network;
 
-import it.polimi.ingsw.common.event.EventBus;
-import it.polimi.ingsw.common.message.Command;
 import it.polimi.ingsw.common.message.Message;
-import it.polimi.ingsw.common.message.system.ErrorMessage;
+import it.polimi.ingsw.common.message.PongMessage;
+import it.polimi.ingsw.common.message.request.Request;
+import it.polimi.ingsw.common.message.response.ErrorResponse;
 import it.polimi.ingsw.server.controller.CommandDispatcher;
+import it.polimi.ingsw.server.monitor.ConnectionMonitorService;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.logging.Level;
@@ -25,8 +27,8 @@ public class ServerNetworkManager {
     private static final Logger LOGGER = Logger.getLogger(ServerNetworkManager.class.getName());
 
     private final List<ServerNetworkInterface> networkAdapters = new ArrayList<>();
-    private final EventBus serverEventBus;
     private CommandDispatcher commandDispatcher;
+    private ConnectionMonitorService connectionMonitor;
 
     // Maps a networkClientId to the specific adapter that handles it.
     private final Map<String, ServerNetworkInterface> clientToAdapterMap = new ConcurrentHashMap<>();
@@ -39,14 +41,6 @@ public class ServerNetworkManager {
     };
 
     /**
-     * Constructs a ServerNetworkManager.
-     * @param serverEventBus The main server event bus, potentially for system-level or non-command messages.
-     */
-    public ServerNetworkManager(EventBus serverEventBus) {
-        this.serverEventBus = Objects.requireNonNull(serverEventBus, "Server EventBus cannot be null");
-    }
-
-    /**
      * Sets the CommandDispatcher that will handle incoming client commands.
      * This should be called after CommandDispatcher is initialized.
      * @param commandDispatcher The CommandDispatcher instance.
@@ -54,6 +48,15 @@ public class ServerNetworkManager {
     public void setCommandDispatcher(CommandDispatcher commandDispatcher) {
         this.commandDispatcher = Objects.requireNonNull(commandDispatcher, "CommandDispatcher cannot be null");
         LOGGER.info("CommandDispatcher has been set for ServerNetworkManager.");
+    }
+
+    /**
+     * Sets the ConnectionMonitorService for handling ping-pong.
+     * @param connectionMonitor The ConnectionMonitorService instance.
+     */
+    public void setConnectionMonitor(ConnectionMonitorService connectionMonitor) {
+        this.connectionMonitor = connectionMonitor;
+        LOGGER.info("ConnectionMonitorService has been set for ServerNetworkManager.");
     }
 
     /**
@@ -97,18 +100,23 @@ public class ServerNetworkManager {
                     specificAdapter.getClass().getSimpleName() + " from " + networkClientId +
                     ": " + message.getClass().getSimpleName());
 
-            if (message instanceof Command) {
+            if (message instanceof Request request) {
                 if (this.commandDispatcher != null) {
-                    this.commandDispatcher.dispatch((Command) message, networkClientId);
+                    this.commandDispatcher.dispatch(request, networkClientId);
                 } else {
                     LOGGER.severe("CommandDispatcher is not set in ServerNetworkManager. " +
                             "Cannot dispatch command: " + message.getClass().getSimpleName() + " from " + networkClientId);
                     specificAdapter.sendMessageToClient(networkClientId,
-                            new ErrorMessage("Server internal configuration error: Command dispatcher not available.",
-                                    ErrorMessage.ErrorType.SERVER_INTERNAL));
+                            new ErrorResponse(request.getCorrelationId(), "Server internal configuration error: Command dispatcher not available.",
+                                    ErrorResponse.INTERNAL_ERROR));
+                }
+            } else if (message instanceof PongMessage) {
+                LOGGER.fine("Received PONG from client " + networkClientId);
+                if (this.connectionMonitor != null) {
+                    this.connectionMonitor.handlePong(networkClientId);
                 }
             } else {
-                LOGGER.warning("Received non-Command message from client " + networkClientId +
+                LOGGER.warning("Received unsupported message from client " + networkClientId +
                         ": " + message.getClass().getSimpleName() + ". Current policy is to ignore or log.");
             }
         });
@@ -200,17 +208,24 @@ public class ServerNetworkManager {
         Objects.requireNonNull(networkClientId, "networkClientId cannot be null for sendMessageToClient");
         Objects.requireNonNull(message, "message cannot be null for sendMessageToClient");
 
+        LOGGER.fine("ServerNetworkManager attempting to send " + message.getClass().getSimpleName() + 
+                   " to client: " + networkClientId);
+
         ServerNetworkInterface adapter = clientToAdapterMap.get(networkClientId);
 
         if (adapter != null) {
+            LOGGER.fine("Found adapter for client " + networkClientId + ": " + adapter.getClass().getSimpleName());
             if (adapter.isRunning()) {
-                LOGGER.finer("Sending message to " + networkClientId + " (" + message.getClass().getSimpleName() + ") via " + adapter.getClass().getSimpleName());
-                return adapter.sendMessageToClient(networkClientId, message);
+                LOGGER.fine("Adapter is running, delegating send to adapter: " + adapter.getClass().getSimpleName());
+                boolean result = adapter.sendMessageToClient(networkClientId, message);
+                LOGGER.fine("Adapter send result: " + result + " for message " + message.getClass().getSimpleName());
+                return result;
             } else {
                 LOGGER.warning("Adapter for client " + networkClientId + " (" + adapter.getClass().getSimpleName() + ") is not running. Message not sent.");
             }
         } else {
             LOGGER.warning("No adapter mapping found for client ID: " + networkClientId + ". Message not sent. Client might have disconnected.");
+            LOGGER.info("Current client mappings: " + clientToAdapterMap.keySet());
         }
         return false;
     }
@@ -259,5 +274,13 @@ public class ServerNetworkManager {
             }
         }
         return false;
+    }
+
+    /**
+     * Returns a set of all currently connected client IDs.
+     * @return A set of client IDs.
+     */
+    public Set<String> getAllConnectedClientIds() {
+        return clientToAdapterMap.keySet();
     }
 }

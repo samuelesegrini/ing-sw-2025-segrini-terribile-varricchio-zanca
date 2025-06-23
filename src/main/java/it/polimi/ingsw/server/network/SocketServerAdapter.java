@@ -150,10 +150,14 @@ public class SocketServerAdapter implements ServerNetworkInterface {
     public boolean sendMessageToClient(String clientId, Message message) {
         ClientHandler handler = activeClients.get(clientId);
         if (handler != null) {
-            return handler.sendMessage(message);
+            LOGGER.fine("Found client handler for " + clientId + ", delegating send");
+            boolean result = handler.sendMessage(message);
+            LOGGER.fine("Client handler send result: " + result + " for client " + clientId);
+            return result;
+        } else {
+            LOGGER.warning("No client handler found for client ID: " + clientId + ". Cannot send message.");
+            return false;
         }
-        LOGGER.warning("Attempted to send message to non-existent or disconnected client ID: " + clientId);
-        return false;
     }
 
     @Override
@@ -237,15 +241,19 @@ public class SocketServerAdapter implements ServerNetworkInterface {
 
         public boolean sendMessage(Message message) {
             if (!connected.get() || clientSocket.isClosed() || oos == null) {
-                LOGGER.warning("Cannot send message, client " + clientId + " is not connected or OOS is null.");
+                LOGGER.warning("Cannot send message, client " + clientId + " is not connected or OOS is null. " +
+                              "Connected: " + connected.get() + ", Socket closed: " + clientSocket.isClosed() + 
+                              ", OOS null: " + (oos == null));
                 return false;
             }
+            
+            LOGGER.fine("Client " + clientId + " appears connected, attempting to write message to stream");
             try {
                 synchronized (oos) {
                     oos.writeObject(message);
                     oos.flush();
-                    oos.reset();
                 }
+                LOGGER.fine("Successfully sent " + message.getClass().getSimpleName() + " to client " + clientId);
                 return true;
             } catch (SocketException se) {
                 LOGGER.log(Level.WARNING, "SocketException sending message to " + clientId + " (client likely disconnected): " + se.getMessage());

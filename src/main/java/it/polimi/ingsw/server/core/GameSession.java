@@ -1,421 +1,683 @@
 package it.polimi.ingsw.server.core;
 
-import it.polimi.ingsw.common.dto.GameLobbyInfoDTO;
-import it.polimi.ingsw.common.dto.GameSettingsDTO;
-import it.polimi.ingsw.common.dto.PlayerInfoDTO;
-import it.polimi.ingsw.common.event.EventBus;
-import it.polimi.ingsw.common.model.GameSessionState;
-import it.polimi.ingsw.server.event.*;
+import it.polimi.ingsw.common.PlayerInfo;
+import it.polimi.ingsw.server.model.domain.adventure.card.AdventureCard;
 import it.polimi.ingsw.server.model.domain.general.GameModel;
+import it.polimi.ingsw.server.model.domain.general.config.GameConfigurationManager;
+import it.polimi.ingsw.server.model.domain.player.Player;
+import it.polimi.ingsw.server.model.domain.player.PlayerId;
+import it.polimi.ingsw.server.model.domain.ship.components.Component;
 import it.polimi.ingsw.server.model.enums.GameLevel;
+import it.polimi.ingsw.server.model.enums.GamePhase;
+import it.polimi.ingsw.server.core.PlayerSessionRegistry;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.*;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 public class GameSession {
     private static final Logger LOGGER = Logger.getLogger(GameSession.class.getName());
 
-    private final String sessionId;
-    private final EventBus serverEventBus;
-
-    public GameModel getGameModel() {
-        return gameModel;
-    }
-
-    protected static class PlayerInSessionStatus {
-        String networkClientId;
-        final String gamePlayerId;
-        final String nickname;
-        boolean isReady;
-        final boolean isHost;
-        AtomicBoolean isTemporarilyDisconnected = new AtomicBoolean(false);
-
-        PlayerInSessionStatus(String networkClientId, String gamePlayerId, String nickname, boolean isHost) {
-            this.networkClientId = networkClientId;
-            this.gamePlayerId = gamePlayerId;
-            this.nickname = nickname;
-            this.isHost = isHost;
-            // Host is ready by default
-            this.isReady = isHost;
-        }
-
-        PlayerInfoDTO toPlayerInfoDTO() {
-            String displayName = nickname + (isTemporarilyDisconnected.get() ? " (Disconnected)" : "");
-            return new PlayerInfoDTO(gamePlayerId, displayName, isReady, isHost);
-        }
-
-        boolean isActive() { // Convenience method
-            return !isTemporarilyDisconnected.get();
-        }
-    }
-
-    private final Map<String, PlayerInSessionStatus> playersByGameId = new ConcurrentHashMap<>();
-    // This map tracks which networkClientId is *currently* associated with a gamePlayerId IN THIS SESSION
-    private final Map<String, String> currentNetworkIdToGameIdMap = new ConcurrentHashMap<>();
-
+    private final String gameId;
+    private final String gameName;
+    private final GameModel gameModel;
     private final int maxPlayers;
-    private volatile GameSessionState currentState;
-    private String gameName;
-    private final GameLevel gameLevel;
-    private final String creatorGamePlayerId;
+    private final Map<String, PlayerState> playerStates;
+    private final GameConfigurationManager configManager;
+    private final PlayerSessionRegistry playerRegistry;
+    private final Object lock = new Object();
 
-    private GameModel gameModel;
+    // Building phase management
+    private final Map<String, Component> availableComponents;
+    private final Map<String, String> componentOwnership; // componentId -> playerId
+    private final Set<String> usedComponents;
+    private final Map<String, Component> faceUpComponents; // Face-up components pile
+    private final Map<String, List<String>> playerHeldComponents; // playerId -> list of componentIds
 
-    public GameSession(String sessionId, GameSettingsDTO settings, String creatorGamePlayerId, String creatorNickname,
-                       EventBus serverEventBus) {
-        this.sessionId = Objects.requireNonNull(sessionId);
-        this.serverEventBus = Objects.requireNonNull(serverEventBus);
+    // Turn management
+    private int currentPlayerIndex = 0;
+    private long phaseStartTime;
+    private ScheduledFuture<?> phaseTimer;
 
-        this.gameLevel = settings.getGameLevel();
-        this.maxPlayers = settings.getMaxPlayers();
-        this.creatorGamePlayerId = Objects.requireNonNull(creatorGamePlayerId);
-        this.gameName = (settings.getGameName() != null && !settings.getGameName().trim().isEmpty())
-                ? settings.getGameName().trim() : creatorNickname + "'s Game";
-        this.currentState = GameSessionState.LOBBY;
+    // Game state
+    private volatile GamePhase currentPhase;
+    private volatile boolean started;
+    private volatile boolean ended;
 
-        LOGGER.info("New GameSession " + sessionId + " created: '" + gameName + "', Level: " + gameLevel + ", MaxPlayers: " + maxPlayers);
-        // GameModel initialized when SHIP_BUILDING starts
+    public GameSession(String gameId, String gameName, String creatorId,
+                       int maxPlayers, GameLevel gameLevel,
+                       GameConfigurationManager configManager,
+                       PlayerSessionRegistry playerRegistry) {
+        this.gameId = gameId;
+        this.gameName = gameName;
+        this.maxPlayers = maxPlayers;
+        this.configManager = configManager;
+        this.playerRegistry = playerRegistry;
+        this.gameModel = new GameModel(gameLevel, configManager, maxPlayers);
+        this.playerStates = new ConcurrentHashMap<>();
+        this.availableComponents = new ConcurrentHashMap<>();
+        this.componentOwnership = new ConcurrentHashMap<>();
+        this.usedComponents = new HashSet<>();
+        this.faceUpComponents = new ConcurrentHashMap<>();
+        this.playerHeldComponents = new ConcurrentHashMap<>();
+        this.currentPhase = GamePhase.SETUP;
+        this.started = false;
+        this.ended = false;
+
+        // Add creator as first player
+        addPlayer(creatorId);
     }
 
+    /**
+     * Adds a player to the game session.
+     */
+    public boolean addPlayer(String playerId) {
+        synchronized (lock) {
+            if (started || playerStates.size() >= maxPlayers) {
+                return false;
+            }
 
-    //Getters (Synchronized where appropriate if state can change)
-    public String getSessionId() {
-        return sessionId;
+            PlayerState state = new PlayerState(playerId);
+            playerStates.put(playerId, state);
+
+            // Add to game model
+            PlayerId playerIdObj = PlayerId.fromString(playerId);
+            gameModel.addPlayer(playerIdObj, playerId);
+
+            LOGGER.info("Player " + playerId + " joined game " + gameId);
+            return true;
+        }
+    }
+
+    /**
+     * Removes a player from the game session.
+     */
+    public boolean removePlayer(String playerId) {
+        synchronized (lock) {
+            PlayerState removed = playerStates.remove(playerId);
+            if (removed == null) {
+                return false;
+            }
+
+            // Remove from game model
+            PlayerId playerIdObj = PlayerId.fromString(playerId);
+            gameModel.removePlayer(playerIdObj);
+
+            // Return player's components to pool
+            returnPlayerComponents(playerId);
+
+            LOGGER.info("Player " + playerId + " left game " + gameId);
+
+            // Check if game should end
+            if (playerStates.isEmpty()) {
+                endGame("All players left");
+            } else if (started && playerStates.size() < 2) {
+                endGame("Not enough players to continue");
+            }
+
+            return true;
+        }
+    }
+
+    /**
+     * Sets a player's ready status.
+     */
+    public void setPlayerReady(String playerId, boolean ready) {
+        synchronized (lock) {
+            PlayerState state = playerStates.get(playerId);
+            if (state != null) {
+                state.setReady(ready);
+                LOGGER.info("Player " + playerId + " ready status: " + ready);
+
+                // Check if all players are ready to start
+                if (!started && ready && canStart()) {
+                    checkAutoStart();
+                }
+            }
+        }
+    }
+
+    /**
+     * Checks if the game can start.
+     */
+    public boolean canStart() {
+        synchronized (lock) {
+            if (started || playerStates.size() < 2) {
+                return false;
+            }
+
+            // Check if all players are ready
+            return playerStates.values().stream().allMatch(PlayerState::isReady);
+        }
+    }
+
+    /**
+     * Starts the game.
+     */
+    public boolean startGame() {
+        synchronized (lock) {
+            if (!canStart()) {
+                return false;
+            }
+
+            started = true;
+            gameModel.initializeGame();
+            gameModel.startGame();
+
+            // Initialize components
+            initializeComponents();
+
+            // Start building phase
+            transitionToPhase(GamePhase.BUILDING);
+
+            LOGGER.info("Game " + gameId + " started with " + playerStates.size() + " players");
+            return true;
+        }
+    }
+
+    /**
+     * Transitions to a new game phase.
+     */
+    private void transitionToPhase(GamePhase newPhase) {
+        synchronized (lock) {
+            this.currentPhase = newPhase;
+            this.phaseStartTime = System.currentTimeMillis();
+            gameModel.changePhase(newPhase);
+
+            // Cancel any existing timer
+            if (phaseTimer != null) {
+                phaseTimer.cancel(false);
+            }
+
+            switch (newPhase) {
+                case BUILDING:
+                    startBuildingPhase();
+                    break;
+                case FLIGHT:
+                    startFlightPhase();
+                    break;
+                case END:
+                    endGame("Game completed");
+                    break;
+            }
+        }
+    }
+
+    /**
+     * Initializes components for the building phase.
+     */
+    private void initializeComponents() {
+        // Load components from deck
+        List<Component> components = configManager.getAllComponents();
+
+        // Shuffle and distribute
+        Collections.shuffle(components);
+
+        for (Component component : components) {
+            String componentId = UUID.randomUUID().toString();
+            availableComponents.put(componentId, component);
+        }
+
+        LOGGER.info("Initialized " + availableComponents.size() + " components for building phase");
+    }
+
+    /**
+     * Starts the building phase.
+     */
+    private void startBuildingPhase() {
+        LOGGER.info("Starting building phase for game " + gameId);
+
+        // Set timer for building phase (from config)
+        int buildingTimeMinutes = 1;
+
+        if (buildingTimeMinutes > 0) {
+            ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+            phaseTimer = scheduler.schedule(() -> {
+                synchronized (lock) {
+                    if (currentPhase == GamePhase.BUILDING) {
+                        // Force validation for all players
+                        validateAllShips();
+                        transitionToPhase(GamePhase.FLIGHT);
+                    }
+                }
+            }, buildingTimeMinutes, TimeUnit.MINUTES);
+        }
+    }
+
+    /**
+     * Starts the flight phase.
+     */
+    private void startFlightPhase() {
+        LOGGER.info("Starting flight phase for game " + gameId);
+
+        // Initialize flight board
+        gameModel.getAdventureDeck().startFlightPhase();
+
+        // Update player order based on ship stats
+        updatePlayerOrder();
+    }
+
+    /**
+     * Gets an available component.
+     */
+    public Component getAvailableComponent(String componentId) {
+        synchronized (lock) {
+            if (usedComponents.contains(componentId)) {
+                return null;
+            }
+            return availableComponents.get(componentId);
+        }
+    }
+
+    /**
+     * Marks a component as used by a player.
+     */
+    public void useComponent(String componentId, String playerId) {
+        synchronized (lock) {
+            usedComponents.add(componentId);
+            componentOwnership.put(componentId, playerId);
+        }
+    }
+
+    /**
+     * Returns a component to the available pool.
+     */
+    public void returnComponent(Component component) {
+        synchronized (lock) {
+            // Find the component ID
+            String componentId = null;
+            for (Map.Entry<String, Component> entry : availableComponents.entrySet()) {
+                if (entry.getValue() == component) {
+                    componentId = entry.getKey();
+                    break;
+                }
+            }
+
+            if (componentId != null) {
+                usedComponents.remove(componentId);
+                componentOwnership.remove(componentId);
+            }
+        }
+    }
+
+    /**
+     * Returns all components owned by a player.
+     */
+    private void returnPlayerComponents(String playerId) {
+        synchronized (lock) {
+            List<String> toReturn = new ArrayList<>();
+            for (Map.Entry<String, String> entry : componentOwnership.entrySet()) {
+                if (entry.getValue().equals(playerId)) {
+                    toReturn.add(entry.getKey());
+                }
+            }
+
+            for (String componentId : toReturn) {
+                usedComponents.remove(componentId);
+                componentOwnership.remove(componentId);
+            }
+            
+            // Also clear held components for this player
+            playerHeldComponents.remove(playerId);
+        }
+    }
+
+    /**
+     * Gets a face-up component by ID.
+     */
+    public Component getFaceUpComponent(String componentId) {
+        synchronized (lock) {
+            return faceUpComponents.get(componentId);
+        }
+    }
+
+    /**
+     * Reserves a face-up component for a player.
+     */
+    public void reserveFaceUpComponent(String componentId, String playerId) {
+        synchronized (lock) {
+            Component component = faceUpComponents.remove(componentId);
+            if (component != null) {
+                // Add to player's held components
+                playerHeldComponents.computeIfAbsent(playerId, k -> new ArrayList<>()).add(componentId);
+                componentOwnership.put(componentId, playerId);
+                // Keep the component in available pool but mark as owned
+                availableComponents.put(componentId, component);
+            }
+        }
+    }
+
+    /**
+     * Gets the list of components held by a player.
+     */
+    public List<String> getPlayerHeldComponents(String playerId) {
+        synchronized (lock) {
+            return new ArrayList<>(playerHeldComponents.getOrDefault(playerId, new ArrayList<>()));
+        }
+    }
+
+    /**
+     * Adds a component to the face-up pile (returned by player).
+     */
+    public void addToFaceUpPile(String componentId, Component component) {
+        synchronized (lock) {
+            faceUpComponents.put(componentId, component);
+            // Remove from any player's held components
+            for (List<String> heldList : playerHeldComponents.values()) {
+                heldList.remove(componentId);
+            }
+            componentOwnership.remove(componentId);
+        }
+    }
+
+    /**
+     * Flips the building timer to extend building time.
+     * Returns the new time remaining.
+     */
+    public long flipBuildingTimer(long additionalTime) {
+        synchronized (lock) {
+            if (currentPhase != GamePhase.BUILDING) {
+                throw new IllegalStateException("Can only flip timer during building phase");
+            }
+            
+            // Cancel existing timer and create new one with extended time
+            if (phaseTimer != null) {
+                phaseTimer.cancel(false);
+            }
+            
+            // Calculate new remaining time
+            long elapsed = System.currentTimeMillis() - phaseStartTime;
+            long baseTime = 60000; // 1 minute base time
+            long newTotalTime = baseTime + additionalTime;
+            long newTimeRemaining = Math.max(0, newTotalTime - elapsed);
+            
+            // Start new timer with extended time
+            if (newTimeRemaining > 0) {
+                ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+                phaseTimer = scheduler.schedule(() -> {
+                    synchronized (lock) {
+                        if (currentPhase == GamePhase.BUILDING) {
+                            // Force validation for all players
+                            validateAllShips();
+                            transitionToPhase(GamePhase.FLIGHT);
+                        }
+                    }
+                }, newTimeRemaining, TimeUnit.MILLISECONDS);
+            }
+            
+            return newTimeRemaining;
+        }
+    }
+
+    /**
+     * Validates all player ships.
+     */
+    private void validateAllShips() {
+        for (String playerId : playerStates.keySet()) {
+            Player player = getPlayer(playerId);
+            if (player != null) {
+                player.getShip().updateStats();
+                // Mark validation complete
+                playerStates.get(playerId).setShipValidated(true);
+            }
+        }
+    }
+
+    /**
+     * Updates player order for flight phase.
+     */
+    private void updatePlayerOrder() {
+        gameModel.getFlightBoard().updateCurrentOrder();
+    }
+
+    /**
+     * Ends the game.
+     */
+    private void endGame(String reason) {
+        synchronized (lock) {
+            if (ended) {
+                return;
+            }
+
+            ended = true;
+            currentPhase = GamePhase.END;
+
+            if (phaseTimer != null) {
+                phaseTimer.cancel(false);
+            }
+
+            LOGGER.info("Game " + gameId + " ended: " + reason);
+        }
+    }
+
+    /**
+     * Gets the current adventure card.
+     */
+    public AdventureCard getCurrentAdventureCard() {
+        return gameModel.getAdventureDeck().getCurrentCard().orElse(null);
+    }
+
+    /**
+     * Draws the next adventure card.
+     */
+    public AdventureCard drawNextAdventureCard() {
+        return gameModel.getAdventureDeck().drawNextCard().orElse(null);
+    }
+
+    // Getters
+
+    public String getGameId() {
+        return gameId;
     }
 
     public String getGameName() {
         return gameName;
     }
 
-    public GameLevel getGameLevel() {
-        return gameLevel;
-    }
-
-    public GameSessionState getCurrentState() {
-        return currentState;
+    public GameModel getGameModel() {
+        return gameModel;
     }
 
     public int getMaxPlayers() {
         return maxPlayers;
     }
 
-    public boolean isCreator(String gamePlayerId) {
-        return creatorGamePlayerId.equals(gamePlayerId);
+    public int getPlayerCount() {
+        synchronized (lock) {
+            return playerStates.size();
+        }
     }
 
-    public synchronized int getActivePlayerCount() {
-        return (int) playersByGameId.values().stream().filter(PlayerInSessionStatus::isActive).count();
+    public Set<String> getPlayerIds() {
+        synchronized (lock) {
+            return new HashSet<>(playerStates.keySet());
+        }
     }
 
-    public synchronized int getTotalRegisteredPlayerCount() {
-        return playersByGameId.size();
+    public Player getPlayer(String playerId) {
+        PlayerId playerIdObj = PlayerId.fromString(playerId);
+        return gameModel.getPlayerById(playerIdObj);
     }
 
-    public synchronized PlayerInfoDTO getPlayerInfoDTO(String gamePlayerId) {
-        PlayerInSessionStatus p = playersByGameId.get(gamePlayerId);
-        return (p != null) ? p.toPlayerInfoDTO() : null;
+    public GamePhase getCurrentPhase() {
+        return currentPhase;
     }
 
-    public synchronized String getPlayerNickname(String gamePlayerId) {
-        PlayerInSessionStatus p = playersByGameId.get(gamePlayerId);
-        return (p != null) ? p.nickname : null;
+    public boolean isStarted() {
+        return started;
     }
 
-    public synchronized List<PlayerInfoDTO> getActivePlayersInfoDTOs() {
-        return playersByGameId.values().stream()
-                .filter(PlayerInSessionStatus::isActive)
-                .map(PlayerInSessionStatus::toPlayerInfoDTO)
-                .collect(Collectors.toList());
+    public boolean isEnded() {
+        return ended;
     }
 
-    public synchronized List<PlayerInfoDTO> getAllRegisteredPlayersInfoDTOs() {
-        return playersByGameId.values().stream()
-                .map(PlayerInSessionStatus::toPlayerInfoDTO)
-                .collect(Collectors.toList());
+    public boolean canJoin() {
+        synchronized (lock) {
+            return !started && !ended && playerStates.size() < maxPlayers;
+        }
     }
 
-    public synchronized boolean isPlayerTemporarilyDisconnected(String gamePlayerId) {
-        PlayerInSessionStatus p = playersByGameId.get(gamePlayerId);
-        return p != null && p.isTemporarilyDisconnected.get();
+    public GameLevel getGameLevel() {
+        return gameModel.getLevel();
+    }
+
+    public Map<String, Object> getGameState() {
+        synchronized (lock) {
+            Map<String, Object> state = new HashMap<>();
+            state.put("gameId", gameId);
+            state.put("phase", currentPhase);
+            state.put("players", new ArrayList<>(playerStates.keySet()));
+            state.put("started", started);
+            state.put("ended", ended);
+            return state;
+        }
+    }
+
+    public List<PlayerInfo> getPlayers() {
+        synchronized (lock) {
+            List<PlayerInfo> players = new ArrayList<>();
+            for (Map.Entry<String, PlayerState> entry : playerStates.entrySet()) {
+                String playerId = entry.getKey();
+                String nickname = playerRegistry.getPlayerNickname(playerId);
+                players.add(new PlayerInfo(
+                        playerId,
+                        nickname != null ? nickname : "Unknown",
+                        entry.getValue().isReady()
+                ));
+            }
+            return players;
+        }
+    }
+
+    public Component getComponentById(String componentId) {
+        return availableComponents.get(componentId);
+    }
+    
+    public PlayerState getPlayerState(String playerId) {
+        synchronized (lock) {
+            return playerStates.get(playerId);
+        }
+    }
+    
+    public boolean areAllPlayersReady() {
+        synchronized (lock) {
+            if (playerStates.isEmpty()) {
+                return false;
+            }
+            return playerStates.values().stream().allMatch(PlayerState::isReady);
+        }
+    }
+    
+    public boolean isCreator(String playerId) {
+        synchronized (lock) {
+            // First player in the list is the creator
+            return !playerStates.isEmpty() && 
+                   playerStates.keySet().iterator().next().equals(playerId);
+        }
+    }
+    
+    public it.polimi.ingsw.server.model.domain.general.config.ShipGridConfig getShipGridConfig() {
+        return gameModel.getConfig().shipGridConfig();
+    }
+    
+    public ShipBuildingSyncState getShipBuildingSyncState(String playerId) {
+        synchronized (lock) {
+            ShipBuildingSyncState syncState = new ShipBuildingSyncState();
+            
+            // Get player's ship grid
+            Player player = getPlayer(playerId);
+            if (player != null && player.getShip() != null) {
+                var ship = player.getShip();
+                for (int row = 0; row < 5; row++) {
+                    for (int col = 0; col < 7; col++) {
+                        var component = ship.getBoard()[row][col];
+                        if (component != null) {
+                            syncState.shipGrid.put(
+                                new it.polimi.ingsw.server.model.domain.ship.Position(row, col),
+                                component.getType()
+                            );
+                        }
+                    }
+                }
+                
+                // Add forbidden positions
+                syncState.forbiddenPositions.addAll(ship.forbiddenPositions);
+            }
+            
+            // Add available face-up tiles
+            for (Component component : faceUpComponents.values()) {
+                syncState.availableTiles.add(component.getType());
+            }
+            
+            // Add player's held tiles
+            List<String> heldComponentIds = playerHeldComponents.getOrDefault(playerId, new ArrayList<>());
+            for (String componentId : heldComponentIds) {
+                Component component = availableComponents.get(componentId);
+                if (component != null) {
+                    syncState.heldTiles.add(component.getType());
+                }
+            }
+            
+            // Calculate remaining building time
+            if (currentPhase == GamePhase.BUILDING && phaseStartTime > 0) {
+                long elapsed = System.currentTimeMillis() - phaseStartTime;
+                long totalTime = 60000; // 1 minute in milliseconds  
+                syncState.buildingTimeRemaining = Math.max(0, totalTime - elapsed);
+            }
+            
+            return syncState;
+        }
+    }
+    
+    public static class ShipBuildingSyncState {
+        public final Map<it.polimi.ingsw.server.model.domain.ship.Position, it.polimi.ingsw.server.model.enums.ship.ComponentType> shipGrid = new HashMap<>();
+        public final List<it.polimi.ingsw.server.model.enums.ship.ComponentType> availableTiles = new ArrayList<>();
+        public final List<it.polimi.ingsw.server.model.enums.ship.ComponentType> heldTiles = new ArrayList<>();
+        public final Set<it.polimi.ingsw.server.model.domain.ship.Position> forbiddenPositions = new HashSet<>();
+        public long buildingTimeRemaining = 0;
+        public boolean timerFlipped = false;
+    }
+
+    private void checkAutoStart() {
+        // Auto-start if all players are ready
+        if (canStart()) {
+            // Give a small delay for UI updates
+            ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+            scheduler.schedule(() -> {
+                if (canStart()) {
+                    startGame();
+                }
+            }, 3, TimeUnit.SECONDS);
+            scheduler.shutdown();
+        }
     }
 
     /**
-     * Constructs a GameLobbyInfoDTO representing the current state of this session's lobby.
-     * This method is thread-safe.
-     *
-     * @return A new GameLobbyInfoDTO instance.
+     * Inner class to track player state within the game.
      */
-    public synchronized GameLobbyInfoDTO getLobbyInfo() {
-        return new GameLobbyInfoDTO(
-                this.sessionId,
-                this.gameName,
-                this.getTotalRegisteredPlayerCount(),
-                this.maxPlayers,
-                this.currentState,
-                this.gameLevel
-        );
-    }
+    public static class PlayerState {
+        private final String playerId;
+        private volatile boolean ready = false;
+        private volatile boolean shipValidated = false;
 
-
-    //Player Management
-    public synchronized boolean addPlayer(String networkClientId, String gamePlayerId, String nickname) {
-        if (currentState != GameSessionState.LOBBY) {
-            LOGGER.warning("SessID " + sessionId + ": Cannot add player " + nickname + ". Not in LOBBY (state=" + currentState + ")");
-            return false;
+        public PlayerState(String playerId) {
+            this.playerId = playerId;
         }
 
-        PlayerInSessionStatus existingPlayerStatus = playersByGameId.get(gamePlayerId);
-
-        if (existingPlayerStatus != null) { // Player is rejoining
-            if (!existingPlayerStatus.isTemporarilyDisconnected.get()) {
-                LOGGER.warning("SessID " + sessionId + ": Player " + nickname + " (GameID: " + gamePlayerId + ") trying to join but is already active with NetID " + existingPlayerStatus.networkClientId);
-                if (!Objects.equals(existingPlayerStatus.networkClientId, networkClientId)) {
-                    currentNetworkIdToGameIdMap.remove(existingPlayerStatus.networkClientId); // Remove old mapping
-                    LOGGER.info("SessID " + sessionId + ": Player " + nickname + " already active, updating NetID from " + existingPlayerStatus.networkClientId + " to " + networkClientId);
-                }
-            }
-            existingPlayerStatus.networkClientId = networkClientId;
-            currentNetworkIdToGameIdMap.put(networkClientId, gamePlayerId);
-            existingPlayerStatus.isTemporarilyDisconnected.set(false);
-            LOGGER.info("SessID " + sessionId + ": Player " + nickname + " (GameID: " + gamePlayerId + ") re-joined/re-associated with NetID: " + networkClientId);
-            serverEventBus.post(new InternalPlayerReconnectedEvent(sessionId, gamePlayerId, nickname, networkClientId, getActivePlayersInfoDTOs()));
-            checkAndHandleGameResumption();
-            return true;
+        public boolean isReady() {
+            return ready;
         }
 
-        // New player joining
-        if (playersByGameId.size() >= maxPlayers) {
-            LOGGER.warning("SessID " + sessionId + ": Lobby full. Cannot add new player " + nickname);
-            return false;
+        public void setReady(boolean ready) {
+            this.ready = ready;
         }
 
-        boolean isHost = gamePlayerId.equals(creatorGamePlayerId);
-        PlayerInSessionStatus newPlayerStatus = new PlayerInSessionStatus(networkClientId, gamePlayerId, nickname, isHost);
-        playersByGameId.put(gamePlayerId, newPlayerStatus);
-        currentNetworkIdToGameIdMap.put(networkClientId, gamePlayerId);
-
-        LOGGER.info("SessID " + sessionId + ": New player " + nickname + " (GameID: " + gamePlayerId + ", NetID: " + networkClientId + ") added.");
-        serverEventBus.post(new InternalPlayerJoinedMySessionEvent(sessionId, newPlayerStatus.toPlayerInfoDTO(), getAllRegisteredPlayersInfoDTOs(), networkClientId));
-        return true;
-    }
-
-    /**
-     * Handles a "hard" removal of a player, e.g., client explicitly left or fully timed out.
-     *
-     * @param networkClientIdToRemove The network ID of the client connection that is gone.
-     */
-    public synchronized void removePlayerHard(String networkClientIdToRemove) {
-        String gamePlayerId = currentNetworkIdToGameIdMap.remove(networkClientIdToRemove);
-        if (gamePlayerId == null) {
-            LOGGER.info("SessID " + sessionId + ": Attempted hard removal for NetID " + networkClientIdToRemove + ", but no current gamePlayerId mapping. Client might have already been marked temporarily_disconnected or never fully joined session logic.");
-            return;
+        public boolean isShipValidated() {
+            return shipValidated;
         }
 
-        PlayerInSessionStatus removedPlayerStatus = playersByGameId.remove(gamePlayerId);
-        if (removedPlayerStatus != null) {
-            LOGGER.info("SessID " + sessionId + ": Player " + removedPlayerStatus.nickname + " (GameID: " + gamePlayerId + ") hard removed.");
-
-            GameSessionState stateBeforeCheck = this.currentState;
-            boolean stateChanged = checkAndHandleGameSuspensionOrAbortion();
-            GameSessionState stateAfterCheck = this.currentState;
-
-            serverEventBus.post(new InternalPlayerLeftSessionEvent(
-                    sessionId, gamePlayerId, removedPlayerStatus.nickname,
-                    getActivePlayersInfoDTOs(),
-                    removedPlayerStatus.isHost,
-                    (stateChanged ? stateAfterCheck : stateBeforeCheck)
-            ));
-        } else {
-            LOGGER.warning("SessID " + sessionId + ": NetID " + networkClientIdToRemove + " mapped to GameID " + gamePlayerId + ", but GameID not found in playersByGameId map during hard removal.");
+        public void setShipValidated(boolean validated) {
+            this.shipValidated = validated;
         }
-    }
-
-    public synchronized void markPlayerAsTemporarilyDisconnected(String gamePlayerIdToMark, String associatedNetworkClientId) {
-        PlayerInSessionStatus playerStatus = playersByGameId.get(gamePlayerIdToMark);
-        if (playerStatus != null && Objects.equals(playerStatus.networkClientId, associatedNetworkClientId)) {
-            if (playerStatus.isTemporarilyDisconnected.compareAndSet(false, true)) {
-                currentNetworkIdToGameIdMap.remove(associatedNetworkClientId);
-
-                LOGGER.info("SessID " + sessionId + ": Player " + playerStatus.nickname + " marked as temporarily disconnected.");
-                serverEventBus.post(new InternalPlayerTemporarilyDisconnectedEvent(sessionId, gamePlayerIdToMark, playerStatus.nickname));
-                checkAndHandleGameSuspensionOrAbortion();
-            }
-        } else if (playerStatus != null) {
-            LOGGER.warning("SessID " + sessionId + ": Mismatch when marking player temporarily disconnected. Expected NetID " + playerStatus.networkClientId + ", got " + associatedNetworkClientId + " for GameID " + gamePlayerIdToMark);
-        }
-    }
-
-    public synchronized void markPlayerAsReconnected(String gamePlayerIdToReconnect, String newNetworkClientId) {
-        PlayerInSessionStatus playerStatus = playersByGameId.get(gamePlayerIdToReconnect);
-        if (playerStatus != null) { // Player record exists
-            if (playerStatus.isTemporarilyDisconnected.get()) {
-                playerStatus.isTemporarilyDisconnected.set(false);
-                LOGGER.info("SessID " + sessionId + ": Player " + playerStatus.nickname + " marked as reconnected.");
-            } else {
-                LOGGER.info("SessID " + sessionId + ": Player " + playerStatus.nickname + " was re-associating network ID but was not marked as temp_disconnected. Marking active.");
-            }
-            String oldNetIdMappedToThisGamePlayer = null;
-            for (Map.Entry<String, String> entry : currentNetworkIdToGameIdMap.entrySet()) {
-                if (entry.getValue().equals(gamePlayerIdToReconnect) && !entry.getKey().equals(newNetworkClientId)) {
-                    oldNetIdMappedToThisGamePlayer = entry.getKey();
-                    break;
-                }
-            }
-            if (oldNetIdMappedToThisGamePlayer != null)
-                currentNetworkIdToGameIdMap.remove(oldNetIdMappedToThisGamePlayer);
-
-
-            playerStatus.networkClientId = newNetworkClientId;
-            currentNetworkIdToGameIdMap.put(newNetworkClientId, gamePlayerIdToReconnect);
-
-            checkAndHandleGameResumption();
-        } else {
-            LOGGER.warning("SessID " + sessionId + ": Tried to mark unknown GameID " + gamePlayerIdToReconnect + " as reconnected.");
-        }
-    }
-
-    // --- State Transitions & Game Logic ---
-    private void onEnterState(GameSessionState enteredState) {
-        LOGGER.fine("SessID " + sessionId + ": Entered state " + enteredState);
-        if (enteredState == GameSessionState.SHIP_BUILDING) {
-            if (this.gameModel == null) {
-                LOGGER.info("SessID " + sessionId + ": Initializing GameModel with " + getTotalRegisteredPlayerCount() + " registered players for SHIP_BUILDING.");
-            } else {
-                LOGGER.info("SessID " + sessionId + ": GameModel already exists. Skipping re-initialization.");
-            }
-        }
-    }
-
-    public synchronized void setPlayerReady(String requestingNetworkClientId, boolean isReady) {
-        if (currentState != GameSessionState.LOBBY) {
-            LOGGER.warning("SessID " + sessionId + ": Cannot set player ready. Not in LOBBY state.");
-            serverEventBus.post(new InternalOperationErrorEvent(requestingNetworkClientId, "Cannot change ready: not in lobby.", false));
-            return;
-        }
-        String gamePlayerId = currentNetworkIdToGameIdMap.get(requestingNetworkClientId);
-        if (gamePlayerId == null) {
-            LOGGER.warning("SessID " + sessionId + ": NetID " + requestingNetworkClientId + " not mapped to GameID for SetPlayerReady.");
-            serverEventBus.post(new InternalOperationErrorEvent(requestingNetworkClientId, "Player not recognized in session.", false));
-            return;
-        }
-
-        PlayerInSessionStatus playerStatus = playersByGameId.get(gamePlayerId);
-        if (playerStatus != null) {
-            if (playerStatus.isTemporarilyDisconnected.get()) {
-                LOGGER.warning("SessID " + sessionId + ": Player " + playerStatus.nickname + " is disconnected, cannot change ready status.");
-                serverEventBus.post(new InternalOperationErrorEvent(requestingNetworkClientId, "Cannot change ready: you are disconnected.", false));
-                return;
-            }
-            if (playerStatus.isReady != isReady) {
-                playerStatus.isReady = isReady;
-                LOGGER.info("SessID " + sessionId + ": Player " + playerStatus.nickname + " readiness set to " + isReady);
-                serverEventBus.post(new InternalPlayerReadyStatusChangedInSessionEvent(sessionId, getAllRegisteredPlayersInfoDTOs()));
-                //saveState();
-            }
-        } else {
-            LOGGER.severe("SessID " + sessionId + ": Critical inconsistency! NetID " + requestingNetworkClientId + " mapped to GameID " + gamePlayerId + " but GameID not in playersByGameId.");
-            serverEventBus.post(new InternalOperationErrorEvent(requestingNetworkClientId, "Server error processing readiness.", true));
-        }
-    }
-
-    public synchronized boolean startGame(String requestingHostGamePlayerId) {
-        if (currentState != GameSessionState.LOBBY) {
-            LOGGER.warning("SessID " + sessionId + ": startGame called but not in LOBBY state.");
-            return false;
-        }
-        if (!Objects.equals(requestingHostGamePlayerId, creatorGamePlayerId)) {
-            LOGGER.warning("SessID " + sessionId + ": startGame called by non-host " + requestingHostGamePlayerId);
-            return false;
-        }
-        if (!checkAllActivePlayersReady()) {
-            LOGGER.warning("SessID " + sessionId + ": startGame called by host but not all active players are ready.");
-            return false;
-        }
-        if (getActivePlayerCount() < 2 && gameLevel != GameLevel.TEST_FLIGHT) {
-            // Test flight right now allows 1 player for testing, then it has to be changed
-            LOGGER.warning("SessID " + sessionId + ": startGame called by host but not enough active players (" + getActivePlayerCount() + ").");
-            return false;
-        }
-
-
-        LOGGER.info("SessID " + sessionId + ": Host " + requestingHostGamePlayerId + " initiating game start.");
-        if (transitionToState(GameSessionState.SHIP_BUILDING)) {
-            serverEventBus.post(new InternalGameStartedInSessionEvent(sessionId, getActivePlayersInfoDTOs()));
-            return true;
-        }
-        return false;
-    }
-
-    public synchronized boolean checkAllActivePlayersReady() {
-        if (getActivePlayerCount() == 0) return false;
-        return playersByGameId.values().stream()
-                .filter(PlayerInSessionStatus::isActive)
-                .allMatch(p -> p.isReady);
-    }
-
-    //Abort event still need to be implemented
-    private synchronized boolean checkAndHandleGameSuspensionOrAbortion() {
-        if (currentState == GameSessionState.FINISHED || currentState == GameSessionState.ABORTED) {
-            return false;
-        }
-
-        long activePlayers = getActivePlayerCount();
-        boolean stateChanged = false;
-
-//        if (activePlayers == 0) {
-//            LOGGER.info("SessID " + sessionId + ": All players inactive/disconnected. Aborting game.");
-//            stateChanged = transitionToState(GameSessionState.ABORTED);
-//        } else if (activePlayers == 1 && (currentState == GameSessionState.SHIP_BUILDING || currentState == GameSessionState.FLIGHT || currentState == GameSessionState.FLIGHT_PREPARATION)) {
-//            PlayerInSessionStatus lastPlayer = playersByGameId.values().stream()
-//                    .filter(PlayerInSessionStatus::isActive).findFirst().orElse(null);
-//            if (lastPlayer != null) {
-//                LOGGER.info("SessID " + sessionId + ": Only one player (" + lastPlayer.nickname + ") active. Suspending game logic (no state change).");
-//                serverEventBus.post(new InternalGameSuspendedEvent(sessionId, lastPlayer.nickname));
-//            }
-//        }
-        return stateChanged;
-    }
-
-    //Resume event still need to be implemented
-    private synchronized boolean checkAndHandleGameResumption() {
-        if (currentState == GameSessionState.ABORTED || currentState == GameSessionState.FINISHED) {
-            return false;
-        }
-        long activePlayerCount = getActivePlayerCount();
-//        if (activePlayerCount > 1) {
-//            LOGGER.info("SessID " + sessionId + ": Active player count is " + activePlayerCount + ". Broadcasting game resume signal.");
-//            serverEventBus.post(new InternalGameResumedEvent(sessionId, getActivePlayersInfoDTOs()));
-//            return true;
-//        }
-        return false;
-    }
-
-    public synchronized Map<String, String> getCurrentNetworkIdToGameIdMap() {
-        return new ConcurrentHashMap<>(currentNetworkIdToGameIdMap);
-    }
-
-    public synchronized String getGameIdForCurrentNetId(String networkClientId) {
-        return this.currentNetworkIdToGameIdMap.get(networkClientId);
-    }
-
-    // Modify in GameSession.java
-    public synchronized boolean transitionToState(GameSessionState newState) {
-        if (this.currentState == newState && newState != GameSessionState.LOBBY) {
-            LOGGER.finer("SessID " + sessionId + ": Already in state " + newState + ". No transition action.");
-            return false;
-        }
-        GameSessionState oldState = this.currentState;
-        this.currentState = newState;
-        LOGGER.info("SessID " + sessionId + ": State transitioned from " + oldState + " to " + newState);
-
-        serverEventBus.post(new InternalSessionActualStateChangedEvent(
-                sessionId, oldState, newState, getAllRegisteredPlayersInfoDTOs()
-        ));
-
-        onEnterState(newState);
-        return true;
     }
 }

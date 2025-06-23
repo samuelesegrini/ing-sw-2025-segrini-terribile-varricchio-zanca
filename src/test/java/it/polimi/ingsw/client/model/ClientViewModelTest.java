@@ -1,7 +1,5 @@
 package it.polimi.ingsw.client.model;
 
-import it.polimi.ingsw.client.network.ClientNetworkInterface;
-import it.polimi.ingsw.client.network.ClientNetworkManager;
 import it.polimi.ingsw.common.dto.GameLobbyInfoDTO;
 import it.polimi.ingsw.common.dto.PlayerInfoDTO;
 import it.polimi.ingsw.common.event.EventBus;
@@ -16,9 +14,7 @@ import org.junit.jupiter.api.Test;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 
 import static org.junit.jupiter.api.Assertions.*;

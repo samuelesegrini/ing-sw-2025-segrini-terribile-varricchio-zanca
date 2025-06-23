@@ -1,0 +1,111 @@
+/* /css/lobby.css */
+.lobby-screen-root { /* The LobbyScreen StackPane */
+    -fx-background-color: #0A0A1A;
+}
+
+.lobby-main-scrollpane { /* The main ScrollPane */
+    /* scroll-pane-styled from common.css will be applied */
+    -fx-fit-to-width: true;
+    -fx-hbar-policy: never;
+    -fx-vbar-policy: as-needed;
+}
+
+.lobby-main-content-container { /* VBox inside ScrollPane */
+    /* panel-medium-glass from common.css will be applied */
+    -fx-padding: 30px;
+    -fx-spacing: 20px;
+    -fx-alignment: top-center;
+}
+
+.lobby-header-box { /* HBox for title and player info/logout */
+    -fx-alignment: center-left;
+    -fx-padding: 0 0 20px 0; /* Bottom padding */
+}
+
+#lobby-title-label { /* The "GAME LOBBY" label, using ID for specificity */
+    /* label-title from common.css will be applied for font size/color */
+    -fx-font-size: 36pt; /* Overriding if needed */
+}
+
+.lobby-player-info-label { /* "Player: ..." label */
+    /* label-header from common.css will be applied */
+    -fx-padding: 0 20px 0 0; /* Right padding */
+}
+/* lobby-logout-button uses .button and .button-danger from common.css */
+
+.lobby-game-lists-area { /* VBox holding waiting and in-progress sections */
+    -fx-alignment: top-center;
+    -fx-spacing: 30px;
+}
+
+.lobby-game-list-section-container { /* VBox for "WAITING..." or "IN PROGRESS..." sections */
+    -fx-background-color: rgba(25, 25, 50, 0.65); /* Slightly different from panel-medium-glass */
+    -fx-background-radius: 10px;
+    -fx-border-color: rgba(100, 100, 150, 0.55);
+    -fx-border-radius: 10px;
+    -fx-padding: 15px;
+    -fx-spacing: 15px;
+}
+
+.lobby-section-title-label { /* "WAITING FOR PLAYERS" etc. */
+    /* label-subtitle from common.css will be applied */
+    -fx-alignment: center;
+    -fx-max-width: infinity;
+}
+
+.lobby-games-flowpane { /* FlowPane for game entries */
+    -fx-hgap: 10px;
+    -fx-vgap: 10px;
+    -fx-padding: 5px;
+}
+
+.lobby-game-entry-pane { /* VBox for a single game entry */
+    /* panel-light-accent-box from common.css will be applied */
+    -fx-pref-width: 300px;
+    -fx-padding: 12px;
+    -fx-spacing: 8px;
+}
+.lobby-game-entry-title-box { /* HBox for game ID and level */
+    -fx-alignment: center-left;
+    -fx-spacing: 10px;
+}
+.lobby-game-id-label {
+    -fx-font-size: 16pt;
+    -fx-text-fill: #FFD700; /* Gold */
+}
+.lobby-level-label { /* Common style for level label */
+    -fx-font-size: 14pt;
+    /* Text color from .level-label.test-flight or .level-label.level-ii in theme files */
+}
+.lobby-host-label,
+.lobby-players-label,
+.lobby-map-name-label {
+    -fx-font-size: 14pt;
+    -fx-text-fill: #C8C8D8; /* Consistent light gray */
+}
+.lobby-game-entry-details-box { /* HBox for players, map */
+    -fx-alignment: center-left;
+    -fx-spacing: 15px;
+}
+.lobby-game-entry-action-box { /* HBox for Join button or status */
+    -fx-alignment: center-right;
+    -fx-padding: 5px 0 0 0;
+}
+/* lobby-join-game-button uses .button, .button-mini, .button-mini-action (theme) */
+.lobby-inprogress-status-label {
+    -fx-font-size: 14pt;
+    -fx-text-fill: #FFA000; /* Orange */
+}
+
+.lobby-no-games-label {
+    -fx-font-size: 16pt;
+    -fx-padding: 20px;
+    -fx-alignment: center;
+    -fx-text-fill: #A0A0B0; /* Muted text */
+}
+
+.lobby-actions-bar { /* HBox for Create Game, Refresh buttons */
+    -fx-alignment: center;
+    -fx-padding: 20px 0 0 0;
+    -fx-spacing: 20px;
+}
