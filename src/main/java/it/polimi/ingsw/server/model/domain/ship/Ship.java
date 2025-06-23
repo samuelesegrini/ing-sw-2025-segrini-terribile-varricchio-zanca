@@ -293,65 +293,65 @@ public class Ship {
         updateStats();
         boolean allResourcesAdded = true;
 
-        // Calcola lo spazio disponibile prima di iniziare
-        int freeSpecialGoodsCapacity = calculateSpecialGoodsCapacity() - specialGoods;
-        int freeNormalGoodsCapacity = calculateNormalGoodsCapacity() - normalGoods;
+    // Calcola lo spazio disponibile prima di iniziare
+    int freeSpecialGoodsCapacity = calculateSpecialGoodsCapacity() - specialGoods;
+    int freeNormalGoodsCapacity = calculateNormalGoodsCapacity() - normalGoods;
 
-        int totalRedGoods = 0;
-        int totalNormalGoods = 0;
+    int totalRedGoods = 0;
+    int totalNormalGoods = 0;
 
         for (Map.Entry<GoodType, Integer> entry : newResources.entrySet()) {
-            GoodType type = entry.getKey();
-            int amount = entry.getValue();
+        GoodType type = entry.getKey();
+        int amount = entry.getValue();
 
-            if (type == GoodType.RED) {
-                totalRedGoods += amount;
-            } else {
-                totalNormalGoods += amount;
-            }
+        if (type == GoodType.RED) {
+            totalRedGoods += amount;
+        } else {
+            totalNormalGoods += amount;
         }
+    }
 
         if (totalRedGoods > freeSpecialGoodsCapacity) {
-            System.out.println("Not enough special cargo space for red goods");
-            return false;
-        }
+        System.out.println("Not enough special cargo space for red goods");
+        return false;
+    }
 
-        // Verifica per merci normali
+    // Verifica per merci normali
         if (totalNormalGoods > freeNormalGoodsCapacity + (freeSpecialGoodsCapacity - totalRedGoods)) {
-            System.out.println("Not enough total cargo space for normal goods");
-            return false;
-        }
+        System.out.println("Not enough total cargo space for normal goods");
+        return false;
+    }
 
-        // Se arriviamo qui, abbiamo verificato che c'è abbastanza spazio per tutte le merci
-        // Procediamo con l'aggiunta
+    // Se arriviamo qui, abbiamo verificato che c'è abbastanza spazio per tutte le merci
+    // Procediamo con l'aggiunta
         for (Map.Entry<GoodType, Integer> entry : newResources.entrySet()) {
-            GoodType type = entry.getKey();
-            int amount = entry.getValue();
+        GoodType type = entry.getKey();
+        int amount = entry.getValue();
 
-            if (type == GoodType.RED) {
-                // Le merci rosse vanno solo nei cargo speciali
-                int remaining = addToSpecificCargoType(type, amount, ComponentType.CARGO_HOLD_SPECIAL);
-                if (remaining > 0) {
-                    allResourcesAdded = false;
-                }
-            } else {
-                // Per le merci normali (blu, gialle, verdi)
-                // Prima prova a riempire i cargo normali
-                int remainingAmount = addToSpecificCargoType(type, amount, ComponentType.CARGO_HOLD);
+        if (type == GoodType.RED) {
+            // Le merci rosse vanno solo nei cargo speciali
+            int remaining = addToSpecificCargoType(type, amount, ComponentType.CARGO_HOLD_SPECIAL);
+            if (remaining > 0) {
+                allResourcesAdded = false;
+            }
+        } else {
+            // Per le merci normali (blu, gialle, verdi)
+            // Prima prova a riempire i cargo normali
+            int remainingAmount = addToSpecificCargoType(type, amount, ComponentType.CARGO_HOLD);
 
-                // Se non c'è abbastanza spazio nei cargo normali, usa anche quelli speciali
+            // Se non c'è abbastanza spazio nei cargo normali, usa anche quelli speciali
+            if (remainingAmount > 0) {
+                remainingAmount = addToSpecificCargoType(type, remainingAmount, ComponentType.CARGO_HOLD_SPECIAL);
                 if (remainingAmount > 0) {
-                    remainingAmount = addToSpecificCargoType(type, remainingAmount, ComponentType.CARGO_HOLD_SPECIAL);
-                    if (remainingAmount > 0) {
-                        allResourcesAdded = false;
-                    }
+                    allResourcesAdded = false;
                 }
             }
         }
-
-        updateStats();
-        return allResourcesAdded;
     }
+
+    updateStats();
+        return allResourcesAdded;
+}
 
     /**
      * Adds resources to a specific type of cargo hold

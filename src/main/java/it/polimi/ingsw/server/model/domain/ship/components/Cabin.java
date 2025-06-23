@@ -15,8 +15,8 @@ public class Cabin extends Component {
     private int currentCrew;
 
 
-    public Cabin(ComponentType type, Map<Direction, ConnectorType> connectors) {
-        super(type, connectors);
+    public Cabin(ComponentType type, Map<Direction, ConnectorType> connectors, String id) {
+        super(type, connectors, id);
         this.maxCrew = 2;
         this.currentCrew = this.maxCrew;
         this.currentCrewType = CrewType.HUMAN;

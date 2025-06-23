@@ -12,8 +12,8 @@ public class Engine extends Component {
     private boolean charged;
 
 
-    public Engine(ComponentType type, Map<Direction, ConnectorType> connectors) {
-        super(type, connectors);
+    public Engine(ComponentType type, Map<Direction, ConnectorType> connectors, String id) {
+        super(type, connectors, id);
         this.charged = false;
     }
 

@@ -3,7 +3,11 @@ package it.polimi.ingsw.server.model.domain.general;
 import it.polimi.ingsw.server.model.domain.adventure.card.AdventureCard;
 import it.polimi.ingsw.server.model.domain.adventure.AdventureDeck;
 import it.polimi.ingsw.server.model.domain.flight.FlightBoard;
+import it.polimi.ingsw.server.model.domain.flight.RewardSystem;
+import it.polimi.ingsw.server.model.domain.flight.Route;
+import it.polimi.ingsw.server.model.domain.general.config.FlightBoardConfig;
 import it.polimi.ingsw.server.model.domain.general.config.GameConfigurationManager;
+import it.polimi.ingsw.server.model.domain.general.config.RewardSystemConfig;
 import it.polimi.ingsw.server.model.domain.player.Player;
 import it.polimi.ingsw.server.model.domain.general.config.GameConfig;
 import it.polimi.ingsw.server.model.domain.player.PlayerId;
@@ -11,11 +15,11 @@ import it.polimi.ingsw.server.model.domain.ship.components.Component;
 import it.polimi.ingsw.server.model.enums.GameLevel;
 import it.polimi.ingsw.server.model.enums.GamePhase;
 import it.polimi.ingsw.server.model.enums.player.PlayerColor;
+import it.polimi.ingsw.server.model.enums.player.PlayerOrder;
+import it.polimi.ingsw.server.model.enums.resource.GoodType;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Represents the current state of the game, including the current player, the flight board,
@@ -110,7 +114,21 @@ public class GameModel {
             throw new IllegalStateException("Game already initialized");
         }
 
-        this.flightBoard = new FlightBoard(level, flightBoard.getRoute(), players.size());
+        GameConfig gameCfg = configManager.getConfigForLevel(level);
+        FlightBoardConfig fbCfg = gameCfg.flightBoardConfig();
+        RewardSystemConfig rsCfg = fbCfg.rewardSystem();
+
+        // Convert RewardSystemConfig to RewardSystem
+        Map<PlayerOrder, Integer> positionBonusMap = rsCfg.positionBonus().entrySet().stream()
+                .collect(Collectors.toMap(e -> PlayerOrder.valueOf(e.getKey().toUpperCase()), Map.Entry::getValue));
+        Map<GoodType, Integer> resourceBonusMap = rsCfg.resourceBonus().entrySet().stream()
+                .collect(Collectors.toMap(e -> GoodType.valueOf(e.getKey().toUpperCase()), Map.Entry::getValue));
+
+        RewardSystem rewardSystem = new RewardSystem(level, positionBonusMap, resourceBonusMap,
+                rsCfg.bestLookingShipBonus(), rsCfg.exposedConnectorsPenalty());
+
+        Route route = new Route(level, Integer.parseInt(fbCfg.length()), new ArrayList<>(fbCfg.startingPositions()), rewardSystem);
+        this.flightBoard = new FlightBoard(level, route, players.size());
         this.adventureDeck = configManager.createAdventureDeck(level);
         this.componentDeck = configManager.createComponentDeck(level);
         

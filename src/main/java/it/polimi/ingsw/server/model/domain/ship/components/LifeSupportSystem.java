@@ -11,8 +11,8 @@ public class LifeSupportSystem extends Component {
     private AlienColor supportedAlienColor;
 
 
-    public LifeSupportSystem(ComponentType type, Map<Direction, ConnectorType> connectors) {
-        super(type, connectors);
+    public LifeSupportSystem(ComponentType type, Map<Direction, ConnectorType> connectors, String id) {
+        super(type, connectors, id);
     }
 
 

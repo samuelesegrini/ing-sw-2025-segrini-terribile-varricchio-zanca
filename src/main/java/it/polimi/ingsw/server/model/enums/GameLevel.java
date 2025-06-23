@@ -2,63 +2,74 @@ package it.polimi.ingsw.server.model.enums;
 
 import it.polimi.ingsw.server.model.enums.adventure.CardLevel;
 import java.util.Map;
+import java.util.List;
+import java.util.HashMap;
 
 public enum GameLevel {
-    // sistemare valori
-    TEST_FLIGHT(0, 0, 8, null),
-
-    // sistema valori
-    LEVEL_II(0, 3, 0, null);
+    TEST_FLIGHT(0, 0, 8, CardLevel.TEST_FLIGHT,
+            Map.of(CardLevel.TEST_FLIGHT, 8) // All 8 cards are TEST_FLIGHT
+    ),
+    LEVEL_II(0, // duration - placeholder
+            3, // predictablePileCount (3 bottom piles)
+            3, // cardsPerPile (e.g., 2xL2, 1xL1 per predictable pile)
+            CardLevel.LEVEL_II, // primaryCardLevel for the game
+            Map.of( // Example distribution for ONE predictable pile for LEVEL_II (or III)
+                    CardLevel.LEVEL_II, 2,
+                    CardLevel.LEVEL_I, 1
+                    // TEST_FLIGHT cards can be considered part of LEVEL_I for this purpose
+            )
+    );
 
     private final int duration;
-    private final int predictablePileCount;
-    private final int cardPerPile;
-    private final CardLevel primaryCardLevel;
+    private final int predictablePileCount; // Number of piles that can be previewed
+    private final int cardsPerPile;
+    private final CardLevel primaryCardLevel; // Overall level of the game/flight
+    private final Map<CardLevel, Integer> cardsPerPredictablePileComposition; // Composition of ONE predictable pile
 
-    private GameLevel(int duration, int predictablePileCount, int cardPerPile, CardLevel primaryCardLevel) {
+    GameLevel(int duration, int predictablePileCount, int cardsPerPile, CardLevel primaryCardLevel,
+              Map<CardLevel, Integer> cardsPerPredictablePileComposition) {
         this.duration = duration;
         this.predictablePileCount = predictablePileCount;
-        this.cardPerPile = cardPerPile;
+        this.cardsPerPile = cardsPerPile;
         this.primaryCardLevel = primaryCardLevel;
+        this.cardsPerPredictablePileComposition = cardsPerPredictablePileComposition;
+    }
+
+    public int getDuration() { return duration; }
+    public int getPredictablePileCount() { return predictablePileCount; }
+
+    public int getCardsPerPile() { return cardsPerPile; }
+    public CardLevel getPrimaryCardLevel() { return primaryCardLevel; }
+
+    /**
+     * Gets the composition for ONE predictable pile.
+     * The "unknown" top pile might need separate logic or be what's left over.
+     */
+    public Map<CardLevel, Integer> getCardsPerPredictablePileComposition() {
+        return cardsPerPredictablePileComposition;
     }
 
     /**
-     * Gets the duration of the game level (hourglass).
-     * @return The duration of the game level (hourglass).
+     * Returns the total number of cards of each CardLevel needed for all predictable piles.
      */
-    public int getDuration() {
-        return duration;
+    public Map<CardLevel, Integer> getTotalCardsForPredictablePiles() {
+        Map<CardLevel, Integer> total = new HashMap<>();
+        if (predictablePileCount == 0) return total;
+
+        cardsPerPredictablePileComposition.forEach((level, count) -> {
+            total.put(level, total.getOrDefault(level, 0) + count * predictablePileCount);
+        });
+        return total;
     }
 
     /**
-     * Gets the total number of predictable piles.
-     * @return The total number of predictable piles
+     * Returns the total number of cards for the "unknown" top pile.
+     * This is a placeholder - the actual number needs to be defined by game rules.
+     * For Level II/III, if there are 4 piles total and 3 are predictable, this is for the 4th pile.
+     * Assuming the unknown pile has the same composition as predictable ones for now.
      */
-    public int getPredictablePileCount() {
-        return predictablePileCount;
-    }
-
-    /**
-     * Get the number of cards per pile.
-     * @return The number of cards per pile
-     */
-    public int getCardPerPile() {
-        return cardPerPile;
-    }
-
-    /**
-     * Gets the level of the primary card.
-     * @return The level of the primary card
-     */
-    public CardLevel getPrimaryCardLevel() {
-        return primaryCardLevel;
-    }
-
-    /**
-     * Returns the card distribution of the piles (how many cards for each game level).
-     * @return A map that associates to each card level the corresponding number of cards per pile
-     */
-    public Map<CardLevel, Integer> getCardDistributionForPile() {
-        return null;
+    public Map<CardLevel, Integer> getCardsForUnknownPileComposition() {
+        if (this == TEST_FLIGHT) return Map.of(); // No separate unknown pile in Test Flight
+        return cardsPerPredictablePileComposition;
     }
 }

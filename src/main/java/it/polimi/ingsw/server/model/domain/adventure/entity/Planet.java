@@ -9,8 +9,6 @@ import java.util.Map;
  * The planet tracks whether it has been visited and allows querying the quantities of specific goods.
  */
 public class Planet {
-
-    //which good types are on the planet and in what quantity
     private int number;
     private Map<GoodType, Integer> goodQuantities;
     private boolean visited;
@@ -72,4 +70,7 @@ public class Planet {
         visited = true;
     }
 
+    public int getNumber() {
+        return number;
+    }
 }

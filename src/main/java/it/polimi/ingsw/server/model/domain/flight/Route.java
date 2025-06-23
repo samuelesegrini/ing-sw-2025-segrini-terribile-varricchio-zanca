@@ -41,5 +41,9 @@ public class Route {
         availableStartingPositions.remove(startingPosition);
         return startingPosition;
     }
+
+    public RewardSystem getRewardSystem() {
+        return rewardSystem;
+    }
 }
 

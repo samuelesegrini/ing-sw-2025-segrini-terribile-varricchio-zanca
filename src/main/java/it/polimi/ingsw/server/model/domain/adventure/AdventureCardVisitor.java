@@ -70,7 +70,7 @@ public class AdventureCardVisitor {
         List<Player> playersOrdered = flightBoard.getCurrentOrder();
 
         if(flightBoard.getPlayerCount()==1){
-            flightBoard.getDeck().drawNextCard();
+            state.getAdventureDeck().drawNextCard();
             System.out.println("Skipping " +card.getType()+" card");
             return false;
         }
@@ -216,7 +216,7 @@ public class AdventureCardVisitor {
                 if((!planet.isVisited()) && (player.getShip().addResources(planet.getGoodQuantities()))){
                     flightBoard.movePlayer(player, card.getLostDays(), false);
                     planet.setVisited();
-                    System.out.println(player.getId().getNickname() + " è atterrato su " + planet.getName());
+                    System.out.println(player.getId().getNickname() + " è atterrato su " + planet.getNumber());
                     break;  // passa al giocatore successivo
                 }
             }
@@ -354,7 +354,7 @@ public class AdventureCardVisitor {
         List<Player> playersOrdered = flightBoard.getCurrentOrder();
 
         if(flightBoard.getPlayerCount()==1){
-            flightBoard.getDeck().drawNextCard();
+            state.getAdventureDeck().drawNextCard();
             System.out.println("Skipping " +card.getType()+" card");
             return false;
         }
