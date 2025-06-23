@@ -1,0 +1,76 @@
+.login-screen-root {
+    -fx-border-width: 5px;
+    -fx-neon-orange: #FF8C00; /* A vibrant orange (DarkOrange) */
+    -fx-neon-orange-hover: #FFA500; /* A slightly brighter orange for hover */
+    -fx-neon-orange-pressed: #FF6347; /* A slightly different shade for pressed (Tomato-ish orange) */
+}
+
+.login-content-container { /* VBox */
+    -fx-pref-width: 700px;
+    -fx-max-width: 700px;
+    -fx-pref-height: 600px; /* Adjusted from 550 for consistency with popup */
+    -fx-max-height: 600px;
+    -fx-padding: 25px 30px 20px 30px; /* Consistent padding */
+    -fx-spacing: 15px; /* Consistent spacing */
+    -fx-alignment: center;
+}
+
+.login-logo-imageview { /* ImageView for the logo */
+    /* fitWidth and preserveRatio set in Java */
+}
+.login-logo-placeholder { /* Label used as placeholder if image fails */
+    /* Font and text fill set in Java */
+}
+
+.login-form-grid { /* GridPane for form elements */
+    -fx-alignment: center;
+    -fx-hgap: 15px;
+    -fx-vgap: 15px;
+}
+
+.login-form-label { /* Labels like "Server IP:", "Nickname:" */
+    -fx-text-fill: #C8C8D8;
+    -fx-font-size: 16pt; /* From Java */
+}
+
+.login-connect-button {
+    /* Inherits base button font, padding etc. from .button in common.css */
+    /* Existing styles like -fx-font-size: 18pt; -fx-max-width: 300px; */
+
+    -fx-background-color: #2D2D3A; /* Dark, slightly desaturated background for the button itself */
+    /* This helps the neon border stand out. */
+    -fx-text-fill: white;
+    -fx-background-radius: 6px; /* Slightly less rounded for a techy feel */
+    -fx-border-radius: 6px;
+
+    /* --- NEON BORDER --- */
+    -fx-border-width: 2px; /* Thickness of the neon border line */
+    -fx-border-color: -fx-neon-orange; /* The main neon orange color */
+
+    /* --- SUBTLE GLOW AROUND THE BORDER --- */
+    /* This effect makes the border itself appear to glow. */
+    /* It's a shadow of the *same color* as the border, with a small radius and spread. */
+    -fx-effect: dropshadow(gaussian, -fx-neon-orange, 5, 0.5, 0, 0);
+    /* Parameters: type, color, radius, spread, offsetX, offsetY
+       - Color: Same as border for the glow.
+       - Radius (5): How much the glow blurs out from the border.
+       - Spread (0.5): Makes the glow more intense/solid near the border.
+    */
+
+    /* Smooth transition for all animatable properties */
+    -fx-transition: -fx-border-color 0.2s ease-out, -fx-effect 0.2s ease-out, -fx-background-color 0.2s ease-out;
+}
+
+.login-connect-button:hover {
+    -fx-background-color: #3C3C4A; /* Slightly lighter background on hover */
+    -fx-border-color: -fx-neon-orange-hover; /* Brighter neon orange border on hover */
+
+    -fx-effect: dropshadow(gaussian, -fx-neon-orange-hover, 8, 0.6, 0, 0); /* More intense glow on hover */
+}
+
+.login-connect-button:pressed {
+    -fx-background-color: #1E1E28; /* Darker background when pressed */
+    -fx-border-color: -fx-neon-orange-pressed; /* Different shade for pressed border */
+    -fx-effect: dropshadow(gaussian, -fx-neon-orange-pressed, 4, 0.4, 0, 0); /* Slightly subdued glow */
+    /* The padding shift from .button:pressed in common.css will also apply */
+}

@@ -40,17 +40,20 @@ public class BuildingPhaseEndedEvent extends AbstractEvent {
     public void handleOnClient(ClientEventContext context) {
         context.runOnUIThread(() -> {
             // Update game state to end building phase
-            if (context.getGameState() != null) {
-                context.getGameState().setCurrentPhase(it.polimi.ingsw.server.model.enums.GamePhase.FLIGHT);
-            }
+            var localGameState = it.polimi.ingsw.client.core.state.LocalGameState.getInstance();
+            localGameState.setCurrentPhase(it.polimi.ingsw.server.model.enums.GamePhase.FLIGHT);
+            
+            // Update local validation results
+            String localPlayerId = localGameState.getLocalPlayerId();
+            ShipValidationResult localResult = validationResults.get(localPlayerId);
+            if (localResult != null) {
+                localGameState.setShipValidation(localResult.isValid(), localResult.getErrors());
             
             // Update client model
             context.getController().getModel().endBuildingPhase();
 
             // Show phase transition notification
             if (context.getNotificationService() != null) {
-                String localPlayerId = context.getLocalPlayerId();
-                ShipValidationResult localResult = validationResults.get(localPlayerId);
                 
                 String message = "Building phase complete! ";
                 if (localResult != null) {

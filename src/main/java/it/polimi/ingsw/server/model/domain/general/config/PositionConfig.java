@@ -1,3 +1,6 @@
 package it.polimi.ingsw.server.model.domain.general.config;
 
-public record PositionConfig(int x, int y) {}
+import java.io.Serializable;
+
+public record PositionConfig(int x, int y) implements Serializable {}
+

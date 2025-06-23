@@ -1,0 +1,272 @@
+/* /css/common.css */
+.root {
+    -fx-font-family: "Orgovan Rounded"; /* VERIFY THIS NAME */
+    -fx-base: #101020;
+    -fx-control-inner-background: derive(-fx-base, 30%);
+    -fx-control-inner-background-alt: derive(-fx-control-inner-background, -5%);
+    -fx-accent: #FFC107; /* Default Accent: Golden Yellow */
+    -fx-focus-color: -fx-accent;
+    -fx-faint-focus-color: derive(-fx-accent, 70%, 1, 0.5);
+}
+
+.label {
+    -fx-font-size: 14pt;
+    -fx-text-fill: #D0D0E0;
+}
+
+.label-title { /* Large titles like "GAME LOBBY", "CREATE NEW GAME" */
+    -fx-font-size: 28pt;
+    -fx-text-fill: #E0E0FF;
+}
+
+/* New alternative title style for better contrast on glass perhaps */
+.label-title-alt {
+    -fx-font-size: 26px; /* Adjust as needed */
+    /* Text fill color will be set by theme-specific or game-specific styles */
+}
+
+.label-subtitle { /* Section headers like "WAITING FOR PLAYERS" */
+    -fx-font-size: 22pt;
+    -fx-text-fill: #B0C4DE;
+}
+.label-header { /* Smaller headers like "Player: Name" */
+    -fx-font-size: 18pt;
+    -fx-text-fill: #D0D0E0;
+}
+
+.label-error {
+    -fx-text-fill: #FF6B6B;
+    -fx-font-size: 12pt;
+}
+
+/* --- BUTTONS --- */
+.button {
+    -fx-font-size: 15pt;
+    -fx-padding: 10px 20px;
+    -fx-background-radius: 8px;
+    -fx-border-radius: 8px;
+    -fx-border-width: 1.5px;
+    -fx-border-color: rgba(255,255,255,0.15); /* Default subtle border */
+    -fx-text-fill: white;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.25), 5, 0, 1, 2);
+    -fx-text-fill: white;
+    -fx-background-radius: 5px;
+    -fx-padding: 8px 15px;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.3), 5, 0, 1, 2);
+}
+.button:hover {
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.5), 8, 0, 2, 3);
+}
+
+.button-primary { /* Color defined in theme (e.g., Connect, Create Game action) */
+    /* Theme CSS will set -fx-background-color */
+}
+.button-standard { /* E.g. Refresh */
+    -fx-background-color: linear-gradient(to bottom, #1E88E5, #1565C0); /* Standard Blue */
+}
+.button-standard:hover {
+    -fx-background-color: linear-gradient(to bottom, #42A5F5, #1E88E5);
+}
+.button-danger { /* E.g. Logout, Cancel */
+    -fx-background-color: linear-gradient(to bottom, #E53935, #C62828); /* Standard Red */
+}
+.button-danger:hover {
+    -fx-background-color: linear-gradient(to bottom, #EF5350, #E53935);
+}
+.button-success { /* E.g. Create Game confirmation */
+    -fx-background-color: linear-gradient(to bottom, #43A047, #2E7D32); /* Standard Green */
+}
+.button-success:hover {
+    -fx-background-color: linear-gradient(to bottom, #66BB6A, #43A047);
+}
+
+.button-mini {
+    -fx-font-size: 13pt;
+    -fx-padding: 6px 14px;
+    -fx-background-radius: 6px;
+    -fx-border-radius: 6px;
+    -fx-text-fill: #E0E0E0;
+    /* Background color defined in theme via .button-mini-action (e.g. Join) */
+}
+
+/* --- TEXT FIELD --- */
+.text-field-styled {
+    -fx-font-size: 14pt;
+    -fx-background-color: rgba(255, 255, 255, 0.08);
+    -fx-text-fill: white;
+    -fx-prompt-text-fill: #A0A0A0;
+    -fx-background-radius: 6px;
+    -fx-border-color: rgba(255, 255, 255, 0.25);
+    -fx-border-radius: 6px;
+    -fx-border-width: 1px;
+    -fx-padding: 7px 10px;
+}
+.text-field-styled:focused {
+    -fx-border-color: -fx-accent;
+    -fx-background-color: rgba(255, 255, 255, 0.12);
+    -fx-effect: dropshadow(gaussian, -fx-faint-focus-color, 5, 0, 0, 0);
+}
+
+/* --- CHOICE BOX --- */
+.choice-box-styled {
+    -fx-font-size: 14pt;
+    -fx-background-color: rgba(255, 255, 255, 0.08);
+    -fx-mark-color: -fx-accent;
+    -fx-background-radius: 6px;
+    -fx-border-color: rgba(255, 255, 255, 0.25);
+    -fx-border-radius: 6px;
+    -fx-padding: 5px 8px 5px 8px;
+}
+.choice-box-styled > .label {
+    -fx-text-fill: white;
+    -fx-padding: 0 0 0 5px;
+    -fx-font-size: 14pt;
+}
+.choice-box-styled .context-menu {
+    -fx-background-color: #1C1C2E;
+    -fx-background-insets: 0;
+    -fx-background-radius: 8px;
+    -fx-padding: 5px;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.35), 10, 0, 2, 4);
+}
+.choice-box-styled .menu-item {
+    -fx-background-color: transparent;
+    -fx-padding: 8px 12px;
+    -fx-background-radius: 6px;
+}
+.choice-box-styled .menu-item .label {
+    -fx-text-fill: #C8C8E0;
+    -fx-font-size: 13pt;
+}
+.choice-box-styled .menu-item:hover,
+.choice-box-styled .menu-item:focused {
+    -fx-background-color: rgba(255, 255, 255, 0.08);
+}
+.choice-box-styled .menu-item:focused .label,
+.choice-box-styled .menu-item:hover .label {
+    -fx-text-fill: white;
+}
+
+/* --- RADIO BUTTON --- */
+.radio-button-styled > .label { /* Targets the text label part of the RadioButton */
+    -fx-font-family: "Orgovan Rounded"; /* Ensure this inherits from .root or is explicitly set */
+    -fx-font-size: 30pt;
+    -fx-text-fill: #D0D0E0;
+    -fx-padding: 0 0 0 20px; /* Slightly more space between radio circle and text */
+}
+
+.radio-button-styled > .radio { /* The circular part */
+    -fx-background-color:
+            -fx-shadow-highlight-color, /* Innermost highlight (often whiteish) */
+            linear-gradient(to bottom, derive(-fx-control-inner-background, -5%), derive(-fx-control-inner-background, -12%)), /* Main gradient for depth */
+            linear-gradient(to bottom, derive(-fx-control-inner-background, -12%), derive(-fx-control-inner-background, -20%)); /* Outer subtle gradient */
+    -fx-background-insets: 0, 1, 2; /* Layering for the gradients/highlights */
+    -fx-background-radius: 100px; /* Makes it a circle */
+    -fx-padding: 6px; /* Size of the radio circle graphic itself */
+    -fx-border-color: derive(-fx-control-inner-background, -30%); /* Subtle border around the circle */
+    -fx-border-width: 1px;
+    -fx-border-radius: 100px;
+}
+
+.radio-button-styled:hover > .radio {
+    -fx-background-color:
+            -fx-shadow-highlight-color,
+            linear-gradient(to bottom, derive(-fx-control-inner-background, 0%), derive(-fx-control-inner-background, -7%)),
+            linear-gradient(to bottom, derive(-fx-control-inner-background, -7%), derive(-fx-control-inner-background, -15%));
+    -fx-border-color: derive(-fx-control-inner-background, -40%);
+}
+
+.radio-button-styled:selected > .radio > .dot { /* The dot inside when selected */
+    -fx-background-color: -fx-accent; /* Use the theme's accent color */
+    -fx-background-insets: 0; /* Fill the dot area */
+    -fx-shape: "M 7,0 A 7,7 0 1 1 -7,0 A 7,7 0 1 1 7,0 Z"; /* Makes a nice round dot, size 5 radius */
+}
+
+.radio-button-styled:focused > .radio { /* Optional: focus ring */
+    -fx-border-color: -fx-focus-color, derive(-fx-control-inner-background, -30%);
+    -fx-border-width: 1, 1;
+    -fx-border-style: solid, solid;
+    -fx-border-insets: -1, 0; /* Outer focus ring */
+    -fx-border-radius: 101px, 100px; /* Slightly larger for focus ring */
+}
+
+/* --- PROGRESS INDICATOR --- */
+.progress-indicator-styled {
+    -fx-progress-color: -fx-accent; /* Simpler way to color both types */
+}
+
+/* --- PANEL STYLES --- */
+.panel-dark-glass {
+    -fx-background-color: rgba(20, 20, 40, 0.7); /* More opaque for lobby */
+    -fx-background-radius: 25px;
+    -fx-border-color: rgba(100, 100, 150, 0.5);
+    -fx-border-radius: 25px;
+    -fx-border-width: 3px;
+}
+
+.panel-medium-glass {
+    -fx-background-color: rgba(20, 20, 40, 0.8); /* More opaque for lobby */
+    -fx-background-radius: 15px;
+    -fx-border-color: rgba(100, 100, 150, 0.5);
+    -fx-border-radius: 15px;
+    -fx-border-width: 1.5px;
+}
+.panel-light-accent-box {
+    -fx-background-color: rgba(45, 45, 75, 0.8); /* Slightly adjusted for lobby game entries */
+    -fx-background-radius: 10px;
+    -fx-border-color: rgba(120, 120, 180, 0.65);
+    -fx-border-radius: 10px;
+    -fx-border-width: 1px;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 5, 0, 1, 1);
+}
+.placeholder-box { /* Generic for old createColorPane content */
+    -fx-border-color: #FFFFFF28;
+    -fx-border-width: 1.5;
+    -fx-background-radius: 10;
+    -fx-border-radius: 10;
+}
+.placeholder-box .label {
+    -fx-font-size: 11pt;
+    -fx-text-fill: rgba(200,200,200,0.9);
+    -fx-padding: 5px;
+    -fx-alignment: center;
+    -fx-text-alignment: center;
+}
+
+/* --- SCROLL PANE --- */
+.scroll-pane-styled {
+    -fx-background-color: transparent;
+    -fx-background: transparent;
+}
+.scroll-pane-styled > .viewport { -fx-background-color: transparent; }
+.scroll-pane-styled > .content { -fx-background-color: transparent; }
+
+.scroll-pane-styled > .scroll-bar:vertical {
+    -fx-background-color: transparent;
+    -fx-background-radius: 5px;
+    -fx-padding: 2px;
+    -fx-pref-width: 12px;
+}
+.scroll-pane-styled > .scroll-bar:vertical > .track-background {
+    -fx-background-color: rgba(20, 20, 40, 0.5);
+    -fx-background-radius: 5px;
+    -fx-border-color: rgba(100, 100, 150, 0.3);
+    -fx-border-radius: 5px;
+}
+.scroll-pane-styled > .scroll-bar:vertical > .thumb {
+    -fx-background-color: linear-gradient(to bottom, -fx-accent, derive(-fx-accent, -20%));
+    -fx-background-radius: 5px;
+    -fx-background-insets: 0;
+}
+.scroll-pane-styled > .scroll-bar:vertical > .thumb:hover {
+    -fx-background-color: linear-gradient(to bottom, derive(-fx-accent, 20%), -fx-accent);
+}
+.scroll-pane-styled > .scroll-bar:vertical > .increment-button,
+.scroll-pane-styled > .scroll-bar:vertical > .decrement-button {
+    -fx-background-color: transparent; -fx-background-radius: 0; -fx-padding: 0;
+    -fx-pref-height: 0; -fx-min-height: 0; -fx-max-height: 0;
+}
+.scroll-pane-styled > .scroll-bar:vertical > .increment-arrow,
+.scroll-pane-styled > .scroll-bar:vertical > .decrement-arrow {
+    -fx-shape: " "; -fx-padding: 0;
+}

@@ -1,148 +1,189 @@
 package it.polimi.ingsw.server.core;
 
-import it.polimi.ingsw.common.dto.GameLobbyInfoDTO;
-import it.polimi.ingsw.common.dto.GameSettingsDTO;
-import it.polimi.ingsw.common.event.EventBus;
-import it.polimi.ingsw.common.model.GameSessionState;
+import it.polimi.ingsw.common.GameInfo;
+import it.polimi.ingsw.server.model.domain.general.config.GameConfigurationManager;
+import it.polimi.ingsw.server.model.enums.GameLevel;
 import it.polimi.ingsw.server.network.ServerNetworkManager;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
+/**
+ *  Game session manager that handles multiple games.
+ */
 public class GameSessionManager {
     private static final Logger LOGGER = Logger.getLogger(GameSessionManager.class.getName());
 
-    private final EventBus serverEventBus;
+    private final Map<String, GameSession> gameSessions;
+    private final Map<String, String> playerToGameMap;
+    private final GameConfigurationManager configManager;
     private final ServerNetworkManager networkManager;
-    private final Map<String, GameSession> activeSessions = new ConcurrentHashMap<>();
-    private final PlayerSessionRegistry playerSessionRegistry;
+    private final PlayerSessionRegistry playerRegistry;
+    private final ExecutorService gameExecutor;
 
-    public GameSessionManager(EventBus serverEventBus, ServerNetworkManager networkManager, PlayerSessionRegistry playerSessionRegistry) { // << NEW PARAM
-        this.serverEventBus = Objects.requireNonNull(serverEventBus);
-        this.networkManager = Objects.requireNonNull(networkManager);
-        this.playerSessionRegistry = Objects.requireNonNull(playerSessionRegistry);
-        LOGGER.info("GameSessionManager initialized.");
+    public GameSessionManager(ServerNetworkManager networkManager,
+                              PlayerSessionRegistry playerRegistry) {
+        this.gameSessions = new ConcurrentHashMap<>();
+        this.playerToGameMap = new ConcurrentHashMap<>();
+        this.networkManager = networkManager;
+        this.playerRegistry = playerRegistry;
+        this.configManager = new GameConfigurationManager();
+        this.gameExecutor = Executors.newCachedThreadPool(r -> {
+            Thread t = new Thread(r);
+            t.setName("game-executor-" + t.getId());
+            return t;
+        });
+
+        // Load game configurations
+        try {
+            configManager.loadAllConfigurations(
+                    "/it/polimi/ingsw/json/components.json",
+                    "/it/polimi/ingsw/json/adventure_cards.json",
+                    "/it/polimi/ingsw/json/game_configurations.json"
+            );
+            System.out.println("Available game levels: " + configManager.getAllGameConfigs().keySet());
+        } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Failed to load game configurations", e);
+            throw new RuntimeException("Failed to initialize game configurations", e);
+        }
     }
 
     /**
-     * Creates a new game session and adds the creator to it.
-     * @param creatorNetworkClientId The network client ID of the player creating the game.
-     * @param creatorGamePlayerId The game-specific player ID of the creator.
-     * @param creatorNickname The nickname of the creator.
-     * @param settings The desired settings for the new game.
-     * @return The newly created GameSession, or null if creation failed.
+     * Creates a new game session.
      */
-    public GameSession createNewGameSession(String creatorNetworkClientId, String creatorGamePlayerId, String creatorNickname, GameSettingsDTO settings) {
-        Objects.requireNonNull(creatorNetworkClientId);
-        Objects.requireNonNull(creatorGamePlayerId);
-        Objects.requireNonNull(creatorNickname);
-        Objects.requireNonNull(settings);
-
-        String newSessionId = "session-" + UUID.randomUUID().toString();
-        GameSession newSession = new GameSession(newSessionId, settings, creatorGamePlayerId, creatorNickname, serverEventBus /*, persistenceService*/);
-
-        activeSessions.put(newSession.getSessionId(), newSession);
-        LOGGER.info("Created new game session: " + newSession.getSessionId() + " named '" + newSession.getGameName() + "' by " + creatorNickname);
-
-        boolean added = newSession.addPlayer(creatorNetworkClientId, creatorGamePlayerId, creatorNickname);
-        if (!added) {
-            LOGGER.severe("FATAL: Could not add creator " + creatorNickname + " to their own session " + newSession.getSessionId() + ". Removing session.");
-            activeSessions.remove(newSession.getSessionId());
+    public String createGame(String creatorId, int maxPlayers, GameLevel gameLevel, String gameName) {
+        // Check if player is already in a game
+        if (playerToGameMap.containsKey(creatorId)) {
+            LOGGER.warning("Player " + creatorId + " already in a game");
             return null;
         }
-        return newSession;
-    }
 
-    public GameSession getSession(String sessionId) {
-        return activeSessions.get(sessionId);
-    }
+        String gameId = UUID.randomUUID().toString();
+        GameSession session = new GameSession(gameId, gameName, creatorId,
+                maxPlayers, gameLevel, configManager, playerRegistry);
 
-    public List<GameLobbyInfoDTO> getJoinableGames() {
-        LOGGER.info("GSM.getJoinableGames() - Checking activeSessions. Count: " + activeSessions.size());
-        activeSessions.forEach((id, session) -> {
-            LOGGER.info("  Session ID: " + id +
-                    ", Name: " + session.getGameName() +
-                    ", State: " + session.getCurrentState() +
-                    ", Players: " + session.getTotalRegisteredPlayerCount() + "/" + session.getMaxPlayers() +
-                    ", AllReady (if lobby): " + (session.getCurrentState() == GameSessionState.LOBBY ? session.checkAllActivePlayersReady() : "N/A"));
-        });
-        return activeSessions.values().stream()
-                .filter(session -> session.getCurrentState() == GameSessionState.LOBBY &&
-                        session.getTotalRegisteredPlayerCount() < session.getMaxPlayers())
-                .map(GameSession::getLobbyInfo)
-                .collect(Collectors.toList());
-    }
+        gameSessions.put(gameId, session);
+        playerToGameMap.put(creatorId, gameId);
 
-    public List<GameLobbyInfoDTO> getRunningGames() {
-        return activeSessions.values().stream()
-                .filter(session -> session.getCurrentState() != GameSessionState.LOBBY &&
-                        session.getCurrentState() != GameSessionState.FINISHED &&
-                        session.getCurrentState() != GameSessionState.ABORTED)
-                .map(GameSession::getLobbyInfo)
-                .collect(Collectors.toList());
+        LOGGER.info("Created game " + gameId + " by player " + creatorId);
+        return gameId;
     }
-    public List<GameLobbyInfoDTO> getAllGames() {
-        return activeSessions.values().stream()
-                .map(GameSession::getLobbyInfo)
-                .collect(Collectors.toList());
-    }
-
 
     /**
-     * Adds a player to a specific game session if it's in LOBBY state and not full.
-     * @param sessionId The ID of the session to join.
-     * @param networkClientId The network client ID of the joining player.
-     * @param gamePlayerId The game-specific player ID.
-     * @param nickname The player's nickname.
-     * @return true if successfully added, false otherwise (session not found, full, or not in lobby).
+     * Joins a player to an existing game.
      */
-    public boolean addPlayerToSession(String sessionId, String networkClientId, String gamePlayerId, String nickname) {
-        GameSession session = getSession(sessionId);
-        if (session != null) {
-            boolean success = session.addPlayer(networkClientId, gamePlayerId, nickname);
-            return success;
+    public boolean joinGame(String gameId, String playerId) {
+        // Check if player is already in a game
+        if (playerToGameMap.containsKey(playerId)) {
+            LOGGER.warning("Player " + playerId + " already in a game");
+            return false;
         }
-        LOGGER.warning("Attempted to add player " + nickname + " to non-existent session: " + sessionId);
+
+        GameSession session = gameSessions.get(gameId);
+        if (session == null) {
+            LOGGER.warning("Game " + gameId + " not found");
+            return false;
+        }
+
+        if (session.addPlayer(playerId)) {
+            playerToGameMap.put(playerId, gameId);
+            return true;
+        }
+
         return false;
     }
 
-    public void removePlayerFromAllSessions(String networkClientId) {
-        LOGGER.info("GSM processing disconnect for NetID " + networkClientId);
-        String sessionId = this.playerSessionRegistry.getSessionIdForNetworkClient(networkClientId);
-        if (sessionId != null) {
-            GameSession session = activeSessions.get(sessionId);
-            if (session != null) {
-                session.removePlayerHard(networkClientId);
-            } else {
-                LOGGER.warning("PSR indicated NetID " + networkClientId + " was in session " + sessionId + ", but session not found in GSM activeSessions.");
-            }
-            this.playerSessionRegistry.removePlayerFromAnySessionByNetworkId(networkClientId);
-        } else {
-            LOGGER.info("NetID " + networkClientId + " not found in any session via PSR. No session-specific removal needed from GSM.");
+    /**
+     * Removes a player from their current game.
+     */
+    public boolean removePlayerFromGame(String gameId, String playerId) {
+        GameSession session = gameSessions.get(gameId);
+        if (session == null) {
+            return false;
         }
-        cleanupOldSessions();
+
+        if (session.removePlayer(playerId)) {
+            playerToGameMap.remove(playerId);
+
+            // Remove empty games
+            if (session.getPlayerCount() == 0) {
+                gameSessions.remove(gameId);
+                LOGGER.info("Removed empty game " + gameId);
+            }
+
+            return true;
+        }
+
+        return false;
     }
 
     /**
-     * Cleans up sessions that are finished or aborted and have no players remaining.
+     * Gets the game session for a specific game ID.
      */
-    private void cleanupOldSessions() {
-        int initialSize = activeSessions.size();
-        activeSessions.entrySet().removeIf(entry -> {
-            GameSession session = entry.getValue();
-            boolean shouldCleanup = (session.getCurrentState() == GameSessionState.FINISHED ||
-                    session.getCurrentState() == GameSessionState.ABORTED) &&
-                    session.getTotalRegisteredPlayerCount() == 0;
-            if (shouldCleanup) {
-                LOGGER.info("Cleaning up session " + session.getSessionId() + " which is " + session.getCurrentState() + " and has no registered players.");
+    public GameSession getGameSession(String gameId) {
+        return gameSessions.get(gameId);
+    }
+
+    /**
+     * Gets the game session that a player is in.
+     */
+    public GameSession getGameSessionForPlayer(String playerId) {
+        String gameId = playerToGameMap.get(playerId);
+        if (gameId != null) {
+            return gameSessions.get(gameId);
+        }
+        return null;
+    }
+    
+    /**
+     * Gets the game ID for a specific player.
+     */
+    public String getPlayerGameId(String playerId) {
+        return playerToGameMap.get(playerId);
+    }
+
+    /**
+     * Gets all available games that can be joined.
+     */
+    public List<GameInfo> getAvailableGames() {
+        List<GameInfo> availableGames = new ArrayList<>();
+
+        for (GameSession session : gameSessions.values()) {
+            if (session.canJoin()) {
+                availableGames.add(new GameInfo(
+                        session.getGameId(),
+                        session.getGameName(),
+                        session.getMaxPlayers(),
+                        session.getPlayerCount(),
+                        session.getGameLevel(),
+                        session.getPlayers()
+                ));
             }
-            return shouldCleanup;
-        });
-        int cleanedCount = initialSize - activeSessions.size();
-        if (cleanedCount > 0) {
-            LOGGER.info("Cleaned up " + cleanedCount + " old game sessions.");
+        }
+
+        return availableGames;
+    }
+
+    /**
+     * Shuts down the game session manager.
+     */
+    public void shutdown() {
+        gameExecutor.shutdown();
+        try {
+            if (!gameExecutor.awaitTermination(5, TimeUnit.SECONDS)) {
+                gameExecutor.shutdownNow();
+            }
+        } catch (InterruptedException e) {
+            gameExecutor.shutdownNow();
+            Thread.currentThread().interrupt();
         }
     }
 }

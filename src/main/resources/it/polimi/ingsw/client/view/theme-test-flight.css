@@ -1,0 +1,44 @@
+/* /css/theme-test-flight.css */
+.root {
+    -fx-accent: #34C1FF; /* Test flight accent: Light Blue */
+}
+
+.button-primary {
+    -fx-background-color: linear-gradient(to bottom, #00AFFF, #0077CC);
+}
+.button-primary:hover {
+    -fx-background-color: linear-gradient(to bottom, #33CFFF, #0088DD);
+}
+
+.button-mini-action { /* For "Join Game" type buttons in this theme */
+    -fx-background-color: linear-gradient(to bottom, #34C1FF, #00A0E0);
+    -fx-text-fill: white; /* Ensure contrast */
+}
+.button-mini-action:hover {
+    -fx-background-color: linear-gradient(to bottom, #60D4FF, #34C1FF);
+}
+
+.game-title-themed {
+    -fx-text-fill: #005080;
+}
+.active-player-pane-themed {
+    -fx-background-color: #002C3EBB;
+    -fx-border-color: #FFFFFF28;
+    -fx-border-width: 1px;
+    -fx-background-radius: 15px;
+    -fx-border-radius: 15px;
+}
+.other-player-pane-themed {
+    -fx-background-color: #305070CC;
+    -fx-border-color: #FFFFFF33;
+    -fx-border-width: 1px;
+    -fx-background-radius: 15px;
+    -fx-border-radius: 15px;
+}
+
+.ship-board-cell-background.test-flight { -fx-stroke: rgb(120, 150, 200, 0.5); }
+.ship-board-reservation-cell-background.test-flight { -fx-stroke: rgb(80, 100, 130, 0.7); }
+.ship-board-reservation-panel-backing.test-flight { -fx-stroke: rgb(130, 150, 180, 0.6); }
+.ship-cabin-label.test-flight { -fx-text-fill: LIGHTBLUE; }
+
+.level-label.test-flight { -fx-text-fill: #34C1FF; }

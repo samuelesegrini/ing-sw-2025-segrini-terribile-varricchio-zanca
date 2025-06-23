@@ -1,8 +1,10 @@
 package it.polimi.ingsw.common.message.request;
 
+import it.polimi.ingsw.common.message.response.ErrorResponse;
+import it.polimi.ingsw.common.message.response.RequestFaceUpTileResponse;
 import it.polimi.ingsw.common.message.response.Response;
 import it.polimi.ingsw.common.message.validation.ValidationResult;
-import it.polimi.ingsw.common.event.ComponentReservedEvent;
+import it.polimi.ingsw.common.message.event.ComponentReservedEvent;
 
 /**
  * Request sent by a player to take a specific face-up tile from the communal pile.
@@ -30,19 +32,64 @@ public class RequestFaceUpTileRequest extends AbstractRequest {
     }
 
     @Override
-    public void execute(RequestContext context) {
-        // ... logic to check if the tile is available ...
-        if (tileAvailable) {
-            // Remove tile from available, add to held
-            // Send response to requester
-            context.sendResponse(new RequestFaceUpTileResponse(getCorrelationId(), tileId, tileType));
-            // Broadcast event to all clients
+    public Response execute(RequestContext context) {
+        ValidationResult validation = validate();
+        if (!validation.isValid()) {
+            return createErrorResponse(validation.getErrorMessage(), ErrorResponse.VALIDATION_ERROR);
+        }
+
+        // Get game session
+        String gameId = context.getGameId();
+        String playerId = context.getPlayerId();
+        String playerNickname = context.getPlayerNickname();
+        
+        // Check if the tile is available in face-up pile
+        try {
+            // Get the component from available face-up tiles
+            // This would be implemented by the GameSession
+            var gameSession = context.getGameSession();
+            if (gameSession == null) {
+                return createErrorResponse("Not in a game", ErrorResponse.INVALID_STATE);
+            }
+            
+            // Check if building phase is active
+            if (gameSession.getGameModel().getCurrentPhase() != it.polimi.ingsw.server.model.enums.GamePhase.BUILDING) {
+                return createErrorResponse("Not in building phase", ErrorResponse.INVALID_STATE);
+            }
+            
+            // Check if tile is available in face-up pile
+            var component = gameSession.getFaceUpComponent(tileId);
+            if (component == null) {
+                return createErrorResponse("Tile not available in face-up pile", "TILE_NOT_AVAILABLE");
+            }
+            
+            // Check if player can hold more tiles (max 2 reserved)
+            var player = gameSession.getPlayer(playerId);
+            if (player == null) {
+                return createErrorResponse("Player not found", ErrorResponse.INTERNAL_ERROR);
+            }
+            
+            if (gameSession.getPlayerHeldComponents(playerId).size() >= 2) {
+                return createErrorResponse("Cannot hold more than 2 components", "MAX_COMPONENTS_REACHED");
+            }
+            
+            // Reserve the component for the player
+            gameSession.reserveFaceUpComponent(tileId, playerId);
+            
+            // Broadcast reservation event to all clients (5 minute reservation)
             context.getEventPublisher().publishEvent(
-                new ComponentReservedEvent(gameId, tileId, tileType, context.getPlayerId(), playerNickname)
+                new ComponentReservedEvent(gameId, tileId, component.getType().toString(), 
+                    playerId, playerNickname, System.currentTimeMillis() + 300000)
             );
-        } else {
-            // Send error response
-            context.sendResponse(new ErrorResponse(getCorrelationId(), "Tile not available"));
+            
+            // Return response with tile details
+            return new RequestFaceUpTileResponse(getCorrelationId(), 
+                new RequestFaceUpTileResponse.Tile(tileId, component.getType().toString(), 
+                    component.getConnectors().size(), 0));
+                    
+        } catch (Exception e) {
+            return createErrorResponse("Failed to reserve face-up tile: " + e.getMessage(), 
+                ErrorResponse.INTERNAL_ERROR);
         }
     }
 }

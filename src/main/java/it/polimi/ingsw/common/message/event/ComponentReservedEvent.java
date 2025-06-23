@@ -62,18 +62,31 @@ public class ComponentReservedEvent extends AbstractEvent {
                 } else {
                     message = String.format("%s reserved a %s tile", playerNickname, tileType);
                 }
-                context.getNotificationService().showInfo(
+                context.getNotificationService().showNotification(
+                    new it.polimi.ingsw.client.ui.Notification(
                         "Component Reserved",
-                        message
+                        message,
+                        it.polimi.ingsw.client.ui.NotificationType.INFO
+                    )
                 );
             }
 
-            // Update building UI to show reservation
-            // if (context.getGameUI() != null) {
-            //     // Note: This would need to be implemented based on the actual UI interface
-            //     // context.getGameUI().showComponentReservation(tileId, playerId, reservationExpiresAt);
-            //     // context.getGameUI().updateTileAvailability();
-            // }
+            // Fire property change events for UI updates
+            if (context.getController() != null && context.getController().getModel() != null) {
+                context.getController().getModel().firePropertyChange("componentReserved", null, 
+                    java.util.Map.of(
+                        "tileId", tileId,
+                        "tileType", tileType,
+                        "playerId", playerId,
+                        "expiresAt", reservationExpiresAt
+                    )
+                );
+                
+                if (context.isLocalPlayer(playerId)) {
+                    context.getController().getModel().firePropertyChange("heldTilesUpdated", null, 
+                        it.polimi.ingsw.client.core.state.LocalGameState.getInstance().getHeldTiles());
+                }
+            }
         });
     }
 }

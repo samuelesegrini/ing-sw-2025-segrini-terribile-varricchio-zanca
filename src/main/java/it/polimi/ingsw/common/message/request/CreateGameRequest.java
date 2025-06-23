@@ -79,6 +79,6 @@ public class CreateGameRequest extends AbstractRequest {
         );
         context.publishEvent(event);
 
-        return new CreateGameResponse(getCorrelationId(), gameId, gameName);
+        return new CreateGameResponse(getCorrelationId(), gameId, gameName, maxPlayers, gameLevel);
     }
 }

@@ -62,6 +62,44 @@ public class ShipBuildingStateSyncEvent extends AbstractEvent {
 
     @Override
     public void handleOnClient(ClientEventContext context) {
-        // Implementation to be added on the client side
+        // Get local game state instance
+        var localState = it.polimi.ingsw.client.core.state.LocalGameState.getInstance();
+        
+        // Sync ship grid
+        localState.resetShipBuildingState();
+        for (Map.Entry<Position, ComponentType> entry : shipGrid.entrySet()) {
+            localState.placeTile(entry.getValue(), entry.getKey(), 0);
+        }
+        
+        // Sync available tiles
+        for (ComponentType tileType : availableTiles) {
+            localState.addAvailableTile(tileType);
+        }
+        
+        // Sync held tiles
+        for (ComponentType tileType : heldTiles) {
+            localState.addHeldTile(tileType);
+        }
+        
+        // Sync timer state
+        localState.updateBuildingTimer(buildingTimeRemaining);
+        localState.setBuildingTimerFlipped(timerFlipped);
+        
+        // Update UI if available
+        if (context.getNotificationService() != null) {
+            context.getNotificationService().showNotification(
+                new it.polimi.ingsw.client.ui.Notification(
+                    "State Sync",
+                    "Building state synchronized",
+                    it.polimi.ingsw.client.ui.NotificationType.INFO
+                )
+            );
+        }
+        
+        // Log for debugging
+        System.out.println("Synchronized building state: " + 
+            shipGrid.size() + " components, " + 
+            availableTiles.size() + " available tiles, " + 
+            heldTiles.size() + " held tiles");
     }
 } 

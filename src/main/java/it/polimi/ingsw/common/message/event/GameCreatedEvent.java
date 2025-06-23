@@ -48,10 +48,14 @@ public class GameCreatedEvent extends AbstractEvent {
 
         LOGGER.log(Level.SEVERE, "GameCreatedEvent received on client. Creator ID: " + creatorId + ". Is this the local player? " + context.isLocalPlayer(creatorId));
 
-        // If this client is the creator, automatically join the game.
+        // If this client is the creator, transition to game lobby
         if (context.isLocalPlayer(creatorId)) {
-            LOGGER.log(Level.SEVERE, "This is the creator's client. Attempting to auto-join game " + gameId);
-            context.getController().joinGame(gameId);
+            LOGGER.log(Level.SEVERE, "This is the creator's client. Transitioning to game lobby " + gameId);
+            
+            // Set current game with creator in player list
+            context.getController().getModel().setCurrentGame(gameInfo);
+            context.getController().getModel().setCurrentView(it.polimi.ingsw.client.ClientModel.ViewState.GAME_LOBBY);
+
         } else {
             // Otherwise, just show a notification to other players.
             context.runOnUIThread(() -> {

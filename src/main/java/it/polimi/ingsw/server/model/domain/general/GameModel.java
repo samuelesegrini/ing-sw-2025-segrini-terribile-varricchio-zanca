@@ -259,7 +259,7 @@ public class GameModel {
     private Player determineWinner() {
         // Example implementation
         Player winner = players.get(0);
-        //TODO: Impèlement the end logic
+        //TODO: Implement the end logic
         return winner;
     }
 

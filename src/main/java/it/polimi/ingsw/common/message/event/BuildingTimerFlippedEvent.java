@@ -1,5 +1,6 @@
 package it.polimi.ingsw.common.message.event;
 
+import java.util.Map;
 
 /**
  * Event broadcast when a player flips the building timer during ship construction.
@@ -40,10 +41,10 @@ public class BuildingTimerFlippedEvent extends AbstractEvent {
     public void handleOnClient(ClientEventContext context) {
         context.runOnUIThread(() -> {
             // Update game state with new timer information
-            if (context.getGameState() != null) {
-                // context.getGameState().setBuildingTimeRemaining(newTimeRemaining);
-                // context.getGameState().setBuildingTimerFlipCount(flipCount);
-            }
+            var gameState = LocalGameState.getInstance();
+            gameState.updateBuildingTimer(newTimeRemaining);
+            gameState.setBuildingTimerFlipped(true);
+
 
             // Show notification
             if (context.getNotificationService() != null) {
@@ -59,26 +60,30 @@ public class BuildingTimerFlippedEvent extends AbstractEvent {
                 }
                 
                 // Add warning if timer has been flipped multiple times
+                NotificationType notificationType = 
+                    flipCount > 2 ? NotificationType.WARNING 
+                                  : NotificationType.INFO;
+                
                 if (flipCount > 2) {
                     message += " (Timer flipped " + flipCount + " times)";
-                    context.getNotificationService().showWarning(
-                            "Timer Flipped",
-                            message
-                    );
-                } else {
-                    context.getNotificationService().showInfo(
-                            "Timer Flipped",
-                            message
-                    );
                 }
+                
+                context.getNotificationService().showNotification(
+                    new it.polimi.ingsw.client.ui.Notification(
+                        "Timer Flipped",
+                        message,
+                        notificationType
+                    )
+                );
             }
 
-            // Update building UI timer display
-            // if (context.getGameUI() != null) {
-            //     // Note: This would need to be implemented based on the actual UI interface
-            //     // context.getGameUI().updateBuildingTimer(newTimeRemaining, flipCount);
-            //     // context.getGameUI().showTimerFlipAnimation(playerId);
-            // }
+            // Fire property change events for UI updates
+            if (context.getController() != null && context.getController().getModel() != null) {
+                context.getController().getModel().firePropertyChange("buildingTimerUpdated", 
+                    null, newTimeRemaining);
+                context.getController().getModel().firePropertyChange("buildingTimerFlipped", 
+                    null, Map.of("playerId", playerId, "flipCount", flipCount));
+            }
         });
     }
 }

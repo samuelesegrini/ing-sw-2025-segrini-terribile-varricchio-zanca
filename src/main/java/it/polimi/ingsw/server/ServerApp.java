@@ -1,221 +1,363 @@
 package it.polimi.ingsw.server;
 
-import it.polimi.ingsw.common.event.EventBus;
-import it.polimi.ingsw.common.message.system.ClientLoginRequest;
+import it.polimi.ingsw.common.GameInfo;
+import it.polimi.ingsw.common.message.EventPublisher;
+import it.polimi.ingsw.common.message.event.Event;
+import it.polimi.ingsw.common.message.event.PlayerDisconnectedEvent;
+import it.polimi.ingsw.common.message.event.PlayerLeftGameEvent;
 import it.polimi.ingsw.server.controller.CommandDispatcher;
-import it.polimi.ingsw.server.controller.action.*;
-import it.polimi.ingsw.server.controller.notification.NotificationController;
 import it.polimi.ingsw.server.core.*;
+import it.polimi.ingsw.server.monitor.ConnectionMonitorService;
 import it.polimi.ingsw.server.network.RMIServerAdapter;
 import it.polimi.ingsw.server.network.ServerNetworkManager;
 import it.polimi.ingsw.server.network.SocketServerAdapter;
-import it.polimi.ingsw.common.message.system.PingMessage;
-import it.polimi.ingsw.common.message.system.PongMessage;
-import it.polimi.ingsw.common.message.setup.*;
-
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.rmi.RemoteException;
+import java.util.List;
 import java.util.Map;
-import java.util.concurrent.*;
-import java.util.logging.ConsoleHandler;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.logging.SimpleFormatter;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.*;
 
+/**
+
+ Main server application for Galaxy Trucker.
+ Manages all server components and handles the game lifecycle.
+ */
 public class ServerApp {
-    private static final Logger ROOT_LOGGER = Logger.getLogger("it.polimi.ingsw.server");
+    private static final Logger LOGGER = Logger.getLogger(ServerApp.class.getName());
     private static final int DEFAULT_SOCKET_PORT = 12345;
     private static final int DEFAULT_RMI_PORT = 1099;
-
-    private static final Map<String, String> networkClientToGamePlayerMap = new ConcurrentHashMap<>();
-    private static final Map<String, String> activePlayersByIdMap = new ConcurrentHashMap<>(); // gamePlayerId -> nickname
-
-    private static EventBus serverEventBus;
-    private static ExecutorService gameLogicExecutor;
-    private static ServerNetworkManager networkManager;
-    private static GameSessionManager sessionManager;
-    private static PlayerSessionRegistry playerSessionRegistry;
-    private static ConnectionMonitorService connectionMonitor;
-    private static CommandDispatcher dispatcher;
-    private static AuthenticationActionController authController;
-    private static GameBrowserActionController gameBrowserController;
-    private static GameLifecycleActionController gameLifecycleController;
-    private static KeepAliveActionController keepAliveController;
-
-    private static NotificationController notificationController;
-
-
+    // Core components
+    private ServerNetworkManager networkManager;
+    private GameSessionManager sessionManager;
+    private PlayerSessionRegistry playerRegistry;
+    private CommandDispatcher commandDispatcher;
+    private ConnectionMonitorService connectionMonitor;
+    // Configuration
+    private int socketPort = DEFAULT_SOCKET_PORT;
+    private int rmiPort = DEFAULT_RMI_PORT;
     public static void main(String[] args) {
-        setupLogging();
-        configurePorts(args);
-
-        //Initialize Core Components
-        serverEventBus = new EventBus(Runtime.getRuntime().availableProcessors() * 2 + 2, "server-main-eb");
-        gameLogicExecutor = Executors.newFixedThreadPool(
-                Runtime.getRuntime().availableProcessors(),
-                r -> { Thread t = new Thread(r); t.setName("game-logic-worker-" + t.threadId()); t.setDaemon(true); return t; }
-        );
-
-        networkManager = new ServerNetworkManager(serverEventBus);
+        ServerApp server = new ServerApp();
+        server.parseArguments(args);
+        server.setupLogging();
         try {
-            networkManager.addNetworkAdapter(new SocketServerAdapter());
-            networkManager.addNetworkAdapter(new RMIServerAdapter());
-        } catch (RemoteException e) {
-            ROOT_LOGGER.log(Level.SEVERE, "Failed to initialize RMI adapter, RMI features may be unavailable.", e);
-        }
-
-        playerSessionRegistry = new PlayerSessionRegistry();
-        sessionManager = new GameSessionManager(serverEventBus, networkManager, playerSessionRegistry);
-
-        //Initialize Connection Monitor
-        connectionMonitor = new ConnectionMonitorService(networkManager, serverEventBus, playerSessionRegistry, sessionManager, networkClientToGamePlayerMap);        // Pass CommandContext a reference to connectionMonitor
-
-        //Initialize Action Controllers
-        authController = new AuthenticationActionController();
-        gameBrowserController = new GameBrowserActionController();
-        gameLifecycleController = new GameLifecycleActionController();
-        keepAliveController = new KeepAliveActionController();
-
-        //Initialize Notification Controller (subscribes to eventBus)
-        notificationController = new NotificationController(serverEventBus, networkManager, sessionManager, playerSessionRegistry);
-
-        //Create and configure CommandDispatcher
-        dispatcher = new CommandDispatcher(
-                sessionManager, networkManager, serverEventBus,
-                playerSessionRegistry, networkClientToGamePlayerMap, activePlayersByIdMap,
-                gameLogicExecutor, connectionMonitor
-        );
-        networkManager.setCommandDispatcher(dispatcher);
-
-        //Register All Command Handlers
-        registerCommandHandlers();
-
-        //Setup Global Network Callbacks
-        setupGlobalNetworkCallbacks();
-
-        //Start Server and Services
-        try {
-            networkManager.startAdapters(DEFAULT_SOCKET_PORT, DEFAULT_RMI_PORT);
-            connectionMonitor.startMonitoring(); // Start pinging
-
-            ROOT_LOGGER.info("Server started. Socket on " + DEFAULT_SOCKET_PORT + ", RMI on " + DEFAULT_RMI_PORT +
-                    (networkManager.isRunning() ? ". All systems go!" : ". One or more systems failed.") +
-                    " Type 'quit' or 'exit' to stop.");
-
-            setupShutdownHook();
-            handleConsoleInput();
-
-        } catch (IOException e) {
-            ROOT_LOGGER.log(Level.SEVERE, "Fatal I/O Error during server startup: " + e.getMessage(), e);
-            shutdownServerComponents(true);
+            server.initialize();
+            server.start();
+            server.handleConsoleInput();
+        } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Fatal error during server operation", e);
             System.exit(1);
         }
     }
-
-    private static void setupLogging() {
-        ROOT_LOGGER.setLevel(Level.INFO);
-        ConsoleHandler logHandler = new ConsoleHandler();
-        logHandler.setFormatter(new SimpleFormatter());
-        logHandler.setLevel(Level.ALL);
-        if (ROOT_LOGGER.getHandlers().length == 0) ROOT_LOGGER.addHandler(logHandler);
-        ROOT_LOGGER.setUseParentHandlers(false);
-        // Set levels for noisy components if needed, e.g.:
-        Logger.getLogger(EventBus.class.getName()).setLevel(Level.INFO);
-        Logger.getLogger(ConnectionMonitorService.class.getName()).setLevel(Level.INFO);
-    }
-
-    private static int socketPort = DEFAULT_SOCKET_PORT;
-    private static int rmiPort = DEFAULT_RMI_PORT;
-
-    private static void configurePorts(String[] args) {
-        if (args.length >= 1) { try { socketPort = Integer.parseInt(args[0]); } catch (NumberFormatException e) { ROOT_LOGGER.warning("Invalid Socket port arg, using default: " + socketPort); } }
-        if (args.length >= 2) { try { rmiPort = Integer.parseInt(args[1]); } catch (NumberFormatException e) { ROOT_LOGGER.warning("Invalid RMI port arg, using default: " + rmiPort); } }
-    }
-
-
-    private static void registerCommandHandlers() {
-        // Authentication
-        dispatcher.registerHandler(ClientLoginRequest.class, authController::handleLogin);
-
-        // Game Browsing
-        dispatcher.registerHandler(RequestGameListCommand.class, gameBrowserController::handleRequestGameList);
-
-        // Game Lifecycle & Lobby
-        dispatcher.registerHandler(CreateGameRequestCommand.class, gameLifecycleController::handleCreateGame);
-        dispatcher.registerHandler(JoinGameRequestCommand.class, gameLifecycleController::handleJoinGame);
-        dispatcher.registerHandler(LeaveGameRequestCommand.class, gameLifecycleController::handleLeaveGame);
-        dispatcher.registerHandler(SetPlayerReadyCommand.class, gameLifecycleController::handleSetPlayerReady);
-        dispatcher.registerHandler(StartGameRequestCommand.class, gameLifecycleController::handleStartGame);
-
-        // Keep-Alive
-        dispatcher.registerHandler(PingMessage.class, keepAliveController::handlePing);
-        dispatcher.registerHandler(PongMessage.class, keepAliveController::handlePong);
-    }
-
-    private static void setupGlobalNetworkCallbacks() {
-        networkManager.setGlobalOnClientConnected(networkClientId -> {
-            ROOT_LOGGER.info("ServerApp Main Callback: Client connected " + networkClientId + ". Awaiting login command via Dispatcher.");
-        });
-
-        networkManager.setGlobalOnClientDisconnected(networkClientId -> {
-            ROOT_LOGGER.info("ServerApp Main Callback: Client disconnected " + networkClientId + ". Notifying AuthController for cleanup.");
-            authController.handlePlayerDisconnect(
-                    networkClientId,
-                    playerSessionRegistry,
-                    networkClientToGamePlayerMap,
-                    activePlayersByIdMap,
-                    serverEventBus,
-                    sessionManager
-            );
-        });
-    }
-
-    private static void setupShutdownHook() {
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            ROOT_LOGGER.info("Shutdown hook triggered. Gracefully stopping server...");
-            shutdownServerComponents(false);
-            ROOT_LOGGER.info("Server stopped.");
-        }));
-    }
-
-    private static void shutdownServerComponents(boolean isErrorExit) {
-        if (connectionMonitor != null) connectionMonitor.stopMonitoring();
-        if (networkManager != null) networkManager.stop();
-        if (gameLogicExecutor != null && !gameLogicExecutor.isShutdown()) {
+    /**
+     Parses command line arguments.
+     */
+    private void parseArguments(String[] args) {
+        if (args.length >= 1) {
             try {
-                gameLogicExecutor.shutdown();
-                if (!gameLogicExecutor.awaitTermination(5, TimeUnit.SECONDS)) {
-                    gameLogicExecutor.shutdownNow();
-                }
-            } catch (InterruptedException e) {
-                gameLogicExecutor.shutdownNow();
-                Thread.currentThread().interrupt();
+                socketPort = Integer.parseInt(args[0]);
+            } catch (NumberFormatException e) {
+                LOGGER.warning("Invalid socket port argument, using default: " + socketPort);
             }
         }
-        if (serverEventBus != null) serverEventBus.shutdown();
+        if (args.length >= 2) {
+            try {
+                rmiPort = Integer.parseInt(args[1]);
+            } catch (NumberFormatException e) {
+                LOGGER.warning("Invalid RMI port argument, using default: " + rmiPort);
+            }
+        }
     }
+    /**
+     Sets up logging configuration.
+     */
+    private void setupLogging() {
+        LogManager.getLogManager().reset();
+        ConsoleHandler consoleHandler = new ConsoleHandler();
+        consoleHandler.setLevel(Level.INFO);
+        consoleHandler.setFormatter(new SimpleFormatter());
+        Logger rootLogger = Logger.getLogger("");
+        rootLogger.setLevel(Level.INFO);
+        rootLogger.addHandler(consoleHandler);
 
-    private static void handleConsoleInput() {
-        BufferedReader consoleReader = new BufferedReader(new InputStreamReader(System.in));
+        Logger.getLogger(ConnectionMonitorService.class.getName()).setLevel(Level.INFO);
+        Logger.getLogger(CommandDispatcher.class.getName()).setLevel(Level.INFO);
+    }
+    /**
+     Initializes all server components.
+     */
+    private void initialize() throws IOException {
+        LOGGER.info("Initializing Galaxy Trucker server...");
+
+        int threadPoolSize = Runtime.getRuntime().availableProcessors() * 2 + 2;
+        networkManager = new ServerNetworkManager();
+        playerRegistry = new PlayerSessionRegistry();
+        sessionManager = new GameSessionManager(networkManager, playerRegistry);
+
+        initializeNetworkAdapters();
+
+        Map<String, String> networkClientToGamePlayerMap = new ConcurrentHashMap<>();
+        commandDispatcher = new CommandDispatcher(
+                sessionManager,
+                playerRegistry,
+                networkManager,
+                networkClientToGamePlayerMap
+        );
+        networkManager.setCommandDispatcher(commandDispatcher);
+
+        connectionMonitor = new ConnectionMonitorService(
+                networkManager,
+                playerRegistry,
+                sessionManager,
+                networkClientToGamePlayerMap,
+                this::handleClientDisconnect
+        );
+        
+        // Set connection monitor in network manager for pong handling
+        networkManager.setConnectionMonitor(connectionMonitor);
+
+        setupNetworkCallbacks();
+
+        setupShutdownHook();
+        LOGGER.info("Server initialization complete");
+    }
+    /**
+     Initializes network adapters.
+     */
+    private void initializeNetworkAdapters() throws RemoteException {
+
+        networkManager.addNetworkAdapter(new SocketServerAdapter());
+        LOGGER.info("Socket adapter initialized");
+
+        try {
+            networkManager.addNetworkAdapter(new RMIServerAdapter());
+            LOGGER.info("RMI adapter initialized");
+        } catch (RemoteException e) {
+            LOGGER.log(Level.WARNING, "Failed to initialize RMI adapter", e);
+
+        }
+    }
+    /**
+     Sets up network callbacks.
+     */
+    private void setupNetworkCallbacks() {
+        networkManager.setGlobalOnClientConnected(clientId -> {
+            LOGGER.info("Client connected: " + clientId);
+
+        });
+        networkManager.setGlobalOnClientDisconnected(clientId -> {
+            LOGGER.info("Client disconnected: " + clientId);
+            handleClientDisconnect(clientId);
+        });
+    }
+    /**
+     Handles client disconnection.
+     */
+    private void handleClientDisconnect(String clientId) {
+
+        String playerId = playerRegistry.getPlayerIdForClient(clientId);
+        if (playerId != null) {
+            String nickname = playerRegistry.getPlayerNickname(playerId);
+
+            // Remove from game if in one
+            GameSession gameSession = sessionManager.getGameSessionForPlayer(playerId);
+            if (gameSession != null) {
+                sessionManager.removePlayerFromGame(gameSession.getGameId(), playerId);
+
+                // Publish player left event
+                PlayerLeftGameEvent event = new PlayerLeftGameEvent(
+                        gameSession.getGameId(),
+                        playerId,
+                        nickname
+                );
+                publishEvent(event);
+            }
+
+            // Unregister player
+            playerRegistry.unregisterPlayer(clientId);
+
+            // Publish disconnected event
+            PlayerDisconnectedEvent event = new PlayerDisconnectedEvent(playerId, nickname);
+            publishEvent(event);
+        }
+    }
+    /**
+     Publishes an event to clients.
+     */
+    private void publishEvent(Event event) {
+        EventPublisher publisher = commandDispatcher.getEventPublisher();
+        if (publisher != null) {
+            publisher.publishEvent(event);
+        }
+    }
+    /**
+     Starts the server.
+     */
+    private void start() throws IOException {
+        LOGGER.info("Starting Galaxy Trucker server...");
+
+        networkManager.startAdapters(socketPort, rmiPort);
+
+        connectionMonitor.startMonitoring();
+        LOGGER.info("=================================================");
+        LOGGER.info("Galaxy Trucker Server Started Successfully!");
+        LOGGER.info("Socket port: " + socketPort);
+        LOGGER.info("RMI port: " + rmiPort);
+        LOGGER.info("Ready to accept connections...");
+        LOGGER.info("Type 'help' for available commands");
+        LOGGER.info("=================================================");
+    }
+    /**
+     Handles console input.
+     */
+    private void handleConsoleInput() {
+        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
         String line;
         try {
-            while (networkManager != null && networkManager.isRunning() && (line = consoleReader.readLine()) != null) {
-                if ("quit".equalsIgnoreCase(line.trim()) || "exit".equalsIgnoreCase(line.trim())) {
-                    ROOT_LOGGER.info("Shutdown command received from console. Initiating shutdown...");
-                    System.exit(0);
-                    break;
+            while ((line = reader.readLine()) != null) {
+                line = line.trim().toLowerCase();
+
+                switch (line) {
+                    case "quit":
+                    case "exit":
+                        LOGGER.info("Shutdown command received");
+                        shutdown();
+                        System.exit(0);
+                        break;
+
+                    case "help":
+                        printHelp();
+                        break;
+
+                    case "status":
+                        printStatus();
+                        break;
+
+                    case "games":
+                        printGames();
+                        break;
+
+                    case "players":
+                        printPlayers();
+                        break;
+
+                    default:
+                        if (!line.isEmpty()) {
+                            LOGGER.info("Unknown command: " + line + ". Type 'help' for available commands.");
+                        }
+                        break;
                 }
-                ROOT_LOGGER.info("Unknown command on server console: " + line + ". Available: quit, exit.");
             }
+
         } catch (IOException e) {
-            ROOT_LOGGER.log(Level.WARNING, "Error reading from console input.", e);
-        } finally {
-            if (networkManager == null || !networkManager.isRunning()) {
-                ROOT_LOGGER.warning("Server network seems to have stopped or was not fully started. Main thread input loop exiting.");
+            LOGGER.log(Level.WARNING, "Error reading console input", e);
+        }
+    }
+    /**
+     Prints help information.
+     */
+    private void printHelp() {
+        System.out.println("Available commands:");
+        System.out.println(" help - Show this help message");
+        System.out.println(" status - Show server status");
+        System.out.println(" games - List active games");
+        System.out.println(" players - List connected players");
+        System.out.println(" quit - Shutdown the server");
+        System.out.println(" exit - Shutdown the server");
+    }
+    /**
+     Prints server status.
+     */
+    private void printStatus() {
+        System.out.println("Server Status:");
+        System.out.println(" Network: " + (networkManager.isRunning() ? "Running" : "Stopped"));
+        System.out.println(" Socket Port: " + socketPort);
+        System.out.println(" RMI Port: " + rmiPort);
+        System.out.println(" Connected Clients: " + playerRegistry.getAllClientIds().size());
+        System.out.println(" Active Games: " + sessionManager.getAvailableGames().size());
+    }
+    /**
+     Prints active games.
+     */
+    private void printGames() {
+        List<GameInfo> games = sessionManager.getAvailableGames();
+        if (games.isEmpty()) {
+            System.out.println("No active games");
+        } else {
+            System.out.println("Active Games:");
+            for (GameInfo game : games) {
+                System.out.println(" Game ID: " + game.gameId);
+                System.out.println(" Name: " + (game.gameName != null ? game.gameName : "Unnamed"));
+                System.out.println(" Players: " + game.currentPlayers + "/" + game.maxPlayers);
+                System.out.println(" Level: " + game.gameLevel);
+                System.out.println();
             }
         }
+    }
+    /**
+     Prints connected players.
+     */
+    private void printPlayers() {
+        Set<String> clientIds = playerRegistry.getAllClientIds();
+        if (clientIds.isEmpty()) {
+            System.out.println("No connected players");
+        } else {
+            System.out.println("Connected Players:");
+            for (String clientId : clientIds) {
+                Map<String, String> info = playerRegistry.getPlayerInfo(clientId);
+                if (info != null) {
+                    System.out.println(" " + info.get("nickname") + " (ID: " + info.get("playerId") + ")");
+                }
+            }
+        }
+    }
+    /**
+     Sets up shutdown hook.
+     */
+    private void setupShutdownHook() {
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            LOGGER.info("Shutdown hook triggered");
+            shutdown();
+        }));
+    }
+    /**
+     Shuts down the server gracefully.
+     */
+    private void shutdown() {
+        LOGGER.info("Shutting down Galaxy Trucker server...");
+
+        if (connectionMonitor != null) {
+            connectionMonitor.stopMonitoring();
+        }
+
+        if (networkManager != null) {
+            networkManager.stop();
+        }
+
+        if (commandDispatcher != null) {
+            commandDispatcher.shutdown();
+        }
+
+        if (sessionManager != null) {
+            sessionManager.shutdown();
+        }
+        LOGGER.info("Server shutdown complete");
+    }
+    // Getters for testing and integration
+    public GameSessionManager getSessionManager() {
+        return sessionManager;
+    }
+    public PlayerSessionRegistry getPlayerRegistry() {
+        return playerRegistry;
+    }
+    public ServerNetworkManager getNetworkManager() {
+        return networkManager;
+    }
+    public CommandDispatcher getCommandDispatcher() {
+        return commandDispatcher;
     }
 }

@@ -66,9 +66,13 @@ public class GameConfigurationManager {
     }
 
     public void loadAllConfigurations(String componentsPath, String cardsPath, String gameConfigPath) throws IOException {
+        System.out.println("Loading game configurations...");
+        
         loadComponents(componentsPath);
         loadAdventureCardConfigs(cardsPath);
         loadGameConfigs(gameConfigPath);
+        
+        System.out.println("All configurations loaded successfully!");
     }
 
     public List<Component> loadComponents(String jsonPath) throws IOException {
@@ -110,25 +114,38 @@ public class GameConfigurationManager {
                 try {
                     GameConfig config = parseGameConfig(levelNode);
                     levelConfigs.put(config.levelEnum(), config);
+                    System.out.println("Loaded configuration for: " + config.levelEnum());
                 } catch (Exception e) {
-                    String levelStr = levelNode.has("level") ? levelNode.get("level").asText("UNKNOWN_LEVEL_IN_JSON") : "LEVEL_FIELD_MISSING";
+                    String levelStr = levelNode.has("level") ? levelNode.get("level").asText() : "LEVEL_FIELD_MISSING";
                     System.err.println("Warning: Skipping game config for level '" + levelStr + "' due to parsing error: " + e.getMessage());
-                    // e.printStackTrace();
+                    e.printStackTrace();
                 }
             }
         } else {
             System.err.println("Warning: 'levels' array not found or not an array in " + jsonPath);
-        }
+        }        
+        System.out.println("Successfully loaded " + levelConfigs.size() + " game configurations: " + levelConfigs.keySet());
+
         return new HashMap<>(levelConfigs);
     }
 
     private JsonNode readJsonFile(String jsonPath) throws IOException {
+        // Try classpath resource first
+        InputStream inputStream = getClass().getResourceAsStream(jsonPath);
+        if (inputStream != null) {
+            try (InputStream is = inputStream) {
+                return jsonMapper.readTree(is);
+            }
+        }
+        
+        // Fallback to file system path
         File file = new File(jsonPath);
         if (!file.exists()) {
-            throw new IOException("File not found: " + jsonPath);
+            throw new IOException("Resource not found in classpath or file system: " + jsonPath);
         }
-        try (InputStream inputStream = new FileInputStream(file)) {
-            return jsonMapper.readTree(inputStream);
+        
+        try (InputStream fileStream = new FileInputStream(file)) {
+            return jsonMapper.readTree(fileStream);
         }
     }
 
@@ -365,7 +382,8 @@ public class GameConfigurationManager {
     public GameConfig getConfigForLevel(GameLevel level) {
         GameConfig cfg = levelConfigs.get(level);
         if (cfg == null) {
-            System.err.println("FATAL: No game configuration found for level: " + level + ". Ensure it's loaded and the GameLevel enum key matches.");
+            System.err.println("FATAL: No game configuration found for level: " + level);
+            System.err.println("Available levels in configuration: " + levelConfigs.keySet());
             throw new IllegalStateException("Configuration for game level " + level + " not found.");
         }
         return cfg;
@@ -389,7 +407,6 @@ public class GameConfigurationManager {
 
         return new Route(level, Integer.parseInt(fbCfg.length()), new ArrayList<>(fbCfg.startingPositions()), rewardSystem);
     }
-
 
     public List<Component> getAllComponents() {
         return new ArrayList<>(allComponents);
