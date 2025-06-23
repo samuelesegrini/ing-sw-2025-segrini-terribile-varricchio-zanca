@@ -6,10 +6,13 @@ Components: Samuele Segrini, Manuela Terribile, Alessandra Varricchio, Diego Zan
 Group 26
 
 # The Project  
-The goal of the project is to develope a software version of the board game *Galaxy Trucker*.
-
+This project is a Java-based software adaptation of the board game Galaxy Trucker, developed as the final project for the Software Engineering course.  
+It features a distributed client-server architecture and follows the Model-View-Controller (MVC) design pattern.  
 
 # Documentation  
+* Initial UML
+* Final UML
+* Client-Server Communication Protocol Documentation
 
 # Implemented Features 
 ### Core 
