@@ -31,6 +31,18 @@ public class PlayerReadyChangedEvent extends AbstractEvent {
     }
 
     @Override
+    public boolean shouldSendTo(String clientId, EventFilterContext context) {
+        // Don't send to the requesting client (they already have the response)
+        String playerId = context.getPlayerIdForClient(clientId);
+        if (this.playerId.equals(playerId)) {
+            return false;
+        }
+        
+        // Use default game filtering for other clients
+        return super.shouldSendTo(clientId, context);
+    }
+
+    @Override
     public void handleOnClient(ClientEventContext context) {
         context.runOnUIThread(() -> {
             // Update model state if this is the current game

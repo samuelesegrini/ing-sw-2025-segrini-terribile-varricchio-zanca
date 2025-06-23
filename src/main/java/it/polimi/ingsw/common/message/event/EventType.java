@@ -4,10 +4,6 @@ package it.polimi.ingsw.common.message.event;
  * Enumeration of all event types in the game.
  */
 public enum EventType {
-    // Connection events
-    PLAYER_CONNECTED,
-    PLAYER_DISCONNECTED,
-    PLAYER_RECONNECTED,
 
     // Game lifecycle events
     GAME_CREATED,
@@ -19,6 +15,8 @@ public enum EventType {
     // Player status events
     PLAYER_JOINED_GAME,
     PLAYER_LEFT_GAME,
+    PLAYER_DISCONNECTED,
+    PLAYER_RECONNECTED,
     PLAYER_READY_CHANGED,
 
     // Game settings events

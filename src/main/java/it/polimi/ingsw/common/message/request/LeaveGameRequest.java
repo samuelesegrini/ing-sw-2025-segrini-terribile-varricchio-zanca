@@ -1,14 +1,19 @@
 package it.polimi.ingsw.common.message.request;
 
 import it.polimi.ingsw.common.message.event.GameEndedEvent;
+import it.polimi.ingsw.common.message.event.GameLobbyUpdateEvent;
 import it.polimi.ingsw.common.message.event.PlayerLeftGameEvent;
 import it.polimi.ingsw.common.message.response.ErrorResponse;
 import it.polimi.ingsw.common.message.response.LeaveGameResponse;
 import it.polimi.ingsw.common.message.response.Response;
 import it.polimi.ingsw.common.message.validation.ValidationResult;
+import it.polimi.ingsw.common.PlayerInfo;
 import it.polimi.ingsw.server.core.GameSession;
 import it.polimi.ingsw.server.core.GameSessionManager;
 import it.polimi.ingsw.server.core.PlayerSessionRegistry;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Request from a player to leave the current game lobby.
@@ -73,8 +78,33 @@ public class LeaveGameRequest extends AbstractRequest {
         // Check if game should be ended
         if (gameSession.getPlayerCount() == 0) {
             context.publishEvent(new GameEndedEvent(gameId, "All players left", null));
+        } else {
+            // Update lobby state for remaining players (exclude the leaving player)
+            publishLobbyUpdateEvent(context, gameSession, gameId, registry, playerId);
         }
 
         return new LeaveGameResponse(getCorrelationId());
+    }
+
+    /**
+     * Publishes a lobby update event to synchronize remaining clients with updated lobby state.
+     */
+    private void publishLobbyUpdateEvent(RequestContext context, GameSession gameSession, 
+                                       String gameId, PlayerSessionRegistry registry, String excludePlayerId) {
+        List<PlayerInfo> playerInfos = new ArrayList<>();
+        
+        // Build the player info list with current ready states
+        for (String pId : gameSession.getPlayerIds()) {
+            String pNickname = registry.getPlayerNickname(pId);
+            boolean isReady = gameSession.getPlayerState(pId) != null && 
+                             gameSession.getPlayerState(pId).isReady();
+            playerInfos.add(new PlayerInfo(pId, pNickname, isReady));
+        }
+        
+        // Create and publish the lobby update event (excluding the leaving player)
+        GameLobbyUpdateEvent lobbyEvent = new GameLobbyUpdateEvent(
+                gameId, playerInfos, gameSession.getMaxPlayers(), excludePlayerId
+        );
+        context.publishEvent(lobbyEvent);
     }
 }

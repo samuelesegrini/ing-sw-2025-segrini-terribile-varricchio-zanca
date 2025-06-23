@@ -1,6 +1,5 @@
 package it.polimi.ingsw.common.message.request;
 
-import it.polimi.ingsw.common.message.event.PlayerConnectedEvent;
 import it.polimi.ingsw.common.message.response.*;
 import it.polimi.ingsw.common.message.response.LoginResponse;
 import it.polimi.ingsw.common.message.validation.ValidationResult;
@@ -8,11 +7,13 @@ import it.polimi.ingsw.server.core.PlayerSessionRegistry;
 
 import java.util.UUID;
 import java.util.regex.Pattern;
+import java.util.logging.Logger;
 
 /**
  * Request to authenticate a player with the server.
  */
 public class LoginRequest extends AbstractRequest {
+    private static final Logger LOGGER = Logger.getLogger(LoginRequest.class.getName());
     private static final Pattern NICKNAME_PATTERN = Pattern.compile("^[a-zA-Z0-9_-]{3,20}$");
     private final String nickname;
 
@@ -52,30 +53,41 @@ public class LoginRequest extends AbstractRequest {
 
     @Override
     public Response execute(RequestContext context) {
+        LOGGER.info("🔐 LOGIN REQUEST - Starting authentication for nickname: '" + nickname + "' from client: " + context.getSenderId());
+        
         // Validate the request
         ValidationResult validation = validate();
         if (!validation.isValid()) {
+            LOGGER.warning("❌ LOGIN FAILED - Validation error for nickname '" + nickname + "': " + validation.getErrorMessage());
             return createErrorResponse(validation.getErrorMessage(), ErrorResponse.VALIDATION_ERROR);
         }
+        LOGGER.fine("✅ LOGIN VALIDATION - Nickname '" + nickname + "' passed validation checks");
 
         // Check if already authenticated
         if (context.getPlayerId() != null) {
+            LOGGER.warning("❌ LOGIN FAILED - Client " + context.getSenderId() + " already authenticated as player: " + context.getPlayerId());
             return createErrorResponse("Already logged in", ErrorResponse.INVALID_STATE);
         }
+        LOGGER.fine("✅ AUTH STATE - Client " + context.getSenderId() + " is not yet authenticated");
 
         PlayerSessionRegistry registry = context.getPlayerRegistry();
         String trimmedNickname = nickname.trim();
+        LOGGER.fine("🔍 NICKNAME CHECK - Checking availability of nickname: '" + trimmedNickname + "'");
 
         // Check if nickname is already in use
         if (registry.isNicknameInUse(trimmedNickname)) {
+            LOGGER.warning("❌ LOGIN FAILED - Nickname '" + trimmedNickname + "' is already taken");
             return createErrorResponse(
                     "Nickname '" + trimmedNickname + "' is already taken",
                     ErrorResponse.VALIDATION_ERROR
             );
         }
+        LOGGER.fine("✅ NICKNAME AVAILABLE - Nickname '" + trimmedNickname + "' is available");
 
         // Create player
         String playerId = UUID.randomUUID().toString();
+        LOGGER.info("👤 PLAYER CREATION - Generated playerId: " + playerId + " for nickname: '" + trimmedNickname + "'");
+        
         boolean registered = registry.registerPlayer(
                 context.getSenderId(),
                 playerId,
@@ -83,17 +95,17 @@ public class LoginRequest extends AbstractRequest {
         );
 
         if (!registered) {
+            LOGGER.severe("❌ LOGIN FAILED - Failed to register player with ID: " + playerId + " and nickname: '" + trimmedNickname + "'");
             return createErrorResponse(
                     "Failed to register player",
                     ErrorResponse.INTERNAL_ERROR
             );
         }
+        LOGGER.info("✅ PLAYER REGISTERED - Successfully registered player: " + playerId + " ('" + trimmedNickname + "') for client: " + context.getSenderId());
 
-        // Publish player connected event
-        PlayerConnectedEvent event = new PlayerConnectedEvent(playerId, trimmedNickname);
-        context.publishEvent(event);
 
         // Return success response
+        LOGGER.info("🎉 LOGIN SUCCESS - Returning LoginResponse for player: " + playerId + " ('" + trimmedNickname + "') to client: " + context.getSenderId());
         return new LoginResponse(getCorrelationId(), playerId, trimmedNickname);
     }
 }

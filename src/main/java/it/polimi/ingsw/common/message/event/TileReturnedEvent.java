@@ -26,6 +26,46 @@ public class TileReturnedEvent extends AbstractEvent {
 
     @Override
     public void handleOnClient(ClientEventContext context) {
-        // Client UI can now show this tile as available in the face-up pile.
+        context.runOnUIThread(() -> {
+            // Update local game state to reflect returned tile
+            if (context.getGameState() != null) {
+                // Add the returned tile back to face-up pile
+                context.getGameState().addAvailableTile(tileType);
+                
+                // Remove from held tiles if this was held by local player
+                context.getGameState().removeHeldTile(tileType);
+            }
+
+            // Show notification about returned tile
+            if (context.getNotificationService() != null) {
+                String message = String.format("A %s tile was returned to the face-up pile", tileType.toString().toLowerCase());
+                context.getNotificationService().showNotification(
+                    new it.polimi.ingsw.client.ui.Notification(
+                        "Tile Returned",
+                        message,
+                        it.polimi.ingsw.client.ui.NotificationType.INFO
+                    )
+                );
+            }
+
+            // Fire property change events for UI updates
+            if (context.getController() != null && context.getController().getModel() != null) {
+                // Notify that face-up tiles have been updated
+                context.getController().getModel().firePropertyChange("faceUpTilesUpdated", null, 
+                    context.getGameState().getAvailableTiles());
+                
+                // Notify that held tiles may have been updated
+                context.getController().getModel().firePropertyChange("heldTilesUpdated", null, 
+                    context.getGameState().getHeldTiles());
+                
+                // General tile availability update
+                context.getController().getModel().firePropertyChange("tileReturned", null, 
+                    java.util.Map.of(
+                        "tileId", tileId,
+                        "tileType", tileType.toString()
+                    )
+                );
+            }
+        });
     }
 }

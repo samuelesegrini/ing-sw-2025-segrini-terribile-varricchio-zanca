@@ -3,8 +3,10 @@ package it.polimi.ingsw.client.controller;
 import it.polimi.ingsw.client.ClientModel;
 import it.polimi.ingsw.client.network.NetworkClient;
 import it.polimi.ingsw.client.ui.NotificationType;
+import it.polimi.ingsw.client.ui.core.NotificationService;
 import it.polimi.ingsw.common.GameInfo;
 import it.polimi.ingsw.common.message.*;
+import it.polimi.ingsw.common.message.event.ClientEventContext;
 import it.polimi.ingsw.common.message.event.Event;
 import it.polimi.ingsw.common.message.event.GameCreatedEvent;
 import it.polimi.ingsw.common.message.event.GameEndedEvent;
@@ -220,6 +222,30 @@ public class ClientController {
                 });
     }
 
+    public CompletableFuture<Boolean> refreshGameList() {
+        if (!model.isAuthenticated()) {
+            LOGGER.warning("Cannot refresh game list: not authenticated");
+            return CompletableFuture.completedFuture(false);
+        }
+
+        LOGGER.info("Refreshing game list");
+        return requestGameList()
+                .thenApply(response -> {
+                    if (response.isSuccess() && response instanceof ListGamesResponse listGamesResponse) {
+                        model.setAvailableGames(listGamesResponse.getGames());
+                        LOGGER.info("Game list refreshed successfully - " + listGamesResponse.getGames().size() + " games found");
+                        return true;
+                    } else {
+                        LOGGER.warning("Failed to refresh game list: " + response.getErrorMessage());
+                        return false;
+                    }
+                })
+                .exceptionally(ex -> {
+                    LOGGER.log(Level.WARNING, "Refresh game list failed with exception", ex);
+                    return false;
+                });
+    }
+
     // Generic request sending method
     public CompletableFuture<Response> sendRequest(Request request) {
         if (!model.isAuthenticated()) {
@@ -306,6 +332,153 @@ public class ClientController {
                 });
     }
 
+    // Ship building actions
+    public CompletableFuture<Boolean> placeTile(String componentType, int row, int col, int rotation) {
+        if (!model.isAuthenticated()) {
+            LOGGER.warning("Cannot place tile: not authenticated");
+            return CompletableFuture.completedFuture(false);
+        }
+
+        if (componentType == null || componentType.trim().isEmpty()) {
+            LOGGER.warning("Cannot place tile: invalid component type");
+            return CompletableFuture.completedFuture(false);
+        }
+
+        if (row < 0 || row >= 5 || col < 0 || col >= 7) {
+            LOGGER.warning("Cannot place tile: invalid position (" + row + ", " + col + ")");
+            return CompletableFuture.completedFuture(false);
+        }
+
+        LOGGER.info("Placing tile: " + componentType + " at (" + row + ", " + col + ") with rotation " + rotation);
+
+        PlaceTileRequest request = new PlaceTileRequest(componentType.trim(), row, col, rotation);
+        return sendRequest(request)
+                .thenApply(response -> {
+                    if (response.isSuccess()) {
+                        LOGGER.info("Tile placed successfully");
+                        return true;
+                    } else {
+                        LOGGER.warning("Failed to place tile: " + response.getErrorMessage());
+                        return false;
+                    }
+                });
+    }
+
+    public CompletableFuture<Boolean> takeTile() {
+        if (!model.isAuthenticated()) {
+            LOGGER.warning("Cannot take tile: not authenticated");
+            return CompletableFuture.completedFuture(false);
+        }
+
+        LOGGER.info("Taking random tile");
+
+        TakeTileRequest request = new TakeTileRequest();
+        return sendRequest(request)
+                .thenApply(response -> {
+                    if (response.isSuccess()) {
+                        LOGGER.info("Tile taken successfully");
+                        return true;
+                    } else {
+                        LOGGER.warning("Failed to take tile: " + response.getErrorMessage());
+                        return false;
+                    }
+                });
+    }
+
+    public CompletableFuture<Boolean> requestFaceUpTile(String componentType) {
+        if (!model.isAuthenticated()) {
+            LOGGER.warning("Cannot request face up tile: not authenticated");
+            return CompletableFuture.completedFuture(false);
+        }
+
+        if (componentType == null || componentType.trim().isEmpty()) {
+            LOGGER.warning("Cannot request face up tile: invalid component type");
+            return CompletableFuture.completedFuture(false);
+        }
+
+        LOGGER.info("Requesting face up tile: " + componentType);
+
+        RequestFaceUpTileRequest request = new RequestFaceUpTileRequest(componentType.trim());
+        return sendRequest(request)
+                .thenApply(response -> {
+                    if (response.isSuccess()) {
+                        LOGGER.info("Face up tile requested successfully");
+                        return true;
+                    } else {
+                        LOGGER.warning("Failed to request face up tile: " + response.getErrorMessage());
+                        return false;
+                    }
+                });
+    }
+
+    public CompletableFuture<Boolean> returnTile(String componentType) {
+        if (!model.isAuthenticated()) {
+            LOGGER.warning("Cannot return tile: not authenticated");
+            return CompletableFuture.completedFuture(false);
+        }
+
+        if (componentType == null || componentType.trim().isEmpty()) {
+            LOGGER.warning("Cannot return tile: invalid component type");
+            return CompletableFuture.completedFuture(false);
+        }
+
+        LOGGER.info("Returning tile: " + componentType);
+
+        ReturnTileRequest request = new ReturnTileRequest(componentType.trim());
+        return sendRequest(request)
+                .thenApply(response -> {
+                    if (response.isSuccess()) {
+                        LOGGER.info("Tile returned successfully");
+                        return true;
+                    } else {
+                        LOGGER.warning("Failed to return tile: " + response.getErrorMessage());
+                        return false;
+                    }
+                });
+    }
+
+    public CompletableFuture<Boolean> flipBuildingTimer() {
+        if (!model.isAuthenticated()) {
+            LOGGER.warning("Cannot flip building timer: not authenticated");
+            return CompletableFuture.completedFuture(false);
+        }
+
+        LOGGER.info("Flipping building timer");
+
+        FlipBuildingTimerRequest request = new FlipBuildingTimerRequest();
+        return sendRequest(request)
+                .thenApply(response -> {
+                    if (response.isSuccess()) {
+                        LOGGER.info("Building timer flipped successfully");
+                        return true;
+                    } else {
+                        LOGGER.warning("Failed to flip building timer: " + response.getErrorMessage());
+                        return false;
+                    }
+                });
+    }
+
+    public CompletableFuture<Boolean> validateShip() {
+        if (!model.isAuthenticated()) {
+            LOGGER.warning("Cannot validate ship: not authenticated");
+            return CompletableFuture.completedFuture(false);
+        }
+
+        LOGGER.info("Validating ship");
+
+        ValidateShipRequest request = new ValidateShipRequest();
+        return sendRequest(request)
+                .thenApply(response -> {
+                    if (response.isSuccess()) {
+                        LOGGER.info("Ship validated successfully");
+                        return true;
+                    } else {
+                        LOGGER.warning("Failed to validate ship: " + response.getErrorMessage());
+                        return false;
+                    }
+                });
+    }
+
     // Message handling
     public void handleMessage(Message message) {
         if (message == null) {
@@ -351,104 +524,51 @@ public class ClientController {
             LOGGER.info("Received event: " + event.getEventType());
 
             try {
-                // Update model based on event type
-                switch (event.getEventType()) {
-                    case GAME_CREATED -> {
-                        if (event instanceof GameCreatedEvent gce) {
-                            // Create proper game info with creator as first player
-                            it.polimi.ingsw.common.PlayerInfo creatorInfo = new it.polimi.ingsw.common.PlayerInfo(
-                                gce.getCreatorId(), gce.getCreatorNickname(), true);
-                            java.util.List<it.polimi.ingsw.common.PlayerInfo> players = new ArrayList<>();
-                            players.add(creatorInfo);
-                            
-                            GameInfo gameInfo = new GameInfo(
-                                    gce.getGameId(),
-                                    gce.getGameName(),
-                                    gce.getMaxPlayers(),
-                                    1,
-                                    gce.getGameLevel(),
-                                    players
-                            );
-                            
-                            // If this is the creator, transition to game lobby
-                            if (gce.getCreatorId().equals(model.getPlayerId())) {
-                                LOGGER.info("Creator event received - transitioning to game lobby");
-                                model.setCurrentGame(gameInfo);
-                                model.setPlayersInLobby(players); // Update lobby player list
-                                model.setCurrentView(ClientModel.ViewState.GAME_LOBBY);
-                            } else {
-                                // For other players, just add to available games
-                                model.addAvailableGame(gameInfo);
-                            }
-                            LOGGER.fine("Processed game created event: " + gce.getGameName());
-                        }
-                    }
-                    case PLAYER_JOINED_GAME -> {
-                        if (event instanceof it.polimi.ingsw.common.message.event.PlayerJoinedGameEvent pjge) {
-                            LOGGER.info("Player joined game event received: " + pjge.getPlayerNickname());
-                            
-                            // If we're in the same game, update our lobby player list
-                            if (model.getCurrentGameInfo() != null && 
-                                model.getCurrentGameInfo().getGameId().equals(pjge.getGameId())) {
-                                
-                                // Add new player to existing player list
-                                java.util.List<it.polimi.ingsw.common.PlayerInfo> currentPlayers = 
-                                    new ArrayList<>(model.getPlayersInLobby());
-                                
-                                // Check if player is already in the list (avoid duplicates)
-                                boolean playerExists = currentPlayers.stream()
-                                    .anyMatch(p -> p.getPlayerId().equals(pjge.getPlayerId()));
-                                
-                                if (!playerExists) {
-                                    it.polimi.ingsw.common.PlayerInfo newPlayer = 
-                                        new it.polimi.ingsw.common.PlayerInfo(pjge.getPlayerId(), pjge.getPlayerNickname(), false);
-                                    currentPlayers.add(newPlayer);
-                                    
-                                    // Update model with new player list
-                                    model.setPlayersInLobby(currentPlayers);
-                                    
-                                    // Update current game info with new player count
-                                    it.polimi.ingsw.common.GameInfo updatedGameInfo = 
-                                        new it.polimi.ingsw.common.GameInfo(
-                                            model.getCurrentGameInfo().getGameId(),
-                                            model.getCurrentGameInfo().getGameName(),
-                                            model.getCurrentGameInfo().getMaxPlayers(),
-                                            pjge.getCurrentPlayerCount(),
-                                            model.getCurrentGameInfo().getGameLevel(),
-                                            currentPlayers
-                                        );
-                                    model.setCurrentGame(updatedGameInfo);
-                                    
-                                    LOGGER.info("Updated lobby with new player: " + pjge.getPlayerNickname());
-                                }
-                            }
-                        }
-                    }
-                    case PLAYER_READY_CHANGED -> {
-                        if (event instanceof it.polimi.ingsw.common.message.event.PlayerReadyChangedEvent prce) {
-                            LOGGER.info("Player ready status changed: " + prce.getPlayerNickname() + " = " + prce.isReady());
-                            
-                            // If we're in the same game, update the ready status
-                            if (model.getCurrentGameInfo() != null && 
-                                model.getCurrentGameInfo().getGameId().equals(prce.getGameId())) {
-                                
-                                model.setPlayerReadyStatus(prce.getPlayerId(), prce.isReady());
-                                LOGGER.info("Updated ready status for " + prce.getPlayerNickname());
-                            }
-                        }
-                    }
-                    case GAME_ENDED -> {
-                        if (event instanceof GameEndedEvent gee) {
-                            model.removeAvailableGame(gee.getGameId());
-                            LOGGER.fine("Removed ended game from available games: " + gee.getGameId());
-                        }
-                    }
-                    default -> {
-                        LOGGER.fine("Unhandled event type: " + event.getEventType());
-                    }
-                }
+                // Create ClientEventContext and let each event handle itself
+                ClientEventContext clientEventContext = new ClientEventContextImpl();
+                event.handleOnClient(clientEventContext);
+                
+                LOGGER.fine("Successfully processed event: " + event.getEventType());
             } catch (Exception e) {
                 LOGGER.log(Level.WARNING, "Error processing event: " + event.getEventType(), e);
+            }
+        }
+        
+        /**
+         * Implementation of ClientEventContext for events
+         */
+        private class ClientEventContextImpl implements ClientEventContext {
+            @Override
+            public void runOnUIThread(Runnable task) {
+                // For console/TUI applications, just run on current thread
+                // For JavaFX applications, this would use Platform.runLater()
+                task.run();
+            }
+            
+            @Override
+            public ClientController getController() {
+                return ClientController.this;
+            }
+            
+            @Override
+            public String getLocalPlayerId() {
+                return model.getPlayerId();
+            }
+            
+            @Override
+            public boolean isLocalPlayer(String playerId) {
+                return playerId != null && playerId.equals(model.getPlayerId());
+            }
+            
+            @Override
+            public it.polimi.ingsw.client.core.state.LocalGameState getGameState() {
+                return it.polimi.ingsw.client.core.state.LocalGameState.getInstance();
+            }
+            
+            @Override
+            public NotificationService getNotificationService() {
+                // Return null for now - events can handle their own notifications
+                return null;
             }
         }
 

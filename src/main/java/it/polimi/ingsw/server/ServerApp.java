@@ -3,8 +3,9 @@ package it.polimi.ingsw.server;
 import it.polimi.ingsw.common.GameInfo;
 import it.polimi.ingsw.common.message.EventPublisher;
 import it.polimi.ingsw.common.message.event.Event;
-import it.polimi.ingsw.common.message.event.PlayerDisconnectedEvent;
 import it.polimi.ingsw.common.message.event.PlayerLeftGameEvent;
+import it.polimi.ingsw.common.message.event.PlayerDisconnectedEvent;
+import it.polimi.ingsw.common.message.event.PlayerReconnectedEvent;
 import it.polimi.ingsw.server.controller.CommandDispatcher;
 import it.polimi.ingsw.server.core.*;
 import it.polimi.ingsw.server.monitor.ConnectionMonitorService;
@@ -163,26 +164,29 @@ public class ServerApp {
         if (playerId != null) {
             String nickname = playerRegistry.getPlayerNickname(playerId);
 
-            // Remove from game if in one
+            // Check if player is in a game
             GameSession gameSession = sessionManager.getGameSessionForPlayer(playerId);
             if (gameSession != null) {
-                sessionManager.removePlayerFromGame(gameSession.getGameId(), playerId);
+                // Determine if this is an active game or just lobby
+                boolean isInActiveGame = gameSession.isStarted();
 
-                // Publish player left event
-                PlayerLeftGameEvent event = new PlayerLeftGameEvent(
+                // Publish player disconnected event (not left - they might reconnect)
+                PlayerDisconnectedEvent event = new PlayerDisconnectedEvent(
                         gameSession.getGameId(),
                         playerId,
-                        nickname
+                        nickname,
+                        isInActiveGame
                 );
                 publishEvent(event);
+
+                // Don't remove from game immediately - allow reconnection
+                // The player remains in the game session but marked as disconnected
+                LOGGER.info("Player " + nickname + " disconnected from game " + gameSession.getGameId() + 
+                           " (active: " + isInActiveGame + ") - session preserved for reconnection");
             }
 
-            // Unregister player
+            // Mark player as disconnected but keep session for reconnection
             playerRegistry.unregisterPlayer(clientId);
-
-            // Publish disconnected event
-            PlayerDisconnectedEvent event = new PlayerDisconnectedEvent(playerId, nickname);
-            publishEvent(event);
         }
     }
     /**

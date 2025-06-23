@@ -8,14 +8,17 @@ import it.polimi.ingsw.common.message.validation.ValidationResult;
 import it.polimi.ingsw.server.core.GameSession;
 import it.polimi.ingsw.server.core.GameSessionManager;
 import it.polimi.ingsw.server.core.PlayerSessionRegistry;
+import it.polimi.ingsw.server.model.domain.ship.Position;
+import it.polimi.ingsw.server.model.enums.ship.ComponentType;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
+import java.util.logging.Logger;
 
 /**
  * Request sent by a game creator to start the game.
  */
 public class StartGameRequest extends AbstractRequest {
+    private static final Logger LOGGER = Logger.getLogger(StartGameRequest.class.getName());
 
     private final String gameId;
 
@@ -38,28 +41,39 @@ public class StartGameRequest extends AbstractRequest {
 
     @Override
     public Response execute(RequestContext context) {
+        LOGGER.info("🚀 START GAME REQUEST - Attempting to start game: " + gameId + " from client: " + context.getSenderId());
+        
         ValidationResult validation = validate();
         if (!validation.isValid()) {
+            LOGGER.warning("❌ START GAME FAILED - Validation error for gameId '" + gameId + "': " + validation.getErrorMessage());
             return createErrorResponse(validation.getErrorMessage(), "VALIDATION_ERROR");
         }
+        LOGGER.fine("✅ START VALIDATION - GameId '" + gameId + "' passed validation");
 
         String playerId = context.getPlayerId();
         if (playerId == null) {
+            LOGGER.warning("❌ START GAME FAILED - Client " + context.getSenderId() + " is not authenticated");
             return createErrorResponse("Authentication required", "AUTHENTICATION_ERROR");
         }
+        LOGGER.fine("✅ AUTH CHECK - Player " + playerId + " is authenticated");
 
         GameSessionManager sessionManager = context.getSessionManager();
         PlayerSessionRegistry registry = context.getPlayerRegistry();
+        LOGGER.fine("🔧 SERVICES - Retrieved session manager and player registry");
         
         GameSession gameSession = sessionManager.getGameSession(gameId);
         if (gameSession == null) {
+            LOGGER.warning("❌ START GAME FAILED - Game not found: " + gameId);
             return createErrorResponse("Game not found", "NOT_FOUND");
         }
+        LOGGER.fine("✅ GAME FOUND - Game " + gameId + " exists");
 
         // Check if player is the creator (host)
         if (!gameSession.isCreator(playerId)) {
+            LOGGER.warning("❌ START GAME FAILED - Player " + playerId + " is not the creator of game: " + gameId);
             return createErrorResponse("Only the game creator can start the game", "UNAUTHORIZED");
         }
+        LOGGER.fine("✅ CREATOR CHECK - Player " + playerId + " is the creator of game: " + gameId);
 
         if (gameSession.isStarted()) {
             return createErrorResponse("Game has already started", "INVALID_STATE");
@@ -72,14 +86,20 @@ public class StartGameRequest extends AbstractRequest {
         
         // Then check if all players are ready
         if (!gameSession.areAllPlayersReady()) {
+            LOGGER.warning("❌ START GAME FAILED - Not all players are ready in game: " + gameId + 
+                          " (players: " + gameSession.getPlayerCount() + ")");
             return createErrorResponse("Not all players are ready", "INVALID_STATE");
         }
+        LOGGER.fine("✅ READY CHECK - All players are ready in game: " + gameId);
 
         // Start the game
+        LOGGER.info("🚀 STARTING GAME - Calling gameSession.startGame() for game: " + gameId);
         boolean started = gameSession.startGame();
         if (!started) {
+            LOGGER.severe("❌ START GAME FAILED - gameSession.startGame() returned false for game: " + gameId);
             return createErrorResponse("Failed to start game", "INTERNAL_ERROR");
         }
+        LOGGER.info("✅ GAME STARTED - Successfully started game: " + gameId);
 
         // Prepare game started event
         List<PlayerInfo> playerInfos = new ArrayList<>();
@@ -89,13 +109,14 @@ public class StartGameRequest extends AbstractRequest {
         }
 
         // Build full building phase state maps
-        java.util.Map<String, java.util.Map<it.polimi.ingsw.server.model.domain.ship.Position, it.polimi.ingsw.server.model.enums.ship.ComponentType>> playerShipGrids = new java.util.HashMap<>();
-        java.util.Map<String, java.util.List<it.polimi.ingsw.server.model.enums.ship.ComponentType>> playerAvailableTiles = new java.util.HashMap<>();
-        java.util.Map<String, java.util.List<it.polimi.ingsw.server.model.enums.ship.ComponentType>> playerHeldTiles = new java.util.HashMap<>();
+        Map<String, Map<Position, ComponentType>> playerShipGrids = new HashMap<>();
+        Map<String, List<ComponentType>> playerAvailableTiles = new HashMap<>();
+        Map<String, List<ComponentType>> playerHeldTiles = new HashMap<>();
 
-        java.util.Map<String, java.util.Set<it.polimi.ingsw.server.model.domain.ship.Position>> playerForbiddenPositions = new java.util.HashMap<>();
-        java.util.Map<String, Long> playerBuildingTimeRemaining = new java.util.HashMap<>();
-        java.util.Map<String, Boolean> playerTimerFlipped = new java.util.HashMap<>();
+        Map<String, Set<Position>> playerForbiddenPositions = new java.util.HashMap<>();
+        Map<String, Long> playerBuildingTimeRemaining = new java.util.HashMap<>();
+        Map<String, Boolean> playerTimerFlipped = new java.util.HashMap<>();
+
         for (String pId : gameSession.getPlayerIds()) {
             GameSession.ShipBuildingSyncState syncState = gameSession.getShipBuildingSyncState(pId);
             if (syncState != null) {
@@ -107,13 +128,18 @@ public class StartGameRequest extends AbstractRequest {
                 playerTimerFlipped.put(pId, syncState.timerFlipped);
             }
         }
+        LOGGER.info("📢 EVENT PUBLISH - Publishing GameStartedEvent for game: " + gameId + 
+                   " with " + playerInfos.size() + " players entering building phase");
         GameStartedEvent event = new GameStartedEvent(
                 gameId, playerInfos, gameSession.getShipGridConfig(),
                 playerShipGrids, playerAvailableTiles, playerHeldTiles,
                 playerForbiddenPositions, playerBuildingTimeRemaining, playerTimerFlipped
         );
         context.publishEvent(event);
+        LOGGER.fine("✅ EVENT PUBLISHED - GameStartedEvent sent to event system");
 
+        LOGGER.info("🎉 START GAME SUCCESS - Game " + gameId + " successfully started with " + 
+                   playerInfos.size() + " players entering building phase");
         return new GenericSuccessResponse(getCorrelationId());
     }
 } 

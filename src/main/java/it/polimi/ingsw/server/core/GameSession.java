@@ -20,6 +20,7 @@ public class GameSession {
 
     private final String gameId;
     private final String gameName;
+    private final String creatorId;
     private final GameModel gameModel;
     private final int maxPlayers;
     private final Map<String, PlayerState> playerStates;
@@ -50,6 +51,7 @@ public class GameSession {
                        PlayerSessionRegistry playerRegistry) {
         this.gameId = gameId;
         this.gameName = gameName;
+        this.creatorId = creatorId;
         this.maxPlayers = maxPlayers;
         this.configManager = configManager;
         this.playerRegistry = playerRegistry;
@@ -66,6 +68,12 @@ public class GameSession {
 
         // Add creator as first player
         addPlayer(creatorId);
+        
+        // Set creator as ready by default (without triggering auto-start)
+        PlayerState creatorState = playerStates.get(creatorId);
+        if (creatorState != null) {
+            creatorState.setReady(true);
+        }
     }
 
     /**
@@ -474,6 +482,10 @@ public class GameSession {
         return gameName;
     }
 
+    public String getCreatorId() {
+        return creatorId;
+    }
+
     public GameModel getGameModel() {
         return gameModel;
     }
@@ -570,9 +582,7 @@ public class GameSession {
     
     public boolean isCreator(String playerId) {
         synchronized (lock) {
-            // First player in the list is the creator
-            return !playerStates.isEmpty() && 
-                   playerStates.keySet().iterator().next().equals(playerId);
+            return creatorId != null && creatorId.equals(playerId);
         }
     }
     

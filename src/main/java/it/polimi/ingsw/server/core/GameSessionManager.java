@@ -161,6 +161,7 @@ public class GameSessionManager {
                 availableGames.add(new GameInfo(
                         session.getGameId(),
                         session.getGameName(),
+                        session.getCreatorId(),
                         session.getMaxPlayers(),
                         session.getPlayerCount(),
                         session.getGameLevel(),

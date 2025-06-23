@@ -39,12 +39,11 @@ public class GameCreatedEvent extends AbstractEvent {
     public void handleOnClient(ClientEventContext context) {
         // Add game to available games list
         PlayerInfo creatorInfo = new PlayerInfo(creatorId, creatorNickname, true);
-        GameInfo gameInfo = new GameInfo(gameId, gameName, maxPlayers, 1, gameLevel,
+        GameInfo gameInfo = new GameInfo(gameId, gameName, creatorId, maxPlayers, 1, gameLevel,
                 Collections.singletonList(creatorInfo));
 
-        if(context.getGameState() != null){
-            context.getGameState().addAvailableGame(gameInfo);
-        }
+        // Add to client model to trigger property change and UI update
+        context.getController().getModel().addAvailableGame(gameInfo);
 
         LOGGER.log(Level.SEVERE, "GameCreatedEvent received on client. Creator ID: " + creatorId + ". Is this the local player? " + context.isLocalPlayer(creatorId));
 
@@ -103,7 +102,14 @@ public class GameCreatedEvent extends AbstractEvent {
         return gameLevel;
     }
 
+    @Override
     public String getGameId() {
+        // GameCreatedEvent should be a global event, not game-specific
+        // Return null so it gets sent to ALL clients, not just clients in this game
+        return null;
+    }
+    
+    public String getCreatedGameId() {
         return gameId;
     }
 }

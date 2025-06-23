@@ -152,23 +152,21 @@ public class GuiGameLobbyView extends BaseUIView {
     }
 
     @Override
-    public void propertyChange(PropertyChangeEvent evt) {
-        Platform.runLater(() -> {
-            switch (evt.getPropertyName()) {
-                case "playersInLobby":
-                case "currentGameInfo":
-                case "playerReady":
-                    updateLobbyDisplay();
-                    break;
-                case "currentView":
-                    // Handle view transitions
-                    if (evt.getNewValue() == ClientModel.ViewState.GAME) {
-                        // Game started, transition to game view will be handled by manager
-                        context.getNotificationService().showSuccess("Game Started", "The game has begun!");
-                    }
-                    break;
-            }
-        });
+    protected void onPropertyChange(PropertyChangeEvent evt) {
+        switch (evt.getPropertyName()) {
+            case "playersInLobby":
+            case "currentGameInfo":
+            case "playerReady":
+                updateLobbyDisplay();
+                break;
+            case "currentView":
+                // Handle view transitions
+                if (evt.getNewValue() == ClientModel.ViewState.GAME) {
+                    // Game started, transition to game view will be handled by manager
+                    context.getNotificationService().showSuccess("Game Started", "The game has begun!");
+                }
+                break;
+        }
     }
 
     private VBox createGameInfoSection() {
@@ -386,8 +384,12 @@ public class GuiGameLobbyView extends BaseUIView {
     }
 
     private String getHostPlayerId() {
-        List<PlayerInfo> players = context.getModel().getPlayersInLobby();
-        return players != null && !players.isEmpty() ? players.get(0).getPlayerId() : null;
+        // Get host from GameInfo which tracks the actual creator/host
+        if (context.getModel().getCurrentGameInfo() != null) {
+            return context.getModel().getCurrentGameInfo().getCreatorId();
+        }
+        // No fallback - if GameInfo is not available, no one is host
+        return null;
     }
 
     private boolean areAllPlayersReady() {
@@ -424,32 +426,17 @@ public class GuiGameLobbyView extends BaseUIView {
         String playerId = context.getController().getPlayerId();
         boolean currentReady = context.getModel().isPlayerReady(playerId);
         
-        SetPlayerReadyRequest request = new SetPlayerReadyRequest(!currentReady);
-        context.getController().sendRequest(request);
+        context.getController().setPlayerReady(!currentReady);
     }
 
     public void handleStartGameButton() {
         LOGGER.info("Start game button clicked");
-        String gameId = context.getModel().getCurrentGameId();
-        if (gameId != null) {
-            LOGGER.info("Sending StartGameRequest for gameId: " + gameId);
-            StartGameRequest request = new StartGameRequest(gameId);
-            context.getController().sendRequest(request);
-        } else {
-            LOGGER.warning("Cannot start game: gameId is null");
-        }
+        context.getController().startGame();
     }
 
     public void handleLeaveGameButton() {
         LOGGER.info("Leave game button clicked");
-        String gameId = context.getModel().getCurrentGameId();
-        if (gameId != null) {
-            LOGGER.info("Sending LeaveGameRequest for gameId: " + gameId);
-            LeaveGameRequest request = new LeaveGameRequest(gameId);
-            context.getController().sendRequest(request);
-        } else {
-            LOGGER.warning("Cannot leave game: gameId is null");
-        }
+        context.getController().leaveGame();
     }
 
 }

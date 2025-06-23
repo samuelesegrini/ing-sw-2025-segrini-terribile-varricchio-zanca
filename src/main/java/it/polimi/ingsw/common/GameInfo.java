@@ -12,15 +12,17 @@ import java.util.List;
 public class GameInfo implements Serializable {
     public final String gameId;
     public final String gameName;
+    public final String creatorId;
     public final int maxPlayers;
     public final int currentPlayers;
     public final GameLevel gameLevel;
     public final List<PlayerInfo> players;
 
-    public GameInfo(String gameId, String gameName, int maxPlayers, int currentPlayers,
+    public GameInfo(String gameId, String gameName, String creatorId, int maxPlayers, int currentPlayers,
                     GameLevel gameLevel, List<PlayerInfo> players) {
         this.gameId = gameId;
         this.gameName = gameName;
+        this.creatorId = creatorId;
         this.maxPlayers = maxPlayers;
         this.currentPlayers = currentPlayers;
         this.gameLevel = gameLevel;
@@ -36,10 +38,7 @@ public class GameInfo implements Serializable {
     }
 
     public String getCreatorId() {
-        if (players != null && !players.isEmpty()) {
-            return players.get(0).getPlayerId();
-        }
-        return null;
+        return creatorId;
     }
 
     public List<PlayerInfo> getPlayers() {

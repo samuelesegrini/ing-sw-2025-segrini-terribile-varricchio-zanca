@@ -271,11 +271,7 @@ public class GuiShipBuildingView extends BaseUIView {
         }
         
         // Send placement request to server
-        PlaceTileRequest request = new PlaceTileRequest(
-            selectedComponent.name(), row, col, 0 // rotation = 0 for now
-        );
-        
-        controller.sendRequest(request);
+        controller.placeTile(selectedComponent.name(), row, col, 0);
         
         // Remove from held tiles if it was selected from there
         if (gameState.getHeldTiles().contains(selectedComponent)) {
@@ -305,15 +301,13 @@ public class GuiShipBuildingView extends BaseUIView {
     }
 
     private void handleTakeRandomTile() {
-        TakeTileRequest request = new TakeTileRequest();
-        controller.sendRequest(request);
+        controller.takeTile();
     }
 
     private void handleTakeSelectedTile() {
         ComponentType selected = availableTilesList.getSelectionModel().getSelectedItem();
         if (selected != null) {
-            RequestFaceUpTileRequest request = new RequestFaceUpTileRequest(selected.name());
-            controller.sendRequest(request);
+            controller.requestFaceUpTile(selected.name());
         } else {
             showAlert("No Selection", "Please select a tile from the available tiles list.");
         }
@@ -322,8 +316,7 @@ public class GuiShipBuildingView extends BaseUIView {
     private void handleReturnTile() {
         ComponentType selected = heldTilesList.getSelectionModel().getSelectedItem();
         if (selected != null) {
-            ReturnTileRequest request = new ReturnTileRequest(selected.name());
-            controller.sendRequest(request);
+            controller.returnTile(selected.name());
             
             LocalGameState.getInstance().removeHeldTile(selected);
             LocalGameState.getInstance().addAvailableTile(selected);
@@ -336,13 +329,11 @@ public class GuiShipBuildingView extends BaseUIView {
     }
 
     private void handleFlipTimer() {
-        FlipBuildingTimerRequest request = new FlipBuildingTimerRequest();
-        controller.sendRequest(request);
+        controller.flipBuildingTimer();
     }
 
     private void handleValidateShip() {
-        ValidateShipRequest request = new ValidateShipRequest();
-        controller.sendRequest(request);
+        controller.validateShip();
     }
 
     private void updateShipDisplay() {
@@ -503,7 +494,7 @@ public class GuiShipBuildingView extends BaseUIView {
     }
 
     @Override
-    public void propertyChange(PropertyChangeEvent evt) {
+    protected void onPropertyChange(PropertyChangeEvent evt) {
         String propertyName = evt.getPropertyName();
         switch (propertyName) {
             case "shipGridUpdated" -> updateShipDisplay();

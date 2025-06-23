@@ -1,10 +1,10 @@
 package it.polimi.ingsw.common.message.request;
 
-import it.polimi.ingsw.common.message.event.PlayerReconnectedEvent;
 import it.polimi.ingsw.common.message.response.ErrorResponse;
 import it.polimi.ingsw.common.message.response.Response;
 import it.polimi.ingsw.common.message.response.ReconnectResponse;
 import it.polimi.ingsw.common.message.validation.ValidationResult;
+import it.polimi.ingsw.common.message.event.PlayerReconnectedEvent;
 import it.polimi.ingsw.server.core.GameSession;
 import it.polimi.ingsw.server.core.PlayerSessionRegistry;
 
@@ -57,9 +57,17 @@ public class ReconnectRequest extends AbstractRequest {
         GameSession gameSession = context.getSessionManager().getGameSessionForPlayer(playerId);
         String gameId = gameSession != null ? gameSession.getGameId() : null;
 
-        // Publish reconnected event
-        PlayerReconnectedEvent event = new PlayerReconnectedEvent(playerId, nickname, gameId);
-        context.publishEvent(event);
+        // Publish reconnection event if player was in a game
+        if (gameSession != null) {
+            boolean wasInActiveGame = gameSession.isStarted();
+            PlayerReconnectedEvent event = new PlayerReconnectedEvent(
+                    gameId,
+                    playerId,
+                    nickname,
+                    wasInActiveGame
+            );
+            context.getEventPublisher().publishEvent(event);
+        }
 
         return new ReconnectResponse(
                 getCorrelationId(),

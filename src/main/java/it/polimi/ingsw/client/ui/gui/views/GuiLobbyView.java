@@ -43,6 +43,7 @@ public class GuiLobbyView extends BaseUIView {
     private ProgressIndicator loadingIndicator;
     private ScrollPane mainScrollPane;
     private Label statusLabel;
+    private Label playerLabel;
     private VBox contentContainer;
 
     public GuiLobbyView(Stage stage) {
@@ -124,8 +125,8 @@ public class GuiLobbyView extends BaseUIView {
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
         
-        Label playerLabel = new Label("Player: " + (context != null && context.getModel() != null ? 
-            context.getModel().getNickname() : "Unknown"));
+        playerLabel = new Label("Player: " + (context != null && context.getModel() != null && 
+            context.getModel().getNickname() != null ? context.getModel().getNickname() : "Unknown"));
         playerLabel.getStyleClass().addAll("label-header", "lobby-player-info-label");
         
         logoutButton = new Button("LOGOUT");
@@ -199,7 +200,7 @@ public class GuiLobbyView extends BaseUIView {
         createGameButton.setOnAction(e -> showCreateGameDialog());
         
         // Refresh button
-        refreshButton.setOnAction(e -> refreshGameList());
+        refreshButton.setOnAction(e -> fetchGameListFromServer());
         
         // Logout button
         logoutButton.setOnAction(e -> handleLogout());
@@ -219,11 +220,212 @@ public class GuiLobbyView extends BaseUIView {
     }
     
     private void showCreateGameDialog() {
-        // For now, create a simple game with default values
-        // This can be expanded with a proper dialog later
-        CreateGameRequest request = new CreateGameRequest(4, GameLevel.TEST_FLIGHT, "New Game");
-        context.getController().sendRequest(request);
-        statusLabel.setText("Creating game...");
+        Dialog<CreateGameRequest> dialog = new Dialog<>();
+        dialog.setTitle("Create New Game");
+        dialog.setHeaderText(null); // Remove default header for custom styling
+        
+        // Set dialog buttons
+        ButtonType createButtonType = new ButtonType("Create Game", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(createButtonType, ButtonType.CANCEL);
+        
+        // Apply Galaxy Trucker styling to dialog
+        dialog.getDialogPane().getStylesheets().add(
+            getClass().getResource("/css/common.css").toExternalForm()
+        );
+        dialog.getDialogPane().getStyleClass().add("panel-medium-glass");
+        
+        // Set dialog size and styling
+        dialog.getDialogPane().setPrefSize(500, 450);
+        dialog.getDialogPane().setStyle("-fx-background-color: rgba(16, 16, 32, 0.95);");
+        
+        // Create main container with proper styling
+        VBox mainContainer = new VBox(20);
+        mainContainer.getStyleClass().add("panel-dark-glass");
+        mainContainer.setPadding(new Insets(30));
+        mainContainer.setAlignment(Pos.CENTER);
+        mainContainer.setMaxWidth(420);
+        
+        // Title
+        Label titleLabel = new Label("Create New Game");
+        titleLabel.getStyleClass().addAll("label-title");
+        titleLabel.setAlignment(Pos.CENTER);
+        
+        Label subtitleLabel = new Label("Configure your Galaxy Trucker game");
+        subtitleLabel.getStyleClass().addAll("label-subtitle");
+        subtitleLabel.setAlignment(Pos.CENTER);
+        
+        // Create form controls
+        GridPane grid = new GridPane();
+        grid.setHgap(15);
+        grid.setVgap(20);
+        grid.setAlignment(Pos.CENTER);
+        
+        // Game Name field
+        TextField gameNameField = new TextField("New Game");
+        gameNameField.setPromptText("Enter game name (optional)");
+        gameNameField.getStyleClass().add("text-field-styled");
+        gameNameField.setMaxWidth(280);
+        
+        // Max Players selection
+        ComboBox<Integer> maxPlayersCombo = new ComboBox<>();
+        maxPlayersCombo.getItems().addAll(2, 3, 4);
+        maxPlayersCombo.setValue(4); // Default to 4 players
+        maxPlayersCombo.getStyleClass().add("choice-box-styled");
+        maxPlayersCombo.setMaxWidth(280);
+        
+        // Game Level selection
+        ComboBox<GameLevel> gameLevelCombo = new ComboBox<>();
+        gameLevelCombo.getItems().addAll(GameLevel.TEST_FLIGHT, GameLevel.LEVEL_II);
+        gameLevelCombo.setValue(GameLevel.TEST_FLIGHT); // Default to TEST_FLIGHT
+        gameLevelCombo.getStyleClass().add("choice-box-styled");
+        gameLevelCombo.setMaxWidth(280);
+        
+        // Custom cell factory for game level display
+        gameLevelCombo.setCellFactory(listView -> new ListCell<GameLevel>() {
+            @Override
+            protected void updateItem(GameLevel item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                } else {
+                    switch (item) {
+                        case TEST_FLIGHT:
+                            setText("Test Flight (Beginner)");
+                            break;
+                        case LEVEL_II:
+                            setText("Level II (Standard)");
+                            break;
+                        default:
+                            setText(item.toString());
+                    }
+                }
+            }
+        });
+        
+        // Set button cell for display when closed
+        gameLevelCombo.setButtonCell(new ListCell<GameLevel>() {
+            @Override
+            protected void updateItem(GameLevel item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                } else {
+                    switch (item) {
+                        case TEST_FLIGHT:
+                            setText("Test Flight (Beginner)");
+                            break;
+                        case LEVEL_II:
+                            setText("Level II (Standard)");
+                            break;
+                        default:
+                            setText(item.toString());
+                    }
+                }
+            }
+        });
+        
+        // Add descriptions with proper styling
+        Label gameNameLabel = new Label("Game Name:");
+        gameNameLabel.getStyleClass().add("label");
+        
+        Label maxPlayersLabel = new Label("Max Players:");
+        maxPlayersLabel.getStyleClass().add("label");
+        
+        Label gameLevelLabel = new Label("Game Level:");
+        gameLevelLabel.getStyleClass().add("label");
+        
+        Label levelDescLabel = new Label();
+        levelDescLabel.setWrapText(true);
+        levelDescLabel.setMaxWidth(280);
+        levelDescLabel.getStyleClass().add("label");
+        levelDescLabel.setStyle("-fx-font-size: 12pt; -fx-text-fill: #B0C4DE; -fx-opacity: 0.8;");
+        
+        // Update description and theme when level changes
+        gameLevelCombo.setOnAction(e -> {
+            GameLevel selectedLevel = gameLevelCombo.getValue();
+            if (selectedLevel != null) {
+                switch (selectedLevel) {
+                    case TEST_FLIGHT:
+                        levelDescLabel.setText("8 simple adventure cards, perfect for learning the game mechanics.");
+                        // Apply Test Flight theme accent
+                        titleLabel.setStyle("-fx-text-fill: #34C1FF;");
+                        break;
+                    case LEVEL_II:
+                        levelDescLabel.setText("Mix of Level I and II cards with 3 predictable piles for strategic planning.");
+                        // Apply Level II theme accent
+                        titleLabel.setStyle("-fx-text-fill: #D455F5;");
+                        break;
+                }
+            }
+        });
+        
+        // Set initial description and theme
+        levelDescLabel.setText("8 simple adventure cards, perfect for learning the game mechanics.");
+        titleLabel.setStyle("-fx-text-fill: #34C1FF;"); // Test Flight theme as default
+        
+        // Layout components
+        grid.add(gameNameLabel, 0, 0);
+        grid.add(gameNameField, 1, 0);
+        grid.add(maxPlayersLabel, 0, 1);
+        grid.add(maxPlayersCombo, 1, 1);
+        grid.add(gameLevelLabel, 0, 2);
+        grid.add(gameLevelCombo, 1, 2);
+        grid.add(levelDescLabel, 1, 3);
+        
+        // Assemble main container
+        mainContainer.getChildren().addAll(titleLabel, subtitleLabel, grid);
+        
+        dialog.getDialogPane().setContent(mainContainer);
+        
+        // Style dialog buttons to match Galaxy Trucker theme
+        Platform.runLater(() -> {
+            Node createButton = dialog.getDialogPane().lookupButton(createButtonType);
+            Node cancelButton = dialog.getDialogPane().lookupButton(ButtonType.CANCEL);
+            
+            if (createButton instanceof Button) {
+                ((Button) createButton).getStyleClass().addAll("button", "button-primary");
+                setupButtonAnimations((Button) createButton);
+            }
+            
+            if (cancelButton instanceof Button) {
+                ((Button) cancelButton).getStyleClass().addAll("button");
+                setupButtonAnimations((Button) cancelButton);
+            }
+        });
+        
+        // Convert result when Create button is clicked
+        dialog.setResultConverter(dialogButton -> {
+            if (dialogButton == createButtonType) {
+                String gameName = gameNameField.getText().trim();
+                if (gameName.isEmpty()) {
+                    gameName = "New Game";
+                }
+                return new CreateGameRequest(
+                    maxPlayersCombo.getValue(),
+                    gameLevelCombo.getValue(),
+                    gameName
+                );
+            }
+            return null;
+        });
+        
+        // Show dialog and handle result
+        dialog.showAndWait().ifPresent(request -> {
+            LOGGER.info("Creating game: " + request.getGameName() + 
+                       " (Level: " + request.getGameLevel() + 
+                       ", Max Players: " + request.getMaxPlayers() + ")");
+            statusLabel.setText("Creating game...");
+            context.getController().createGame(request.getGameName(), request.getMaxPlayers(), request.getGameLevel().toString())
+                    .thenAccept(success -> {
+                        Platform.runLater(() -> {
+                            if (success) {
+                                statusLabel.setText("Game created successfully");
+                            } else {
+                                statusLabel.setText("Failed to create game");
+                            }
+                        });
+                    });
+        });
     }
     
     private void handleLogout() {
@@ -232,7 +434,7 @@ public class GuiLobbyView extends BaseUIView {
         context.getModel().setCurrentView(ClientModel.ViewState.LOGIN);
     }
 
-    private void refreshGameList() {
+    private void fetchGameListFromServer() {
         if (context == null) {
             LOGGER.warning("Cannot refresh game list: context is null");
             return;
@@ -241,37 +443,20 @@ public class GuiLobbyView extends BaseUIView {
         showLoading(true);
         statusLabel.setText("Refreshing game list...");
         
-        ListGamesRequest request = new ListGamesRequest();
-        context.getController().sendRequest(request);
-        
-        // Safety timeout to hide loading indicator if response doesn't come
-        Platform.runLater(() -> {
-            javafx.concurrent.Task<Void> timeoutTask = new javafx.concurrent.Task<Void>() {
-                @Override
-                protected Void call() throws Exception {
-                    Thread.sleep(5000); // 5 second timeout
-                    return null;
-                }
-                
-                @Override
-                protected void succeeded() {
+        context.getController().refreshGameList()
+                .thenAccept(success -> {
                     Platform.runLater(() -> {
-                        if (loadingIndicator.isVisible()) {
-                            LOGGER.warning("Loading indicator timeout - forcing hide");
-                            showLoading(false);
-                            statusLabel.setText("Game list refresh timed out");
+                        showLoading(false);
+                        if (success) {
+                            statusLabel.setText("Game list refreshed successfully");
+                        } else {
+                            statusLabel.setText("Failed to refresh game list");
                         }
                     });
-                }
-            };
-            
-            Thread timeoutThread = new Thread(timeoutTask);
-            timeoutThread.setDaemon(true);
-            timeoutThread.start();
-        });
+                });
     }
     
-    private void updateGamesList() {
+    private void renderGamesListUI() {
         LOGGER.info("Updating games list");
         
         List<GameInfo> availableGames = context.getModel().getAvailableGames();
@@ -376,8 +561,17 @@ public class GuiLobbyView extends BaseUIView {
         showLoading(true);
         statusLabel.setText("Joining game...");
         
-        JoinGameRequest request = new JoinGameRequest(game.getGameId());
-        context.getController().sendRequest(request);
+        context.getController().joinGame(game.getGameId())
+                .thenAccept(success -> {
+                    Platform.runLater(() -> {
+                        showLoading(false);
+                        if (success) {
+                            statusLabel.setText("Joined game successfully");
+                        } else {
+                            statusLabel.setText("Failed to join game");
+                        }
+                    });
+                });
     }
     
     private void showLoading(boolean isLoading) {
@@ -424,7 +618,7 @@ public class GuiLobbyView extends BaseUIView {
         if (context != null && context.getModel() != null && 
             context.getModel().getAvailableGames() != null) {
             LOGGER.info("Games already available, updating display");
-            Platform.runLater(this::updateGamesList);
+            Platform.runLater(this::renderGamesListUI);
         } else {
             // Show a brief loading state but with timeout
             showLoading(true);
@@ -471,30 +665,36 @@ public class GuiLobbyView extends BaseUIView {
 
     @Override
     protected void onRefresh() {
-        Platform.runLater(this::updateGamesList);
+        Platform.runLater(this::renderGamesListUI);
     }
     
     @Override
-    public void propertyChange(PropertyChangeEvent evt) {
+    protected void onPropertyChange(PropertyChangeEvent evt) {
         LOGGER.info("Property change received: " + evt.getPropertyName());
-        Platform.runLater(() -> {
-            switch (evt.getPropertyName()) {
-                case "availableGames":
-                    LOGGER.info("Available games property changed, updating list");
-                    updateGamesList();
-                    break;
-                case "currentView":
-                    // Hide loading when view changes away from lobby
-                    ClientModel.ViewState newView = (ClientModel.ViewState) evt.getNewValue();
-                    LOGGER.info("View changed to: " + newView);
-                    if (newView != ClientModel.ViewState.LOBBY) {
-                        showLoading(false);
-                    }
-                    break;
-                default:
-                    LOGGER.fine("Unhandled property change: " + evt.getPropertyName());
-            }
-        });
+        switch (evt.getPropertyName()) {
+            case "availableGames":
+                LOGGER.info("Available games property changed, updating list");
+                renderGamesListUI();
+                break;
+            case "currentView":
+                // Hide loading when view changes away from lobby
+                ClientModel.ViewState newView = (ClientModel.ViewState) evt.getNewValue();
+                LOGGER.info("View changed to: " + newView);
+                if (newView != ClientModel.ViewState.LOBBY) {
+                    showLoading(false);
+                }
+                break;
+            case "nickname":
+                // Update player label when nickname changes
+                String newNickname = (String) evt.getNewValue();
+                LOGGER.info("Nickname changed to: " + newNickname);
+                if (playerLabel != null) {
+                    playerLabel.setText("Player: " + (newNickname != null ? newNickname : "Unknown"));
+                }
+                break;
+            default:
+                LOGGER.fine("Unhandled property change: " + evt.getPropertyName());
+        }
     }
 
     @Override
