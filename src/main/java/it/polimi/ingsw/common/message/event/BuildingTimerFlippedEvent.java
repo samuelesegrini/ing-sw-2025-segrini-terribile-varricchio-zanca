@@ -1,5 +1,8 @@
 package it.polimi.ingsw.common.message.event;
 
+import it.polimi.ingsw.client.core.state.LocalGameState;
+import it.polimi.ingsw.client.ui.NotificationType;
+
 import java.util.Map;
 
 /**
@@ -60,7 +63,7 @@ public class BuildingTimerFlippedEvent extends AbstractEvent {
                 }
                 
                 // Add warning if timer has been flipped multiple times
-                NotificationType notificationType = 
+                NotificationType notificationType =
                     flipCount > 2 ? NotificationType.WARNING 
                                   : NotificationType.INFO;
                 

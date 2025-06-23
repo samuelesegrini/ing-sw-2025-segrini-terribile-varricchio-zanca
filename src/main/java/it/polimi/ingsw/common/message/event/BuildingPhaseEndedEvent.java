@@ -16,7 +16,7 @@ public class BuildingPhaseEndedEvent extends AbstractEvent {
     private final List<PlayerInfo> flightOrder;
     private final long buildingTimeElapsed;
 
-    public BuildingPhaseEndedEvent(String gameId, Map<String, ShipValidationResult> validationResults, 
+    public BuildingPhaseEndedEvent(String gameId, Map<String, ShipValidationResult> validationResults,
                                    List<PlayerInfo> flightOrder, long buildingTimeElapsed) {
         super(EventType.BUILDING_PHASE_COMPLETED, gameId, null);
         this.validationResults = validationResults;
@@ -42,19 +42,20 @@ public class BuildingPhaseEndedEvent extends AbstractEvent {
             // Update game state to end building phase
             var localGameState = it.polimi.ingsw.client.core.state.LocalGameState.getInstance();
             localGameState.setCurrentPhase(it.polimi.ingsw.server.model.enums.GamePhase.FLIGHT);
-            
+
             // Update local validation results
             String localPlayerId = localGameState.getLocalPlayerId();
             ShipValidationResult localResult = validationResults.get(localPlayerId);
             if (localResult != null) {
                 localGameState.setShipValidation(localResult.isValid(), localResult.getErrors());
-            
+            }
+
             // Update client model
             context.getController().getModel().endBuildingPhase();
 
             // Show phase transition notification
             if (context.getNotificationService() != null) {
-                
+
                 String message = "Building phase complete! ";
                 if (localResult != null) {
                     if (localResult.isValid()) {
@@ -63,7 +64,7 @@ public class BuildingPhaseEndedEvent extends AbstractEvent {
                         message += "Your ship has " + localResult.getErrorCount() + " construction errors.";
                     }
                 }
-                
+
                 context.getNotificationService().showNotification(new Notification(
                         "Building Phase Complete",
                         message,
