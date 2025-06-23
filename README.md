@@ -7,7 +7,7 @@ Group 26
 
 # The Project  
 This project is a Java-based software adaptation of the board game Galaxy Trucker, developed as the final project for the Software Engineering course.  
-It features a distributed client-server architecture and follows the Model-View-Controller (MVC) design pattern.  
+It features a distributed client-server architecture and follows the Model-View-Controller design pattern.  
 
 # Documentation  
 * Initial UML
