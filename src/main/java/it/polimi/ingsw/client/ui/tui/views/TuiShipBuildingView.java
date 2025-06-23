@@ -198,14 +198,12 @@ public class TuiShipBuildingView extends BaseUIView {
     }
 
     @Override
-    public void propertyChange(PropertyChangeEvent evt) {
-        if (active) {
-            refreshNeeded = true;
-            if ("shipGridUpdated".equals(evt.getPropertyName()) ||
-                "heldTilesUpdated".equals(evt.getPropertyName()) ||
-                "buildingTimerUpdated".equals(evt.getPropertyName())) {
-                displayFullInterface();
-            }
+    protected void onPropertyChange(PropertyChangeEvent evt) {
+        refreshNeeded = true;
+        if ("shipGridUpdated".equals(evt.getPropertyName()) ||
+            "heldTilesUpdated".equals(evt.getPropertyName()) ||
+            "buildingTimerUpdated".equals(evt.getPropertyName())) {
+            displayFullInterface();
         }
     }
 

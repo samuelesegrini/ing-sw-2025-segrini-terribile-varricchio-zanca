@@ -52,7 +52,7 @@ public class TuiGameLobbyView extends BaseUIView {
     }
 
     @Override
-    public void propertyChange(PropertyChangeEvent evt) {
+    protected void onPropertyChange(PropertyChangeEvent evt) {
         switch (evt.getPropertyName()) {
             case "playersInLobby":
             case "currentGameInfo":
@@ -283,6 +283,11 @@ public class TuiGameLobbyView extends BaseUIView {
     }
 
     private String getHostPlayerId() {
+        // Get host from GameInfo which tracks the actual creator/host
+        if (context.getModel().getCurrentGameInfo() != null) {
+            return context.getModel().getCurrentGameInfo().getCreatorId();
+        }
+        // Fallback to first player if GameInfo is not available
         List<PlayerInfo> players = context.getModel().getPlayersInLobby();
         return players != null && !players.isEmpty() ? players.get(0).getPlayerId() : null;
     }
