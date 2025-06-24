@@ -42,8 +42,8 @@ public class SocketServerAdapter implements ServerNetworkInterface {
         this(-1); // Default constructor indicating port needs to be set by startServer
     }
 
-    public SocketServerAdapter(int port) { // Legacy, prefer startServer(port)
-        this.port = port; // Port will be used by startServer
+    public SocketServerAdapter(int port) {
+        this.port = port;
         this.clientHandlingExecutor = Executors.newCachedThreadPool(
                 r -> {
                     Thread t = new Thread(r);

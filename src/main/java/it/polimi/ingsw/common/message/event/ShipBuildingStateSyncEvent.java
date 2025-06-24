@@ -2,6 +2,8 @@ package it.polimi.ingsw.common.message.event;
 
 import it.polimi.ingsw.server.model.domain.ship.Position;
 import it.polimi.ingsw.server.model.enums.ship.ComponentType;
+import it.polimi.ingsw.client.core.state.ComponentInstance;
+import it.polimi.ingsw.common.ComponentData;
 
 import java.util.List;
 import java.util.Map;
@@ -12,18 +14,18 @@ import java.util.Set;
  * Used at the start of the building phase and on reconnection.
  */
 public class ShipBuildingStateSyncEvent extends AbstractEvent {
-    private final Map<Position, ComponentType> shipGrid;
-    private final List<ComponentType> availableTiles;
-    private final List<ComponentType> heldTiles;
+    private final Map<Position, ComponentData> shipGrid;
+    private final List<ComponentData> availableTiles;
+    private final List<ComponentData> heldTiles;
     private final Set<Position> forbiddenPositions;
     private final long buildingTimeRemaining;
     private final boolean timerFlipped;
 
     public ShipBuildingStateSyncEvent(String gameId,
                                       String playerId,
-                                      Map<Position, ComponentType> shipGrid,
-                                      List<ComponentType> availableTiles,
-                                      List<ComponentType> heldTiles,
+                                      Map<Position, ComponentData> shipGrid,
+                                      List<ComponentData> availableTiles,
+                                      List<ComponentData> heldTiles,
                                       Set<Position> forbiddenPositions,
                                       long buildingTimeRemaining,
                                       boolean timerFlipped) {
@@ -36,15 +38,15 @@ public class ShipBuildingStateSyncEvent extends AbstractEvent {
         this.timerFlipped = timerFlipped;
     }
 
-    public Map<Position, ComponentType> getShipGrid() {
+    public Map<Position, ComponentData> getShipGrid() {
         return shipGrid;
     }
 
-    public List<ComponentType> getAvailableTiles() {
+    public List<ComponentData> getAvailableTiles() {
         return availableTiles;
     }
 
-    public List<ComponentType> getHeldTiles() {
+    public List<ComponentData> getHeldTiles() {
         return heldTiles;
     }
 
@@ -65,20 +67,35 @@ public class ShipBuildingStateSyncEvent extends AbstractEvent {
         // Get local game state instance
         var localState = it.polimi.ingsw.client.core.state.LocalGameState.getInstance();
         
-        // Sync ship grid
+        // Sync ship grid - create ComponentInstance from complete server data
         localState.resetShipBuildingState();
-        for (Map.Entry<Position, ComponentType> entry : shipGrid.entrySet()) {
-            localState.placeTile(entry.getValue(), entry.getKey(), 0);
+        for (Map.Entry<Position, ComponentData> entry : shipGrid.entrySet()) {
+            ComponentData componentData = entry.getValue();
+            ComponentInstance component = new ComponentInstance(
+                componentData.getId(),
+                componentData.getType(),
+                componentData.getConnectors()
+            );
+            component.setDirection(componentData.getDefaultDirection());
+            localState.placeTile(component, entry.getKey(), 0);
         }
         
-        // Sync available tiles
-        for (ComponentType tileType : availableTiles) {
-            localState.addAvailableTile(tileType);
+        // Sync available tiles - create ComponentInstance from complete server data
+        for (ComponentData componentData : availableTiles) {
+            localState.addAvailableTile(
+                componentData.getId(),
+                componentData.getType(),
+                componentData.getConnectors()
+            );
         }
         
-        // Sync held tiles
-        for (ComponentType tileType : heldTiles) {
-            localState.addHeldTile(tileType);
+        // Sync held tiles - create ComponentInstance from complete server data
+        for (ComponentData componentData : heldTiles) {
+            localState.addHeldTile(
+                componentData.getId(),
+                componentData.getType(),
+                componentData.getConnectors()
+            );
         }
         
         // Sync timer state

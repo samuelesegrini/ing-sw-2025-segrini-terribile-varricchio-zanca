@@ -12,6 +12,7 @@ import it.polimi.ingsw.client.ui.gui.views.GuiLoginView;
 import it.polimi.ingsw.client.ui.gui.views.GuiShipBuildingView;
 import javafx.application.Application;
 import javafx.application.Platform;
+import javafx.scene.control.Alert;
 import javafx.stage.Stage;
 import java.util.HashMap;
 import java.util.Map;
@@ -62,16 +63,22 @@ public class GuiManager extends Application implements ViewNavigator.ViewStateCh
     @Override
     public void showError(String title, String message) {
         Platform.runLater(() -> {
-            // TODO: Implement error dialog
-            System.err.println("ERROR: " + title + " - " + message);
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setTitle(title);
+            alert.setHeaderText(null);
+            alert.setContentText(message);
+            alert.showAndWait();
         });
     }
     
     @Override
     public void showInfo(String title, String message) {
         Platform.runLater(() -> {
-            // TODO: Implement info dialog
-            System.out.println("INFO: " + title + " - " + message);
+            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+            alert.setTitle(title);
+            alert.setHeaderText(null);
+            alert.setContentText(message);
+            alert.showAndWait();
         });
     }
     

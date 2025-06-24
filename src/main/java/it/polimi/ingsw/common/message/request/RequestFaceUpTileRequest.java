@@ -1,5 +1,6 @@
 package it.polimi.ingsw.common.message.request;
 
+import it.polimi.ingsw.common.ComponentData;
 import it.polimi.ingsw.common.message.response.ErrorResponse;
 import it.polimi.ingsw.common.message.response.RequestFaceUpTileResponse;
 import it.polimi.ingsw.common.message.response.Response;
@@ -77,8 +78,10 @@ public class RequestFaceUpTileRequest extends AbstractRequest {
             gameSession.reserveFaceUpComponent(tileId, playerId);
             
             // Broadcast reservation event to all clients (5 minute reservation)
+            //TODO: delete 5 min reservation it is a all game long reservation
+            ComponentData componentData = new ComponentData(component.getId(), component.getType(), component.getConnectors());
             context.getEventPublisher().publishEvent(
-                new ComponentReservedEvent(gameId, tileId, component.getType().toString(), 
+                new ComponentReservedEvent(gameId, componentData,
                     playerId, playerNickname, System.currentTimeMillis() + 300000)
             );
             

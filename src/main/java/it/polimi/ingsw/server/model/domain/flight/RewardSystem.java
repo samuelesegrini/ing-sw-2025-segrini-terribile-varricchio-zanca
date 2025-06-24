@@ -80,5 +80,23 @@ public class RewardSystem {
     public int calculateExposedConnectorsPenalty (Ship ship){
        return (ship.getExposedConnectors() * exposedConnectorsPenalty);
     }
+    
+    /**
+     * Gets the position bonus for a specific finish position.
+     * @param finishPosition The position (0 = first place, 1 = second place, etc.)
+     * @return The bonus points for that position
+     */
+    public int getPositionBonus(int finishPosition) {
+        if (finishPosition < 0 || finishPosition >= positionBonus.size()) {
+            return 0; // Position out of bounds
+        }
+        
+        PlayerOrder[] orders = PlayerOrder.values();
+        if (finishPosition < orders.length) {
+            return positionBonus.getOrDefault(orders[finishPosition], 0);
+        }
+        
+        return 0;
+    }
 }
 

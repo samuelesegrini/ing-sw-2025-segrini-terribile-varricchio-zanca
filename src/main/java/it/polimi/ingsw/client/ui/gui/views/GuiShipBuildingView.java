@@ -3,10 +3,11 @@ package it.polimi.ingsw.client.ui.gui.views;
 import it.polimi.ingsw.client.ClientModel;
 import it.polimi.ingsw.client.controller.ClientController;
 import it.polimi.ingsw.client.core.state.LocalGameState;
+import it.polimi.ingsw.client.core.state.ComponentInstance;
 import it.polimi.ingsw.client.ui.core.BaseUIView;
-import it.polimi.ingsw.common.message.request.*;
+import it.polimi.ingsw.client.ui.gui.components.*;
+import it.polimi.ingsw.common.PlayerInfo;
 import it.polimi.ingsw.server.model.domain.ship.Position;
-import it.polimi.ingsw.server.model.enums.ship.ComponentType;
 
 import javafx.application.Platform;
 import javafx.geometry.Insets;
@@ -22,33 +23,33 @@ import java.beans.PropertyChangeEvent;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Functional GUI view for ship building phase with interactive ship grid.
+ * Pure ComponentInstance-based GUI view for ship building phase.
+ * NO ComponentType conversions, NO legacy code, PURE ComponentInstance system.
  */
 public class GuiShipBuildingView extends BaseUIView {
     private Stage stage;
     private ClientController controller;
     
     // UI Components
-    private GridPane shipGrid;
-    private ListView<ComponentType> availableTilesList;
-    private ListView<ComponentType> heldTilesList;
+    private ShipGridView shipGridView;
+    private ComponentInventoryView componentInventoryView;
+    private ComponentJunkyardView componentJunkyard;
+    private VBox otherPlayersColumn;
     private Label timerLabel;
     private Label shipStatsLabel;
     private Button validateShipButton;
     private Button flipTimerButton;
-    private Button takeTileButton;
-    private Button takeFaceUpTileButton;
     private TextArea validationErrorsArea;
     
-    // Ship grid cells for visual feedback
-    private Rectangle[][] gridCells = new Rectangle[5][7];
-    private Label[][] gridLabels = new Label[5][7];
+    // Other players management
+    private final Map<String, PlayerMiniView> playerMiniViews = new ConcurrentHashMap<>();
+    private static final int MAX_MINI_VIEWS = 3;
     
-    // Current selection and state
-    private ComponentType selectedComponent = null;
-    private boolean dragMode = false;
+    // Current selection - ONLY ComponentInstance, NO legacy
+    private ComponentInstance selectedComponent = null;
 
     public GuiShipBuildingView(Stage stage, ClientController controller) {
         this.stage = stage;
@@ -67,24 +68,28 @@ public class GuiShipBuildingView extends BaseUIView {
 
     @Override
     protected void onShow() {
-        BorderPane root = new BorderPane();
-        root.setPadding(new Insets(10));
+        // 1. Create UI structure - pure ComponentInstance system
+        BorderPane root = createLayout();
         
-        // Create main layout
-        root.setTop(createTopPanel());
-        root.setCenter(createCenterPanel());
-        root.setRight(createRightPanel());
-        root.setBottom(createBottomPanel());
+        Scene scene = new Scene(root, 1600, 900);
         
-        Scene scene = new Scene(root, 1200, 800);
+        // Load CSS
+        try {
+            scene.getStylesheets().add(getClass().getResource("/css/common.css").toExternalForm());
+            scene.getStylesheets().add(getClass().getResource("/css/ship-building.css").toExternalForm());
+        } catch (Exception e) {
+            System.err.println("Could not load ship building stylesheet: " + e.getMessage());
+        }
+        
         stage.setScene(scene);
         stage.setTitle("Galaxy Trucker - " + getTitle());
         
-        // Initialize display
-        updateShipDisplay();
-        updateTimerDisplay();
-        updateShipStats();
-        updateAvailableTiles();
+        // 2. Initialize all displays from ComponentInstance data
+        updateAllDisplays();
+        
+        // 3. Setup property change listeners
+        setupPropertyChangeListeners();
+        updateOtherPlayersDisplay();
         
         if (!stage.isShowing()) {
             stage.show();
@@ -116,149 +121,145 @@ public class GuiShipBuildingView extends BaseUIView {
         return topPanel;
     }
 
-    private VBox createCenterPanel() {
-        VBox centerPanel = new VBox(10);
-        centerPanel.setAlignment(Pos.CENTER);
+    private HBox createMainContent() {
+        HBox mainContent = new HBox(15);
+        mainContent.getStyleClass().add("main-content-split");
         
-        Label gridLabel = new Label("Ship Grid (5x7)");
-        gridLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;");
+        // Left side content
+        HBox leftSideContent = new HBox(15);
+        leftSideContent.getStyleClass().add("left-side-content");
         
-        shipGrid = new GridPane();
-        shipGrid.setAlignment(Pos.CENTER);
-        shipGrid.setHgap(2);
-        shipGrid.setVgap(2);
-        initializeShipGrid();
+        // Other players column
+        otherPlayersColumn = new VBox(10);
+        otherPlayersColumn.getStyleClass().add("other-players-column");
+        otherPlayersColumn.setPrefWidth(250);
+        otherPlayersColumn.setMaxWidth(250);
+        otherPlayersColumn.setAlignment(Pos.TOP_CENTER);
+        
+        Label otherPlayersLabel = new Label("Other Players");
+        otherPlayersLabel.getStyleClass().addAll("section-title", "other-players-title");
+        otherPlayersColumn.getChildren().add(otherPlayersLabel);
+        
+        // Junkyard area - PURE ComponentInstance
+        VBox junkyardSection = new VBox(10);
+        junkyardSection.getStyleClass().add("junkyard-section");
+        
+        componentJunkyard = new ComponentJunkyardView(new ComponentJunkyardView.JunkyardClickHandler() {
+            @Override
+            public void onFaceDownTileClicked() {
+                handleRandomComponentRequest();
+            }
+            
+            @Override
+            public void onComponentClicked(ComponentInstance component) {
+                handleSpecificComponentRequest(component);
+            }
+        });
+        
+        junkyardSection.getChildren().add(componentJunkyard);
+        VBox.setVgrow(componentJunkyard, javafx.scene.layout.Priority.ALWAYS);
+        
+        leftSideContent.getChildren().addAll(otherPlayersColumn, junkyardSection);
+        HBox.setHgrow(junkyardSection, javafx.scene.layout.Priority.ALWAYS);
+        
+        // Right section - Active player ship building area
+        VBox activePlayerArea = createShipBuildingArea();
+        activePlayerArea.getStyleClass().add("active-player-area");
+        activePlayerArea.setPrefWidth(500);
+        
+        mainContent.getChildren().addAll(leftSideContent, activePlayerArea);
+        HBox.setHgrow(leftSideContent, javafx.scene.layout.Priority.ALWAYS);
+        
+        return mainContent;
+    }
+    
+    private VBox createShipBuildingArea() {
+        VBox buildingArea = new VBox(15);
+        buildingArea.setAlignment(Pos.CENTER);
+        buildingArea.getStyleClass().add("ship-building-center");
+        
+        Label gridLabel = new Label("Ship Construction");
+        gridLabel.getStyleClass().add("section-title");
+        
+        // Create ship grid with ComponentInstance handlers
+        shipGridView = new ShipGridView(new ShipGridView.ShipGridClickHandler() {
+            @Override
+            public void onCellClicked(int row, int col) {
+                handleCellClick(row, col);
+            }
+            
+            @Override
+            public void onCellRightClicked(int row, int col) {
+                handleCellRightClick(row, col);
+            }
+        });
         
         shipStatsLabel = new Label("Ship Stats: Engines: 0, Cannons: 0, Crew: 0, Cargo: 0");
-        shipStatsLabel.setStyle("-fx-font-size: 14px;");
+        shipStatsLabel.getStyleClass().add("ship-stats-label");
         
-        centerPanel.getChildren().addAll(gridLabel, shipGrid, shipStatsLabel);
-        return centerPanel;
+        // Hand management area - PURE ComponentInstance
+        VBox handArea = createHandManagementArea();
+        
+        buildingArea.getChildren().addAll(gridLabel, shipGridView, shipStatsLabel, handArea);
+        return buildingArea;
     }
 
-    private VBox createRightPanel() {
-        VBox rightPanel = new VBox(10);
-        rightPanel.setPrefWidth(250);
-        rightPanel.setPadding(new Insets(10));
+    private VBox createHandManagementArea() {
+        VBox handArea = new VBox(10);
+        handArea.getStyleClass().add("hand-management-area");
         
-        // Available tiles section
-        Label availableLabel = new Label("Available Tiles");
-        availableLabel.setStyle("-fx-font-weight: bold;");
+        Label handLabel = new Label("Hand (Max 2 components)");
+        handLabel.getStyleClass().add("section-title");
         
-        availableTilesList = new ListView<>();
-        availableTilesList.setPrefHeight(150);
-        availableTilesList.getSelectionModel().selectedItemProperty().addListener(
-            (obs, oldVal, newVal) -> selectedComponent = newVal
-        );
+        Label instructionsLabel = new Label("Click face-down tiles for random components, face-up components for specific ones. " + 
+                                           "Returned components appear face-up in the warehouse for others to see.");
+        instructionsLabel.setStyle("-fx-font-style: italic; -fx-font-size: 11px; -fx-text-fill: #cccccc;");
+        instructionsLabel.setWrapText(true);
         
-        HBox tileButtonBox = new HBox(5);
-        takeTileButton = new Button("Take Random");
-        takeTileButton.setOnAction(e -> handleTakeRandomTile());
+        // Component inventory for held components ONLY
+        componentInventoryView = new ComponentInventoryView(new ComponentInventoryView.ComponentClickHandler() {
+            @Override
+            public void onAvailableComponentClicked(ComponentInstance component) {
+                // Not used in new layout
+            }
+            
+            @Override
+            public void onHeldComponentClicked(ComponentInstance component) {
+                handleHeldComponentClicked(component);
+            }
+        });
         
-        takeFaceUpTileButton = new Button("Take Selected");
-        takeFaceUpTileButton.setOnAction(e -> handleTakeSelectedTile());
+        // Action buttons
+        HBox actionButtons = new HBox(10);
+        actionButtons.setAlignment(Pos.CENTER);
         
-        tileButtonBox.getChildren().addAll(takeTileButton, takeFaceUpTileButton);
+        Button returnComponentButton = new Button("Return Selected Component");
+        returnComponentButton.getStyleClass().addAll("button", "button-standard");
+        returnComponentButton.setOnAction(e -> handleReturnComponent());
         
-        // Held tiles section
-        Label heldLabel = new Label("Held Tiles (Max 2)");
-        heldLabel.setStyle("-fx-font-weight: bold;");
+        Button rotateComponentButton = new Button("Rotate Selected Component");
+        rotateComponentButton.getStyleClass().addAll("button", "button-standard");
+        rotateComponentButton.setOnAction(e -> handleRotateComponent());
         
-        heldTilesList = new ListView<>();
-        heldTilesList.setPrefHeight(100);
-        heldTilesList.getSelectionModel().selectedItemProperty().addListener(
-            (obs, oldVal, newVal) -> selectedComponent = newVal
-        );
-        
-        Button returnTileButton = new Button("Return Selected");
-        returnTileButton.setOnAction(e -> handleReturnTile());
+        actionButtons.getChildren().addAll(returnComponentButton, rotateComponentButton);
         
         // Validation errors section
         Label errorsLabel = new Label("Validation Errors");
-        errorsLabel.setStyle("-fx-font-weight: bold;");
+        errorsLabel.getStyleClass().add("section-title");
         
         validationErrorsArea = new TextArea();
-        validationErrorsArea.setPrefHeight(100);
+        validationErrorsArea.setPrefHeight(80);
         validationErrorsArea.setEditable(false);
+        validationErrorsArea.getStyleClass().add("validation-errors-area");
+        validationErrorsArea.setWrapText(true);
         
-        rightPanel.getChildren().addAll(
-            availableLabel, availableTilesList, tileButtonBox,
-            heldLabel, heldTilesList, returnTileButton,
-            errorsLabel, validationErrorsArea
-        );
-        
-        return rightPanel;
-    }
-
-    private HBox createBottomPanel() {
-        HBox bottomPanel = new HBox(10);
-        bottomPanel.setAlignment(Pos.CENTER);
-        bottomPanel.setPadding(new Insets(10));
-        
-        Label instructionsLabel = new Label(
-            "Instructions: Select a tile from Available or Held lists, then click on ship grid to place. " +
-            "Right-click on placed tiles to remove them."
-        );
-        instructionsLabel.setStyle("-fx-font-style: italic;");
-        
-        bottomPanel.getChildren().add(instructionsLabel);
-        return bottomPanel;
-    }
-
-    private void initializeShipGrid() {
-        LocalGameState gameState = LocalGameState.getInstance();
-        
-        for (int row = 0; row < 5; row++) {
-            for (int col = 0; col < 7; col++) {
-                Rectangle cell = new Rectangle(60, 60);
-                Label label = new Label();
-                label.setAlignment(Pos.CENTER);
-                label.setPrefSize(60, 60);
-                
-                Position pos = new Position(row, col);
-                
-                // Check if position is forbidden or starting cabin
-                if (pos.equals(new Position(2, 3))) {
-                    // Starting cabin position
-                    cell.setFill(Color.LIGHTBLUE);
-                    label.setText("START");
-                    label.setStyle("-fx-font-size: 8px; -fx-font-weight: bold;");
-                } else if (!gameState.canPlaceComponent(ComponentType.STRUCTURAL, pos)) {
-                    // Forbidden position
-                    cell.setFill(Color.LIGHTGRAY);
-                    label.setText("X");
-                    label.setStyle("-fx-font-size: 12px; -fx-font-weight: bold;");
-                } else {
-                    // Normal position
-                    cell.setFill(Color.WHITE);
-                    cell.setStroke(Color.BLACK);
-                    cell.setStrokeWidth(1);
-                    
-                    // Add click handler for tile placement
-                    final int finalRow = row;
-                    final int finalCol = col;
-                    
-                    cell.setOnMouseClicked(e -> {
-                        if (e.getButton().toString().equals("PRIMARY")) {
-                            handleCellClick(finalRow, finalCol);
-                        } else if (e.getButton().toString().equals("SECONDARY")) {
-                            handleCellRightClick(finalRow, finalCol);
-                        }
-                    });
-                }
-                
-                gridCells[row][col] = cell;
-                gridLabels[row][col] = label;
-                
-                StackPane cellPane = new StackPane(cell, label);
-                shipGrid.add(cellPane, col, row);
-            }
-        }
+        handArea.getChildren().addAll(handLabel, instructionsLabel, componentInventoryView, actionButtons, errorsLabel, validationErrorsArea);
+        return handArea;
     }
 
     private void handleCellClick(int row, int col) {
         if (selectedComponent == null) {
-            showAlert("No Component Selected", "Please select a component from Available or Held tiles first.");
+            showAlert("No Component Selected", "Please select a component from the inventory first.");
             return;
         }
         
@@ -266,65 +267,109 @@ public class GuiShipBuildingView extends BaseUIView {
         LocalGameState gameState = LocalGameState.getInstance();
         
         if (!gameState.canPlaceComponent(selectedComponent, position)) {
-            showAlert("Invalid Placement", "Cannot place component at this position.");
+            showAlert("Invalid Placement", "Cannot place component at this position. Check connectors and placement rules.");
             return;
         }
         
-        // Send placement request to server
-        controller.placeTile(selectedComponent.name(), row, col, 0);
+        // Create visual component and place on grid
+        ComponentTileView tileView = new ComponentTileView(selectedComponent);
+        tileView.setPlaced(true);
         
-        // Remove from held tiles if it was selected from there
-        if (gameState.getHeldTiles().contains(selectedComponent)) {
-            gameState.removeHeldTile(selectedComponent);
-            updateHeldTiles();
+        if (shipGridView.placeComponent(tileView, row, col)) {
+            // Send placement request to server
+            controller.placeTile(selectedComponent.getId(), row, col, selectedComponent.getCurrentDirection().ordinal());
+            
+            // Update local ship state (will be confirmed by server)
+            gameState.placeTile(selectedComponent, position, selectedComponent.getCurrentDirection().ordinal());
+            
+            // Remove from held components
+            if (gameState.getHeldTiles().contains(selectedComponent)) {
+                gameState.removeHeldTile(selectedComponent);
+                updateComponentInventoryDisplay();
+            }
+            
+            // Clear selection
+            clearComponentSelection();
         }
-        
-        selectedComponent = null;
-        availableTilesList.getSelectionModel().clearSelection();
-        heldTilesList.getSelectionModel().clearSelection();
     }
 
     private void handleCellRightClick(int row, int col) {
-        Position position = new Position(row, col);
-        LocalGameState gameState = LocalGameState.getInstance();
-        ComponentType component = gameState.getComponentAt(position);
+        // Remove component from grid
+        ComponentTileView removedComponent = shipGridView.removeComponent(row, col);
         
-        if (component != null) {
-            // Remove component and return to available tiles
-            gameState.removeTile(position);
-            gameState.addAvailableTile(component);
+        if (removedComponent != null) {
+            LocalGameState gameState = LocalGameState.getInstance();
+            ComponentInstance componentInstance = removedComponent.getComponentInstance();
             
-            updateShipDisplay();
-            updateAvailableTiles();
-            updateShipStats();
+            if (componentInstance != null) {
+                gameState.removeTile(new Position(row, col));
+                gameState.addAvailableTile(componentInstance);
+                
+                // Update visual displays
+                updateComponentInventoryDisplay();
+                updateJunkyardDisplay();
+                updateShipStats();
+            }
         }
     }
 
-    private void handleTakeRandomTile() {
+    private void handleRandomComponentRequest() {
         controller.takeTile();
     }
-
-    private void handleTakeSelectedTile() {
-        ComponentType selected = availableTilesList.getSelectionModel().getSelectedItem();
-        if (selected != null) {
-            controller.requestFaceUpTile(selected.name());
-        } else {
-            showAlert("No Selection", "Please select a tile from the available tiles list.");
-        }
+    
+    private void handleSpecificComponentRequest(ComponentInstance component) {
+        controller.requestFaceUpTile(component.getId());
+        
+        // Remove the component from face-up junkyard (it's now taken)
+        LocalGameState gameState = LocalGameState.getInstance();
+        gameState.removeFaceUpJunkyardTile(component);
+        updateJunkyardDisplay();
+        
+        System.out.println("Requested specific component from warehouse: " + component);
+    }
+    
+    private void handleHeldComponentClicked(ComponentInstance component) {
+        selectedComponent = component;
+        clearComponentSelection();
+        // Visual feedback will be handled by the component view
     }
 
-    private void handleReturnTile() {
-        ComponentType selected = heldTilesList.getSelectionModel().getSelectedItem();
-        if (selected != null) {
-            controller.returnTile(selected.name());
+    private void handleReturnComponent() {
+        LocalGameState gameState = LocalGameState.getInstance();
+        if (selectedComponent != null && gameState.getHeldTiles().contains(selectedComponent)) {
+            controller.returnTile(selectedComponent.getId());
             
-            LocalGameState.getInstance().removeHeldTile(selected);
-            LocalGameState.getInstance().addAvailableTile(selected);
+            gameState.removeHeldTile(selectedComponent);
+            gameState.addFaceUpJunkyardTile(selectedComponent);
             
-            updateHeldTiles();
-            updateAvailableTiles();
+            // Update UI displays
+            updateComponentInventoryDisplay();
+            updateJunkyardDisplay();
+            
+            clearComponentSelection();
+            
+            System.out.println("Returned component to warehouse as face-up: " + selectedComponent);
         } else {
-            showAlert("No Selection", "Please select a tile from the held tiles list.");
+            showAlert("No Selection", "Please select a component from the held components first.");
+        }
+    }
+    
+    private void handleRotateComponent() {
+        if (selectedComponent != null) {
+            selectedComponent.rotate();
+            // Update the visual representation
+            updateComponentInventoryDisplay();
+            System.out.println("Rotated component: " + selectedComponent + " to direction: " + selectedComponent.getCurrentDirection());
+        } else {
+            showAlert("No Selection", "Please select a component to rotate first.");
+        }
+    }
+    
+    private void clearComponentSelection() {
+        selectedComponent = null;
+        // Remove selection styling from all components
+        if (componentInventoryView != null) {
+            componentInventoryView.clearSelection();
         }
     }
 
@@ -338,30 +383,23 @@ public class GuiShipBuildingView extends BaseUIView {
 
     private void updateShipDisplay() {
         Platform.runLater(() -> {
-            LocalGameState gameState = LocalGameState.getInstance();
-            Map<Position, ComponentType> shipGridData = gameState.getShipGrid();
+            if (shipGridView == null) return;
             
-            for (int row = 0; row < 5; row++) {
-                for (int col = 0; col < 7; col++) {
-                    Position pos = new Position(row, col);
-                    ComponentType component = shipGridData.get(pos);
+            LocalGameState gameState = LocalGameState.getInstance();
+            ComponentInstance[][] shipGridData = gameState.getShipGrid();
+            
+            // Clear current components
+            shipGridView.clearComponents();
+            
+            // Place components according to game state
+            for (int row = 0; row < shipGridData.length; row++) {
+                for (int col = 0; col < shipGridData[row].length; col++) {
+                    ComponentInstance component = shipGridData[row][col];
                     
-                    Rectangle cell = gridCells[row][col];
-                    Label label = gridLabels[row][col];
-                    
-                    if (component != null && !pos.equals(new Position(2, 3))) {
-                        // Component placed
-                        cell.setFill(getComponentColor(component));
-                        label.setText(getComponentAbbreviation(component));
-                        label.setStyle("-fx-font-size: 8px; -fx-font-weight: bold;");
-                    } else if (pos.equals(new Position(2, 3))) {
-                        // Keep starting cabin style
-                        cell.setFill(Color.LIGHTBLUE);
-                        label.setText("START");
-                    } else if (gameState.canPlaceComponent(ComponentType.STRUCTURAL, pos)) {
-                        // Empty valid position
-                        cell.setFill(Color.WHITE);
-                        label.setText("");
+                    if (component != null) {
+                        ComponentTileView tileView = new ComponentTileView(component);
+                        tileView.setPlaced(true);
+                        shipGridView.placeComponent(tileView, row, col);
                     }
                 }
             }
@@ -406,19 +444,42 @@ public class GuiShipBuildingView extends BaseUIView {
         });
     }
 
-    private void updateAvailableTiles() {
+    private void updateComponentInventoryDisplay() {
         Platform.runLater(() -> {
+            if (componentInventoryView == null) return;
+            
             LocalGameState gameState = LocalGameState.getInstance();
-            availableTilesList.getItems().clear();
-            availableTilesList.getItems().addAll(gameState.getAvailableTiles());
+            
+            // Update held components - PURE ComponentInstance
+            List<ComponentInstance> heldComponents = gameState.getHeldTiles();
+            componentInventoryView.updateHeldComponents(heldComponents);
+            
+            // Clear available components since they're now in junkyard
+            componentInventoryView.updateAvailableComponents(new ArrayList<>());
         });
     }
-
-    private void updateHeldTiles() {
+    
+    private void updateJunkyardDisplay() {
         Platform.runLater(() -> {
+            if (componentJunkyard == null) {
+                return;
+            }
+            
             LocalGameState gameState = LocalGameState.getInstance();
-            heldTilesList.getItems().clear();
-            heldTilesList.getItems().addAll(gameState.getHeldTiles());
+            
+            // Get all available components for the scattered pile
+            List<ComponentInstance> allComponents = new ArrayList<>();
+            allComponents.addAll(gameState.getAvailableTiles());
+            allComponents.addAll(gameState.getFaceUpJunkyardTiles());
+            
+            // Get specifically face-up components
+            List<ComponentInstance> faceUpComponents = new ArrayList<>(gameState.getFaceUpJunkyardTiles());
+            
+            // Estimated face-down count (total minus face-up)
+            int faceDownCount = Math.max(0, allComponents.size() - faceUpComponents.size());
+            
+            // Update the warehouse with physical pile behavior
+            componentJunkyard.updateWarehouse(allComponents, faceUpComponents, faceDownCount);
         });
     }
 
@@ -437,37 +498,6 @@ public class GuiShipBuildingView extends BaseUIView {
         });
     }
 
-    private Color getComponentColor(ComponentType component) {
-        return switch (component) {
-            case ENGINE_SINGLE, ENGINE_DOUBLE -> Color.ORANGE;
-            case CANNON_SINGLE, CANNON_DOUBLE -> Color.RED;
-            case CABIN, CABIN_START -> Color.YELLOW;
-            case CARGO_HOLD, CARGO_HOLD_SPECIAL -> Color.BROWN;
-            case BATTERY -> Color.PURPLE;
-            case SHIELD -> Color.CYAN;
-            case LIFE_SUPPORT_BROWN, LIFE_SUPPORT_PURPLE -> Color.PINK;
-            case STRUCTURAL -> Color.LIGHTGRAY;
-        };
-    }
-
-    private String getComponentAbbreviation(ComponentType component) {
-        return switch (component) {
-            case ENGINE_SINGLE -> "E1";
-            case ENGINE_DOUBLE -> "E2";
-            case CANNON_SINGLE -> "C1";
-            case CANNON_DOUBLE -> "C2";
-            case CABIN -> "CAB";
-            case CABIN_START -> "START";
-            case CARGO_HOLD -> "CRG";
-            case CARGO_HOLD_SPECIAL -> "CRG+";
-            case BATTERY -> "BAT";
-            case SHIELD -> "SHD";
-            case LIFE_SUPPORT_BROWN -> "LS-B";
-            case LIFE_SUPPORT_PURPLE -> "LS-P";
-            case STRUCTURAL -> "STR";
-        };
-    }
-
     private void showAlert(String title, String message) {
         Platform.runLater(() -> {
             Alert alert = new Alert(Alert.AlertType.INFORMATION);
@@ -477,6 +507,120 @@ public class GuiShipBuildingView extends BaseUIView {
             alert.showAndWait();
         });
     }
+    
+    private void updateOtherPlayersDisplay() {
+        Platform.runLater(() -> {
+            if (otherPlayersColumn == null) return;
+            
+            LocalGameState gameState = LocalGameState.getInstance();
+            
+            // Get real players from client model
+            ClientModel clientModel = controller.getModel();
+            String currentPlayerId = clientModel.getPlayerId();
+            List<PlayerInfo> allPlayers = clientModel.getPlayersInLobby();
+            
+            // Clear existing mini-views except the title
+            otherPlayersColumn.getChildren().removeIf(node -> node instanceof PlayerMiniView);
+            playerMiniViews.clear();
+            
+            // Add mini-views for other players (exclude current player)
+            int addedPlayers = 0;
+            for (PlayerInfo player : allPlayers) {
+                if (player.getPlayerId() != null && !player.getPlayerId().equals(currentPlayerId) && addedPlayers < MAX_MINI_VIEWS) {
+                    Map<Position, ComponentInstance> playerShip = gameState.getOtherPlayerShip(player.getPlayerId());
+                    
+                    // Handle null or empty nicknames
+                    String playerName = player.getNickname();
+                    if (playerName == null || playerName.trim().isEmpty()) {
+                        playerName = "Player " + player.getPlayerId().substring(0, Math.min(8, player.getPlayerId().length()));
+                    }
+                    
+                    addOtherPlayerDirect(player.getPlayerId(), playerName, playerShip);
+                    addedPlayers++;
+                }
+            }
+        });
+    }
+    
+    private void addOtherPlayerDirect(String playerId, String playerName, Map<Position, ComponentInstance> shipGrid) {
+        if (otherPlayersColumn == null || playerId == null) return;
+        
+        // Don't add if already exists
+        if (playerMiniViews.containsKey(playerId)) {
+            PlayerMiniView existing = playerMiniViews.get(playerId);
+            // PURE ComponentInstance - no conversions
+            existing.updateShipDisplay(shipGrid);
+            return;
+        }
+        
+        PlayerMiniView miniView = new PlayerMiniView(playerId, playerName);
+        // PURE ComponentInstance - no conversions
+        miniView.updateShipDisplay(shipGrid);
+        
+        playerMiniViews.put(playerId, miniView);
+        otherPlayersColumn.getChildren().add(miniView);
+    }
+    
+    public void addOtherPlayer(String playerId, String playerName, Map<Position, ComponentInstance> shipGrid) {
+        Platform.runLater(() -> {
+            addOtherPlayerDirect(playerId, playerName, shipGrid);
+        });
+    }
+    
+    public void updateOtherPlayerShip(String playerId, Map<Position, ComponentInstance> shipGrid) {
+        Platform.runLater(() -> {
+            PlayerMiniView miniView = playerMiniViews.get(playerId);
+            if (miniView != null) {
+                // PURE ComponentInstance - no conversions
+                miniView.updateShipDisplay(shipGrid);
+            }
+        });
+    }
+    
+    public void removeOtherPlayer(String playerId) {
+        Platform.runLater(() -> {
+            PlayerMiniView miniView = playerMiniViews.remove(playerId);
+            if (miniView != null && otherPlayersColumn != null) {
+                otherPlayersColumn.getChildren().remove(miniView);
+                System.out.println("Removed mini-view for player: " + miniView.getPlayerName());
+            }
+        });
+    }
+    
+    public void highlightOtherPlayer(String playerId, boolean highlight) {
+        Platform.runLater(() -> {
+            PlayerMiniView miniView = playerMiniViews.get(playerId);
+            if (miniView != null) {
+                miniView.setHighlighted(highlight);
+            }
+        });
+    }
+    
+    // Layout creation methods
+    private BorderPane createLayout() {
+        BorderPane root = new BorderPane();
+        root.setPadding(new Insets(15));
+        root.getStyleClass().add("ship-building-root");
+        
+        root.setTop(createTopPanel());
+        root.setCenter(createMainContent());
+        
+        return root;
+    }
+    
+    private void updateAllDisplays() {
+        updateShipDisplay();
+        updateTimerDisplay();
+        updateShipStats();
+        updateJunkyardDisplay();
+        updateComponentInventoryDisplay();
+        updateValidationErrors();
+    }
+    
+    private void setupPropertyChangeListeners() {
+        // Property change listeners are handled in onPropertyChange method
+    }
+
 
     @Override
     protected void onHide() {
@@ -485,12 +629,8 @@ public class GuiShipBuildingView extends BaseUIView {
 
     @Override
     protected void onRefresh() {
-        updateShipDisplay();
-        updateTimerDisplay();
-        updateShipStats();
-        updateAvailableTiles();
-        updateHeldTiles();
-        updateValidationErrors();
+        updateAllDisplays();
+        updateOtherPlayersDisplay();
     }
 
     @Override
@@ -505,11 +645,40 @@ public class GuiShipBuildingView extends BaseUIView {
                 updateShipDisplay();
                 updateShipStats();
             }
-            case "heldTiles" -> updateHeldTiles();
-            case "availableTiles" -> updateAvailableTiles();
+            case "heldTiles" -> updateComponentInventoryDisplay();
+            case "availableTiles", "faceUpJunkyardTiles" -> updateJunkyardDisplay();
+            case "otherPlayersUpdate", "playersInLobby" -> updateOtherPlayersDisplay();
+            case "playerJoined" -> updateOtherPlayersDisplay();
+            case "playerLeft" -> updateOtherPlayersDisplay();
+            case "playerShipUpdated" -> {
+                if (evt.getNewValue() instanceof Map<?, ?> shipData) {
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> data = (Map<String, Object>) shipData;
+                    String playerId = (String) data.get("playerId");
+                    @SuppressWarnings("unchecked")
+                    Map<Position, ComponentInstance> shipGrid = (Map<Position, ComponentInstance>) data.get("shipGrid");
+                    if (playerId != null && shipGrid != null) {
+                        LocalGameState.getInstance().updateOtherPlayerShip(playerId, shipGrid);
+                        updateOtherPlayerShip(playerId, shipGrid);
+                    }
+                }
+            }
+            case "currentPlayerTurn" -> {
+                if (evt.getOldValue() instanceof String oldPlayerId) {
+                    highlightOtherPlayer(oldPlayerId, false);
+                }
+                if (evt.getNewValue() instanceof String newPlayerId) {
+                    highlightOtherPlayer(newPlayerId, true);
+                }
+            }
             case "phaseTransition" -> {
                 if ("FLIGHT".equals(evt.getNewValue())) {
                     showAlert("Phase Transition", "Building phase complete! Transitioning to flight phase.");
+                }
+            }
+            case "shipGridConfig" -> {
+                if (shipGridView != null) {
+                    shipGridView.updateGridLayout();
                 }
             }
         }

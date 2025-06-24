@@ -162,6 +162,60 @@ public class FlightBoard {
     public boolean isFlightComplete() {
         return (finishOrder.size() == playerCount);
     }
+    
+    /**
+     * Moves a player forward by the specified number of spaces.
+     * This is a simplified version that calls the main movePlayer method.
+     * @param player The player to move
+     * @param spaces The number of spaces to move forward
+     */
+    public void movePlayer(Player player, int spaces) {
+        movePlayer(player, spaces, true);
+    }
+    
+    /**
+     * Gets the leading player (furthest ahead on the route).
+     * @return The leading player, or null if no players are registered
+     */
+    public Player getLeadingPlayer() {
+        if (currentOrder.isEmpty()) {
+            return null;
+        }
+        
+        Player leader = currentOrder.get(0);
+        int furthestPosition = leader.getFlightData().getPosition();
+        
+        for (Player player : currentOrder) {
+            int position = player.getFlightData().getPosition();
+            if (position > furthestPosition) {
+                furthestPosition = position;
+                leader = player;
+            }
+        }
+        
+        return leader;
+    }
+    
+    /**
+     * Gets the position bonus for a player based on their final position.
+     * @param player The player to get bonus for
+     * @return The position bonus points
+     */
+    public int getPositionBonus(Player player) {
+        if (route == null || route.getRewardSystem() == null) {
+            return 0;
+        }
+        
+        // Calculate bonus based on finish order
+        int finishPosition = finishOrder.indexOf(player);
+        if (finishPosition == -1) {
+            // Player didn't finish, no bonus
+            return 0;
+        }
+        
+        // Use reward system to calculate position bonus
+        return route.getRewardSystem().getPositionBonus(finishPosition);
+    }
 }
 
 
