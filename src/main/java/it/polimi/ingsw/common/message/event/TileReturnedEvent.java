@@ -2,43 +2,47 @@
 package it.polimi.ingsw.common.message.event;
 
 import it.polimi.ingsw.server.model.enums.ship.ComponentType;
+import it.polimi.ingsw.client.core.state.ComponentInstance;
+import it.polimi.ingsw.common.ComponentData;
 
 /**
  * Broadcast when a player returns a tile to the communal pile, face-up.
  */
 public class TileReturnedEvent extends AbstractEvent {
-    private final String tileId;
-    private final ComponentType tileType;
+    private final ComponentData componentData;
 
-    public TileReturnedEvent(String gameId, String tileId, ComponentType tileType) {
+    public TileReturnedEvent(String gameId, ComponentData componentData) {
         super(EventType.TILE_RETURNED, gameId, null);
-        this.tileId = tileId;
-        this.tileType = tileType;
+        this.componentData = componentData;
+    }
+    
+
+    public ComponentData getComponentData() {
+        return componentData;
     }
 
-    public String getTileId() {
-        return tileId;
-    }
-
-    public ComponentType getTileType() {
-        return tileType;
-    }
 
     @Override
     public void handleOnClient(ClientEventContext context) {
         context.runOnUIThread(() -> {
             // Update local game state to reflect returned tile
             if (context.getGameState() != null) {
-                // Add the returned tile back to face-up pile
-                context.getGameState().addAvailableTile(tileType);
+                // Create ComponentInstance from complete server data
+                if (componentData.getConnectors() != null) {
+                    context.getGameState().addFaceUpJunkyardTile(
+                        componentData.getId(),
+                        componentData.getType(),
+                        componentData.getConnectors()
+                    );
+                }
                 
                 // Remove from held tiles if this was held by local player
-                context.getGameState().removeHeldTile(tileType);
+                context.getGameState().removeHeldTileById(componentData.getId());
             }
 
             // Show notification about returned tile
             if (context.getNotificationService() != null) {
-                String message = String.format("A %s tile was returned to the face-up pile", tileType.toString().toLowerCase());
+                String message = String.format("A %s tile was returned to the face-up pile", componentData.getType().toString().toLowerCase());
                 context.getNotificationService().showNotification(
                     new it.polimi.ingsw.client.ui.Notification(
                         "Tile Returned",
@@ -61,8 +65,8 @@ public class TileReturnedEvent extends AbstractEvent {
                 // General tile availability update
                 context.getController().getModel().firePropertyChange("tileReturned", null, 
                     java.util.Map.of(
-                        "tileId", tileId,
-                        "tileType", tileType.toString()
+                        "tileId", componentData.getId(),
+                        "tileType", componentData.getType().toString()
                     )
                 );
             }

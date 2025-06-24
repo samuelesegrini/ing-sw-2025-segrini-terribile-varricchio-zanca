@@ -1,5 +1,6 @@
 package it.polimi.ingsw.common.message.request;
 
+import it.polimi.ingsw.common.ComponentData;
 import it.polimi.ingsw.common.message.response.ErrorResponse;
 import it.polimi.ingsw.common.message.response.Response;
 import it.polimi.ingsw.common.message.response.TakeTileResponse;
@@ -36,8 +37,16 @@ public class TakeTileRequest extends AbstractRequest {
         // The server should now associate this tile with the player, perhaps in a "held tile" state.
         // For now, we just return it to the client.
 
+        // Create complete component data including connectors
+        ComponentData componentData = new ComponentData(
+            drawnComponent.getId(),
+            drawnComponent.getType(),
+            drawnComponent.getConnectors(),
+            drawnComponent.getDirection()
+        );
+
         // Send response to requester
-        TakeTileResponse response = new TakeTileResponse(getCorrelationId(), drawnComponent.getId(), drawnComponent.getType());
+        TakeTileResponse response = new TakeTileResponse(getCorrelationId(), componentData);
 
         // Broadcast event to all clients
         if (context.getEventPublisher() != null) {
@@ -48,8 +57,7 @@ public class TakeTileRequest extends AbstractRequest {
             context.getEventPublisher().publishEvent(
                 new it.polimi.ingsw.common.message.event.ComponentReservedEvent(
                     session.getGameId(),
-                    drawnComponent.getId(),
-                    drawnComponent.getType().name(),
+                    componentData,
                     context.getPlayerId(),
                     nickname != null ? nickname : context.getPlayerId(),
                     System.currentTimeMillis() + 60000 // 1 min reservation for example

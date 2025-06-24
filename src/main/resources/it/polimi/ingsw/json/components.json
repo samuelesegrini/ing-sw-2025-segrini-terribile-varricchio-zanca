@@ -259,7 +259,7 @@
     ]
   },
   {
-    "image": "/assets/tiles/cabin_UDL_DDU.jpg",
+    "image": "/assets/tiles/cabin_UDL-DDU.jpg",
     "type": "CABIN",
     "direction": "UP",
     "connectors": [
@@ -314,7 +314,7 @@
     ]
   },
   {
-    "image": "/assets/tiles/cabin_URLD-DSDD.jpg",
+    "image": "/assets/tiles/cabin_URDL-DSDD.jpg",
     "type": "CABIN",
     "direction": "UP",
     "connectors": [
@@ -1574,7 +1574,7 @@
     ]
   },
   {
-    "image": "/assets/tiles/life-support-system-purple_URL_SDD.jpg",
+    "image": "/assets/tiles/life-support-system-purple_URL-SDD.jpg",
     "type": "LIFE_SUPPORT_PURPLE",
     "direction": "UP",
     "connectors": [

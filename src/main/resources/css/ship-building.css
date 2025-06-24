@@ -1,0 +1,496 @@
+/* Ship Building View Styles */
+
+.ship-building-root {
+    -fx-background-color: #2b2b2b;
+    -fx-text-fill: white;
+}
+
+/* Physical Warehouse Pile Styles */
+.component-junkyard {
+    -fx-background-color: #2a2a2a;
+    -fx-background-radius: 10;
+    -fx-border-color: #555;
+    -fx-border-width: 2;
+    -fx-border-radius: 10;
+}
+
+.junkyard-title {
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #ffffff;
+    -fx-padding: 5;
+}
+
+.scattered-pile {
+    -fx-background-color: rgba(70, 70, 70, 0.6);
+    -fx-background-radius: 8;
+    -fx-border-color: #666;
+    -fx-border-width: 1;
+    -fx-border-radius: 8;
+    -fx-effect: innershadow(gaussian, rgba(0,0,0,0.5), 10, 0.3, 0, 2);
+}
+
+.scattered-pile:disabled {
+    -fx-opacity: 0.5;
+}
+
+/* Face-down tiles in the pile */
+.component-tile.face-down {
+    -fx-background-color: #4a4a4a;
+    -fx-border-color: #666666;
+    -fx-border-width: 2;
+    -fx-background-radius: 6;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 3, 0.5, 1, 1);
+}
+
+.component-tile.face-down:hover {
+    -fx-background-color: #5a5a5a;
+    -fx-border-color: #777777;
+    -fx-cursor: hand;
+    -fx-effect: dropshadow(gaussian, rgba(255,255,255,0.2), 5, 0.7, 0, 0);
+}
+
+/* Face-up tiles in the pile */
+.component-tile:hover {
+    -fx-cursor: hand;
+    -fx-effect: dropshadow(gaussian, rgba(255,255,255,0.3), 5, 0.7, 0, 0);
+    -fx-scale-x: 1.05;
+    -fx-scale-y: 1.05;
+}
+
+.ship-building-center {
+    -fx-alignment: center;
+    -fx-spacing: 15;
+}
+
+.ship-building-right-panel {
+    -fx-background-color: #3a3a3a;
+    -fx-background-radius: 8;
+    -fx-border-color: #555555;
+    -fx-border-width: 1;
+    -fx-border-radius: 8;
+}
+
+.section-title {
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #ffffff;
+}
+
+.ship-stats-label {
+    -fx-font-size: 14px;
+    -fx-text-fill: #cccccc;
+    -fx-padding: 5 0 0 0;
+}
+
+/* Ship Grid Styles */
+.ship-grid-view {
+    -fx-background-color: #4a4a4a;
+    -fx-background-radius: 5;
+    -fx-padding: 10;
+}
+
+.ship-grid {
+    -fx-background-color: #333333;
+    -fx-background-radius: 3;
+    -fx-padding: 5;
+}
+
+.ship-grid-cell {
+    -fx-background-color: #555555;
+    -fx-border-color: #777777;
+    -fx-border-width: 1;
+    -fx-background-radius: 2;
+}
+
+.ship-grid-cell.valid-cell:hover {
+    -fx-background-color: #666666;
+    -fx-cursor: hand;
+}
+
+.ship-grid-cell.starting-cabin {
+    -fx-background-color: #4682B4;
+    -fx-border-color: #87CEEB;
+    -fx-border-width: 2;
+}
+
+.ship-grid-cell.invalid-cell {
+    -fx-background-color: #2a2a2a;
+    -fx-border-color: #404040;
+}
+
+.ship-grid-cell.highlighted {
+    -fx-background-color: #FFD700;
+    -fx-border-color: #FFA500;
+    -fx-border-width: 2;
+}
+
+.cabin-label {
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+}
+
+/* Component Tile Inventory Styles */
+.tile-inventory-view {
+    -fx-background-color: transparent;
+}
+
+.tile-section {
+    -fx-background-color: #444444;
+    -fx-background-radius: 5;
+    -fx-padding: 8;
+}
+
+.tile-section-title {
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+}
+
+.tile-section-title.available-title {
+    -fx-text-fill: #90EE90;
+}
+
+.tile-section-title.held-title {
+    -fx-text-fill: #FFD700;
+}
+
+.tile-count-label {
+    -fx-font-size: 12px;
+    -fx-text-fill: #cccccc;
+}
+
+.tile-count-label.tiles-full {
+    -fx-text-fill: #FF6B6B;
+    -fx-font-weight: bold;
+}
+
+.tile-scroll-pane {
+    -fx-background-color: transparent;
+    -fx-background: transparent;
+}
+
+.tile-scroll-pane .viewport {
+    -fx-background-color: transparent;
+}
+
+.tile-scroll-pane .scroll-bar {
+    -fx-background-color: #555555;
+}
+
+.available-tiles-pane, .held-tiles-pane {
+    -fx-background-color: transparent;
+}
+
+/* Component Tile Styles */
+.component-tile {
+    -fx-background-radius: 3;
+    -fx-border-radius: 3;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.3), 2, 0, 1, 1);
+}
+
+.component-tile:hover {
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.5), 3, 0, 2, 2);
+    -fx-cursor: hand;
+}
+
+.component-tile.tile-hover {
+    -fx-scale-x: 1.05;
+    -fx-scale-y: 1.05;
+}
+
+.component-tile.tile-selected {
+    -fx-border-color: #FFD700;
+    -fx-border-width: 3;
+    -fx-effect: dropshadow(three-pass-box, #FFD700, 5, 0, 0, 0);
+}
+
+.component-tile.placed-tile {
+    -fx-border-color: #32CD32;
+    -fx-border-width: 2;
+}
+
+/* Action Buttons */
+.tile-actions-box {
+    -fx-background-color: #3a3a3a;
+    -fx-background-radius: 5;
+    -fx-padding: 10;
+}
+
+.button {
+    -fx-background-radius: 5;
+    -fx-border-radius: 5;
+    -fx-padding: 8 16;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+}
+
+.button.button-primary {
+    -fx-background-color: #4CAF50;
+    -fx-text-fill: white;
+    -fx-border-color: #45a049;
+    -fx-border-width: 1;
+}
+
+.button.button-primary:hover {
+    -fx-background-color: #45a049;
+}
+
+.button.button-secondary {
+    -fx-background-color: #2196F3;
+    -fx-text-fill: white;
+    -fx-border-color: #1976D2;
+    -fx-border-width: 1;
+}
+
+.button.button-secondary:hover {
+    -fx-background-color: #1976D2;
+}
+
+.button.button-standard {
+    -fx-background-color: #FF9800;
+    -fx-text-fill: white;
+    -fx-border-color: #F57C00;
+    -fx-border-width: 1;
+}
+
+.button.button-standard:hover {
+    -fx-background-color: #F57C00;
+}
+
+.button:disabled {
+    -fx-background-color: #666666;
+    -fx-text-fill: #999999;
+    -fx-border-color: #555555;
+}
+
+/* Validation Errors */
+.validation-errors-area {
+    -fx-background-color: #2a2a2a;
+    -fx-text-fill: #ff6b6b;
+    -fx-border-color: #555555;
+    -fx-border-width: 1;
+    -fx-border-radius: 3;
+    -fx-background-radius: 3;
+    -fx-font-family: "Courier New", monospace;
+    -fx-font-size: 11px;
+}
+
+.validation-errors-area .content {
+    -fx-background-color: transparent;
+}
+
+/* Main Layout Styles */
+.main-content-split {
+    -fx-spacing: 15;
+}
+
+.left-side-content {
+    -fx-spacing: 15;
+}
+
+.junkyard-section {
+    -fx-background-color: #1a1a1a;
+    -fx-background-radius: 12;
+    -fx-border-color: #444444;
+    -fx-border-width: 2;
+    -fx-border-radius: 12;
+    -fx-padding: 15;
+}
+
+.active-player-area {
+    -fx-background-color: #2a2a2a;
+    -fx-background-radius: 12;
+    -fx-border-color: #555555;
+    -fx-border-width: 2;
+    -fx-border-radius: 12;
+    -fx-padding: 15;
+}
+
+/* Other Players Column */
+.other-players-column {
+    -fx-background-color: #1a1a2a;
+    -fx-background-radius: 12;
+    -fx-border-color: #444466;
+    -fx-border-width: 2;
+    -fx-border-radius: 12;
+    -fx-padding: 10;
+}
+
+.other-players-title {
+    -fx-text-fill: #87CEEB;
+    -fx-font-size: 16px;
+    -fx-effect: dropshadow(gaussian, rgba(135,206,235,0.5), 2, 0, 0, 0);
+}
+
+/* Player Mini-View Styles */
+.player-mini-view {
+    -fx-background-color: #2a2a3a;
+    -fx-background-radius: 8;
+    -fx-border-color: #555577;
+    -fx-border-width: 1;
+    -fx-border-radius: 8;
+    -fx-padding: 8;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.4), 3, 0, 1, 1);
+}
+
+.player-mini-view:hover {
+    -fx-border-color: #7777aa;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.6), 4, 0, 2, 2);
+}
+
+.player-mini-view.highlighted-mini-view {
+    -fx-border-color: #FFD700;
+    -fx-border-width: 2;
+    -fx-effect: dropshadow(three-pass-box, rgba(255,215,0,0.8), 6, 0, 0, 0);
+}
+
+.player-info-section {
+    -fx-alignment: center;
+}
+
+.player-name-label {
+    -fx-text-fill: #ffffff;
+    -fx-font-weight: bold;
+}
+
+.player-avatar {
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.5), 2, 0, 1, 1);
+}
+
+/* Mini Ship Grid */
+.mini-ship-grid {
+    -fx-background-color: #333344;
+    -fx-background-radius: 4;
+    -fx-border-color: #555566;
+    -fx-border-width: 1;
+    -fx-border-radius: 4;
+    -fx-padding: 2;
+}
+
+.mini-ship-grid .ship-grid-cell {
+    -fx-background-color: #444455;
+    -fx-border-color: #666677;
+    -fx-border-width: 0.5;
+    -fx-background-radius: 1;
+}
+
+.mini-ship-grid .ship-grid-cell.starting-cabin {
+    -fx-background-color: #4682B4;
+    -fx-border-color: #87CEEB;
+    -fx-border-width: 1;
+}
+
+.component-tile.mini-tile {
+    -fx-border-width: 1;
+    -fx-background-radius: 2;
+    -fx-effect: none;
+}
+
+.component-tile.mini-tile .label {
+    -fx-font-size: 8px;
+}
+
+/* Junkyard Component Styles */
+.tile-junkyard-view {
+    -fx-background-color: transparent;
+}
+
+.junkyard-section .section-title {
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #ffffff;
+}
+
+.junkyard-title {
+    -fx-text-fill: #FFD700;
+    -fx-effect: dropshadow(gaussian, rgba(255,215,0,0.5), 3, 0, 0, 0);
+}
+
+.face-down-area {
+    -fx-background-color: #333333;
+    -fx-background-radius: 8;
+    -fx-border-color: #666666;
+    -fx-border-width: 1;
+    -fx-border-radius: 8;
+    -fx-effect: inset 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.face-up-area {
+    -fx-background-color: #444444;
+    -fx-background-radius: 8;
+    -fx-border-color: #777777;
+    -fx-border-width: 1;
+    -fx-border-radius: 8;
+}
+
+/* Junkyard Tile Styles */
+.component-tile.in-junkyard {
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.6), 4, 0, 2, 2);
+}
+
+.component-tile.in-junkyard:hover,
+.component-tile.junkyard-tile-hover {
+    -fx-effect: dropshadow(three-pass-box, rgba(255,255,255,0.4), 6, 0, 0, 0);
+    -fx-cursor: hand;
+    -fx-scale-x: 1.05;
+    -fx-scale-y: 1.05;
+}
+
+.component-tile.face-down {
+    -fx-background-color: #4a4a4a;
+    -fx-border-color: #666666;
+    -fx-border-width: 2;
+    -fx-background-radius: 3;
+}
+
+.component-tile.face-down:hover {
+    -fx-background-color: #555555;
+    -fx-border-color: #888888;
+}
+
+/* Hand Management Area */
+.hand-management-area {
+    -fx-background-color: #3a3a3a;
+    -fx-background-radius: 8;
+    -fx-border-color: #555555;
+    -fx-border-width: 1;
+    -fx-border-radius: 8;
+    -fx-padding: 10;
+}
+
+.hand-management-area .section-title {
+    -fx-text-fill: #FFD700;
+    -fx-font-size: 14px;
+}
+
+/* Animation Support */
+@keyframes tile-pickup {
+    from {
+        -fx-scale-x: 1.0;
+        -fx-scale-y: 1.0;
+        -fx-opacity: 1.0;
+    }
+    50% {
+        -fx-scale-x: 1.2;
+        -fx-scale-y: 1.2;
+        -fx-opacity: 0.8;
+    }
+    to {
+        -fx-scale-x: 0.0;
+        -fx-scale-y: 0.0;
+        -fx-opacity: 0.0;
+    }
+}
+
+@keyframes tile-place {
+    from {
+        -fx-scale-x: 0.5;
+        -fx-scale-y: 0.5;
+        -fx-opacity: 0.5;
+    }
+    to {
+        -fx-scale-x: 1.0;
+        -fx-scale-y: 1.0;
+        -fx-opacity: 1.0;
+    }
+}

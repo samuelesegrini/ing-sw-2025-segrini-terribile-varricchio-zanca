@@ -1,35 +1,52 @@
 package it.polimi.ingsw.common.message.response;
 
 import it.polimi.ingsw.client.core.state.LocalGameState;
+import it.polimi.ingsw.client.core.state.ComponentInstance;
+import it.polimi.ingsw.common.ComponentData;
 import it.polimi.ingsw.server.model.enums.ship.ComponentType;
 import java.util.UUID;
 
 /**
- * Response to a TakeTileRequest, containing the information about the drawn tile.
+ * Response to a TakeTileRequest, containing the complete information about the drawn tile.
  */
 public class TakeTileResponse extends AbstractResponse {
-    private final String tileId;
-    private final ComponentType tileType;
+    private final ComponentData componentData;
 
-    public TakeTileResponse(UUID correlationId, String tileId, ComponentType tileType) {
+    public TakeTileResponse(UUID correlationId, ComponentData componentData) {
         super(correlationId);
-        this.tileId = tileId;
-        this.tileType = tileType;
+        this.componentData = componentData;
     }
 
-    public String getTileId() {
-        return tileId;
+
+    public ComponentData getComponentData() {
+        return componentData;
     }
 
-    public ComponentType getTileType() {
-        return tileType;
-    }
 
     @Override
     public void handleOnClient(ClientContext context) {
-        LocalGameState.getInstance().addHeldTile(tileType);
-        context.getModel().firePropertyChange("heldTiles", null, null);
-        context.showNotification("Tile Drawn", "You drew a " + tileType.name(),
+        // Create ComponentInstance from complete server data
+        if (componentData == null) {
+            System.err.println("TakeTileResponse: ComponentData is null");
+            return;
+        }
+        
+        if (componentData.getConnectors() != null) {
+            // Full component data with connectors
+            ComponentInstance componentInstance = new ComponentInstance(
+                componentData.getId(), 
+                componentData.getType(), 
+                componentData.getConnectors()
+            );
+            componentInstance.setDirection(componentData.getDefaultDirection());
+
+            LocalGameState.getInstance().addHeldTile(componentInstance);
+            context.getModel().firePropertyChange("heldTiles", null, null);
+        } else {
+            System.err.println("TakeTileResponse: ComponentData has null connectors for " + componentData.getType());
+        }
+        
+        context.showNotification("Tile Drawn", "You drew a " + componentData.getType().name(),
                 it.polimi.ingsw.client.ui.NotificationType.INFO);
     }
 }

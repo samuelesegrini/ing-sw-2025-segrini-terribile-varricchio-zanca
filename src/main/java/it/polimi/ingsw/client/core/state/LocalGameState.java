@@ -5,6 +5,7 @@ import it.polimi.ingsw.server.model.domain.ship.Position;
 import it.polimi.ingsw.server.model.enums.ship.ComponentType;
 import it.polimi.ingsw.server.model.enums.GamePhase;
 import it.polimi.ingsw.server.model.domain.general.config.ShipGridConfig;
+import it.polimi.ingsw.server.model.domain.general.config.PositionConfig;
 import it.polimi.ingsw.server.model.enums.ship.ConnectorType;
 import it.polimi.ingsw.server.model.enums.ship.Direction;
 
@@ -223,6 +224,19 @@ public class LocalGameState {
         this.shipGridConfig = config;
         if (config != null) {
             updateGridDimensions(config.rows(), config.cols());
+            
+            // Extract forbidden positions from config
+            Set<Position> configForbiddenPositions = new HashSet<>();
+            if (config.forbiddenPositions() != null) {
+                for (PositionConfig posConfig : config.forbiddenPositions()) {
+                    Position position = new Position(posConfig.x(), posConfig.y());
+                    if (position.getRow() >= 0 && position.getRow() < gridRows && 
+                        position.getCol() >= 0 && position.getCol() < gridCols) {
+                        configForbiddenPositions.add(position);
+                    }
+                }
+            }
+            setForbiddenPositions(configForbiddenPositions);
         }
     }
     
@@ -482,6 +496,7 @@ public class LocalGameState {
         buildingPhaseStartTime = 0;
         shipValidated = false;
         validationErrors.clear();
+        // Note: NOT clearing forbidden positions here - they come from server config
         updateShipStatistics();
     }
     

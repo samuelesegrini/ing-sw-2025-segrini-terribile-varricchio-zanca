@@ -12,10 +12,10 @@ import java.util.concurrent.ExecutionException;
  * TUI view for server connection.
  * Migrated to new unified architecture.
  */
-public class TuiConnectionView extends BaseUIView {
-    
+public class TuiConnectionView extends BaseUIView { //CONTROLLA
+
     private final Scanner scanner;
-    
+
     public TuiConnectionView() {
         this.scanner = new Scanner(System.in);
     }
@@ -46,14 +46,10 @@ public class TuiConnectionView extends BaseUIView {
     }
     
     @Override
-    protected void onHide() {
-        // TUI views don't need special hiding logic
-    }
+    protected void onHide() {}
     
     @Override
-    protected void onRefresh() {
-        // Called when model properties change, but not needed here as onShow handles the loop.
-    }
+    protected void onRefresh() {}
     
     private void promptForConnection() {
         TuiConsole console = getConsole();

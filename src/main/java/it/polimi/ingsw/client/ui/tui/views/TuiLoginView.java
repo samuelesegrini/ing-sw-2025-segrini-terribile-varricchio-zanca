@@ -85,7 +85,7 @@ public class TuiLoginView extends BaseUIView {
         }
     }
 
-    private void promptRetry() { //CHIEDI
+    private void promptRetry() {
         console.println("");
         // The login loop will continue automatically
     }

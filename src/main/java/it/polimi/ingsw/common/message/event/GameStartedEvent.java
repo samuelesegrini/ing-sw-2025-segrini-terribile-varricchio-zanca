@@ -120,11 +120,12 @@ public class GameStartedEvent extends AbstractEvent {
                     }
                 }
 
-                // Set forbidden positions from server configuration
+                // Set forbidden positions from server configuration (only if server provides explicit positions)
                 Set<Position> forbidden = playerForbiddenPositions.get(localPlayerId);
-                if (forbidden != null) {
+                if (forbidden != null && !forbidden.isEmpty()) {
                     gameState.setForbiddenPositions(forbidden);
                 }
+                // If server forbidden positions are empty/null, keep the ones extracted from ShipGridConfig
 
                 // Set timer and timer flipped
                 Long time = playerBuildingTimeRemaining.get(localPlayerId);

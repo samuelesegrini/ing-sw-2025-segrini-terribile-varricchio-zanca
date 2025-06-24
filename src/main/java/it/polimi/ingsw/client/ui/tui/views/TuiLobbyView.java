@@ -19,9 +19,10 @@ public class TuiLobbyView extends BaseUIView {
     private final TuiConsole console;
     private final Scanner scanner;
 
-    public TuiLobbyView() {
-        this.console = ((TuiContext) context).getConsole();
+    public TuiLobbyView(TuiContext context) {
+        this.console = context.getConsole();
         this.scanner = new Scanner(System.in);
+        initialize(context);
     }
     
     @Override
@@ -36,6 +37,15 @@ public class TuiLobbyView extends BaseUIView {
 
     @Override
     protected void onShow() {
+        context.getController().refreshGameList()
+                .thenAccept(success -> {
+                    if (success) {
+                        LOGGER.info("Refreshed game list.");
+                    } else {
+                        LOGGER.warning("Failed to refresh game list.");
+                    }
+                });
+
         displayLobby();
         startInputLoop();
     }
@@ -52,8 +62,9 @@ public class TuiLobbyView extends BaseUIView {
     protected void onPropertyChange(java.beans.PropertyChangeEvent evt) {
         switch (evt.getPropertyName()) {
             case "availableGames":
-            //case "inProgressGames": //CHIEDII
-                displayAllGames();
+            case "inProgressGames":
+                displayLobby();
+                break;
         }
     }
 
@@ -65,16 +76,10 @@ public class TuiLobbyView extends BaseUIView {
         console.clearScreen();
         console.printSectionHeader("LOBBY");
 
-        ClientModel model = context.getModel();
-
-        displayAllGames(); //CHIEDI In ClientModel manca gamesInProgress
-
-        displayCommands();
-    }
-
-    private void displayAllGames() {
         displayJoinableGames();
         displayInProgressGames();
+        displayAvailableGames();
+        displayCommands();
     }
 
     private void displayJoinableGames() {
@@ -167,10 +172,8 @@ public class TuiLobbyView extends BaseUIView {
     public void displayCommands() {
         console.println("Available Commands:");
 
-        console.println("• list - List available games");
-        console.println("• create - Create a new game");
-        console.println("• join - Join an existing game");
-        console.println("• refresh - Refresh game list");
+        console.println("• (c) create <gameName> <maxPlayers> <gameLevel> - Create a new game");
+        console.println("• (j) join <gameId - Join an existing game");
         console.println("");
     }
 
@@ -198,12 +201,15 @@ public class TuiLobbyView extends BaseUIView {
         String[] tokens = input.split("\\s+");
         String command = tokens[0].toLowerCase();
         switch (command) {
+            case "c":
             case "create":
                 handleCreateCommand(tokens);
                 break;
+            case "j":
             case "join":
                 handleJoinCommand(tokens);
                 break;
+            case "h":
             case "help":
                 displayCommands();
                 break;
@@ -212,17 +218,6 @@ public class TuiLobbyView extends BaseUIView {
                 break;
         }
     }
-
-//    private void handleListCommand() {
-//        context.getController().refreshGameList()
-//                .thenAccept(success -> {
-//                    if (success) {
-//                        LOGGER.info("Refreshed game list.");
-//                    } else {
-//                        LOGGER.warning("Failed to refresh game list.");
-//                    }
-//                }); //VERIFICA
-//    }
 
     private void handleCreateCommand(String[] tokens) {
         if (tokens.length != 4) {
@@ -255,20 +250,17 @@ public class TuiLobbyView extends BaseUIView {
             return;
         }
 
-        context.getController().createGame(gameName, maxPlayers, gameLevel); //CONTROLLA
+        context.getController().createGame(gameName, maxPlayers, gameLevel);
     }
 
     private void handleJoinCommand(String[] tokens) {
-        if (tokens.length != 3) {
+        if (tokens.length != 2) {
             console.printError("Error: 'join' command requires 1 argument.");
             return;
         }
 
         String gameId = tokens[1];
-        if (gameId.length() < 3 || gameId.length() > 15) { //CHIEDI
-            console.println("Error: gameId length must be between 3 and 15 characters.");
-        }
 
-        context.getController().joinGame(gameId); //CONTROLLA
+        context.getController().joinGame(gameId);
     }
 }

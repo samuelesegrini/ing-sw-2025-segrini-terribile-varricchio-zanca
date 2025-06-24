@@ -1,34 +1,33 @@
 package it.polimi.ingsw.common.message.event;
 
+import it.polimi.ingsw.server.model.enums.ship.ComponentType;
+import it.polimi.ingsw.client.core.state.ComponentInstance;
+import it.polimi.ingsw.common.ComponentData;
 
 /**
  * Event broadcast when a component tile is reserved by a player.
  * This happens in advanced building rules where players can reserve components for later use.
  */
 public class ComponentReservedEvent extends AbstractEvent {
-    private final String tileId;
-    private final String tileType;
+    private final ComponentData componentData;
     private final String playerId;
     private final String playerNickname;
     private final long reservationExpiresAt;
 
-    public ComponentReservedEvent(String gameId, String tileId, String tileType, 
+    public ComponentReservedEvent(String gameId, ComponentData componentData, 
                                  String playerId, String playerNickname, long reservationExpiresAt) {
         super(EventType.COMPONENT_RESERVED, gameId, playerId);
-        this.tileId = tileId;
-        this.tileType = tileType;
+        this.componentData = componentData;
         this.playerId = playerId;
         this.playerNickname = playerNickname;
         this.reservationExpiresAt = reservationExpiresAt;
     }
+    
 
-    public String getTileId() {
-        return tileId;
+    public ComponentData getComponentData() {
+        return componentData;
     }
 
-    public String getTileType() {
-        return tileType;
-    }
 
     public String getPlayerId() {
         return playerId;
@@ -47,10 +46,20 @@ public class ComponentReservedEvent extends AbstractEvent {
         context.runOnUIThread(() -> {
             // Update game state with component reservation
             if (context.isLocalPlayer(playerId)) {
-                it.polimi.ingsw.client.core.state.LocalGameState.getInstance().addHeldTile(
-                    it.polimi.ingsw.server.model.enums.ship.ComponentType.valueOf(tileType)
-                );
-                context.getController().getModel().firePropertyChange("heldTiles", null, null);
+                if (componentData != null && componentData.getConnectors() != null) {
+                    // Create ComponentInstance from complete server data
+                    ComponentInstance component = new ComponentInstance(
+                        componentData.getId(),
+                        componentData.getType(),
+                        componentData.getConnectors()
+                    );
+                    component.setDirection(componentData.getDefaultDirection());
+                    
+                    it.polimi.ingsw.client.core.state.LocalGameState.getInstance().addHeldTile(component);
+                    context.getController().getModel().firePropertyChange("heldTiles", null, null);
+                } else {
+                    System.err.println("ComponentReservedEvent: Invalid componentData or null connectors");
+                }
             }
 
             // Show notification
@@ -58,9 +67,9 @@ public class ComponentReservedEvent extends AbstractEvent {
                 String message;
                 if (context.isLocalPlayer(playerId)) {
                     long timeLeft = (reservationExpiresAt - System.currentTimeMillis()) / 1000;
-                    message = String.format("You reserved a %s tile (%d seconds to use)", tileType, timeLeft);
+                    message = String.format("You reserved a %s tile (%d seconds to use)", componentData.getType().name(), timeLeft);
                 } else {
-                    message = String.format("%s reserved a %s tile", playerNickname, tileType);
+                    message = String.format("%s reserved a %s tile", playerNickname, componentData.getType().name());
                 }
                 context.getNotificationService().showNotification(
                     new it.polimi.ingsw.client.ui.Notification(
@@ -75,8 +84,8 @@ public class ComponentReservedEvent extends AbstractEvent {
             if (context.getController() != null && context.getController().getModel() != null) {
                 context.getController().getModel().firePropertyChange("componentReserved", null, 
                     java.util.Map.of(
-                        "tileId", tileId,
-                        "tileType", tileType,
+                        "tileId", componentData.getId(),
+                        "tileType", componentData.getType().name(),
                         "playerId", playerId,
                         "expiresAt", reservationExpiresAt
                     )

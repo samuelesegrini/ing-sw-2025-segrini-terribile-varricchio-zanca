@@ -18,9 +18,10 @@ public class TuiGameLobbyView extends BaseUIView { //CONTROLLA
     private final TuiConsole console;
     private final Scanner scanner;
 
-    public TuiGameLobbyView() {
-        this.console = ((TuiContext) context).getConsole();
+    public TuiGameLobbyView(TuiContext context) {
+        this.console = context.getConsole();
         this.scanner = new Scanner(System.in);
+        initialize(context);
     }
 
     @Override
@@ -83,13 +84,8 @@ public class TuiGameLobbyView extends BaseUIView { //CONTROLLA
             console.println("");
         }
 
-        // Display players
         displayPlayersTable();
-
-        // Display status
         displayStatus();
-
-        // Display available commands
         displayCommands();
     }
 
@@ -105,7 +101,6 @@ public class TuiGameLobbyView extends BaseUIView { //CONTROLLA
         String currentPlayerId = context.getController().getPlayerId();
         String hostId = getHostPlayerId();
 
-        // Prepare table data
         String[] headers = {"NICKNAME", "STATUS", "HOST"};
         String[][] data = new String[players.size()][3];
         
@@ -153,18 +148,18 @@ public class TuiGameLobbyView extends BaseUIView { //CONTROLLA
         boolean allReady = areAllPlayersReady();
 
         if (isReady) {
-            console.println("• nr - Mark yourself as not ready");
+            console.println("• (u) unready - Mark yourself as not ready");
         } else {
-            console.println("• r - Mark yourself as ready");
+            console.println("• (r) ready - Mark yourself as ready");
         }
 
         if (isHost && allReady) {
-            console.println("• start - Start the game");
+            console.println("• (s) start - Start the game");
         }
 
-        console.println("• leave - Leave the lobby");
+        console.println("• (l) leave - Leave the lobby");
         console.println("• refresh - Refresh the lobby display");
-        console.println("• help - Show this help message");
+        console.println("• (h) help - Show this help message");
         console.println("");
     }
 
@@ -196,14 +191,14 @@ public class TuiGameLobbyView extends BaseUIView { //CONTROLLA
             case "ready":
                 handleReadyCommand();
                 break;
-            case "nr":
-            case "notready":
-            case "not ready":
-                handleNotReadyCommand();
+            case "u":
+            case "unready":
+                handleUnreadyCommand();
                 break;
             case "start":
                 handleStartCommand();
                 break;
+            case "l":
             case "leave":
             case "quit":
                 handleLeaveCommand();
@@ -211,8 +206,8 @@ public class TuiGameLobbyView extends BaseUIView { //CONTROLLA
             case "refresh":
                 displayGameLobby();
                 break;
-            case "help":
             case "h":
+            case "help":
                 displayCommands();
                 break;
             default:
@@ -231,7 +226,7 @@ public class TuiGameLobbyView extends BaseUIView { //CONTROLLA
         }
     }
 
-    private void handleNotReadyCommand() {
+    private void handleUnreadyCommand() {
         String playerId = context.getController().getPlayerId();
         if (context.getModel().isPlayerReady(playerId)) {
             context.getController().setPlayerReady(false);
