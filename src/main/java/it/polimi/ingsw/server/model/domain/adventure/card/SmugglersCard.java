@@ -54,9 +54,9 @@ import it.polimi.ingsw.server.model.enums.resource.GoodType;
      *
      * @param visitor The visitor handling the card logic.
      * @param state The current game state, which may affect the behavior of the visitor.
-     * @return The result of the visitor's action on the Smugglers card.
+     *
      */
-    public boolean accept(AdventureCardVisitor visitor, GameModel state){
-        return visitor.visitSmugglersCard(this, state);
+    public void accept(AdventureCardVisitor visitor, GameModel state){
+        visitor.visitSmugglersCard(this, state);
     }
 }

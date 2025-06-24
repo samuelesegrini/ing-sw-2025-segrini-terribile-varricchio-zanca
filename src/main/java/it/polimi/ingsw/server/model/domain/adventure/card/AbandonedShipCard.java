@@ -56,8 +56,8 @@ public class AbandonedShipCard extends AdventureCard {
     * @param state The current state of the game.
      * @return The result of applying the visitor to this card
      */
-    public boolean accept(AdventureCardVisitor visitor, GameModel state){
-        return visitor.visitAbandonedShipCard(this, state);
+    public void accept(AdventureCardVisitor visitor, GameModel state){
+        visitor.visitAbandonedShipCard(this, state);
     }
 
 }

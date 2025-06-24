@@ -27,9 +27,9 @@ public class EpidemicCard extends AdventureCard {
      *
      * @param visitor The visitor to accept.
      * @param state The current game state.
-     * @return The result of the visitor's action on the Epidemic card.
+     *
      */
-    public boolean accept(AdventureCardVisitor visitor, GameModel state){
-        return visitor.visitEpidemicCard(this, state);
+    public void accept(AdventureCardVisitor visitor, GameModel state){
+         visitor.visitEpidemicCard(this, state);
     }
 }

@@ -45,9 +45,9 @@ public class PiratesCard extends EnemyCard {
      *
      * @param visitor The visitor to accept.
      * @param state The current game state.
-     * @return The result of the visitor's action on the Pirates card.
+     *
      */
-    public boolean accept(AdventureCardVisitor visitor, GameModel state){
-        return visitor.visitPiratesCard(this, state);
+    public void accept(AdventureCardVisitor visitor, GameModel state){
+        visitor.visitPiratesCard(this, state);
     }
 }

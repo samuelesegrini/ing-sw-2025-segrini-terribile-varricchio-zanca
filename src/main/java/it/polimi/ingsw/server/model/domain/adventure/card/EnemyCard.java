@@ -51,5 +51,5 @@ public abstract class EnemyCard extends AdventureCard {
      * @param state The current game state.
      * @return The result of the visitor's processing.
      */
-    public abstract boolean accept(AdventureCardVisitor visitor, GameModel state);
+    public abstract void accept(AdventureCardVisitor visitor, GameModel state);
 }

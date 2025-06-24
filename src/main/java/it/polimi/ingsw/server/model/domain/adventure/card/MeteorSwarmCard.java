@@ -39,9 +39,9 @@ public class MeteorSwarmCard extends AdventureCard {
      *
      * @param visitor The visitor which will perform actions on the card.
      * @param state The current game state.
-     * @return The result of the visitor's action on the MeteorSwarmCard.
+     *
      */
-    public boolean accept(AdventureCardVisitor visitor, GameModel state){
-        return visitor.visitMeteorSwarmCard(this, state);
+    public void accept(AdventureCardVisitor visitor, GameModel state){
+        visitor.visitMeteorSwarmCard(this, state);
     }
 }

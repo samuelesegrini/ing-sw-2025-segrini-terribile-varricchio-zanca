@@ -57,9 +57,8 @@ public class AbandonedStationCard extends AdventureCard {
      * The visitor pattern allows operations to be applied to the card without modifying its class.
      * @param visitor The visitor that will process this card.
      * @param state The current game state.
-     * @return The result of the visitor's operation on this card.
      */
-    public boolean accept(AdventureCardVisitor visitor, GameModel state){
-        return visitor.visitAbandonedStationCard(this, state);
+    public void accept(AdventureCardVisitor visitor, GameModel state){
+         visitor.visitAbandonedStationCard(this, state);
     }
 }
