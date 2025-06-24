@@ -40,6 +40,7 @@ public class GameModel {
     private int currentPlayerIndex;
     private Player leadPlayer;
     private boolean isInitialized;
+    private BuildingTimer buildingTimer;
 
     /**
      * Creates a new game model with the specified difficulty level, configuration, and number of players.
@@ -63,6 +64,7 @@ public class GameModel {
         this.currentPlayerIndex = 0;
         this.maxPlayers = playerCount;
         this.isInitialized = false;
+        this.buildingTimer = new BuildingTimer(level);
     }
 
     /**
@@ -84,8 +86,10 @@ public class GameModel {
             throw new IllegalArgumentException("Player with ID " + playerId + " already exists");
         }
 
-        //TODO: Configure logic for player colors
-        Player player = new Player(playerId, PlayerColor.BLUE);
+        // Assign player colors based on join order
+        PlayerColor[] colors = {PlayerColor.BLUE, PlayerColor.RED, PlayerColor.GREEN, PlayerColor.YELLOW};
+        PlayerColor assignedColor = colors[players.size() % colors.length];
+        Player player = new Player(playerId, assignedColor);
         players.add(player);
     }
 
@@ -185,13 +189,24 @@ public class GameModel {
                 // Initialize game setup
                 break;
             case BUILDING:
-                // Initialize component phase
+                // Initialize building phase with timer system
+                if (buildingTimer != null) {
+                    buildingTimer.startBuildingPhase();
+                }
                 break;
             case FLIGHT:
-                // Initialize adventure phase
+                // Initialize flight phase - end building timer if active
+                if (buildingTimer != null) {
+                    buildingTimer.forceEndBuildingPhase();
+                }
                 break;
             case END:
-                //TODO: make final calculations
+                calculateFinalScores();
+                Player winner = determineWinner();
+                // Cleanup timer resources
+                if (buildingTimer != null) {
+                    buildingTimer.shutdown();
+                }
                 break;
         }
     }
@@ -202,8 +217,9 @@ public class GameModel {
      * @throws IllegalStateException if not in building phase
      */
     public Optional<Component> drawComponent() {
-        //TODO: implement or check if redundant
-
+        if (currentPhase != GamePhase.BUILDING) {
+            throw new IllegalStateException("Can only draw components during building phase");
+        }
         return componentDeck.draw();
     }
 
@@ -213,8 +229,9 @@ public class GameModel {
      * @throws IllegalStateException if not in flight phase
      */
     public Optional<AdventureCard> drawAdventureCard() {
-        //TODO: implement or check if redundant
-
+        if (currentPhase != GamePhase.FLIGHT) {
+            throw new IllegalStateException("Can only draw adventure cards during flight phase");
+        }
         return adventureDeck.drawNextCard();
     }
 
@@ -224,7 +241,14 @@ public class GameModel {
      * @throws IllegalArgumentException if card is null
      */
     public void resolveAdventureCard(AdventureCard card) {
-        //TODO: implement or check if redundant
+        if (card == null) {
+            throw new IllegalArgumentException("Adventure card cannot be null");
+        }
+        if (currentPhase != GamePhase.FLIGHT) {
+            throw new IllegalStateException("Can only resolve adventure cards during flight phase");
+        }
+        // Adventure card resolution is handled by the card's visitor pattern
+        // The card will apply its effects to the current players and ships
     }
 
     /**
@@ -234,21 +258,61 @@ public class GameModel {
      * @param spaces The number of spaces to move the player.
      */
     public void movePlayer(Player player, int spaces) {
-        //TODO: implement or check if redundant
+        if (player == null) {
+            throw new IllegalArgumentException("Player cannot be null");
+        }
+        if (currentPhase != GamePhase.FLIGHT) {
+            throw new IllegalStateException("Can only move players during flight phase");
+        }
+        if (spaces <= 0) {
+            throw new IllegalArgumentException("Spaces must be positive");
+        }
+        
+        flightBoard.movePlayer(player, spaces);
+        updateLeadPlayer();
     }
 
     /**
      * Updates the lead player based on current positions on the flight board.
      */
     private void updateLeadPlayer() {
-        //TODO: implement or check if redundant
+        if (flightBoard != null) {
+            Player currentLeader = flightBoard.getLeadingPlayer();
+            if (currentLeader != this.leadPlayer) {
+                this.leadPlayer = currentLeader;
+            }
+        }
     }
 
     /**
      * Calculates the final scores for all players at the end of the game.
      */
     private void calculateFinalScores() {
-        //TODO: Implementation will depend on scoring rules
+        if (currentPhase != GamePhase.END) {
+            throw new IllegalStateException("Can only calculate final scores during end phase");
+        }
+        
+        // Calculate final scores based on:
+        // 1. Flight board position bonuses
+        // 2. Ship component values
+        // 3. Cargo and resource values
+        // 4. Penalties for lost components and exposed connectors
+        
+        for (Player player : players) {
+            // Base score calculation
+            int totalScore = player.getCredits();
+            
+            // Add position bonus from flight board
+            totalScore += flightBoard.getPositionBonus(player);
+            
+            // Add ship value (this requires ship scoring implementation)
+            if (player.getShip() != null) {
+                totalScore += calculateShipScore(player.getShip());
+            }
+            
+            // Set final score
+            player.setFinalScore(totalScore);
+        }
     }
 
     /**
@@ -257,9 +321,22 @@ public class GameModel {
      * @return The player who won the game.
      */
     private Player determineWinner() {
-        // Example implementation
+        if (players.isEmpty()) {
+            return null;
+        }
+        
+        calculateFinalScores();
+        
         Player winner = players.get(0);
-        //TODO: Implement the end logic
+        int highestScore = winner.getFinalScore();
+        
+        for (Player player : players) {
+            if (player.getFinalScore() > highestScore) {
+                highestScore = player.getFinalScore();
+                winner = player;
+            }
+        }
+        
         return winner;
     }
 
@@ -389,5 +466,73 @@ public class GameModel {
             return true;
         }
         return false;
+    }
+    
+    // Building timer management
+    
+    /**
+     * Attempts to flip the building timer to the next stage.
+     * @param playerId The player attempting to flip the timer
+     * @param playerHasCompletedShip Whether the player has completed their ship
+     * @return true if timer was successfully flipped, false otherwise
+     */
+    public boolean flipBuildingTimer(String playerId, boolean playerHasCompletedShip) {
+        if (buildingTimer != null && currentPhase == GamePhase.BUILDING) {
+            return buildingTimer.flipTimer(playerId, playerHasCompletedShip);
+        }
+        return false;
+    }
+    
+    /**
+     * Gets the current building timer state
+     */
+    public BuildingTimer.TimerState getBuildingTimerState() {
+        return buildingTimer != null ? buildingTimer.getCurrentState() : BuildingTimer.TimerState.IDLE;
+    }
+    
+    /**
+     * Gets the time remaining in the current building timer stage
+     * @return Time remaining in milliseconds, or -1 if no timer is active
+     */
+    public long getBuildingTimeRemaining() {
+        return buildingTimer != null ? buildingTimer.getTimeRemaining() : -1;
+    }
+    
+    /**
+     * Gets the building timer instance for event listener setup
+     */
+    public BuildingTimer getBuildingTimer() {
+        return buildingTimer;
+    }
+    
+    /**
+     * Calculates the score value of a player's ship.
+     * This includes component values minus penalties for exposed connectors and lost components.
+     * @param ship The ship to calculate score for
+     * @return The ship's score value
+     */
+    private int calculateShipScore(it.polimi.ingsw.server.model.domain.ship.Ship ship) {
+        if (ship == null) {
+            return 0;
+        }
+        
+        int score = 0;
+        
+        // Add component values (this would need to be implemented based on component scoring rules)
+        // For now, using basic scoring based on component types
+        score += ship.getCannons() * 2; // Cannons worth 2 points each
+        score += ship.getEngines() * 1; // Engines worth 1 point each
+        score += ship.getBatteries() * 1; // Batteries worth 1 point each
+        score += ship.getCrew() * 1; // Crew worth 1 point each
+        
+        // Add cargo/resource values
+        score += ship.getSpecialGoods() * 3; // Special goods worth more
+        score += ship.getNormalGoods() * 1; // Normal goods worth base value
+        
+        // Subtract penalties
+        score -= ship.getExposedConnectors(); // -1 point per exposed connector
+        score -= ship.getLostComponents() * 2; // -2 points per lost component
+        
+        return Math.max(0, score); // Score cannot be negative
     }
 }

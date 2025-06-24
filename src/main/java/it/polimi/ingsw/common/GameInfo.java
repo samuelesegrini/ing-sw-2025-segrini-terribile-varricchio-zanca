@@ -1,6 +1,7 @@
 package it.polimi.ingsw.common;
 
 import it.polimi.ingsw.server.model.enums.GameLevel;
+import it.polimi.ingsw.server.model.enums.GamePhase;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -16,16 +17,18 @@ public class GameInfo implements Serializable {
     public final int maxPlayers;
     public final int currentPlayers;
     public final GameLevel gameLevel;
+    public final GamePhase currentPhase;
     public final List<PlayerInfo> players;
 
     public GameInfo(String gameId, String gameName, String creatorId, int maxPlayers, int currentPlayers,
-                    GameLevel gameLevel, List<PlayerInfo> players) {
+                    GameLevel gameLevel, GamePhase currentPhase, List<PlayerInfo> players) {
         this.gameId = gameId;
         this.gameName = gameName;
         this.creatorId = creatorId;
         this.maxPlayers = maxPlayers;
         this.currentPlayers = currentPlayers;
         this.gameLevel = gameLevel;
+        this.currentPhase = currentPhase;
         this.players = new ArrayList<>(players);
     }
 
@@ -55,6 +58,10 @@ public class GameInfo implements Serializable {
 
     public int getMaxPlayers() {
         return maxPlayers;
+    }
+
+    public GamePhase getCurrentPhase() {
+        return currentPhase;
     }
 }
 

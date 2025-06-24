@@ -8,6 +8,7 @@ import it.polimi.ingsw.common.message.request.CreateGameRequest;
 import it.polimi.ingsw.common.message.request.JoinGameRequest;
 import it.polimi.ingsw.common.message.request.ListGamesRequest;
 import it.polimi.ingsw.server.model.enums.GameLevel;
+import it.polimi.ingsw.server.model.enums.GamePhase;
 import javafx.animation.ScaleTransition;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
@@ -125,8 +126,11 @@ public class GuiLobbyView extends BaseUIView {
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
         
-        playerLabel = new Label("Player: " + (context != null && context.getModel() != null && 
-            context.getModel().getNickname() != null ? context.getModel().getNickname() : "Unknown"));
+        String nickname = (context != null && context.getModel() != null) ? context.getModel().getNickname() : null;
+        if (nickname == null || nickname.trim().isEmpty()) {
+            nickname = "Guest Player";
+        }
+        playerLabel = new Label("Player: " + nickname);
         playerLabel.getStyleClass().addAll("label-header", "lobby-player-info-label");
         
         logoutButton = new Button("LOGOUT");
@@ -478,9 +482,14 @@ public class GuiLobbyView extends BaseUIView {
         for (GameInfo game : availableGames) {
             Node gameCard = createGameCard(game);
             
-            // For now, assume all games are waiting (can be enhanced based on game state)
-            waitingGamesFlowPane.getChildren().add(gameCard);
-            hasWaitingGames = true;
+            // Separate games based on their current phase
+            if (game.getCurrentPhase() == GamePhase.SETUP) {
+                waitingGamesFlowPane.getChildren().add(gameCard);
+                hasWaitingGames = true;
+            } else {
+                inProgressGamesFlowPane.getChildren().add(gameCard);
+                hasInProgressGames = true;
+            }
         }
         
         // Add "no games" labels if needed
@@ -497,56 +506,63 @@ public class GuiLobbyView extends BaseUIView {
     }
     
     private Node createGameCard(GameInfo game) {
-        VBox card = new VBox(8);
+        VBox card = new VBox(10);
         card.getStyleClass().addAll("panel-light-accent-box", "lobby-game-entry-pane");
-        card.setPrefWidth(300);
-        card.setPadding(new Insets(12));
+        card.setPrefWidth(280);
+        card.setPadding(new Insets(15));
         
-        // Title box with game ID and level
-        HBox titleBox = new HBox(10);
-        titleBox.getStyleClass().add("lobby-game-entry-title-box");
-        titleBox.setAlignment(Pos.CENTER_LEFT);
-        
-        Label gameIdLabel = new Label(game.getGameId());
-        gameIdLabel.getStyleClass().add("lobby-game-id-label");
-        
-        Region titleSpacer = new Region();
-        HBox.setHgrow(titleSpacer, Priority.ALWAYS);
-        
-        Label levelLabel = new Label(game.getGameLevel().toString().replace("_", " "));
-        levelLabel.getStyleClass().add("lobby-level-label");
-        
-        titleBox.getChildren().addAll(gameIdLabel, titleSpacer, levelLabel);
-        
-        // Game name
+        // Game name (title)
         Label nameLabel = new Label(game.getGameName());
-        nameLabel.getStyleClass().add("lobby-host-label");
+        nameLabel.getStyleClass().addAll("label-subtitle", "lobby-game-name-label");
+        nameLabel.setAlignment(Pos.CENTER);
+        nameLabel.setMaxWidth(Double.MAX_VALUE);
         
-        // Details box
-        HBox detailsBox = new HBox(15);
-        detailsBox.getStyleClass().add("lobby-game-entry-details-box");
-        detailsBox.setAlignment(Pos.CENTER_LEFT);
+        // Info box with phase and players
+        HBox infoBox = new HBox(10);
+        infoBox.setAlignment(Pos.CENTER);
         
-        Label playersLabel = new Label(String.format("Players: %d/%d", 
+        // Phase status
+        String phaseText = getPhaseDisplayText(game.getCurrentPhase());
+        Label phaseLabel = new Label(phaseText);
+        phaseLabel.getStyleClass().add("lobby-phase-label");
+        
+        // Player count
+        Label playersLabel = new Label(String.format("%d/%d players", 
             game.getCurrentPlayers(), game.getMaxPlayers()));
         playersLabel.getStyleClass().add("lobby-players-label");
         
-        detailsBox.getChildren().add(playersLabel);
+        // Add separator
+        Label separator = new Label("•");
+        separator.getStyleClass().add("lobby-separator-label");
         
-        // Action box
-        HBox actionBox = new HBox();
-        actionBox.getStyleClass().add("lobby-game-entry-action-box");
-        actionBox.setAlignment(Pos.CENTER_RIGHT);
+        infoBox.getChildren().addAll(phaseLabel, separator, playersLabel);
         
-        Button joinButton = new Button("JOIN GAME");
-        joinButton.getStyleClass().addAll("button", "button-mini", "button-mini-action", "lobby-join-game-button");
-        joinButton.setOnAction(e -> joinGame(game));
-        setupButtonAnimations(joinButton);
+        // Action button
+        Button actionButton;
+        if (game.getCurrentPhase() == GamePhase.SETUP) {
+            actionButton = new Button("JOIN GAME");
+            actionButton.getStyleClass().addAll("button", "button-primary", "lobby-join-game-button");
+            actionButton.setOnAction(e -> joinGame(game));
+        } else {
+            actionButton = new Button("IN PROGRESS");
+            actionButton.getStyleClass().addAll("button", "button-secondary", "lobby-in-progress-button");
+            actionButton.setDisable(true);
+        }
+        actionButton.setMaxWidth(Double.MAX_VALUE);
+        setupButtonAnimations(actionButton);
         
-        actionBox.getChildren().add(joinButton);
         
-        card.getChildren().addAll(titleBox, nameLabel, detailsBox, actionBox);
+        card.getChildren().addAll(nameLabel, infoBox, actionButton);
         return card;
+    }
+    
+    private String getPhaseDisplayText(GamePhase phase) {
+        return switch (phase) {
+            case SETUP -> "Open";
+            case BUILDING -> "Building";
+            case FLIGHT -> "In Flight";
+            case END -> "Ended";
+        };
     }
     
     private Label createNoGamesLabel() {
@@ -574,6 +590,15 @@ public class GuiLobbyView extends BaseUIView {
                 });
     }
     
+    private void refreshPlayerNickname() {
+        if (context != null && context.getModel() != null && playerLabel != null) {
+            String currentNickname = context.getModel().getNickname();
+            if (currentNickname != null && !currentNickname.trim().isEmpty()) {
+                playerLabel.setText("Player: " + currentNickname);
+            }
+        }
+    }
+    
     private void showLoading(boolean isLoading) {
         // TEMPORARY FIX: Disable loading indicator for testing
         LOGGER.info("showLoading called with: " + isLoading + " - DISABLED FOR TESTING");
@@ -598,6 +623,9 @@ public class GuiLobbyView extends BaseUIView {
     @Override
     protected void onShow() {
         LOGGER.info("GuiLobbyView.onShow() called");
+        
+        // Refresh nickname when showing the lobby
+        refreshPlayerNickname();
         
         // Clear any global loading states that might have been inherited
         if (context != null && context.getNotificationService() != null) {
@@ -689,7 +717,10 @@ public class GuiLobbyView extends BaseUIView {
                 String newNickname = (String) evt.getNewValue();
                 LOGGER.info("Nickname changed to: " + newNickname);
                 if (playerLabel != null) {
-                    playerLabel.setText("Player: " + (newNickname != null ? newNickname : "Unknown"));
+                    if (newNickname == null || newNickname.trim().isEmpty()) {
+                        newNickname = "Guest Player";
+                    }
+                    playerLabel.setText("Player: " + newNickname);
                 }
                 break;
             default:

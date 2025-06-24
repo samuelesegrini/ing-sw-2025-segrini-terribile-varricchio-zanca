@@ -1,5 +1,6 @@
 package it.polimi.ingsw.common.message.request;
 
+import it.polimi.ingsw.common.GameInfo;
 import it.polimi.ingsw.common.message.event.GameCreatedEvent;
 import it.polimi.ingsw.common.message.response.CreateGameResponse;
 import it.polimi.ingsw.common.message.response.ErrorResponse;
@@ -9,6 +10,7 @@ import it.polimi.ingsw.server.core.GameSessionManager;
 import it.polimi.ingsw.server.core.PlayerSessionRegistry;
 import it.polimi.ingsw.server.model.enums.GameLevel;
 
+import java.util.List;
 import java.util.logging.Logger;
 
 /**
@@ -116,4 +118,5 @@ public class CreateGameRequest extends AbstractRequest {
                    " to creator: " + creatorNickname + " (" + playerId + ")");
         return new CreateGameResponse(getCorrelationId(), gameId, gameName, maxPlayers, gameLevel);
     }
+
 }

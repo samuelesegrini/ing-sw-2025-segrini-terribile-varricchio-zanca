@@ -154,6 +154,18 @@ public class ClientModel {
         pcs.firePropertyChange("availableGames", old, availableGames);
     }
 
+    public List<GameInfo> getJoinableGames() {
+        return availableGames.stream()
+                .filter(game -> game.getCurrentPhase() == GamePhase.SETUP)
+                .collect(java.util.stream.Collectors.toList());
+    }
+
+    public List<GameInfo> getGamesInProgress() {
+        return availableGames.stream()
+                .filter(game -> game.getCurrentPhase() != GamePhase.SETUP)
+                .collect(java.util.stream.Collectors.toList());
+    }
+
     // View state
     public ViewState getCurrentView() {
         return currentView;

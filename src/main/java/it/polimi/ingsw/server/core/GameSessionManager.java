@@ -151,26 +151,25 @@ public class GameSessionManager {
     }
 
     /**
-     * Gets all available games that can be joined.
+     * Gets all games (both available to join and in progress).
      */
     public List<GameInfo> getAvailableGames() {
-        List<GameInfo> availableGames = new ArrayList<>();
+        List<GameInfo> allGames = new ArrayList<>();
 
         for (GameSession session : gameSessions.values()) {
-            if (session.canJoin()) {
-                availableGames.add(new GameInfo(
-                        session.getGameId(),
-                        session.getGameName(),
-                        session.getCreatorId(),
-                        session.getMaxPlayers(),
-                        session.getPlayerCount(),
-                        session.getGameLevel(),
-                        session.getPlayers()
-                ));
-            }
+            allGames.add(new GameInfo(
+                    session.getGameId(),
+                    session.getGameName(),
+                    session.getCreatorId(),
+                    session.getMaxPlayers(),
+                    session.getPlayerCount(),
+                    session.getGameLevel(),
+                    session.getCurrentPhase(),
+                    session.getPlayers()
+            ));
         }
 
-        return availableGames;
+        return allGames;
     }
 
     /**

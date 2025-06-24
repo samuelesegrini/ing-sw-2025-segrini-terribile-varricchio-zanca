@@ -17,6 +17,7 @@ public abstract class Component {
     protected Position position;
     protected Map<Direction, ConnectorType> connectors;
     protected Ship ship;
+    protected String reservedBy; // Player ID who reserved this component
 
 
     public Component(ComponentType type, Map<Direction, ConnectorType> connectors, String id) {
@@ -114,5 +115,29 @@ public abstract class Component {
 
     public String getId() {
         return id;
+    }
+    
+    /**
+     * Gets the ID of the player who reserved this component
+     * @return Player ID or null if not reserved
+     */
+    public String getReservedBy() {
+        return reservedBy;
+    }
+    
+    /**
+     * Sets the player who reserved this component
+     * @param playerId Player ID or null to unreserve
+     */
+    public void setReservedBy(String playerId) {
+        this.reservedBy = playerId;
+    }
+    
+    /**
+     * Checks if this component is reserved by any player
+     * @return true if reserved, false otherwise
+     */
+    public boolean isReserved() {
+        return reservedBy != null;
     }
 }

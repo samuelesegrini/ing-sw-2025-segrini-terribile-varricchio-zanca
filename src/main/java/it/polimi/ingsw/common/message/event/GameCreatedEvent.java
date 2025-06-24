@@ -1,11 +1,13 @@
 package it.polimi.ingsw.common.message.event;
 
+import it.polimi.ingsw.client.ClientModel;
 import it.polimi.ingsw.client.core.state.LocalGameState;
 import it.polimi.ingsw.client.ui.Notification;
 import it.polimi.ingsw.common.GameInfo;
 import it.polimi.ingsw.common.PlayerInfo;
 import it.polimi.ingsw.client.ui.NotificationType;
 import it.polimi.ingsw.server.model.enums.GameLevel;
+import it.polimi.ingsw.server.model.enums.GamePhase;
 
 import java.util.Collections;
 import java.util.List;
@@ -37,26 +39,26 @@ public class GameCreatedEvent extends AbstractEvent {
 
     @Override
     public void handleOnClient(ClientEventContext context) {
-        // Add game to available games list
+        LOGGER.log(Level.SEVERE, "GameCreatedEvent received on client. Creator ID: " + creatorId + ". Is this the local player? " + context.isLocalPlayer(creatorId));
+
+        // Create game info for the new game
         PlayerInfo creatorInfo = new PlayerInfo(creatorId, creatorNickname, true);
         GameInfo gameInfo = new GameInfo(gameId, gameName, creatorId, maxPlayers, 1, gameLevel,
-                Collections.singletonList(creatorInfo));
+                GamePhase.SETUP, Collections.singletonList(creatorInfo));
 
-        // Add to client model to trigger property change and UI update
+        // Add game to available games list for all recipients
         context.getController().getModel().addAvailableGame(gameInfo);
-
-        LOGGER.log(Level.SEVERE, "GameCreatedEvent received on client. Creator ID: " + creatorId + ". Is this the local player? " + context.isLocalPlayer(creatorId));
 
         // If this client is the creator, transition to game lobby
         if (context.isLocalPlayer(creatorId)) {
             LOGGER.log(Level.SEVERE, "This is the creator's client. Transitioning to game lobby " + gameId);
             
-            // Set current game with creator in player list
+            // Set current game and transition to game lobby
             context.getController().getModel().setCurrentGame(gameInfo);
-            context.getController().getModel().setCurrentView(it.polimi.ingsw.client.ClientModel.ViewState.GAME_LOBBY);
+            context.getController().getModel().setCurrentView(ClientModel.ViewState.GAME_LOBBY);
 
         } else {
-            // Otherwise, just show a notification to other players.
+            // For other players, show a notification
             context.runOnUIThread(() -> {
                 if (context.getNotificationService() != null) {
                     String gameDesc = gameName != null ? "'" + gameName + "'" : "a new game";
@@ -104,7 +106,6 @@ public class GameCreatedEvent extends AbstractEvent {
 
     @Override
     public String getGameId() {
-        // GameCreatedEvent should be a global event, not game-specific
         // Return null so it gets sent to ALL clients, not just clients in this game
         return null;
     }

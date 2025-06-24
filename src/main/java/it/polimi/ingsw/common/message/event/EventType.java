@@ -11,6 +11,7 @@ public enum EventType {
     GAME_ENDED,
     GAME_SUSPENDED,       // NEW: For resilience
     GAME_LOBBY_UPDATE,    // NEW: For lobby updates
+    GAMES_LIST_UPDATE,    // NEW: For main lobby games list updates
 
     // Player status events
     PLAYER_JOINED_GAME,

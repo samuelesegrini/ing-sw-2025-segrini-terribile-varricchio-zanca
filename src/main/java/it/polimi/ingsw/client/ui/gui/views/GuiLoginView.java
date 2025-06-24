@@ -8,6 +8,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
@@ -69,7 +70,7 @@ public class GuiLoginView extends BaseUIView {
 
     private Scene createScene() {
         // Root StackPane to allow overlaying loading indicator
-        javafx.scene.layout.StackPane root = new javafx.scene.layout.StackPane();
+        StackPane root = new StackPane();
 
         // Main content VBox (acts as a card)
         VBox card = new VBox(24);
@@ -148,7 +149,7 @@ public class GuiLoginView extends BaseUIView {
 
         card.getChildren().setAll(title, subtitle, formBox, loginButton, requirementsLabel, errorLabel, statusLabel);
         root.getChildren().setAll(card, loadingIndicator);
-        javafx.scene.layout.StackPane.setAlignment(loadingIndicator, Pos.CENTER);
+        StackPane.setAlignment(loadingIndicator, Pos.CENTER);
 
         return scene;
     }

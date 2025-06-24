@@ -69,7 +69,6 @@ public class GameSession {
         // Add creator as first player
         addPlayer(creatorId);
         
-        // Set creator as ready by default (without triggering auto-start)
         PlayerState creatorState = playerStates.get(creatorId);
         if (creatorState != null) {
             creatorState.setReady(true);
@@ -92,7 +91,7 @@ public class GameSession {
             PlayerId playerIdObj = PlayerId.fromString(playerId);
             gameModel.addPlayer(playerIdObj, playerId);
 
-            LOGGER.info("Player " + playerId + " joined game " + gameId);
+            LOGGER.info("Joined: " + playerId + " -> " + gameId);
             return true;
         }
     }
@@ -114,7 +113,7 @@ public class GameSession {
             // Return player's components to pool
             returnPlayerComponents(playerId);
 
-            LOGGER.info("Player " + playerId + " left game " + gameId);
+            LOGGER.info("Left: " + playerId + " <- " + gameId);
 
             // Check if game should end
             if (playerStates.isEmpty()) {
@@ -135,12 +134,7 @@ public class GameSession {
             PlayerState state = playerStates.get(playerId);
             if (state != null) {
                 state.setReady(ready);
-                LOGGER.info("Player " + playerId + " ready status: " + ready);
-
-                // Check if all players are ready to start
-                if (!started && ready && canStart()) {
-                    checkAutoStart();
-                }
+                LOGGER.info("Ready: " + playerId + "=" + ready);
             }
         }
     }
@@ -178,7 +172,7 @@ public class GameSession {
             // Start building phase
             transitionToPhase(GamePhase.BUILDING);
 
-            LOGGER.info("Game " + gameId + " started with " + playerStates.size() + " players");
+            LOGGER.info("Started: " + gameId + " (" + playerStates.size() + " players)");
             return true;
         }
     }
@@ -222,18 +216,19 @@ public class GameSession {
         Collections.shuffle(components);
 
         for (Component component : components) {
-            String componentId = UUID.randomUUID().toString();
+            // Use the component's original ID (which contains the image path)
+            String componentId = component.getId();
             availableComponents.put(componentId, component);
         }
 
-        LOGGER.info("Initialized " + availableComponents.size() + " components for building phase");
+        LOGGER.info("Components: " + availableComponents.size() + " initialized");
     }
 
     /**
      * Starts the building phase.
      */
     private void startBuildingPhase() {
-        LOGGER.info("Starting building phase for game " + gameId);
+        LOGGER.info("Phase: BUILDING -> " + gameId);
 
         // Set timer for building phase (from config)
         int buildingTimeMinutes = 1;
@@ -252,11 +247,12 @@ public class GameSession {
         }
     }
 
+
     /**
      * Starts the flight phase.
      */
     private void startFlightPhase() {
-        LOGGER.info("Starting flight phase for game " + gameId);
+        LOGGER.info("Phase: FLIGHT -> " + gameId);
 
         // Initialize flight board
         gameModel.getAdventureDeck().startFlightPhase();
@@ -274,6 +270,21 @@ public class GameSession {
                 return null;
             }
             return availableComponents.get(componentId);
+        }
+    }
+
+    /**
+     * Gets all available components for building phase sync.
+     */
+    public Map<String, Component> getAvailableComponents() {
+        synchronized (lock) {
+            Map<String, Component> available = new HashMap<>();
+            for (Map.Entry<String, Component> entry : availableComponents.entrySet()) {
+                if (!usedComponents.contains(entry.getKey())) {
+                    available.put(entry.getKey(), entry.getValue());
+                }
+            }
+            return available;
         }
     }
 
@@ -454,7 +465,7 @@ public class GameSession {
                 phaseTimer.cancel(false);
             }
 
-            LOGGER.info("Game " + gameId + " ended: " + reason);
+            LOGGER.info("Ended: " + gameId + " (" + reason + ")");
         }
     }
 
@@ -614,7 +625,12 @@ public class GameSession {
                 syncState.forbiddenPositions.addAll(ship.forbiddenPositions);
             }
             
-            // Add available face-up tiles
+            // Add available face-down tiles (all components from the deck)
+            for (Component component : availableComponents.values()) {
+                syncState.availableTiles.add(component.getType());
+            }
+            
+            // Add face-up tiles (returned components)
             for (Component component : faceUpComponents.values()) {
                 syncState.availableTiles.add(component.getType());
             }
@@ -648,19 +664,6 @@ public class GameSession {
         public boolean timerFlipped = false;
     }
 
-    private void checkAutoStart() {
-        // Auto-start if all players are ready
-        if (canStart()) {
-            // Give a small delay for UI updates
-            ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
-            scheduler.schedule(() -> {
-                if (canStart()) {
-                    startGame();
-                }
-            }, 3, TimeUnit.SECONDS);
-            scheduler.shutdown();
-        }
-    }
 
     /**
      * Inner class to track player state within the game.

@@ -6,6 +6,7 @@ import it.polimi.ingsw.client.ui.tui.TuiConsole;
 import it.polimi.ingsw.client.ui.tui.TuiContext;
 import it.polimi.ingsw.common.GameInfo;
 import it.polimi.ingsw.server.model.enums.GameLevel;
+import it.polimi.ingsw.server.model.enums.GamePhase;
 
 import java.util.List;
 import java.util.Scanner;
@@ -72,16 +73,17 @@ public class TuiLobbyView extends BaseUIView {
     }
 
     private void displayAllGames() {
-        displayAvailableGames();
-        //displayInProgressGames();
+        displayJoinableGames();
+        displayInProgressGames();
     }
 
-    private void displayAvailableGames() {
-        console.println("Available Games:");
+    private void displayJoinableGames() {
+        console.println("Available Games (Waiting for Players):");
 
-        List<GameInfo> games = context.getModel().getAvailableGames();
+        List<GameInfo> games = context.getModel().getJoinableGames();
         if (games == null || games.isEmpty()) {
-            console.println("No games available.");
+            console.println("No games available to join.");
+            console.println("");
             return;
         }
 
@@ -99,6 +101,67 @@ public class TuiLobbyView extends BaseUIView {
 
         console.printTable(headers, data);
         console.println("");
+    }
+
+    private void displayInProgressGames() {
+        console.println("Games in Progress:");
+
+        List<GameInfo> games = context.getModel().getGamesInProgress();
+        if (games == null || games.isEmpty()) {
+            console.println("No games currently in progress.");
+            console.println("");
+            return;
+        }
+
+        String[] headers = {"GAME ID", "GAME NAME", "PHASE", "PLAYERS"};
+        String[][] data = new String[games.size()][4];
+
+        for (int i = 0; i < games.size(); i++) {
+            GameInfo game = games.get(i);
+
+            data[i][0] = game.getGameId();
+            data[i][1] = game.getGameName();
+            data[i][2] = getPhaseDisplayText(game.getCurrentPhase());
+            data[i][3] = game.getCurrentPlayers() + "/" + game.getMaxPlayers();
+        }
+
+        console.printTable(headers, data);
+        console.println("");
+    }
+
+    private void displayAvailableGames() {
+        console.println("All Games:");
+
+        List<GameInfo> games = context.getModel().getAvailableGames();
+        if (games == null || games.isEmpty()) {
+            console.println("No games available.");
+            return;
+        }
+
+        String[] headers = {"GAME ID", "GAME NAME", "GAME LEVEL", "PHASE", "PLAYERS"};
+        String[][] data = new String[games.size()][5];
+
+        for (int i = 0; i < games.size(); i++) {
+            GameInfo game = games.get(i);
+
+            data[i][0] = game.getGameId();
+            data[i][1] = game.getGameName();
+            data[i][2] = game.getGameLevel().toString();
+            data[i][3] = getPhaseDisplayText(game.getCurrentPhase());
+            data[i][4] = game.getCurrentPlayers() + "/" + game.getMaxPlayers();
+        }
+
+        console.printTable(headers, data);
+        console.println("");
+    }
+
+    private String getPhaseDisplayText(GamePhase phase) {
+        return switch (phase) {
+            case SETUP -> "Waiting";
+            case BUILDING -> "Building";
+            case FLIGHT -> "Flight";
+            case END -> "Ended";
+        };
     }
 
     public void displayCommands() {

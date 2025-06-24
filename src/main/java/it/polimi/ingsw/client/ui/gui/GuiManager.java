@@ -2,6 +2,7 @@ package it.polimi.ingsw.client.ui.gui;
 
 import it.polimi.ingsw.client.ClientModel;
 import it.polimi.ingsw.client.controller.ClientController;
+import it.polimi.ingsw.client.ui.UI;
 import it.polimi.ingsw.client.ui.core.UIView;
 import it.polimi.ingsw.client.ui.core.ViewNavigator;
 import it.polimi.ingsw.client.ui.gui.views.GuiConnectionView;
@@ -22,7 +23,7 @@ import it.polimi.ingsw.client.ui.core.UIContextProvider;
  * New GUI manager using the unified architecture.
  * Replaces the old GUI manager with cleaner separation of concerns.
  */
-public class GuiManager extends Application implements ViewNavigator.ViewStateChangeListener, it.polimi.ingsw.client.ui.UI {
+public class GuiManager extends Application implements ViewNavigator.ViewStateChangeListener, UI {
     
     private static final Logger LOGGER = Logger.getLogger(GuiManager.class.getName());
     
@@ -34,9 +35,7 @@ public class GuiManager extends Application implements ViewNavigator.ViewStateCh
     private Map<ClientModel.ViewState, UIView> views;
     private UIView currentView;
     
-    public GuiManager() {
-        // Default constructor for Application
-    }
+    public GuiManager() {}
     
     public GuiManager(ClientController controller) {
         staticController = controller;
@@ -126,17 +125,10 @@ public class GuiManager extends Application implements ViewNavigator.ViewStateCh
         loginView.initialize(context);
         views.put(ClientModel.ViewState.LOGIN, loginView);
         
-        try {
-            GuiLobbyView lobbyView = new GuiLobbyView(primaryStage);
-            lobbyView.initialize(context);
-            views.put(ClientModel.ViewState.LOBBY, lobbyView);
-            LOGGER.info("Successfully initialized GuiLobbyView");
-        } catch (Exception e) {
-            LOGGER.severe("Failed to initialize GuiLobbyView: " + e.getMessage());
-            e.printStackTrace();
-            throw e;
-        }
-        
+        GuiLobbyView lobbyView = new GuiLobbyView(primaryStage);
+        lobbyView.initialize(context);
+        views.put(ClientModel.ViewState.LOBBY, lobbyView);
+
         GuiGameLobbyView gameLobbyView = new GuiGameLobbyView(primaryStage);
         gameLobbyView.initialize(context);
         views.put(ClientModel.ViewState.GAME_LOBBY, gameLobbyView);
@@ -145,9 +137,7 @@ public class GuiManager extends Application implements ViewNavigator.ViewStateCh
         shipBuildingView.initialize(context);
         views.put(ClientModel.ViewState.GAME, shipBuildingView);
         
-        // TODO: Add other views (lobby browser) as they are migrated
-        
-        LOGGER.info("Initialized " + views.size() + " GUI views");
+        // TODO: Add other views
     }
     
     private void navigateToCurrentView() {
@@ -164,7 +154,6 @@ public class GuiManager extends Application implements ViewNavigator.ViewStateCh
         // Show new view
         UIView newView = views.get(viewState);
         if (newView != null) {
-            LOGGER.info("About to show view: " + viewState + " - view class: " + newView.getClass().getSimpleName());
             currentView = newView;
             newView.show();
             LOGGER.info("Switched to view: " + viewState);

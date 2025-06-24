@@ -156,12 +156,24 @@ public class GameConfigurationManager {
         List<String> connectorList = new ArrayList<>();
         Map<String, Object> properties = new HashMap<>();
 
-        if (jsonNode.has("connectors") && jsonNode.get("connectors").isObject()) {
+        if (jsonNode.has("connectors")) {
             JsonNode connectorsNode = jsonNode.get("connectors");
-            Iterator<Map.Entry<String, JsonNode>> cFields = connectorsNode.fields();
-            while (cFields.hasNext()) {
-                Map.Entry<String, JsonNode> cField = cFields.next();
-                connectorList.add(cField.getKey().toUpperCase() + ":" + cField.getValue().asText().toUpperCase());
+            if (connectorsNode.isObject()) {
+                // Handle object format: {"UP": "SINGLE", "RIGHT": "PLAIN", ...}
+                Iterator<Map.Entry<String, JsonNode>> cFields = connectorsNode.fields();
+                while (cFields.hasNext()) {
+                    Map.Entry<String, JsonNode> cField = cFields.next();
+                    connectorList.add(cField.getKey().toUpperCase() + ":" + cField.getValue().asText().toUpperCase());
+                }
+            } else if (connectorsNode.isArray()) {
+                // Handle array format: ["PLAIN", "PLAIN", "PLAIN", "SINGLE"] for [UP, RIGHT, DOWN, LEFT]
+                Direction[] directions = {Direction.UP, Direction.RIGHT, Direction.DOWN, Direction.LEFT};
+                for (int i = 0; i < Math.min(connectorsNode.size(), directions.length); i++) {
+                    String connectorType = connectorsNode.get(i).asText().toUpperCase();
+                    connectorList.add(directions[i].name() + ":" + connectorType);
+                }
+            } else {
+                System.err.println("Warning: Unknown connectors format for component " + id);
             }
         }
 

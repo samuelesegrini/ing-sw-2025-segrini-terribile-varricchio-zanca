@@ -4,6 +4,9 @@ import it.polimi.ingsw.common.GameInfo;
 import it.polimi.ingsw.server.model.domain.ship.Position;
 import it.polimi.ingsw.server.model.enums.ship.ComponentType;
 import it.polimi.ingsw.server.model.enums.GamePhase;
+import it.polimi.ingsw.server.model.domain.general.config.ShipGridConfig;
+import it.polimi.ingsw.server.model.enums.ship.ConnectorType;
+import it.polimi.ingsw.server.model.enums.ship.Direction;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -16,11 +19,15 @@ public class LocalGameState {
     private String currentGameId;
     private GamePhase currentPhase = GamePhase.SETUP;
     
-    // Ship building state
-    private final Map<Position, ComponentType> shipGrid = new ConcurrentHashMap<>();
-    private final List<ComponentType> availableTiles = Collections.synchronizedList(new ArrayList<>());
-    private final List<ComponentType> heldTiles = Collections.synchronizedList(new ArrayList<>());
+    // Ship building state - 2D array with server-driven dimensions
+    private ComponentInstance[][] shipGrid;
+    private int gridRows = 5; // Default, will be updated from server
+    private int gridCols = 7; // Default, will be updated from server
+    private final List<ComponentInstance> availableTiles = Collections.synchronizedList(new ArrayList<>());
+    private final List<ComponentInstance> heldTiles = Collections.synchronizedList(new ArrayList<>());
+    private final List<ComponentInstance> faceUpJunkyardTiles = Collections.synchronizedList(new ArrayList<>());
     private final Set<Position> forbiddenPositions = new HashSet<>();
+    private ShipGridConfig shipGridConfig; // Server-provided configuration
     private boolean buildingTimerFlipped = false;
     private long buildingTimeRemaining = 0;
     private long buildingPhaseStartTime = 0;
@@ -29,6 +36,7 @@ public class LocalGameState {
     
     // Player state
     private final Map<String, Boolean> playerReadyStatus = new ConcurrentHashMap<>();
+    private final Map<String, Map<Position, ComponentInstance>> otherPlayersShips = new ConcurrentHashMap<>();
     private final List<GameInfo> availableGames = Collections.synchronizedList(new ArrayList<>());
     
     // Ship statistics cache
@@ -40,6 +48,7 @@ public class LocalGameState {
     private int totalShields = 0;
     
     private LocalGameState() {
+        initializeShipGrid();
         initializeForbiddenPositions();
     }
     
@@ -81,49 +90,92 @@ public class LocalGameState {
     }
     
     // Ship grid management
-    public void placeTile(ComponentType component, Position position, int rotation) {
+    public void placeTile(ComponentInstance component, Position position, int rotation) {
         if (component != null && position != null && !forbiddenPositions.contains(position)) {
-            shipGrid.put(position, component);
-            updateShipStatistics();
+            int row = position.getRow();
+            int col = position.getCol();
+            if (isValidGridPosition(row, col)) {
+                shipGrid[row][col] = component;
+                updateShipStatistics();
+            }
         }
     }
-    
+
+    /**
+     * Places a tile at the specified position with rotation.
+     * This is used when receiving tile placement updates from the server.
+     * @param playerId The player placing the tile
+     * @param tileId The component tile ID (image path)
+     * @param row Grid row position
+     * @param col Grid column position  
+     * @param rotation Number of 90-degree clockwise rotations
+     */
     public void placeTile(String playerId, String tileId, int row, int col, int rotation) {
-        // Legacy method - convert to new format if needed
         Position position = new Position(row, col);
-        ComponentType componentType = parseComponentType(tileId);
-        if (componentType != null) {
-            placeTile(componentType, position, rotation);
+        
+        // Find the component instance in available tiles or held tiles
+        ComponentInstance component = findComponentById(tileId);
+        if (component != null) {
+            // Apply rotation
+            for (int i = 0; i < rotation; i++) {
+                component.rotate();
+            }
+            
+            // Place the component
+            placeTile(component, position, rotation);
+            
+            // Remove from available/held tiles since it's now placed
+            removeAvailableTileById(tileId);
+            removeHeldTileById(tileId);
         }
     }
     
     public void removeTile(Position position) {
         if (position != null) {
-            shipGrid.remove(position);
-            updateShipStatistics();
+            int row = position.getRow();
+            int col = position.getCol();
+            if (isValidGridPosition(row, col)) {
+                shipGrid[row][col] = null;
+                updateShipStatistics();
+            }
         }
     }
     
-    public ComponentType getComponentAt(Position position) {
-        return shipGrid.get(position);
+    public ComponentInstance getComponentAt(Position position) {
+        if (position != null) {
+            int row = position.getRow();
+            int col = position.getCol();
+            if (isValidGridPosition(row, col)) {
+                return shipGrid[row][col];
+            }
+        }
+        return null;
     }
     
-    public ComponentType getComponentAt(int row, int col) {
-        return getComponentAt(new Position(row, col));
+    public ComponentInstance getComponentAt(int row, int col) {
+        if (isValidGridPosition(row, col)) {
+            return shipGrid[row][col];
+        }
+        return null;
     }
     
-    public Map<Position, ComponentType> getShipGrid() {
-        return new HashMap<>(shipGrid);
+    // Get ship grid as 2D array of ComponentInstances
+    public ComponentInstance[][] getShipGrid() {
+        ComponentInstance[][] result = new ComponentInstance[gridRows][gridCols];
+        for (int row = 0; row < gridRows; row++) {
+            System.arraycopy(shipGrid[row], 0, result[row], 0, gridCols);
+        }
+        return result;
     }
     
-    public boolean canPlaceComponent(ComponentType component, Position position) {
+    public boolean canPlaceComponent(ComponentInstance component, Position position) {
         if (component == null || position == null) {
             return false;
         }
         
-        // Check if position is within bounds (5x7 grid)
-        if (position.getRow() < 0 || position.getRow() >= 5 || 
-            position.getCol() < 0 || position.getCol() >= 7) {
+        // Check if position is within server-defined grid bounds
+        if (position.getRow() < 0 || position.getRow() >= gridRows || 
+            position.getCol() < 0 || position.getCol() >= gridCols) {
             return false;
         }
         
@@ -133,44 +185,161 @@ public class LocalGameState {
         }
         
         // Check if position is already occupied
-        return !shipGrid.containsKey(position);
+        int row = position.getRow();
+        int col = position.getCol();
+        if (!isValidGridPosition(row, col) || shipGrid[row][col] != null) {
+            return false;
+        }
+        
+        // Basic connectivity check - component must connect to existing ship (except first component)
+        if (hasAnyComponents() && !hasAdjacentComponent(position)) {
+            return false;
+        }
+        
+        return true;
     }
     
     public Set<Position> getForbiddenPositions() {
         return new HashSet<>(forbiddenPositions);
     }
     
+    public void setForbiddenPositions(Set<Position> newForbiddenPositions) {
+        forbiddenPositions.clear();
+        if (newForbiddenPositions != null) {
+            forbiddenPositions.addAll(newForbiddenPositions);
+        }
+    }
+    
+    public void clearForbiddenPositions() {
+        forbiddenPositions.clear();
+    }
+    
+    public void addForbiddenPosition(Position position) {
+        forbiddenPositions.add(position);
+    }
+    
+    // Ship grid configuration management
+    public void setShipGridConfig(ShipGridConfig config) {
+        this.shipGridConfig = config;
+        if (config != null) {
+            updateGridDimensions(config.rows(), config.cols());
+        }
+    }
+    
+    public ShipGridConfig getShipGridConfig() {
+        return shipGridConfig;
+    }
+    
+    public String getShipGridBackgroundImage() {
+        return shipGridConfig != null ? shipGridConfig.image() : null;
+    }
+    
+    public int getGridRows() {
+        return gridRows;
+    }
+    
+    public int getGridCols() {
+        return gridCols;
+    }
+    
     // Component inventory management
-    public void addAvailableTile(ComponentType component) {
+    public void addAvailableTile(ComponentInstance component) {
         if (component != null) {
             availableTiles.add(component);
         }
     }
+
+    /**
+     * Adds an available tile with complete component data from server.
+     * @param componentId The component ID (image path)
+     * @param componentType The type of component
+     * @param connectors The exact connector configuration from server
+     */
+    public void addAvailableTile(String componentId, ComponentType componentType, Map<Direction, ConnectorType> connectors) {
+        ComponentInstance component = new ComponentInstance(componentId, componentType, connectors);
+        addAvailableTile(component);
+    }
     
-    public void removeAvailableTile(ComponentType component) {
+    public void removeAvailableTile(ComponentInstance component) {
         availableTiles.remove(component);
     }
     
-    public List<ComponentType> getAvailableTiles() {
+    public void removeAvailableTileById(String componentId) {
+        availableTiles.removeIf(component -> component.getId().equals(componentId));
+    }
+    
+    public List<ComponentInstance> getAvailableTiles() {
         return new ArrayList<>(availableTiles);
     }
     
-    public void addHeldTile(ComponentType component) {
+    public void addHeldTile(ComponentInstance component) {
         if (component != null && heldTiles.size() < 2) { // Max 2 reserved components per rules
             heldTiles.add(component);
         }
     }
+
+    /**
+     * Adds a held (reserved) tile with complete component data from server.
+     * @param componentId The component ID (image path)
+     * @param componentType The type of component
+     * @param connectors The exact connector configuration from server
+     */
+    public void addHeldTile(String componentId, ComponentType componentType, Map<Direction, ConnectorType> connectors) {
+        ComponentInstance component = new ComponentInstance(componentId, componentType, connectors);
+        addHeldTile(component);
+    }
     
-    public void removeHeldTile(ComponentType component) {
+    public void removeHeldTile(ComponentInstance component) {
         heldTiles.remove(component);
     }
     
-    public List<ComponentType> getHeldTiles() {
+    public void removeHeldTileById(String componentId) {
+        heldTiles.removeIf(component -> component.getId().equals(componentId));
+    }
+    
+    public List<ComponentInstance> getHeldTiles() {
         return new ArrayList<>(heldTiles);
     }
     
     public boolean canReserveMoreTiles() {
         return heldTiles.size() < 2;
+    }
+    
+    // Face-up junkyard tile management
+    public List<ComponentInstance> getFaceUpJunkyardTiles() {
+        return new ArrayList<>(faceUpJunkyardTiles);
+    }
+    
+    public void setFaceUpJunkyardTiles(List<ComponentInstance> tiles) {
+        faceUpJunkyardTiles.clear();
+        if (tiles != null) {
+            faceUpJunkyardTiles.addAll(tiles);
+        }
+    }
+    
+    public void addFaceUpJunkyardTile(ComponentInstance tile) {
+        if (tile != null) {
+            faceUpJunkyardTiles.add(tile);
+        }
+    }
+
+    /**
+     * Adds a face-up junkyard tile (returned by players, visible to all).
+     * @param componentId The component ID (image path)
+     * @param componentType The type of component
+     * @param connectors The exact connector configuration from server
+     */
+    public void addFaceUpJunkyardTile(String componentId, ComponentType componentType, Map<Direction, ConnectorType> connectors) {
+        ComponentInstance tile = new ComponentInstance(componentId, componentType, connectors);
+        addFaceUpJunkyardTile(tile);
+    }
+    
+    public void removeFaceUpJunkyardTile(ComponentInstance tile) {
+        faceUpJunkyardTiles.remove(tile);
+    }
+    
+    public void removeFaceUpJunkyardTileById(String componentId) {
+        faceUpJunkyardTiles.removeIf(tile -> tile.getId().equals(componentId));
     }
     
     // Building timer management
@@ -248,6 +417,31 @@ public class LocalGameState {
         return new HashMap<>(playerReadyStatus);
     }
     
+    // Other players' ship management
+    public void updateOtherPlayerShip(String playerId, Map<Position, ComponentInstance> shipGrid) {
+        if (playerId != null && !playerId.equals(localPlayerId)) {
+            otherPlayersShips.put(playerId, new ConcurrentHashMap<>(shipGrid));
+        }
+    }
+    
+    public Map<Position, ComponentInstance> getOtherPlayerShip(String playerId) {
+        Map<Position, ComponentInstance> ship = otherPlayersShips.get(playerId);
+        return ship != null ? new HashMap<>(ship) : new HashMap<>();
+    }
+    
+    public Map<String, Map<Position, ComponentInstance>> getAllOtherPlayersShips() {
+        Map<String, Map<Position, ComponentInstance>> result = new HashMap<>();
+        for (Map.Entry<String, Map<Position, ComponentInstance>> entry : otherPlayersShips.entrySet()) {
+            result.put(entry.getKey(), new HashMap<>(entry.getValue()));
+        }
+        return result;
+    }
+    
+    public void removeOtherPlayer(String playerId) {
+        playerReadyStatus.remove(playerId);
+        otherPlayersShips.remove(playerId);
+    }
+    
     // Game lobby management
     public void addAvailableGame(GameInfo gameInfo) {
         availableGames.add(gameInfo);
@@ -273,7 +467,14 @@ public class LocalGameState {
     
     // Reset methods
     public void resetShipBuildingState() {
-        shipGrid.clear();
+        // Clear 2D array with current dimensions
+        if (shipGrid != null) {
+            for (int row = 0; row < gridRows; row++) {
+                for (int col = 0; col < gridCols; col++) {
+                    shipGrid[row][col] = null;
+                }
+            }
+        }
         availableTiles.clear();
         heldTiles.clear();
         buildingTimerFlipped = false;
@@ -292,14 +493,46 @@ public class LocalGameState {
     }
     
     // Private helper methods
+    /**
+     * Initializes forbidden positions. This will be overridden by server configuration.
+     * Only used as fallback for client-side validation before server data arrives.
+     */
     private void initializeForbiddenPositions() {
-        // Based on game rules - corner positions are forbidden in Test Flight
-        forbiddenPositions.add(new Position(0, 0));
-        forbiddenPositions.add(new Position(0, 6));
-        forbiddenPositions.add(new Position(4, 0));
-        forbiddenPositions.add(new Position(4, 6));
-        // Starting cabin position (2,3) - cannot be changed
-        forbiddenPositions.add(new Position(2, 3));
+        // Clear any existing forbidden positions
+        forbiddenPositions.clear();
+        // Server will provide the actual forbidden positions for the game level
+        // This method is kept for backward compatibility but should not be used
+        // in production as all configuration comes from server
+    }
+    
+    private boolean isValidGridPosition(int row, int col) {
+        return row >= 0 && row < gridRows && col >= 0 && col < gridCols;
+    }
+    
+    private void initializeShipGrid() {
+        shipGrid = new ComponentInstance[gridRows][gridCols];
+    }
+    
+    private void updateGridDimensions(int rows, int cols) {
+        if (rows > 0 && cols > 0 && (rows != gridRows || cols != gridCols)) {
+            gridRows = rows;
+            gridCols = cols;
+            
+            // Recreate ship grid with new dimensions
+            ComponentInstance[][] oldGrid = shipGrid;
+            shipGrid = new ComponentInstance[gridRows][gridCols];
+            
+            // Copy existing components if any
+            if (oldGrid != null) {
+                int minRows = Math.min(gridRows, oldGrid.length);
+                int minCols = Math.min(gridCols, oldGrid.length > 0 ? oldGrid[0].length : 0);
+                for (int row = 0; row < minRows; row++) {
+                    for (int col = 0; col < minCols; col++) {
+                        shipGrid[row][col] = oldGrid[row][col];
+                    }
+                }
+            }
+        }
     }
     
     private void updateShipStatistics() {
@@ -310,32 +543,94 @@ public class LocalGameState {
         totalBatteries = 0;
         totalShields = 0;
         
-        for (ComponentType component : shipGrid.values()) {
-            switch (component) {
-                case ENGINE_SINGLE -> totalEngines += 1;
-                case ENGINE_DOUBLE -> totalEngines += 2;
-                case CANNON_SINGLE -> totalCannons += 1;
-                case CANNON_DOUBLE -> totalCannons += 2;
-                case CABIN, CABIN_START -> totalCrew += 1;
-                case CARGO_HOLD, CARGO_HOLD_SPECIAL -> totalCargo += 1;
-                case BATTERY -> totalBatteries += 1;
-                case SHIELD -> totalShields += 1;
-                case LIFE_SUPPORT_BROWN, LIFE_SUPPORT_PURPLE -> totalCrew += 1; // Life support counts as crew capacity
-                case STRUCTURAL -> { /* No stats contribution */ }
+        for (int row = 0; row < gridRows; row++) {
+            for (int col = 0; col < gridCols; col++) {
+                ComponentInstance componentInstance = shipGrid[row][col];
+                if (componentInstance == null) continue;
+                
+                ComponentType component = componentInstance.getType();
+                switch (component) {
+                    case ENGINE_SINGLE -> totalEngines += 1;
+                    case ENGINE_DOUBLE -> totalEngines += 2;
+                    case CANNON_SINGLE -> totalCannons += 1;
+                    case CANNON_DOUBLE -> totalCannons += 2;
+                    case CABIN, CABIN_START -> totalCrew += 1;
+                    case CARGO_HOLD, CARGO_HOLD_SPECIAL -> totalCargo += 1;
+                    case BATTERY -> totalBatteries += 1;
+                    case SHIELD -> totalShields += 1;
+                    case LIFE_SUPPORT_BROWN, LIFE_SUPPORT_PURPLE -> totalCrew += 1; // Life support counts as crew capacity
+                    case STRUCTURAL -> { /* No stats contribution */ }
+                }
             }
         }
     }
     
-    private ComponentType parseComponentType(String tileId) {
-        // Helper method to convert string IDs to ComponentType enum
-        // This would need to be implemented based on how tile IDs are structured
-        try {
-            return ComponentType.valueOf(tileId.toUpperCase());
-        } catch (IllegalArgumentException e) {
-            return null;
+    // Helper methods
+    
+    /**
+     * Finds a component by its ID in available tiles, held tiles, or face-up junkyard tiles.
+     * @param componentId The component ID to search for
+     * @return The ComponentInstance if found, null otherwise
+     */
+    private ComponentInstance findComponentById(String componentId) {
+        // Check available tiles
+        for (ComponentInstance component : availableTiles) {
+            if (component.getId().equals(componentId)) {
+                return component;
+            }
         }
+        
+        // Check held tiles
+        for (ComponentInstance component : heldTiles) {
+            if (component.getId().equals(componentId)) {
+                return component;
+            }
+        }
+        
+        // Check face-up junkyard tiles
+        for (ComponentInstance component : faceUpJunkyardTiles) {
+            if (component.getId().equals(componentId)) {
+                return component;
+            }
+        }
+        
+        return null;
     }
     
+    
+    /**
+     * Checks if the ship has any components placed.
+     */
+    private boolean hasAnyComponents() {
+        for (int row = 0; row < gridRows; row++) {
+            for (int col = 0; col < gridCols; col++) {
+                if (shipGrid[row][col] != null) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+    
+    /**
+     * Checks if a position has at least one adjacent component for connectivity.
+     */
+    private boolean hasAdjacentComponent(Position position) {
+        Direction[] directions = {Direction.UP, Direction.DOWN, Direction.LEFT, Direction.RIGHT};
+        
+        for (Direction direction : directions) {
+            Position adjacent = position.offsetBy(direction);
+            int adjRow = adjacent.getRow();
+            int adjCol = adjacent.getCol();
+            
+            if (isValidGridPosition(adjRow, adjCol) && shipGrid[adjRow][adjCol] != null) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+
     // Nested enum for ship statistics
     public enum ComponentStatType {
         ENGINES,

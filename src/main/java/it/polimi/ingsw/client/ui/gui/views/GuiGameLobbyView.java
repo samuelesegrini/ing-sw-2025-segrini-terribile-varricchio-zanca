@@ -309,6 +309,9 @@ public class GuiGameLobbyView extends BaseUIView {
         
         // Player name with host indicator
         String displayName = player.getNickname();
+        if (displayName == null || displayName.trim().isEmpty()) {
+            displayName = "Player " + player.getPlayerId().substring(0, Math.min(8, player.getPlayerId().length()));
+        }
         if (isHost) {
             displayName += " (Host)";
         }

@@ -11,6 +11,7 @@ import it.polimi.ingsw.server.core.GameSessionManager;
 import it.polimi.ingsw.server.core.PlayerSessionRegistry;
 import it.polimi.ingsw.common.PlayerInfo;
 import it.polimi.ingsw.common.message.event.GameLobbyUpdateEvent;
+import it.polimi.ingsw.common.message.event.GamesListUpdateEvent;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -99,6 +100,10 @@ public class JoinGameRequest extends AbstractRequest {
         LOGGER.info("📢 LOBBY UPDATE - Publishing GameLobbyUpdateEvent for game: " + gameId + " (excluding requester: " + playerId + ")");
         publishLobbyUpdateEvent(context, gameSession, gameId, registry, playerId);
 
+        // Broadcast updated games list to all clients in main lobby
+        LOGGER.info("📢 GAMES LIST UPDATE - Broadcasting updated available games list to all lobby clients");
+        publishGamesListUpdateEvent(context, sessionManager, registry);
+
         // Manually construct PlayerInfo list to include correct nicknames from the registry
         List<PlayerInfo> playerInfos = new ArrayList<>();
         LOGGER.fine("📋 RESPONSE PREP - Building player info list for response");
@@ -118,6 +123,7 @@ public class JoinGameRequest extends AbstractRequest {
                 gameSession.getMaxPlayers(),
                 gameSession.getPlayerCount(),
                 gameSession.getGameLevel(),
+                gameSession.getCurrentPhase(),
                 playerInfos
         );
         LOGGER.fine("🎮 GAME INFO - Created GameInfo with " + playerInfos.size() + " players for response");
@@ -152,5 +158,24 @@ public class JoinGameRequest extends AbstractRequest {
         );
         context.publishEvent(lobbyEvent);
         LOGGER.fine("✅ LOBBY EVENT PUBLISHED - GameLobbyUpdateEvent sent to event system");
+    }
+
+    /**
+     * Publishes a games list update event to broadcast current available games to all lobby clients.
+     */
+    private void publishGamesListUpdateEvent(RequestContext context, GameSessionManager sessionManager, 
+                                           PlayerSessionRegistry registry) {
+        LOGGER.fine("🔄 GAMES LIST UPDATE - Getting current available games from session manager");
+        
+        // Get the current list of available games
+        List<GameInfo> availableGames = sessionManager.getAvailableGames();
+        
+        LOGGER.fine("📤 GAMES LIST EVENT - Creating GamesListUpdateEvent for " + availableGames.size() + " available games");
+        
+        // Create and publish the games list update event
+        GamesListUpdateEvent gamesListEvent = new GamesListUpdateEvent(availableGames);
+        context.publishEvent(gamesListEvent);
+        
+        LOGGER.fine("✅ GAMES LIST EVENT PUBLISHED - GamesListUpdateEvent sent to event system");
     }
 }

@@ -8,6 +8,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
@@ -20,7 +21,6 @@ import javafx.scene.control.ProgressIndicator;
 
 /**
  * GUI view for server connection.
- * Migrated to new unified architecture.
  */
 public class GuiConnectionView extends BaseUIView {
 
@@ -57,9 +57,7 @@ public class GuiConnectionView extends BaseUIView {
     }
 
     @Override
-    protected void onHide() {
-        // GUI views don't need special hiding logic - handled by scene switching
-    }
+    protected void onHide() {}
 
     @Override
     protected void onRefresh() {
@@ -68,7 +66,7 @@ public class GuiConnectionView extends BaseUIView {
 
     private Scene createScene() {
         // Root StackPane to allow overlaying loading indicator
-        javafx.scene.layout.StackPane root = new javafx.scene.layout.StackPane();
+        StackPane root = new StackPane();
 
         // Main content VBox
         VBox content = new VBox(30);

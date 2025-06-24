@@ -3,10 +3,12 @@ package it.polimi.ingsw.common.message.request;
 import it.polimi.ingsw.common.message.event.GameEndedEvent;
 import it.polimi.ingsw.common.message.event.GameLobbyUpdateEvent;
 import it.polimi.ingsw.common.message.event.PlayerLeftGameEvent;
+import it.polimi.ingsw.common.message.event.GamesListUpdateEvent;
 import it.polimi.ingsw.common.message.response.ErrorResponse;
 import it.polimi.ingsw.common.message.response.LeaveGameResponse;
 import it.polimi.ingsw.common.message.response.Response;
 import it.polimi.ingsw.common.message.validation.ValidationResult;
+import it.polimi.ingsw.common.GameInfo;
 import it.polimi.ingsw.common.PlayerInfo;
 import it.polimi.ingsw.server.core.GameSession;
 import it.polimi.ingsw.server.core.GameSessionManager;
@@ -83,6 +85,9 @@ public class LeaveGameRequest extends AbstractRequest {
             publishLobbyUpdateEvent(context, gameSession, gameId, registry, playerId);
         }
 
+        // Broadcast updated games list to all clients in main lobby
+        publishGamesListUpdateEvent(context, sessionManager, registry);
+
         return new LeaveGameResponse(getCorrelationId());
     }
 
@@ -106,5 +111,18 @@ public class LeaveGameRequest extends AbstractRequest {
                 gameId, playerInfos, gameSession.getMaxPlayers(), excludePlayerId
         );
         context.publishEvent(lobbyEvent);
+    }
+
+    /**
+     * Publishes a games list update event to broadcast current available games to all lobby clients.
+     */
+    private void publishGamesListUpdateEvent(RequestContext context, GameSessionManager sessionManager, 
+                                           PlayerSessionRegistry registry) {
+        // Get the current list of available games
+        List<GameInfo> availableGames = sessionManager.getAvailableGames();
+        
+        // Create and publish the games list update event
+        GamesListUpdateEvent gamesListEvent = new GamesListUpdateEvent(availableGames);
+        context.publishEvent(gamesListEvent);
     }
 }

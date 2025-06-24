@@ -1,12 +1,18 @@
 package it.polimi.ingsw.common.message.event;
 
+import it.polimi.ingsw.client.ui.NotificationType;
 import it.polimi.ingsw.common.PlayerInfo;
+import it.polimi.ingsw.common.ComponentData;
 import it.polimi.ingsw.server.model.domain.general.config.ShipGridConfig;
 import it.polimi.ingsw.client.ClientModel;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import it.polimi.ingsw.client.core.state.LocalGameState;
+import it.polimi.ingsw.client.core.state.ComponentInstance;
+import it.polimi.ingsw.server.model.domain.ship.Position;
+import it.polimi.ingsw.server.model.enums.GamePhase;
+import it.polimi.ingsw.server.model.enums.ship.ComponentType;
 
 /**
  * Broadcast to all players in a game when the lobby is full and the game starts.
@@ -15,18 +21,18 @@ import it.polimi.ingsw.client.core.state.LocalGameState;
 public class GameStartedEvent extends AbstractEvent {
     private final List<PlayerInfo> players;
     private final ShipGridConfig shipGridConfig; // Provides board layout info
-    private final Map<String, Map<it.polimi.ingsw.server.model.domain.ship.Position, it.polimi.ingsw.server.model.enums.ship.ComponentType>> playerShipGrids; // playerId -> shipGrid (Position->ComponentType)
-    private final Map<String, List<it.polimi.ingsw.server.model.enums.ship.ComponentType>> playerAvailableTiles; // playerId -> availableTiles
-    private final Map<String, List<it.polimi.ingsw.server.model.enums.ship.ComponentType>> playerHeldTiles; // playerId -> heldTiles
-    private final Map<String, Set<it.polimi.ingsw.server.model.domain.ship.Position>> playerForbiddenPositions; // playerId -> forbiddenPositions
+    private final Map<String, Map<Position, ComponentData>> playerShipGrids; // playerId -> shipGrid (Position->ComponentData)
+    private final Map<String, List<ComponentData>> playerAvailableTiles; // playerId -> availableTiles
+    private final Map<String, List<ComponentData>> playerHeldTiles; // playerId -> heldTiles
+    private final Map<String, Set<Position>> playerForbiddenPositions; // playerId -> forbiddenPositions
     private final Map<String, Long> playerBuildingTimeRemaining; // playerId -> time
     private final Map<String, Boolean> playerTimerFlipped; // playerId -> timer flipped
 
     public GameStartedEvent(String gameId, List<PlayerInfo> players, ShipGridConfig shipGridConfig,
-                           Map<String, Map<it.polimi.ingsw.server.model.domain.ship.Position, it.polimi.ingsw.server.model.enums.ship.ComponentType>> playerShipGrids,
-                           Map<String, List<it.polimi.ingsw.server.model.enums.ship.ComponentType>> playerAvailableTiles,
-                           Map<String, List<it.polimi.ingsw.server.model.enums.ship.ComponentType>> playerHeldTiles,
-                           Map<String, Set<it.polimi.ingsw.server.model.domain.ship.Position>> playerForbiddenPositions,
+                           Map<String, Map<Position, ComponentData>> playerShipGrids,
+                           Map<String, List<ComponentData>> playerAvailableTiles,
+                           Map<String, List<ComponentData>> playerHeldTiles,
+                           Map<String, Set<Position>> playerForbiddenPositions,
                            Map<String, Long> playerBuildingTimeRemaining,
                            Map<String, Boolean> playerTimerFlipped) {
         super(EventType.GAME_STARTED, gameId, null);
@@ -48,10 +54,10 @@ public class GameStartedEvent extends AbstractEvent {
         return shipGridConfig;
     }
 
-    public Map<String, Map<it.polimi.ingsw.server.model.domain.ship.Position, it.polimi.ingsw.server.model.enums.ship.ComponentType>> getPlayerShipGrids() { return playerShipGrids; }
-    public Map<String, List<it.polimi.ingsw.server.model.enums.ship.ComponentType>> getPlayerAvailableTiles() { return playerAvailableTiles; }
-    public Map<String, List<it.polimi.ingsw.server.model.enums.ship.ComponentType>> getPlayerHeldTiles() { return playerHeldTiles; }
-    public Map<String, Set<it.polimi.ingsw.server.model.domain.ship.Position>> getPlayerForbiddenPositions() { return playerForbiddenPositions; }
+    public Map<String, Map<Position, ComponentData>> getPlayerShipGrids() { return playerShipGrids; }
+    public Map<String, List<ComponentData>> getPlayerAvailableTiles() { return playerAvailableTiles; }
+    public Map<String, List<ComponentData>> getPlayerHeldTiles() { return playerHeldTiles; }
+    public Map<String, Set<Position>> getPlayerForbiddenPositions() { return playerForbiddenPositions; }
     public Map<String, Long> getPlayerBuildingTimeRemaining() { return playerBuildingTimeRemaining; }
     public Map<String, Boolean> getPlayerTimerFlipped() { return playerTimerFlipped; }
 
@@ -70,38 +76,54 @@ public class GameStartedEvent extends AbstractEvent {
             if (localPlayerId != null) {
                 LocalGameState gameState = context.getGameState();
                 gameState.resetShipBuildingState();
-                gameState.setCurrentPhase(it.polimi.ingsw.server.model.enums.GamePhase.BUILDING);
+                gameState.setCurrentPhase(GamePhase.BUILDING);
 
-                // Set ship grid
-                Map<it.polimi.ingsw.server.model.domain.ship.Position, it.polimi.ingsw.server.model.enums.ship.ComponentType> grid =
-                        playerShipGrids.get(localPlayerId);
-                if (grid != null) {
-                    for (Map.Entry<it.polimi.ingsw.server.model.domain.ship.Position, it.polimi.ingsw.server.model.enums.ship.ComponentType> entry : grid.entrySet()) {
-                        gameState.placeTile(entry.getValue(), entry.getKey(), 0);
+                // Set ship grid configuration from server
+                gameState.setShipGridConfig(shipGridConfig);
+
+                // Set ship grid from server data
+                Map<Position, ComponentData> gridMap = playerShipGrids.get(localPlayerId);
+                if (gridMap != null) {
+                    for (Map.Entry<Position, ComponentData> entry : gridMap.entrySet()) {
+                        ComponentData componentData = entry.getValue();
+                        ComponentInstance component = new ComponentInstance(
+                            componentData.getId(),
+                            componentData.getType(),
+                            componentData.getConnectors()
+                        );
+                        component.setDirection(componentData.getDefaultDirection());
+                        gameState.placeTile(component, entry.getKey(), 0);
                     }
                 }
 
-                // Set available tiles
-                List<it.polimi.ingsw.server.model.enums.ship.ComponentType> available = playerAvailableTiles.get(localPlayerId);
+                // Set available tiles with complete component data
+                List<ComponentData> available = playerAvailableTiles.get(localPlayerId);
                 if (available != null) {
-                    for (it.polimi.ingsw.server.model.enums.ship.ComponentType comp : available) {
-                        gameState.addAvailableTile(comp);
+                    for (ComponentData componentData : available) {
+                        gameState.addAvailableTile(
+                            componentData.getId(),
+                            componentData.getType(),
+                            componentData.getConnectors()
+                        );
                     }
                 }
 
-                // Set held tiles
-                List<it.polimi.ingsw.server.model.enums.ship.ComponentType> held = playerHeldTiles.get(localPlayerId);
+                // Set held tiles with complete component data
+                List<ComponentData> held = playerHeldTiles.get(localPlayerId);
                 if (held != null) {
-                    for (it.polimi.ingsw.server.model.enums.ship.ComponentType comp : held) {
-                        gameState.addHeldTile(comp);
+                    for (ComponentData componentData : held) {
+                        gameState.addHeldTile(
+                            componentData.getId(),
+                            componentData.getType(),
+                            componentData.getConnectors()
+                        );
                     }
                 }
 
-                // Set forbidden positions
-                Set<it.polimi.ingsw.server.model.domain.ship.Position> forbidden = playerForbiddenPositions.get(localPlayerId);
+                // Set forbidden positions from server configuration
+                Set<Position> forbidden = playerForbiddenPositions.get(localPlayerId);
                 if (forbidden != null) {
-                    gameState.getForbiddenPositions().clear();
-                    gameState.getForbiddenPositions().addAll(forbidden);
+                    gameState.setForbiddenPositions(forbidden);
                 }
 
                 // Set timer and timer flipped
@@ -121,7 +143,7 @@ public class GameStartedEvent extends AbstractEvent {
                         new it.polimi.ingsw.client.ui.Notification(
                                 "Game Started",
                                 "The building phase has begun! Build your ship before time runs out.",
-                                it.polimi.ingsw.client.ui.NotificationType.INFO
+                                NotificationType.INFO
                         )
                 );
             }

@@ -17,6 +17,7 @@ public class Player {
     private int credits;
     private int crewMembers;
     private Ship ship;
+    private int finalScore;
 
     /**
      * Creates a new player with the specified ID
@@ -117,6 +118,22 @@ public class Player {
             throw new IllegalArgumentException("Cannot subtract more credits than available");
         }
         this.credits -= credits;
+    }
+    
+    /**
+     * Gets the player's final score
+     * @return The final score
+     */
+    public int getFinalScore() {
+        return finalScore;
+    }
+    
+    /**
+     * Sets the player's final score
+     * @param finalScore The final score to set
+     */
+    public void setFinalScore(int finalScore) {
+        this.finalScore = finalScore;
     }
 
     @Override
