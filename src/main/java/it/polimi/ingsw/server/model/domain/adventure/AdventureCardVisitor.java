@@ -11,6 +11,7 @@ import it.polimi.ingsw.server.model.domain.player.Player;
 import it.polimi.ingsw.server.model.domain.ship.Position;
 import it.polimi.ingsw.server.model.domain.ship.Ship;
 import it.polimi.ingsw.server.model.domain.ship.components.Component;
+import it.polimi.ingsw.server.model.enums.GamePhase;
 import it.polimi.ingsw.server.model.enums.adventure.CombatAttributeType;
 import it.polimi.ingsw.server.model.enums.adventure.PenaltyType;
 import it.polimi.ingsw.server.model.enums.adventure.ShotIntensity;
@@ -114,7 +115,8 @@ public class AdventureCardVisitor {
 
                 System.out.println(player.getId().getNickname()+ " has no protection against meteor number "
                         +card.getMeteorPattern().indexOf(meteor));
-                player.getShip().removeComponent(impactPosition);
+                player.getShip().removeComponent(impactPosition, GamePhase.FLIGHT);
+                player.getShip().getLostComponents().add(impactComponent);
             }
         }
         return true;
@@ -186,7 +188,8 @@ public class AdventureCardVisitor {
                     } else {
                         System.out.println(player.getId().getNickname()+ " has no protection against cannon fire number "
                                 +card.getAttackPattern().indexOf(cannonFire));
-                        player.getShip().removeComponent(impactPosition);
+                        player.getShip().removeComponent(impactPosition, GamePhase.FLIGHT);
+                        player.getShip().getLostComponents().add(impactComponent);
                         System.out.println("Player " + player.getId().getNickname() + " has lost the component in position ("
                                 + impactPosition.getRow()+ "," + impactPosition.getCol() + ")");
                     }
@@ -412,7 +415,8 @@ public class AdventureCardVisitor {
                         } else {
                             System.out.println(combatLoser.getId().getNickname()+ " has no protection against cannon fire number "
                                     +check.getCannonFires().indexOf(cannonFire));
-                            combatLoser.getShip().removeComponent(impactPosition);
+                            combatLoser.getShip().removeComponent(impactPosition, GamePhase.FLIGHT);
+                            combatLoser.getShip().getLostComponents().add(impactComponent);
                         }
                     }
                     break;

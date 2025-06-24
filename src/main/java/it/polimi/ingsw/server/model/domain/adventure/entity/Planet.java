@@ -23,6 +23,14 @@ public class Planet {
         this.goodQuantities = goodQuantities;
         visited = false;
     }
+    /**
+     * Gets the unique number of the planet.
+     *
+     * @return The number of the planet.
+     */
+    public int getNumber() {
+        return number;
+    }
 
     /**
      * Gets the map of goods available on the planet, with their respective quantities.
@@ -68,9 +76,5 @@ public class Planet {
 
     public void setVisited(){
         visited = true;
-    }
-
-    public int getNumber() {
-        return number;
     }
 }

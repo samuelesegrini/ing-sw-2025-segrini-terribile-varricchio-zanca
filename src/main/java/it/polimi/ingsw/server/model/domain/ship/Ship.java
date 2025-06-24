@@ -16,10 +16,12 @@ import it.polimi.ingsw.server.model.enums.ship.Direction;
 import java.util.*;
 
 public class Ship {
+    private GameLevel level;
     private final Player player;
     private Component[][] board;
     public Set<Position> forbiddenPositions;
     private Set<Component> reservedComponents;
+    private Set<Component> lostComponents;
 
     // Ship stats
     private double cannons;
@@ -36,13 +38,12 @@ public class Ship {
     // Batteries set to be used by the player to charge cannons/engines/shields
     private int chargingBatteries;
 
-    private int lostComponents;
-    private GameLevel level;
 
     public Ship(Player player, GameLevel level) {
         this.player = player;
         this.board = new Component[5][7];
         reservedComponents = new HashSet<>();
+        lostComponents = new HashSet<>();
         this.resources = new HashMap<>() {{
             put(GoodType.RED, 0);
             put(GoodType.BLUE, 0);
@@ -116,17 +117,16 @@ public class Ship {
      *
      * @param position The position on the grid from which the component should be removed.
      */
-    public void removeComponent(Position position) {
+    public void removeComponent(Position position, GamePhase phase) {
         int row = position.getRow();
         int col = position.getCol();
 
-        // Checks if position is illegal or empty, otherwise removes Component and updates its position attribute
         if (forbiddenPositions.contains(position)) {
             throw new IllegalArgumentException("Forbidden position");
         } else if (board[row][col] == null) {
             throw new IllegalArgumentException("Empty position");
         } else {
-            board[row][col].setPosition(null);    // Spostare il component in lista dei "rifiuti"?
+            board[row][col].setPosition(null);
             board[row][col] = null;
         }
     }
@@ -137,21 +137,20 @@ public class Ship {
      *
      * @param component The component to reserve.
      */
-    public void reserveComponent(Component component) {
+    public void reserveComponent (Component component) {
         if (reservedComponents.size() < 2) {
             reservedComponents.add(component);
         } else {
-            throw new IllegalArgumentException("Too many reserved components");
+            // If there are already 2 reserved components, remove the first one
+            Iterator<Component> iterator = reservedComponents.iterator();
+            if (iterator.hasNext()) {
+                Component firstReserved = iterator.next();
+                reservedComponents.remove(firstReserved);
+            }
+            reservedComponents.add(component);
         }
     }
 
-    public Player getPlayer() {
-        return player;
-    }
-
-    public Component[][] getBoard() {
-        return board;
-    }
 
     // Calls count() for each component on the board
     public void updateStats() {
@@ -171,6 +170,27 @@ public class Ship {
                 }
             }
         }
+    }
+    public GameLevel getLevel() { return level; }
+
+    public void setLevel(GameLevel level) {
+        this.level = level;
+    }
+
+    public Player getPlayer() {
+        return player;
+    }
+
+    public Component[][] getBoard() {
+        return board;
+    }
+
+    public Set<Component> getReservedComponents() {
+        return reservedComponents;
+    }
+
+    public Set<Component> getLostComponents() {
+        return lostComponents;
     }
 
     public double getCannons() {
@@ -237,15 +257,6 @@ public class Ship {
         this.chargingBatteries = chargingBatteries;
     }
 
-    public int getLostComponents() {
-        return lostComponents;
-    }
-
-    public void setLostComponents(int lostComponents) {
-        this.lostComponents = lostComponents;
-    }
-
-    public GameLevel getLevel() { return level; }
 
     public int calculateSpecialGoodsCapacity() {
         this.specialGoodsCapacity = 0;
@@ -350,7 +361,7 @@ public class Ship {
     }
 
     updateStats();
-        return allResourcesAdded;
+    return allResourcesAdded;
 }
 
     /**
@@ -790,7 +801,6 @@ public class Ship {
             for (int col = 0; col < board[0].length; col++) {
                 if (board[row][col] != null) {
                     Component component = board[row][col];
-                    Position position = component.getPosition();
                     if (!isCorrectlyConnected(component)) {
                         wrongConnections.add(component);
                     }
@@ -807,13 +817,13 @@ public class Ship {
      *
      * @param component The component to check
      * @param phase The current game phase
-     * @return A list of components that are incorrectly placed
+     * @return {@code true} if the component is correctly placed, {@code false} otherwise
      */
-    public List<Component> checkPlacingErrors (Component component, GamePhase phase) {
+    public boolean isCorrectlyPlaced (Component component, GamePhase phase) {
         Position position = component.getPosition();
         List<Component> wrongPlacing = new ArrayList<>();
         if(component == null){
-            return wrongPlacing;
+            return true;
         }
 
         switch (component.getType()) {
@@ -851,8 +861,33 @@ public class Ship {
         if(phase == GamePhase.FLIGHT) {
             getPlayer().subtractCredits(1);
         }
+        return (wrongPlacing.isEmpty());
+    }
+
+    /**
+     * Checks if the ship is correctly placed on the board.
+     * A ship is considered correctly placed if all its components are correctly connected
+     * and there are no connection errors.
+     *
+     * @return {@code true} if the ship is correctly placed, {@code false} otherwise
+     */
+    public List<Component> checkPlacingErrors() {
+
+        List<Component> wrongPlacing = new ArrayList<>();
+        for (int row = 0; row < board.length; row++) {
+            for (int col = 0; col < board[0].length; col++) {
+                Component component = board[row][col];
+                Position position = new Position(row, col);
+                if (component != null) {
+                    if (!isCorrectlyPlaced(component, GamePhase.BUILDING)) {
+                        wrongPlacing.add(component);
+                    }
+                }
+            }
+        }
         return wrongPlacing;
     }
+
 
     /**
      * Performs a flood fill algorithm to find all connected components in the ship's grid.
@@ -969,6 +1004,4 @@ public class Ship {
         return ships;
     }
 
-    //TODO :  pezzi scartati perchè rimasti nella pila dei componenti riservati al termine dell'assemblaggio
-    //        o perchè eliminati per rendere la nave corretta  vanno inseriti nella pila degli scarti
 }

@@ -3,6 +3,7 @@ package it.polimi.ingsw.server.model.domain.flight;
 import it.polimi.ingsw.server.model.domain.adventure.AdventureDeck;
 import it.polimi.ingsw.server.model.domain.player.Player;
 import it.polimi.ingsw.server.model.enums.GameLevel;
+import it.polimi.ingsw.server.model.enums.GamePhase;
 import it.polimi.ingsw.server.model.enums.flight.FlightStatus;
 
 import java.util.*;
@@ -12,7 +13,7 @@ public class FlightBoard {
     private int playerCount;
     private Map <Player, PlayerFlightData> playerDataMap;
     private List<Player> currentOrder;
-    private List <Player> finishOrder;
+
 
     /**
      * Constructs a new FlightBoard for the given game level and player count.
@@ -24,7 +25,6 @@ public class FlightBoard {
         this.playerCount = playerCount;
         playerDataMap = new HashMap<>();
         currentOrder = new ArrayList<>();
-        finishOrder = new ArrayList<>();
     }
 
     public Route getRoute() { return route; }
@@ -32,11 +32,20 @@ public class FlightBoard {
     public List<Player> getCurrentOrder() {
         return currentOrder;
     }
-    public List<Player> getFinishOrder() {
-        return finishOrder;
-    }
     public PlayerFlightData getPlayerData(Player player){
         return playerDataMap.get(player);
+    }
+
+   /**
+     * Returns the leading player in the current order of players.
+     * The leading player is the one with the highest position in the flight data.
+     * @return The leading player, or null if no players are registered.
+     */
+    public Player getLeadingPlayer(){
+        if (currentOrder.isEmpty()) {
+            return null; // No players registered
+        }
+        return currentOrder.get(0); // The first player in the current order is the leading player
     }
 
     /**
@@ -144,7 +153,6 @@ public class FlightBoard {
         currentOrder.add(player);
     }
 
-
     /**
      * Abandons a player from the flight, setting their flight status to ABANDONED.
      * @param player The ID of the player to abandon.
@@ -153,14 +161,6 @@ public class FlightBoard {
         playerDataMap.get(player).setStatus(FlightStatus.ABANDONED);
         playerCount--;
         currentOrder.remove(player);
-    }
-
-    /**
-     * Checks if the flight is complete, meaning all players have either finished the flight or abandoned the race.
-     * @return {@code true} if the flight is complete, {@code false} otherwise.
-     */
-    public boolean isFlightComplete() {
-        return (finishOrder.size() == playerCount);
     }
 }
 

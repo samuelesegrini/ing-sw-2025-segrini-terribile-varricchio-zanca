@@ -140,7 +140,7 @@ public class GameModel {
         for (Player player : players) {
             flightBoard.registerPlayer(player);
         }
-        
+
         isInitialized = true;
     }
 
@@ -268,7 +268,7 @@ public class GameModel {
             throw new IllegalArgumentException("Spaces must be positive");
         }
         
-        flightBoard.movePlayer(player, spaces);
+        flightBoard.movePlayer(player, spaces, true);
         updateLeadPlayer();
     }
 
@@ -288,30 +288,13 @@ public class GameModel {
      * Calculates the final scores for all players at the end of the game.
      */
     private void calculateFinalScores() {
-        if (currentPhase != GamePhase.END) {
-            throw new IllegalStateException("Can only calculate final scores during end phase");
-        }
-        
-        // Calculate final scores based on:
-        // 1. Flight board position bonuses
-        // 2. Ship component values
-        // 3. Cargo and resource values
-        // 4. Penalties for lost components and exposed connectors
-        
-        for (Player player : players) {
-            // Base score calculation
-            int totalScore = player.getCredits();
-            
-            // Add position bonus from flight board
-            totalScore += flightBoard.getPositionBonus(player);
-            
-            // Add ship value (this requires ship scoring implementation)
-            if (player.getShip() != null) {
-                totalScore += calculateShipScore(player.getShip());
-            }
-            
-            // Set final score
-            player.setFinalScore(totalScore);
+        RewardSystem rewardSystem =
+            flightBoard == null ? null : flightBoard.getRoute().getRewardSystem();
+
+        if (rewardSystem == null) {
+            throw new IllegalStateException("Reward system is not initialized");
+        } else{
+            for (Player player : players) rewardSystem.calculateFinalScores(players, currentPhase);
         }
     }
 
@@ -504,35 +487,5 @@ public class GameModel {
     public BuildingTimer getBuildingTimer() {
         return buildingTimer;
     }
-    
-    /**
-     * Calculates the score value of a player's ship.
-     * This includes component values minus penalties for exposed connectors and lost components.
-     * @param ship The ship to calculate score for
-     * @return The ship's score value
-     */
-    private int calculateShipScore(it.polimi.ingsw.server.model.domain.ship.Ship ship) {
-        if (ship == null) {
-            return 0;
-        }
-        
-        int score = 0;
-        
-        // Add component values (this would need to be implemented based on component scoring rules)
-        // For now, using basic scoring based on component types
-        score += ship.getCannons() * 2; // Cannons worth 2 points each
-        score += ship.getEngines() * 1; // Engines worth 1 point each
-        score += ship.getBatteries() * 1; // Batteries worth 1 point each
-        score += ship.getCrew() * 1; // Crew worth 1 point each
-        
-        // Add cargo/resource values
-        score += ship.getSpecialGoods() * 3; // Special goods worth more
-        score += ship.getNormalGoods() * 1; // Normal goods worth base value
-        
-        // Subtract penalties
-        score -= ship.getExposedConnectors(); // -1 point per exposed connector
-        score -= ship.getLostComponents() * 2; // -2 points per lost component
-        
-        return Math.max(0, score); // Score cannot be negative
-    }
+
 }

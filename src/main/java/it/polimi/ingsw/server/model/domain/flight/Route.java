@@ -5,7 +5,6 @@ import it.polimi.ingsw.server.model.enums.GameLevel;
 import java.util.List;
 
 public class Route {
-    private GameLevel level;
     private final int length;
     private final List<Integer> startingPositions;
     private List<Integer> availableStartingPositions;
@@ -19,7 +18,6 @@ public class Route {
      * @param rewardSystem The reward system associated with the route.
      */
     public Route(GameLevel level, int length, List<Integer> startingPositions, RewardSystem rewardSystem ) {
-        this.level = level;
         this.length = length;
         this.startingPositions = startingPositions;
         this.availableStartingPositions = startingPositions;
@@ -35,15 +33,13 @@ public class Route {
     public List<Integer> getAllAvailableStartingPositions() {
         return availableStartingPositions;
     }
-
+    public RewardSystem getRewardSystem() {
+        return rewardSystem;
+    }
     public int getFirstAvailableStartingPosition(){
         Integer startingPosition = availableStartingPositions.getFirst();
         availableStartingPositions.remove(startingPosition);
         return startingPosition;
-    }
-
-    public RewardSystem getRewardSystem() {
-        return rewardSystem;
     }
 }
 

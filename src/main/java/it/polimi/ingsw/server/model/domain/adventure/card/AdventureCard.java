@@ -1,5 +1,7 @@
 package it.polimi.ingsw.server.model.domain.adventure.card;
 
+import it.polimi.ingsw.server.model.domain.adventure.AdventureCardVisitor;
+import it.polimi.ingsw.server.model.domain.general.GameModel;
 import it.polimi.ingsw.server.model.enums.adventure.AdventureType;
 import it.polimi.ingsw.server.model.enums.adventure.CardLevel;
 
@@ -41,4 +43,6 @@ public abstract class AdventureCard {
     public AdventureType getType(){
         return this.type;
     }
+
+    public abstract void accept(AdventureCardVisitor visitor, GameModel gameModel);
 }

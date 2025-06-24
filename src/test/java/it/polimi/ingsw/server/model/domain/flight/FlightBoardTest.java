@@ -22,7 +22,7 @@ class FlightBoardTest {
     @BeforeEach
     void setUp() {
         gameLevel = GameLevel.TEST_FLIGHT;
-        Route routeTestFlight = new Route(GameLevel.TEST_FLIGHT,18, List.of(4,2,1), null);
+        Route routeTestFlight = new Route(gameLevel,18, List.of(0, 1, 2, 4), null);
         flightBoard = new FlightBoard(gameLevel, routeTestFlight, 3);
 
         player1 = new Player(new PlayerId(UUID.randomUUID(), "Samuele"));
@@ -56,7 +56,7 @@ class FlightBoardTest {
     @Test
     void testRouteCreationForLevelII() {
         gameLevel = GameLevel.LEVEL_II;
-        Route routeLevelII = new Route(GameLevel.LEVEL_II,24, List.of(6,3,1), null);
+        Route routeLevelII = new Route();
         flightBoard = new FlightBoard(gameLevel, routeLevelII ,3);
 
         // Verifica che la route venga creata correttamente per LEVEL_II
@@ -77,7 +77,7 @@ class FlightBoardTest {
     @Test
     void testStartingPositionsForLevelII() {
         gameLevel = GameLevel.LEVEL_II;
-        Route routeLevelII = new Route(GameLevel.LEVEL_II,24, List.of(6,3,1), null);
+        Route routeLevelII = new Route();
         flightBoard = new FlightBoard(gameLevel, routeLevelII ,3);
         // Verifica che le posizioni di partenza siano corrette per LEVEL_II
         List<Integer> expectedStartingPositions = Arrays.asList(6, 3, 1);

@@ -3,12 +3,14 @@ package it.polimi.ingsw.server.model.domain.flight;
 import it.polimi.ingsw.server.model.domain.player.Player;
 import it.polimi.ingsw.server.model.domain.ship.Ship;
 import it.polimi.ingsw.server.model.enums.GameLevel;
+import it.polimi.ingsw.server.model.enums.GamePhase;
 import it.polimi.ingsw.server.model.enums.player.PlayerOrder;
 import it.polimi.ingsw.server.model.enums.resource.GoodType;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class RewardSystem {
     private final GameLevel level;
@@ -49,7 +51,7 @@ public class RewardSystem {
         Map<GoodType,Integer> resources = ship.getResources();
         int credits = 0;
         for(GoodType good : resources.keySet()){
-            credits += resources.get(good)*resourceBonus.get(good);
+            credits += (resources.get(good)) * (resourceBonus.get(good));
         }
         return credits;
     }
@@ -80,5 +82,50 @@ public class RewardSystem {
     public int calculateExposedConnectorsPenalty (Ship ship){
        return (ship.getExposedConnectors() * exposedConnectorsPenalty);
     }
+
+    /**
+     * Calculates the penalty for never used reserved components on a ship.
+     * @param ship The ship to evaluate.
+     * @return The penalty based on the number of reserved components.
+     */
+    public int calculateReservedComponentsPenalty(Ship ship) {
+        return ship.getReservedComponents().size();
+    }
+
+    /**
+     * Calculates the penalty for lost components on a ship.
+     * @param ship The ship to evaluate.
+     * @return The penalty based on the number of discarded components.
+     */
+    public int calculateLostComponentsPenalty(Ship ship) {
+        return ship.getLostComponents().size();
+    }
+
+    public int calculateTotalReward(List<Player> finishOrder, Player player) {
+        int totalReward = 0;
+        totalReward += calculatePositionBonus(finishOrder, player);
+        totalReward += calculateResourceBonus(player.getShip());
+        List<Ship> ships = finishOrder.stream()
+                .map(Player::getShip)
+                .collect(Collectors.toList());
+        totalReward += calculateBestLookingShipBonus(ships).getOrDefault(player, 0);
+        totalReward -= calculateExposedConnectorsPenalty(player.getShip());
+        totalReward -= calculateLostComponentsPenalty(player.getShip());
+        totalReward -= calculateReservedComponentsPenalty(player.getShip());
+        return (totalReward);
+    }
+
+    public void calculateFinalScores (List<Player> finishOrder, GamePhase phase) {
+        if (phase != GamePhase.END) {
+            throw new IllegalArgumentException("Final scores can only be calculated at the end of the game.");
+        }
+        else{
+            for (Player player : finishOrder) {
+                int score = Math.max(0, calculateTotalReward(finishOrder, player) + player.getCredits() );
+                player.setFinalScore(score);
+            }
+        }
+    }
 }
+
 
