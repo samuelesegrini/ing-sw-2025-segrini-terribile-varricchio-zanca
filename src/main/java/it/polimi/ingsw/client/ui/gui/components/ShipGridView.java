@@ -18,6 +18,8 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.paint.Color;
 
+import java.util.Set;
+
 /**
  * Pure ComponentInstance-based ship building grid.
  * Displays components with connectors, rotation, and placement validation.
@@ -232,6 +234,43 @@ public class ShipGridView extends StackPane {
     }
     
     /**
+     * Efficiently update grid from component data without full clear/rebuild
+     */
+    public void updateFromGridData(ComponentInstance[][] gridData) {
+        if (gridData == null) return;
+        
+        // Track which positions need updates
+        for (int row = 0; row < Math.min(gridRows, gridData.length); row++) {
+            for (int col = 0; col < Math.min(gridCols, gridData[row].length); col++) {
+                ComponentInstance newComponent = gridData[row][col];
+                ComponentTileView existingView = getComponentAt(row, col);
+                
+                // Check if we need to update this position
+                if (newComponent == null && existingView != null) {
+                    // Remove component that's no longer there
+                    removeComponent(row, col);
+                } else if (newComponent != null) {
+                    // Check if component changed
+                    if (existingView == null || 
+                        !newComponent.getId().equals(existingView.getComponentId()) ||
+                        !newComponent.getCurrentDirection().equals(existingView.getComponentInstance().getCurrentDirection())) {
+                        
+                        // Remove old component if exists
+                        if (existingView != null) {
+                            removeComponent(row, col);
+                        }
+                        
+                        // Add new component
+                        ComponentTileView newView = new ComponentTileView(newComponent);
+                        newView.setPlaced(true);
+                        placeComponent(newView, row, col);
+                    }
+                }
+            }
+        }
+    }
+    
+    /**
      * Highlight a cell (for drag and drop feedback)
      */
     public void highlightCell(int row, int col, boolean highlight) {
@@ -264,15 +303,31 @@ public class ShipGridView extends StackPane {
      */
     public void updateGridLayout() {
         // Update dimensions from server
-        updateGridDimensions();
+        int newRows = gameState != null ? gameState.getGridRows() : 5;
+        int newCols = gameState != null ? gameState.getGridCols() : 7;
         
-        // Clear constraints and recreate with new dimensions
-        cellGrid.getRowConstraints().clear();
-        cellGrid.getColumnConstraints().clear();
+        // Only rebuild if dimensions actually changed
+        if (newRows != gridRows || newCols != gridCols) {
+            gridRows = newRows;
+            gridCols = newCols;
+            
+            // Clear constraints and recreate with new dimensions
+            cellGrid.getRowConstraints().clear();
+            cellGrid.getColumnConstraints().clear();
+            cellGrid.getChildren().clear();
+            
+            // Recreate UI with new dimensions
+            createGridUI();
+        }
+    }
+    
+    /**
+     * Refresh grid cell styling to reflect updated forbidden positions
+     */
+    public void refreshCellStyling() {
+        // Force recreate cells to apply updated forbidden positions
         cellGrid.getChildren().clear();
-        
-        // Recreate UI with new dimensions
-        createGridUI();
+        createCells();
     }
     
     /**

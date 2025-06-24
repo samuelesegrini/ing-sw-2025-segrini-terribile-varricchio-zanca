@@ -77,9 +77,14 @@ public class ViewNavigatorImpl implements ViewNavigator {
                 return viewState == ClientModel.ViewState.LOBBY && model.isLoggedIn();
                 
             case LOBBY:
-                // From lobby, can go to game or back to login
-                return (viewState == ClientModel.ViewState.GAME && model.getCurrentGameId() != null) ||
+                // From lobby, can go to game lobby or back to login
+                return viewState == ClientModel.ViewState.GAME_LOBBY ||
                        viewState == ClientModel.ViewState.LOGIN;
+                       
+            case GAME_LOBBY:
+                // From game lobby, can go to game when it starts or back to lobby
+                return (viewState == ClientModel.ViewState.GAME && model.getCurrentGameId() != null) ||
+                       viewState == ClientModel.ViewState.LOBBY;
                        
             case GAME:
                 // From game, can go back to lobby or to login

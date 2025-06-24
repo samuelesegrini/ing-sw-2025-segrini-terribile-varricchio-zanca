@@ -102,6 +102,23 @@ public class ShipBuildingStateSyncEvent extends AbstractEvent {
         localState.updateBuildingTimer(buildingTimeRemaining);
         localState.setBuildingTimerFlipped(timerFlipped);
         
+        // Sync forbidden positions (only if server provides explicit positions)
+        System.out.println("=== SHIP BUILDING STATE SYNC FORBIDDEN POSITIONS ===");
+        System.out.println("ShipBuildingStateSyncEvent forbidden positions: " + forbiddenPositions);
+        if (forbiddenPositions != null && !forbiddenPositions.isEmpty()) {
+            System.out.println("Setting " + forbiddenPositions.size() + " forbidden positions from ShipBuildingStateSyncEvent:");
+            for (Position pos : forbiddenPositions) {
+                System.out.println("  - Position(" + pos.getRow() + ", " + pos.getCol() + ")");
+            }
+            localState.setForbiddenPositions(forbiddenPositions);
+            // Trigger UI refresh to show forbidden squares
+            context.getController().getModel().firePropertyChange("shipGridConfig", null, null);
+        } else {
+            System.out.println("No forbidden positions in ShipBuildingStateSyncEvent - keeping existing positions");
+        }
+        System.out.println("=== END SHIP BUILDING STATE SYNC FORBIDDEN POSITIONS ===");
+        // If server forbidden positions are empty/null, keep the ones extracted from ShipGridConfig
+        
         // Update UI if available
         if (context.getNotificationService() != null) {
             context.getNotificationService().showNotification(

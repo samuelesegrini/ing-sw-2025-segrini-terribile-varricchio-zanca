@@ -50,6 +50,10 @@ public class GuiShipBuildingView extends BaseUIView {
     
     // Current selection - ONLY ComponentInstance, NO legacy
     private ComponentInstance selectedComponent = null;
+    
+    // Batch update tracking
+    private volatile boolean updatesPending = false;
+    private final Object updateLock = new Object();
 
     public GuiShipBuildingView(Stage stage, ClientController controller) {
         this.stage = stage;
@@ -68,9 +72,8 @@ public class GuiShipBuildingView extends BaseUIView {
 
     @Override
     protected void onShow() {
-        // 1. Create UI structure - pure ComponentInstance system
+        // Always create a fresh scene for ship building view
         BorderPane root = createLayout();
-        
         Scene scene = new Scene(root, 1600, 900);
         
         // Load CSS
@@ -84,12 +87,11 @@ public class GuiShipBuildingView extends BaseUIView {
         stage.setScene(scene);
         stage.setTitle("Galaxy Trucker - " + getTitle());
         
-        // 2. Initialize all displays from ComponentInstance data
-        updateAllDisplays();
-        
-        // 3. Setup property change listeners
+        // Setup property change listeners
         setupPropertyChangeListeners();
-        updateOtherPlayersDisplay();
+        
+        // Update displays efficiently - batch all updates
+        batchUpdateAllDisplays();
         
         if (!stage.isShowing()) {
             stage.show();
@@ -384,118 +386,125 @@ public class GuiShipBuildingView extends BaseUIView {
     private void updateShipDisplay() {
         Platform.runLater(() -> {
             if (shipGridView == null) return;
-            
             LocalGameState gameState = LocalGameState.getInstance();
-            ComponentInstance[][] shipGridData = gameState.getShipGrid();
-            
-            // Clear current components
-            shipGridView.clearComponents();
-            
-            // Place components according to game state
-            for (int row = 0; row < shipGridData.length; row++) {
-                for (int col = 0; col < shipGridData[row].length; col++) {
-                    ComponentInstance component = shipGridData[row][col];
-                    
-                    if (component != null) {
-                        ComponentTileView tileView = new ComponentTileView(component);
-                        tileView.setPlaced(true);
-                        shipGridView.placeComponent(tileView, row, col);
-                    }
-                }
-            }
+            updateShipDisplayWithData(gameState.getShipGrid());
         });
+    }
+    
+    private void updateShipDisplayWithData(ComponentInstance[][] shipGridData) {
+        if (shipGridView == null || shipGridData == null) return;
+        
+        // Use efficient update instead of full clear and rebuild
+        shipGridView.updateFromGridData(shipGridData);
     }
 
     private void updateTimerDisplay() {
         Platform.runLater(() -> {
             LocalGameState gameState = LocalGameState.getInstance();
-            long timeRemaining = gameState.getBuildingTimeRemaining();
-            
-            if (timeRemaining > 0) {
-                long minutes = timeRemaining / 60000;
-                long seconds = (timeRemaining % 60000) / 1000;
-                timerLabel.setText(String.format("Time Remaining: %02d:%02d", minutes, seconds));
-            } else {
-                timerLabel.setText("Time Remaining: --:--");
-            }
-            
-            if (gameState.isBuildingTimerFlipped()) {
-                timerLabel.setStyle("-fx-font-size: 18px; -fx-text-fill: red;");
-            } else {
-                timerLabel.setStyle("-fx-font-size: 18px; -fx-text-fill: black;");
-            }
+            updateTimerDisplayWithData(gameState.getBuildingTimeRemaining(), gameState.isBuildingTimerFlipped());
         });
+    }
+    
+    private void updateTimerDisplayWithData(long timeRemaining, boolean timerFlipped) {
+        if (timerLabel == null) return;
+        
+        if (timeRemaining > 0) {
+            long minutes = timeRemaining / 60000;
+            long seconds = (timeRemaining % 60000) / 1000;
+            timerLabel.setText(String.format("Time Remaining: %02d:%02d", minutes, seconds));
+        } else {
+            timerLabel.setText("Time Remaining: --:--");
+        }
+        
+        if (timerFlipped) {
+            timerLabel.setStyle("-fx-font-size: 18px; -fx-text-fill: red;");
+        } else {
+            timerLabel.setStyle("-fx-font-size: 18px; -fx-text-fill: black;");
+        }
     }
 
     private void updateShipStats() {
         Platform.runLater(() -> {
             LocalGameState gameState = LocalGameState.getInstance();
-            Map<LocalGameState.ComponentStatType, Integer> stats = gameState.getAllShipStats();
-            
-            shipStatsLabel.setText(String.format(
-                "Ship Stats - Engines: %d, Cannons: %d, Crew: %d, Cargo: %d, Batteries: %d, Shields: %d",
-                stats.get(LocalGameState.ComponentStatType.ENGINES),
-                stats.get(LocalGameState.ComponentStatType.CANNONS),
-                stats.get(LocalGameState.ComponentStatType.CREW),
-                stats.get(LocalGameState.ComponentStatType.CARGO),
-                stats.get(LocalGameState.ComponentStatType.BATTERIES),
-                stats.get(LocalGameState.ComponentStatType.SHIELDS)
-            ));
+            updateShipStatsWithData(gameState.getAllShipStats());
         });
+    }
+    
+    private void updateShipStatsWithData(Map<LocalGameState.ComponentStatType, Integer> stats) {
+        if (shipStatsLabel == null || stats == null) return;
+        
+        shipStatsLabel.setText(String.format(
+            "Ship Stats - Engines: %d, Cannons: %d, Crew: %d, Cargo: %d, Batteries: %d, Shields: %d",
+            stats.get(LocalGameState.ComponentStatType.ENGINES),
+            stats.get(LocalGameState.ComponentStatType.CANNONS),
+            stats.get(LocalGameState.ComponentStatType.CREW),
+            stats.get(LocalGameState.ComponentStatType.CARGO),
+            stats.get(LocalGameState.ComponentStatType.BATTERIES),
+            stats.get(LocalGameState.ComponentStatType.SHIELDS)
+        ));
     }
 
     private void updateComponentInventoryDisplay() {
         Platform.runLater(() -> {
             if (componentInventoryView == null) return;
-            
             LocalGameState gameState = LocalGameState.getInstance();
-            
-            // Update held components - PURE ComponentInstance
-            List<ComponentInstance> heldComponents = gameState.getHeldTiles();
-            componentInventoryView.updateHeldComponents(heldComponents);
-            
-            // Clear available components since they're now in junkyard
-            componentInventoryView.updateAvailableComponents(new ArrayList<>());
+            updateComponentInventoryDisplayWithData(gameState.getHeldTiles());
         });
+    }
+    
+    private void updateComponentInventoryDisplayWithData(List<ComponentInstance> heldComponents) {
+        if (componentInventoryView == null) return;
+        
+        // Update held components - PURE ComponentInstance
+        componentInventoryView.updateHeldComponents(heldComponents);
+        
+        // Clear available components since they're now in junkyard
+        componentInventoryView.updateAvailableComponents(new ArrayList<>());
     }
     
     private void updateJunkyardDisplay() {
         Platform.runLater(() -> {
-            if (componentJunkyard == null) {
-                return;
-            }
-            
+            if (componentJunkyard == null) return;
             LocalGameState gameState = LocalGameState.getInstance();
-            
-            // Get all available components for the scattered pile
-            List<ComponentInstance> allComponents = new ArrayList<>();
-            allComponents.addAll(gameState.getAvailableTiles());
-            allComponents.addAll(gameState.getFaceUpJunkyardTiles());
-            
-            // Get specifically face-up components
-            List<ComponentInstance> faceUpComponents = new ArrayList<>(gameState.getFaceUpJunkyardTiles());
-            
-            // Estimated face-down count (total minus face-up)
-            int faceDownCount = Math.max(0, allComponents.size() - faceUpComponents.size());
-            
-            // Update the warehouse with physical pile behavior
-            componentJunkyard.updateWarehouse(allComponents, faceUpComponents, faceDownCount);
+            updateJunkyardDisplayWithData(gameState.getAvailableTiles(), gameState.getFaceUpJunkyardTiles());
         });
+    }
+    
+    private void updateJunkyardDisplayWithData(List<ComponentInstance> availableComponents, List<ComponentInstance> faceUpComponents) {
+        if (componentJunkyard == null) return;
+        
+        // Get all available components for the scattered pile
+        List<ComponentInstance> allComponents = new ArrayList<>();
+        allComponents.addAll(availableComponents);
+        allComponents.addAll(faceUpComponents);
+        
+        // Get specifically face-up components
+        List<ComponentInstance> faceUpComponentsCopy = new ArrayList<>(faceUpComponents);
+        
+        // Estimated face-down count (total minus face-up)
+        int faceDownCount = Math.max(0, allComponents.size() - faceUpComponentsCopy.size());
+        
+        // Update the warehouse with physical pile behavior
+        componentJunkyard.updateWarehouse(allComponents, faceUpComponentsCopy, faceDownCount);
     }
 
     private void updateValidationErrors() {
         Platform.runLater(() -> {
             LocalGameState gameState = LocalGameState.getInstance();
-            List<String> errors = gameState.getValidationErrors();
-            
-            if (errors.isEmpty()) {
-                validationErrorsArea.setText("No validation errors");
-                validationErrorsArea.setStyle("-fx-text-fill: green;");
-            } else {
-                validationErrorsArea.setText(String.join("\n", errors));
-                validationErrorsArea.setStyle("-fx-text-fill: red;");
-            }
+            updateValidationErrorsWithData(gameState.getValidationErrors());
         });
+    }
+    
+    private void updateValidationErrorsWithData(List<String> errors) {
+        if (validationErrorsArea == null) return;
+        
+        if (errors.isEmpty()) {
+            validationErrorsArea.setText("No validation errors");
+            validationErrorsArea.setStyle("-fx-text-fill: green;");
+        } else {
+            validationErrorsArea.setText(String.join("\n", errors));
+            validationErrorsArea.setStyle("-fx-text-fill: red;");
+        }
     }
 
     private void showAlert(String title, String message) {
@@ -617,6 +626,31 @@ public class GuiShipBuildingView extends BaseUIView {
         updateValidationErrors();
     }
     
+    private void batchUpdateAllDisplays() {
+        Platform.runLater(() -> {
+            LocalGameState gameState = LocalGameState.getInstance();
+            
+            // Batch all state reads to avoid multiple property accesses
+            ComponentInstance[][] shipGridData = gameState.getShipGrid();
+            long timeRemaining = gameState.getBuildingTimeRemaining();
+            boolean timerFlipped = gameState.isBuildingTimerFlipped();
+            var shipStats = gameState.getAllShipStats();
+            var heldComponents = gameState.getHeldTiles();
+            var availableComponents = gameState.getAvailableTiles();
+            var faceUpComponents = gameState.getFaceUpJunkyardTiles();
+            var validationErrors = gameState.getValidationErrors();
+            
+            // Update all displays with batched data
+            updateShipDisplayWithData(shipGridData);
+            updateTimerDisplayWithData(timeRemaining, timerFlipped);
+            updateShipStatsWithData(shipStats);
+            updateJunkyardDisplayWithData(availableComponents, faceUpComponents);
+            updateComponentInventoryDisplayWithData(heldComponents);
+            updateValidationErrorsWithData(validationErrors);
+            updateOtherPlayersDisplay();
+        });
+    }
+    
     private void setupPropertyChangeListeners() {
         // Property change listeners are handled in onPropertyChange method
     }
@@ -635,21 +669,33 @@ public class GuiShipBuildingView extends BaseUIView {
 
     @Override
     protected void onPropertyChange(PropertyChangeEvent evt) {
+        // Batch multiple rapid property changes into a single update
+        synchronized (updateLock) {
+            if (!updatesPending) {
+                updatesPending = true;
+                Platform.runLater(() -> {
+                    synchronized (updateLock) {
+                        updatesPending = false;
+                        handleBatchedPropertyChanges();
+                    }
+                });
+            }
+        }
+        
+        // Handle immediate updates for critical events
         String propertyName = evt.getPropertyName();
         switch (propertyName) {
-            case "shipGridUpdated" -> updateShipDisplay();
-            case "buildingTimeRemaining" -> updateTimerDisplay();
-            case "buildingTimerFlipped" -> updateTimerDisplay();
-            case "shipValidated", "shipValidationErrors" -> updateValidationErrors();
-            case "tileConfirmed" -> {
-                updateShipDisplay();
-                updateShipStats();
+            case "phaseTransition" -> {
+                if ("FLIGHT".equals(evt.getNewValue())) {
+                    showAlert("Phase Transition", "Building phase complete! Transitioning to flight phase.");
+                }
             }
-            case "heldTiles" -> updateComponentInventoryDisplay();
-            case "availableTiles", "faceUpJunkyardTiles" -> updateJunkyardDisplay();
-            case "otherPlayersUpdate", "playersInLobby" -> updateOtherPlayersDisplay();
-            case "playerJoined" -> updateOtherPlayersDisplay();
-            case "playerLeft" -> updateOtherPlayersDisplay();
+            case "shipGridConfig" -> {
+                if (shipGridView != null) {
+                    shipGridView.updateGridLayout();
+                    shipGridView.refreshCellStyling();
+                }
+            }
             case "playerShipUpdated" -> {
                 if (evt.getNewValue() instanceof Map<?, ?> shipData) {
                     @SuppressWarnings("unchecked")
@@ -671,16 +717,11 @@ public class GuiShipBuildingView extends BaseUIView {
                     highlightOtherPlayer(newPlayerId, true);
                 }
             }
-            case "phaseTransition" -> {
-                if ("FLIGHT".equals(evt.getNewValue())) {
-                    showAlert("Phase Transition", "Building phase complete! Transitioning to flight phase.");
-                }
-            }
-            case "shipGridConfig" -> {
-                if (shipGridView != null) {
-                    shipGridView.updateGridLayout();
-                }
-            }
         }
+    }
+    
+    private void handleBatchedPropertyChanges() {
+        // Perform a full update when batched changes are processed
+        batchUpdateAllDisplays();
     }
 }

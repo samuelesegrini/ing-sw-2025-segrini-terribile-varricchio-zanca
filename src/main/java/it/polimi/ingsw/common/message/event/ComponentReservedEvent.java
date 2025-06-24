@@ -46,16 +46,20 @@ public class ComponentReservedEvent extends AbstractEvent {
         context.runOnUIThread(() -> {
             // Update game state with component reservation
             if (context.isLocalPlayer(playerId)) {
-                // Create ComponentInstance from complete server data
-                ComponentInstance component = new ComponentInstance(
-                    componentData.getId(),
-                    componentData.getType(),
-                    componentData.getConnectors()
-                );
-                component.setDirection(componentData.getDefaultDirection());
-                
-                it.polimi.ingsw.client.core.state.LocalGameState.getInstance().addHeldTile(component);
-                context.getController().getModel().firePropertyChange("heldTiles", null, null);
+                if (componentData != null && componentData.getConnectors() != null) {
+                    // Create ComponentInstance from complete server data
+                    ComponentInstance component = new ComponentInstance(
+                        componentData.getId(),
+                        componentData.getType(),
+                        componentData.getConnectors()
+                    );
+                    component.setDirection(componentData.getDefaultDirection());
+                    
+                    it.polimi.ingsw.client.core.state.LocalGameState.getInstance().addHeldTile(component);
+                    context.getController().getModel().firePropertyChange("heldTiles", null, null);
+                } else {
+                    System.err.println("ComponentReservedEvent: Invalid componentData or null connectors");
+                }
             }
 
             // Show notification

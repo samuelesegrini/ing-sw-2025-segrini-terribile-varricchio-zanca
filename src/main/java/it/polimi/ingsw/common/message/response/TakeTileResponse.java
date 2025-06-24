@@ -26,10 +26,14 @@ public class TakeTileResponse extends AbstractResponse {
     @Override
     public void handleOnClient(ClientContext context) {
         // Create ComponentInstance from complete server data
-        ComponentInstance componentInstance;
+        if (componentData == null) {
+            System.err.println("TakeTileResponse: ComponentData is null");
+            return;
+        }
+        
         if (componentData.getConnectors() != null) {
             // Full component data with connectors
-            componentInstance = new ComponentInstance(
+            ComponentInstance componentInstance = new ComponentInstance(
                 componentData.getId(), 
                 componentData.getType(), 
                 componentData.getConnectors()
@@ -37,10 +41,11 @@ public class TakeTileResponse extends AbstractResponse {
             componentInstance.setDirection(componentData.getDefaultDirection());
 
             LocalGameState.getInstance().addHeldTile(componentInstance);
+            context.getModel().firePropertyChange("heldTiles", null, null);
+        } else {
+            System.err.println("TakeTileResponse: ComponentData has null connectors for " + componentData.getType());
         }
-        //TODO: check better handling because to remove error i moved LocalGameState.getistance ... into the if body
-        // But it is temporary
-        context.getModel().firePropertyChange("heldTiles", null, null);
+        
         context.showNotification("Tile Drawn", "You drew a " + componentData.getType().name(),
                 it.polimi.ingsw.client.ui.NotificationType.INFO);
     }

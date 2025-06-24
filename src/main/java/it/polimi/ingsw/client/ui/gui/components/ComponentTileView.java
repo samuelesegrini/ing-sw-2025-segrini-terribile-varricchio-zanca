@@ -18,6 +18,9 @@ import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
 /**
  * Pure ComponentInstance-based GUI component for displaying ship components.
  * Shows component image, ID, connectors, and rotation state.
@@ -27,6 +30,10 @@ public class ComponentTileView extends StackPane {
     
     public static final double TILE_SIZE = 65;
     public static final double CONNECTOR_SIZE = 8;
+    
+    // Static image cache to avoid reloading same images
+    private static final Map<String, Image> imageCache = new ConcurrentHashMap<>();
+    private static final Map<String, Boolean> loadAttempted = new ConcurrentHashMap<>();
     
     private final ComponentInstance componentInstance;
     private boolean isPlaced = false;
@@ -93,18 +100,31 @@ public class ComponentTileView extends StackPane {
                 return;
             }
             
+            // Check cache first
+            Image cachedImage = imageCache.get(imagePath);
+            if (cachedImage != null) {
+                createImageView(cachedImage);
+                return;
+            }
+            
+            // Check if we've already tried to load this image and failed
+            if (loadAttempted.containsKey(imagePath)) {
+                setupTextDisplay();
+                return;
+            }
+            
+            // Mark as attempted and try to load
+            loadAttempted.put(imagePath, true);
+            
             java.io.InputStream stream = getClass().getResourceAsStream(imagePath);
             if (stream != null) {
                 try {
                     Image image = new Image(stream);
                     
                     if (!image.isError()) {
-                        imageView = new ImageView(image);
-                        imageView.setFitWidth(TILE_SIZE - 16);
-                        imageView.setFitHeight(TILE_SIZE - 16);
-                        imageView.setPreserveRatio(true);
-                        getChildren().add(imageView);
-                        StackPane.setAlignment(imageView, Pos.CENTER);
+                        // Cache successful load
+                        imageCache.put(imagePath, image);
+                        createImageView(image);
                         stream.close();
                         return; // Successfully loaded
                     }
@@ -121,6 +141,15 @@ public class ComponentTileView extends StackPane {
             System.err.println("Exception loading component image: " + componentInstance.getImagePath());
             setupTextDisplay();
         }
+    }
+    
+    private void createImageView(Image image) {
+        imageView = new ImageView(image);
+        imageView.setFitWidth(TILE_SIZE - 16);
+        imageView.setFitHeight(TILE_SIZE - 16);
+        imageView.setPreserveRatio(true);
+        getChildren().add(imageView);
+        StackPane.setAlignment(imageView, Pos.CENTER);
     }
     
     private void setupTextDisplay() {
@@ -250,6 +279,28 @@ public class ComponentTileView extends StackPane {
     }
     
     private void setupFaceDownView() {
+        try {
+            // Try to load the galaxy-sky.jpg image for face-down components
+            java.io.InputStream stream = getClass().getResourceAsStream("/assets/tiles/galaxy-sky.jpg");
+            if (stream != null) {
+                Image backImage = new Image(stream);
+                if (!backImage.isError()) {
+                    imageView = new ImageView(backImage);
+                    imageView.setFitWidth(TILE_SIZE - 4);
+                    imageView.setFitHeight(TILE_SIZE - 4);
+                    imageView.setPreserveRatio(true);
+                    getChildren().add(imageView);
+                    StackPane.setAlignment(imageView, Pos.CENTER);
+                    stream.close();
+                    return;
+                }
+                stream.close();
+            }
+        } catch (Exception e) {
+            System.err.println("Failed to load galaxy-sky.jpg for face-down component: " + e.getMessage());
+        }
+        
+        // Fallback to original "?" display if image loading fails
         componentLabel = new Label("?");
         componentLabel.setFont(Font.font("Arial", FontWeight.BOLD, 24));
         componentLabel.setTextFill(Color.WHITE);
