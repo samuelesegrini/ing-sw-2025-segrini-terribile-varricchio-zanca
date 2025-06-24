@@ -44,19 +44,16 @@ public class TuiManager implements ViewNavigator.ViewStateChangeListener, it.pol
         connectionView.initialize(context);
         views.put(ClientModel.ViewState.CONNECTION, connectionView);
         
-        TuiLoginView loginView = new TuiLoginView(context); //CHIEDI
+        TuiLoginView loginView = new TuiLoginView(context);
         views.put(ClientModel.ViewState.LOGIN, loginView);
 
-        TuiLobbyView lobbyView = new TuiLobbyView();
-        lobbyView.initialize(context);
+        TuiLobbyView lobbyView = new TuiLobbyView(context);
         views.put(ClientModel.ViewState.LOBBY, lobbyView);
 
-        TuiGameLobbyView gameLobbyView = new TuiGameLobbyView();
-        gameLobbyView.initialize(context);
+        TuiGameLobbyView gameLobbyView = new TuiGameLobbyView(context);
         views.put(ClientModel.ViewState.GAME_LOBBY, gameLobbyView);
         
-        TuiShipBuildingView shipBuildingView = new TuiShipBuildingView();
-        shipBuildingView.initialize(context);
+        TuiShipBuildingView shipBuildingView = new TuiShipBuildingView(context);
         views.put(ClientModel.ViewState.GAME, shipBuildingView);
         
         // TODO: Add other views (lobby browser) as they are migrated
@@ -69,7 +66,7 @@ public class TuiManager implements ViewNavigator.ViewStateChangeListener, it.pol
             LOGGER.info("Starting TUI Manager");
             
             try {
-                // Show initial view
+                // Show the initial view
                 navigateToCurrentView();
                 
                 // Keep the manager running
@@ -97,12 +94,12 @@ public class TuiManager implements ViewNavigator.ViewStateChangeListener, it.pol
     }
     
     private void showView(ClientModel.ViewState viewState) {
-        // Hide current view
+        // Hide the current view
         if (currentView != null && currentView.isActive()) {
             currentView.hide();
         }
         
-        // Show new view
+        // Show the new view
         UIView newView = views.get(viewState);
         if (newView != null) {
             currentView = newView;

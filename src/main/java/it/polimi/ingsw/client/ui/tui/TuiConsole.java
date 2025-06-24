@@ -66,11 +66,11 @@ public class TuiConsole {
                     .reset());
             System.out.println(Ansi.ansi()
                     .fgBrightCyan()
-                    .a("║              ")
+                    .a("║                     ")
                     .fgBrightYellow().bold()
                     .a("GALAXY TRUCKER CLIENT")
                     .reset().fgBrightCyan()
-                    .a("               ║")
+                    .a("                     ║")
                     .reset());
             System.out.println(Ansi.ansi()
                     .fgBrightCyan()
@@ -87,34 +87,67 @@ public class TuiConsole {
     /**
      * Prints a section header.
      */
+//    public void printSectionHeader(String title) {
+////        int padding = Math.max(0, (50 - title.length()) / 2);
+////        String paddedTitle = " ".repeat(padding) + title + " ".repeat(padding);
+//        int totalWidth = 52;  // Total width of the box
+//        int contentWidth = totalWidth - 4;  // Subtract 4 for the '│ ' and ' │' on sides
+//        String paddedTitle = center(title, contentWidth);
+//
+//        if (supportsAnsi) {
+//            System.out.println(Ansi.ansi()
+//                    .fgBrightBlue()
+//                    .a("┌" + "─".repeat(totalWidth - 2) + "┐")
+//                    .reset());
+//            System.out.println(Ansi.ansi()
+//                    .fgBrightBlue()
+//                    .a("│ ")
+//                    .fgBrightDefault().bold()
+//                    .a(paddedTitle)
+//                    .reset().fgBrightBlue()
+//                    .a(" │")
+//                    .reset());
+//            System.out.println(Ansi.ansi()
+//                    .fgBrightBlue()
+//                    .a("└" + "─".repeat(totalWidth - 2) + "┘")
+//                    .reset());
+//        } else {
+//            System.out.println("┌" + "─".repeat(totalWidth - 2) + "┐");
+//            System.out.println("│ " + paddedTitle + " │");
+//            System.out.println("└" + "─".repeat(totalWidth - 2) + "┘");
+//        }
+//        System.out.println();
+//    }
+
     public void printSectionHeader(String title) {
-        int padding = Math.max(0, (50 - title.length()) / 2);
-        String paddedTitle = " ".repeat(padding) + title + " ".repeat(padding);
+        int width = 50;  // Total width between the side borders
+        String paddedTitle = center(title, width);
 
         if (supportsAnsi) {
             System.out.println(Ansi.ansi()
                     .fgBrightBlue()
-                    .a("┌" + "─".repeat(52) + "┐")
+                    .a("┌" + "─".repeat(width) + "┐")
                     .reset());
             System.out.println(Ansi.ansi()
                     .fgBrightBlue()
-                    .a("│ ")
+                    .a("│")
                     .fgBrightDefault().bold()
                     .a(paddedTitle)
                     .reset().fgBrightBlue()
-                    .a(" │")
+                    .a("│")
                     .reset());
             System.out.println(Ansi.ansi()
                     .fgBrightBlue()
-                    .a("└" + "─".repeat(52) + "┘")
+                    .a("└" + "─".repeat(width) + "┘")
                     .reset());
         } else {
-            System.out.println("┌" + "─".repeat(52) + "┐");
-            System.out.println("│ " + paddedTitle + " │");
-            System.out.println("└" + "─".repeat(52) + "┘");
+            System.out.println("┌" + "─".repeat(width) + "┐");
+            System.out.println("│" + paddedTitle + "│");
+            System.out.println("└" + "─".repeat(width) + "┘");
         }
         System.out.println();
     }
+
 
     public void printError(String message) {
         println(Ansi.ansi().fgBrightRed().a("[ERROR] ").reset().a(message));
@@ -196,14 +229,24 @@ public class TuiConsole {
         printTableSeparator(widths);
     }
     
-    private String center(String text, int len){
-        if (len <= 0) return "";
-        if(text.length() > len) return text.substring(0, len-3) + "...";
-        String out = String.format("%" + len + "s", text);
-        int l = out.length();
-        int p = (l - text.length()) / 2;
-        out = out.substring(0, p) + text + out.substring(p + text.length());
-        return out;
+//    private String center(String text, int len){
+//        if (len <= 0) return "";
+//        if(text.length() > len) return text.substring(0, len-3) + "...";
+//        String out = String.format("%" + len + "s", text);
+//        int l = out.length();
+//        int p = (l - text.length()) / 2;
+//        out = out.substring(0, p) + text + out.substring(p + text.length());
+//        return out;
+//    }
+
+    private String center(String text, int width) {
+        if (text.length() >= width) {
+            return text.substring(0, width);
+        }
+        int padding = width - text.length();
+        int leftPad = padding / 2;
+        int rightPad = padding - leftPad;
+        return " ".repeat(leftPad) + text + " ".repeat(rightPad);
     }
 
 
@@ -222,7 +265,10 @@ public class TuiConsole {
         StringBuilder textLine = new StringBuilder();
         textLine.append("│");
         for (int i = 0; i < headers.length; i++) {
-            textLine.append(" ").append(center(headers[i], widths[i])).append(" ");
+//            textLine.append(" ").append(center(headers[i], widths[i])).append(" ");
+//            textLine.append("│");
+            String paddedHeader = String.format(" %-" + widths[i] + "s ", headers[i]);
+            textLine.append(paddedHeader);
             textLine.append("│");
         }
         System.out.println(Ansi.ansi().fg(Ansi.Color.WHITE).bold().a(textLine.toString()).reset());
