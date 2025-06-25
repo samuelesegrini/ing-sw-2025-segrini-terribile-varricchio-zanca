@@ -56,7 +56,9 @@ Project requirements: [here](https://github.com/samuelesegrini/ing-sw-2025-segri
 | Resilience to disconnections   |   ✅    |
 
 
-✅ Implemented
+✅ Implemented  
+
+## Execution
 
 
 
