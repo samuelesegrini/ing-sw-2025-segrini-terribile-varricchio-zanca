@@ -40,4 +40,17 @@ public class PlayerId {
     public String toString() {
         return nickname;
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (obj == null || getClass() != obj.getClass()) return false;
+        PlayerId playerId = (PlayerId) obj;
+        return nickname.equals(playerId.nickname);
+    }
+
+    @Override
+    public int hashCode() {
+        return nickname.hashCode();
+    }
 }

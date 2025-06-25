@@ -59,19 +59,20 @@ public class RewardSystem {
    /**
      * Calculates the bonus for the best looking ship based on the number of exposed connectors.
      * The ship with the least exposed connectors is considered the best looking.
-     * @param ships The list of ships to evaluate.
+     * @param players The list of players whose ships to evaluate.
      * @return A map containing the player with the best looking ship and the bonus amount.
      */
-   public Map<Player,Integer> calculateBestLookingShipBonus(List<Ship> ships) {
+   public Map<Player,Integer> calculateBestLookingShipBonus(List<Player> players) {
        int exposedConnectors = Integer.MAX_VALUE;
-       Player player = null;
-       for(Ship ship : ships){
+       Player bestPlayer = null;
+       for(Player player : players){
+           Ship ship = player.getShip();
            if(ship.getExposedConnectors() < exposedConnectors){
                exposedConnectors = ship.getExposedConnectors();
-               player = ship.getPlayer();
+               bestPlayer = player;
            }
        }
-       return Map.of(player, this.bestLookingShipBonus);
+       return Map.of(bestPlayer, this.bestLookingShipBonus);
     }
 
     /**
@@ -105,10 +106,7 @@ public class RewardSystem {
         int totalReward = 0;
         totalReward += calculatePositionBonus(finishOrder, player);
         totalReward += calculateResourceBonus(player.getShip());
-        List<Ship> ships = finishOrder.stream()
-                .map(Player::getShip)
-                .collect(Collectors.toList());
-        totalReward += calculateBestLookingShipBonus(ships).getOrDefault(player, 0);
+        totalReward += calculateBestLookingShipBonus(finishOrder).getOrDefault(player, 0);
         totalReward -= calculateExposedConnectorsPenalty(player.getShip());
         totalReward -= calculateLostComponentsPenalty(player.getShip());
         totalReward -= calculateReservedComponentsPenalty(player.getShip());

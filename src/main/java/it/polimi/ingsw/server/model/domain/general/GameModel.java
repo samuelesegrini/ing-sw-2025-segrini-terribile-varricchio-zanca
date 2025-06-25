@@ -89,7 +89,17 @@ public class GameModel {
         // Assign player colors based on join order
         PlayerColor[] colors = {PlayerColor.BLUE, PlayerColor.RED, PlayerColor.GREEN, PlayerColor.YELLOW};
         PlayerColor assignedColor = colors[players.size() % colors.length];
+        
+        // Create player without ship
         Player player = new Player(playerId, assignedColor);
+        
+        // Create ship separately with proper configuration
+        var gameConfig = configManager.getConfigForLevel(level);
+        var shipGridConfig = gameConfig.shipGridConfig();
+        var ship = new it.polimi.ingsw.server.model.domain.ship.Ship(level, shipGridConfig);
+        
+        // Assign ship to player
+        player.setShip(ship);
         players.add(player);
     }
 
@@ -136,7 +146,7 @@ public class GameModel {
         this.adventureDeck = configManager.createAdventureDeck(level);
         this.componentDeck = configManager.createComponentDeck(level);
         
-        // Initialize player positions on flight board
+        // Initialize player positions on flight board (ships initialized during addPlayer)
         for (Player player : players) {
             flightBoard.registerPlayer(player);
         }
