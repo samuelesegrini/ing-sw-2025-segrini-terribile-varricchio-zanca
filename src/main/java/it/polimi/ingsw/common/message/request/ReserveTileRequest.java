@@ -1,6 +1,6 @@
 package it.polimi.ingsw.common.message.request;
 
-import it.polimi.ingsw.common.message.event.ComponentReservedEvent;
+import it.polimi.ingsw.common.message.event.ComponentTakenEvent;
 import it.polimi.ingsw.common.message.response.ErrorResponse;
 import it.polimi.ingsw.common.message.response.Response;
 import it.polimi.ingsw.common.message.response.ReserveTileResponse;
@@ -66,15 +66,14 @@ public class ReserveTileRequest extends AbstractRequest {
             // Reserve component logic - move from hand to reserved area
             player.reserveComponent(component);
 
-            // ENHANCED: Publish event with full server models
-            ComponentReservedEvent event = new ComponentReservedEvent(
+            // Publish component taken event with full server models
+            ComponentTakenEvent event = new ComponentTakenEvent(
                 session.getGameId(),
-                component,             // Full Component model
-                player,                // Full Player model
-                session.getGameModel().getComponentDeck(), // Updated ComponentDeck model
-                System.currentTimeMillis() + 300000 // 5 minutes reservation time
+                component,
+                playerId,
+                player.getNickname()
             );
-            context.publishEvent(event);
+            context.getEventPublisher().publishEvent(event);
 
             // ENHANCED: Return response with full server models
             return new ReserveTileResponse(

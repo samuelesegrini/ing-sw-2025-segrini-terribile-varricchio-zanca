@@ -1,9 +1,9 @@
 package it.polimi.ingsw.client.ui.gui.views;
 
-import it.polimi.ingsw.client.ClientModel;
+import it.polimi.ingsw.client.core.ClientState;
 import it.polimi.ingsw.client.ui.core.BaseUIView;
 import it.polimi.ingsw.client.ui.core.UIContext;
-import it.polimi.ingsw.common.GameInfo;
+import it.polimi.ingsw.server.model.domain.general.GameModel;
 import it.polimi.ingsw.common.message.request.CreateGameRequest;
 import it.polimi.ingsw.common.message.request.JoinGameRequest;
 import it.polimi.ingsw.common.message.request.ListGamesRequest;
@@ -435,7 +435,7 @@ public class GuiLobbyView extends BaseUIView {
     private void handleLogout() {
         // Clear authentication and return to login view
         context.getModel().setAuthenticated(false);
-        context.getModel().setCurrentView(ClientModel.ViewState.LOGIN);
+        context.getModel().setCurrentView(ClientState.ViewState.LOGIN);
     }
 
     private void fetchGameListFromServer() {
@@ -463,7 +463,7 @@ public class GuiLobbyView extends BaseUIView {
     private void renderGamesListUI() {
         LOGGER.info("Updating games list");
         
-        List<GameInfo> availableGames = context.getModel().getAvailableGames();
+        List<GameModel> availableGames = context.getModel().getAvailableGames();
         if (availableGames == null) {
             LOGGER.warning("Available games is null, hiding loading anyway");
             showLoading(false);
@@ -479,7 +479,7 @@ public class GuiLobbyView extends BaseUIView {
         boolean hasWaitingGames = false;
         boolean hasInProgressGames = false;
         
-        for (GameInfo game : availableGames) {
+        for (GameModel game : availableGames) {
             Node gameCard = createGameCard(game);
             
             // Separate games based on their current phase
@@ -505,7 +505,7 @@ public class GuiLobbyView extends BaseUIView {
         LOGGER.info("Games list update complete, loading indicator hidden");
     }
     
-    private Node createGameCard(GameInfo game) {
+    private Node createGameCard(GameModel game) {
         VBox card = new VBox(10);
         card.getStyleClass().addAll("panel-light-accent-box", "lobby-game-entry-pane");
         card.setPrefWidth(280);
@@ -573,7 +573,7 @@ public class GuiLobbyView extends BaseUIView {
         return noGamesLabel;
     }
     
-    private void joinGame(GameInfo game) {
+    private void joinGame(GameModel game) {
         showLoading(true);
         statusLabel.setText("Joining game...");
         
@@ -706,9 +706,9 @@ public class GuiLobbyView extends BaseUIView {
                 break;
             case "currentView":
                 // Hide loading when view changes away from lobby
-                ClientModel.ViewState newView = (ClientModel.ViewState) evt.getNewValue();
+                ClientState.ViewState newView = (ClientState.ViewState) evt.getNewValue();
                 LOGGER.info("View changed to: " + newView);
-                if (newView != ClientModel.ViewState.LOBBY) {
+                if (newView != ClientState.ViewState.LOBBY) {
                     showLoading(false);
                 }
                 break;
@@ -734,7 +734,7 @@ public class GuiLobbyView extends BaseUIView {
     }
 
     @Override
-    public ClientModel.ViewState getViewState() {
-        return ClientModel.ViewState.LOBBY;
+    public ClientState.ViewState getViewState() {
+        return ClientState.ViewState.LOBBY;
     }
 }

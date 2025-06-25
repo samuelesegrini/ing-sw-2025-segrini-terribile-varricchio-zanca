@@ -1,7 +1,7 @@
 package it.polimi.ingsw.client.ui.core;
 
 import it.polimi.ingsw.client.controller.ClientController;
-import it.polimi.ingsw.client.ClientModel;
+import it.polimi.ingsw.client.core.ClientState;
 
 /**
  * UI Context provides access to core components for all UI implementations.
@@ -15,9 +15,9 @@ public interface UIContext {
     ClientController getController();
     
     /**
-     * Gets the client model for data access.
+     * Gets the client state for data access.
      */
-    ClientModel getModel();
+    ClientState getClientState();
     
     /**
      * Gets the notification service for user feedback.

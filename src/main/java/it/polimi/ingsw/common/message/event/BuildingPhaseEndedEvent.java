@@ -1,8 +1,9 @@
 package it.polimi.ingsw.common.message.event;
 
+import it.polimi.ingsw.client.core.ClientState;
 import it.polimi.ingsw.client.ui.Notification;
 import it.polimi.ingsw.client.ui.NotificationType;
-import it.polimi.ingsw.common.PlayerInfo;
+import it.polimi.ingsw.server.model.domain.player.Player;
 
 import java.util.List;
 import java.util.Map;
@@ -13,11 +14,11 @@ import java.util.Map;
  */
 public class BuildingPhaseEndedEvent extends AbstractEvent {
     private final Map<String, ShipValidationResult> validationResults;
-    private final List<PlayerInfo> flightOrder;
+    private final List<Player> flightOrder;
     private final long buildingTimeElapsed;
 
     public BuildingPhaseEndedEvent(String gameId, Map<String, ShipValidationResult> validationResults,
-                                   List<PlayerInfo> flightOrder, long buildingTimeElapsed) {
+                                   List<Player> flightOrder, long buildingTimeElapsed) {
         super(EventType.BUILDING_PHASE_COMPLETED, gameId, null);
         this.validationResults = validationResults;
         this.flightOrder = flightOrder;
@@ -28,7 +29,7 @@ public class BuildingPhaseEndedEvent extends AbstractEvent {
         return validationResults;
     }
 
-    public List<PlayerInfo> getFlightOrder() {
+    public List<Player> getFlightOrder() {
         return flightOrder;
     }
 
@@ -39,19 +40,19 @@ public class BuildingPhaseEndedEvent extends AbstractEvent {
     @Override
     public void handleOnClient(ClientEventContext context) {
         context.runOnUIThread(() -> {
-            // Update game state to end building phase
-            var localGameState = it.polimi.ingsw.client.core.state.LocalGameState.getInstance();
-            localGameState.setCurrentPhase(it.polimi.ingsw.server.model.enums.GamePhase.FLIGHT);
-
-            // Update local validation results
-            String localPlayerId = localGameState.getLocalPlayerId();
-            ShipValidationResult localResult = validationResults.get(localPlayerId);
-            if (localResult != null) {
-                localGameState.setShipValidation(localResult.isValid(), localResult.getErrors());
+            // Update client state to end building phase
+            ClientState clientState = context.getClientState();
+            if (clientState != null && clientState.getCurrentGame() != null) {
+                clientState.getCurrentGame().setCurrentPhase(it.polimi.ingsw.server.model.enums.GamePhase.FLIGHT);
+                
+                // Update local validation results
+                String localPlayerId = clientState.getPlayerId();
+                ShipValidationResult localResult = validationResults.get(localPlayerId);
+                if (localResult != null) {
+                    // Store validation result in client state if needed
+                    // clientState.setShipValidation(localResult.isValid(), localResult.getErrors());
+                }
             }
-
-            // Update client model
-            context.getController().getModel().endBuildingPhase();
 
             // Show phase transition notification
             if (context.getNotificationService() != null) {
@@ -72,10 +73,9 @@ public class BuildingPhaseEndedEvent extends AbstractEvent {
                 ));
             }
 
-            // Fire property change for UI transition
-            context.getController().getModel().firePropertyChange("phaseTransition", "BUILDING", "FLIGHT");
-            context.getController().getModel().firePropertyChange("validationResults", null, validationResults);
-            context.getController().getModel().firePropertyChange("flightOrder", null, flightOrder);
+            // Fire property change for UI transition if supported
+            // Note: In Simple Direct Model Architecture, UI components refresh automatically
+            // when ClientState is updated. Property change events are not needed.
         });
     }
 

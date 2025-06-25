@@ -1,6 +1,6 @@
 package it.polimi.ingsw.common.message.request;
 
-import it.polimi.ingsw.common.GameInfo;
+import it.polimi.ingsw.server.model.domain.general.GameModel;
 import it.polimi.ingsw.common.message.event.PlayerJoinedGameEvent;
 import it.polimi.ingsw.common.message.response.ErrorResponse;
 import it.polimi.ingsw.common.message.response.JoinGameResponse;
@@ -9,7 +9,7 @@ import it.polimi.ingsw.common.message.validation.ValidationResult;
 import it.polimi.ingsw.server.core.GameSession;
 import it.polimi.ingsw.server.core.GameSessionManager;
 import it.polimi.ingsw.server.core.PlayerSessionRegistry;
-import it.polimi.ingsw.common.PlayerInfo;
+import it.polimi.ingsw.server.model.domain.player.Player;
 import it.polimi.ingsw.common.message.event.GameLobbyUpdateEvent;
 import it.polimi.ingsw.common.message.event.GamesListUpdateEvent;
 
@@ -104,33 +104,13 @@ public class JoinGameRequest extends AbstractRequest {
         LOGGER.info("📢 GAMES LIST UPDATE - Broadcasting updated available games list to all lobby clients");
         publishGamesListUpdateEvent(context, sessionManager, registry);
 
-        // Manually construct PlayerInfo list to include correct nicknames from the registry
-        List<PlayerInfo> playerInfos = new ArrayList<>();
-        LOGGER.fine("📋 RESPONSE PREP - Building player info list for response");
-        for (String pId : gameSession.getPlayerIds()) {
-            String pNickname = registry.getPlayerNickname(pId);
-            // Use the actual ready status from PlayerState
-            boolean isReady = gameSession.getPlayerState(pId) != null && gameSession.getPlayerState(pId).isReady();
-            playerInfos.add(new PlayerInfo(pId, pNickname, isReady));
-            LOGGER.fine("  📌 Player: " + pNickname + " (" + pId + "), ready: " + isReady);
-        }
-
-        // Get game info for response
-        GameInfo gameInfo = new GameInfo(
-                gameSession.getGameId(),
-                gameSession.getGameName(),
-                gameSession.getCreatorId(),
-                gameSession.getMaxPlayers(),
-                gameSession.getPlayerCount(),
-                gameSession.getGameLevel(),
-                gameSession.getCurrentPhase(),
-                playerInfos
-        );
-        LOGGER.fine("🎮 GAME INFO - Created GameInfo with " + playerInfos.size() + " players for response");
+        // Use server GameModel directly - Simple Direct Model Architecture
+        GameModel gameModel = gameSession.getGameModel();
+        LOGGER.fine("🎮 GAME MODEL - Retrieved GameModel directly from session for response");
 
         LOGGER.info("🎉 JOIN GAME SUCCESS - Returning JoinGameResponse for player: " + playerNickname + 
                    " (" + playerId + ") joined game: " + gameId);
-        return new JoinGameResponse(getCorrelationId(), gameInfo);
+        return new JoinGameResponse(getCorrelationId(), gameModel);
     }
 
     /**
@@ -138,23 +118,16 @@ public class JoinGameRequest extends AbstractRequest {
      */
     private void publishLobbyUpdateEvent(RequestContext context, GameSession gameSession, 
                                        String gameId, PlayerSessionRegistry registry, String excludePlayerId) {
-        LOGGER.fine("🔄 LOBBY UPDATE EVENT - Building player list for GameLobbyUpdateEvent");
-        List<PlayerInfo> playerInfos = new ArrayList<>();
+        LOGGER.fine("🔄 LOBBY UPDATE EVENT - Getting players from GameModel");
         
-        // Build the player info list with current ready states
-        for (String pId : gameSession.getPlayerIds()) {
-            String pNickname = registry.getPlayerNickname(pId);
-            boolean isReady = gameSession.getPlayerState(pId) != null && 
-                             gameSession.getPlayerState(pId).isReady();
-            playerInfos.add(new PlayerInfo(pId, pNickname, isReady));
-            LOGGER.fine("  📌 Lobby Player: " + pNickname + " (" + pId + "), ready: " + isReady);
-        }
+        // Use server model directly - Simple Direct Model Architecture
+        List<Player> players = gameSession.getGameModel().getPlayers();
         
         // Create and publish the lobby update event (excluding the requesting client)
-        LOGGER.fine("📤 LOBBY EVENT - Creating GameLobbyUpdateEvent for " + playerInfos.size() + 
+        LOGGER.fine("📤 LOBBY EVENT - Creating GameLobbyUpdateEvent for " + players.size() + 
                    " players, excluding: " + excludePlayerId);
         GameLobbyUpdateEvent lobbyEvent = new GameLobbyUpdateEvent(
-                gameId, playerInfos, gameSession.getMaxPlayers(), excludePlayerId
+                gameId, players, gameSession.getMaxPlayers(), excludePlayerId
         );
         context.publishEvent(lobbyEvent);
         LOGGER.fine("✅ LOBBY EVENT PUBLISHED - GameLobbyUpdateEvent sent to event system");
@@ -167,8 +140,8 @@ public class JoinGameRequest extends AbstractRequest {
                                            PlayerSessionRegistry registry) {
         LOGGER.fine("🔄 GAMES LIST UPDATE - Getting current available games from session manager");
         
-        // Get the current list of available games
-        List<GameInfo> availableGames = sessionManager.getAvailableGames();
+        // Get the current list of available games - use GameModel directly
+        List<GameModel> availableGames = sessionManager.getAvailableGameModels();
         
         LOGGER.fine("📤 GAMES LIST EVENT - Creating GamesListUpdateEvent for " + availableGames.size() + " available games");
         

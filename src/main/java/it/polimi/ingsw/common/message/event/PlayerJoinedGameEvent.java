@@ -1,10 +1,10 @@
 package it.polimi.ingsw.common.message.event;
 
+import it.polimi.ingsw.client.core.ClientState;
 import it.polimi.ingsw.client.ui.Notification;
 import it.polimi.ingsw.client.ui.NotificationType;
-import it.polimi.ingsw.common.PlayerInfo;
-import it.polimi.ingsw.common.GameInfo;
-import it.polimi.ingsw.client.ClientModel;
+import it.polimi.ingsw.server.model.domain.general.GameModel;
+import it.polimi.ingsw.server.model.domain.player.Player;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -44,25 +44,14 @@ public class PlayerJoinedGameEvent extends AbstractEvent {
 
     @Override
     public void handleOnClient(ClientEventContext context) {
-        if (gameId != null) {
-            List<GameInfo> availableGames = context.getController().getModel().getAvailableGames();
+        ClientState clientState = context.getClientState();
+        if (gameId != null && clientState != null) {
+            List<GameModel> availableGames = clientState.getAvailableGames();
             for (int i = 0; i < availableGames.size(); i++) {
-                GameInfo game = availableGames.get(i);
+                GameModel game = availableGames.get(i);
                 if (game.getGameId().equals(gameId)) {
-                    GameInfo updatedGame = new GameInfo(
-                        game.getGameId(),
-                        game.getGameName(),
-                        game.getCreatorId(),
-                        game.getMaxPlayers(),
-                        currentPlayerCount,
-                        game.getGameLevel(),
-                        game.getCurrentPhase(),
-                        game.getPlayers()
-                    );
-                    
-                    List<GameInfo> updatedGames = new ArrayList<>(availableGames);
-                    updatedGames.set(i, updatedGame);
-                    context.getController().getModel().setAvailableGames(updatedGames);
+                    // Update player count in the game model
+                    game.setCurrentPlayers(currentPlayerCount);
                     LOGGER.info("PlayerJoined: " + playerNickname + " -> " + gameId + " (" + currentPlayerCount + " players)");
                     break;
                 }
@@ -72,10 +61,11 @@ public class PlayerJoinedGameEvent extends AbstractEvent {
         context.runOnUIThread(() -> {
             // Only show notification for other players (not the joining player)
             if (!context.isLocalPlayer(playerId) && context.getNotificationService() != null) {
-                context.getNotificationService().showInfo(
+                context.getNotificationService().showNotification(new Notification(
                         "Player Joined",
-                        playerNickname + " joined the game (" + currentPlayerCount + " players)"
-                );
+                        playerNickname + " joined the game (" + currentPlayerCount + " players)",
+                        NotificationType.INFO
+                ));
             }
         });
     }

@@ -1,6 +1,6 @@
 package it.polimi.ingsw.common.message.request;
 
-import it.polimi.ingsw.common.GameInfo;
+import it.polimi.ingsw.server.model.domain.general.GameModel;
 import it.polimi.ingsw.common.message.event.GameCreatedEvent;
 import it.polimi.ingsw.common.message.response.CreateGameResponse;
 import it.polimi.ingsw.common.message.response.ErrorResponse;

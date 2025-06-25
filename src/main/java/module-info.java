@@ -29,7 +29,6 @@ module it.polimi.ingsw2025segriniterribilevarricchiozanca {
     opens it.polimi.ingsw.server.model.domain.general.config to com.fasterxml.jackson.databind;
 
     // --- Client packages ---
-    exports it.polimi.ingsw.client;
     exports it.polimi.ingsw.client.core;
     exports it.polimi.ingsw.client.controller;
     exports it.polimi.ingsw.client.network;
@@ -51,6 +50,5 @@ module it.polimi.ingsw2025segriniterribilevarricchiozanca {
     exports it.polimi.ingsw.server.model.enums.ship;
 
     // --- Common packages ---
-    exports it.polimi.ingsw.common;
     // NOTE: client.core.state package removed as part of Simple Direct Model Architecture
 }

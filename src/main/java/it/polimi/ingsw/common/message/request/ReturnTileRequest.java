@@ -1,7 +1,6 @@
 package it.polimi.ingsw.common.message.request;
 
-import it.polimi.ingsw.common.ComponentData;
-import it.polimi.ingsw.common.message.event.TileReturnedEvent;
+import it.polimi.ingsw.common.message.event.ComponentOfferedEvent;
 import it.polimi.ingsw.common.message.response.ErrorResponse;
 import it.polimi.ingsw.common.message.response.Response;
 import it.polimi.ingsw.common.message.validation.ValidationResult;
@@ -53,15 +52,14 @@ public class ReturnTileRequest extends AbstractRequest {
 
         deck.discard(componentToReturn);
 
-        ComponentData componentData = new ComponentData(
-                componentToReturn.getId(),
-                componentToReturn.getType(),
-                componentToReturn.getConnectors()
-                );
-
-        // Announce the return to all players
-        TileReturnedEvent event = new TileReturnedEvent(session.getGameId(), componentData);
-        context.publishEvent(event);
+        // Announce the component is available to all players
+        ComponentOfferedEvent event = new ComponentOfferedEvent(
+                session.getGameId(), 
+                componentToReturn, 
+                context.getPlayerId(),
+                context.getPlayerNickname()
+        );
+        context.getEventPublisher().publishEvent(event);
 
         return createSuccessResponse();
     }

@@ -1,7 +1,7 @@
 package it.polimi.ingsw.common.message.response;
 
-import it.polimi.ingsw.client.ClientModel;
 import it.polimi.ingsw.client.ui.NotificationType;
+import it.polimi.ingsw.client.core.ClientState;
 
 /**
  * Context for handling messages on the client side.
@@ -9,7 +9,7 @@ import it.polimi.ingsw.client.ui.NotificationType;
 public interface ClientContext {
     String getPlayerId();
     String getGameId();
-    ClientModel getModel();
+    ClientState getClientState();
     void showNotification(String title, String message, NotificationType type);
     void showError(String title, String message);
 }

@@ -1,6 +1,6 @@
 package it.polimi.ingsw.client.ui.tui.views;
 
-import it.polimi.ingsw.client.ClientModel;
+import it.polimi.ingsw.client.core.ClientState;
 import it.polimi.ingsw.client.ui.core.BaseUIView;
 import it.polimi.ingsw.client.ui.tui.TuiConsole;
 import it.polimi.ingsw.client.ui.tui.TuiContext;
@@ -21,8 +21,8 @@ public class TuiConnectionView extends BaseUIView { //CONTROLLA
     }
     
     @Override
-    public ClientModel.ViewState getViewState() {
-        return ClientModel.ViewState.CONNECTION;
+    public ClientState.ViewState getViewState() {
+        return ClientState.ViewState.CONNECTION;
     }
     
     @Override
@@ -31,7 +31,11 @@ public class TuiConnectionView extends BaseUIView { //CONTROLLA
     }
     
     private TuiConsole getConsole() {
-        return ((TuiContext) context).getConsole();
+        // Access TuiConsole through the UIContext - need to cast safely
+        if (context instanceof it.polimi.ingsw.client.ui.tui.TuiContext tuiContext) {
+            return tuiContext.getConsole();
+        }
+        throw new IllegalStateException("Expected TuiContext but got " + context.getClass());
     }
     
     @Override
@@ -54,7 +58,7 @@ public class TuiConnectionView extends BaseUIView { //CONTROLLA
     private void promptForConnection() {
         TuiConsole console = getConsole();
         // The loop continues as long as this view is active and the client is not connected.
-        while (isActive() && !context.getModel().isConnected()) {
+        while (isActive() && !context.getClientState().isConnected()) {
             try {
                 // Get hostname
                 System.out.print("Enter hostname (default: localhost): ");

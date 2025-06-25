@@ -1,6 +1,6 @@
 package it.polimi.ingsw.client.ui.gui.views;
 
-import it.polimi.ingsw.client.ClientModel;
+import it.polimi.ingsw.client.core.ClientState;
 import it.polimi.ingsw.client.ui.core.BaseUIView;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -36,8 +36,8 @@ public class GuiLoginView extends BaseUIView {
     }
 
     @Override
-    public ClientModel.ViewState getViewState() {
-        return ClientModel.ViewState.LOGIN;
+    public ClientState.ViewState getViewState() {
+        return ClientState.ViewState.LOGIN;
     }
 
     @Override

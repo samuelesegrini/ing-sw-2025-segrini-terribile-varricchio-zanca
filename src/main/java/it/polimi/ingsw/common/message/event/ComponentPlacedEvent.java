@@ -55,20 +55,12 @@ public class ComponentPlacedEvent extends AbstractEvent {
             // SIMPLIFIED: Direct model updates instead of complex conversion
             
             // NEW: Simple direct model update via ClientState
-            if (context.getClientState() != null) {
-                // Update the player in game model
-                context.getClientState().updatePlayer(player);
-                // Update the component deck state  
-                context.getClientState().updateComponentDeck(updatedDeck);
-                // UI refreshes automatically via ClientState.refreshCurrentView()
-            } else {
-                // LEGACY: Fallback to LocalGameState for backward compatibility
-                if (context.isLocalPlayer(getPlayerId())) {
-                    // Note: This relies on the old placement method which should be replaced
-                    context.getGameState().placeTile(getPlayerId(), component.getId(), 
-                        component.getPosition().getRow(), component.getPosition().getCol(), 0);
-                }
-            }
+            // Update the player in game model
+            context.getClientState().updatePlayer(player);
+            // Update the component deck state
+            context.getClientState().updateComponentDeck(updatedDeck);
+            // UI refreshes automatically via ClientState.refreshCurrentView()
+
 
             // Show appropriate notification
             if (context.getNotificationService() != null) {

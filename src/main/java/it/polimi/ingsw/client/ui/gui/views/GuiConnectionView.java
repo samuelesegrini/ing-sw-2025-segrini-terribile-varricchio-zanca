@@ -1,6 +1,6 @@
 package it.polimi.ingsw.client.ui.gui.views;
 
-import it.polimi.ingsw.client.ClientModel;
+import it.polimi.ingsw.client.core.ClientState;
 import it.polimi.ingsw.client.ui.core.BaseUIView;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -37,8 +37,8 @@ public class GuiConnectionView extends BaseUIView {
     }
 
     @Override
-    public ClientModel.ViewState getViewState() {
-        return ClientModel.ViewState.CONNECTION;
+    public ClientState.ViewState getViewState() {
+        return ClientState.ViewState.CONNECTION;
     }
 
     @Override

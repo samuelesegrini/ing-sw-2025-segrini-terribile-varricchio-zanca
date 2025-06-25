@@ -1,11 +1,10 @@
 package it.polimi.ingsw.common.message.request;
 
-import it.polimi.ingsw.common.ComponentData;
 import it.polimi.ingsw.common.message.response.ErrorResponse;
 import it.polimi.ingsw.common.message.response.RequestFaceUpTileResponse;
 import it.polimi.ingsw.common.message.response.Response;
 import it.polimi.ingsw.common.message.validation.ValidationResult;
-import it.polimi.ingsw.common.message.event.ComponentReservedEvent;
+import it.polimi.ingsw.common.message.event.ComponentTakenEvent;
 
 /**
  * Request sent by a player to take a specific face-up tile from the communal pile.
@@ -77,12 +76,9 @@ public class RequestFaceUpTileRequest extends AbstractRequest {
             // Reserve the component for the player
             gameSession.reserveFaceUpComponent(tileId, playerId);
             
-            // Broadcast reservation event to all clients (5 minute reservation)
-            //TODO: delete 5 min reservation it is a all game long reservation
-            ComponentData componentData = new ComponentData(component.getId(), component.getType(), component.getConnectors());
+            // Broadcast component taken event to all clients
             context.getEventPublisher().publishEvent(
-                new ComponentReservedEvent(gameId, componentData,
-                    playerId, playerNickname, System.currentTimeMillis() + 300000)
+                new ComponentTakenEvent(gameId, component, playerId, playerNickname)
             );
             
             // Return response with tile details

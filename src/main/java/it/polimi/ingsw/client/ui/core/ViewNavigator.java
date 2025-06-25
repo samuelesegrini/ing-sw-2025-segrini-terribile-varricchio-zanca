@@ -1,6 +1,6 @@
 package it.polimi.ingsw.client.ui.core;
 
-import it.polimi.ingsw.client.ClientModel;
+import it.polimi.ingsw.client.core.ClientState;
 
 /**
  * Unified view navigation interface for all UI implementations.
@@ -13,17 +13,17 @@ public interface ViewNavigator {
      * @param viewState The target view state
      * @return true if navigation was successful, false otherwise
      */
-    boolean navigateTo(ClientModel.ViewState viewState);
+    boolean navigateTo(ClientState.ViewState viewState);
     
     /**
      * Gets the current view state.
      */
-    ClientModel.ViewState getCurrentViewState();
+    ClientState.ViewState getCurrentViewState();
     
     /**
      * Checks if navigation to a specific view is possible.
      */
-    boolean canNavigateTo(ClientModel.ViewState viewState);
+    boolean canNavigateTo(ClientState.ViewState viewState);
     
     /**
      * Registers a view state change listener.
@@ -39,6 +39,6 @@ public interface ViewNavigator {
      * Callback interface for view state changes.
      */
     interface ViewStateChangeListener {
-        void onViewStateChanged(ClientModel.ViewState oldState, ClientModel.ViewState newState);
+        void onViewStateChanged(ClientState.ViewState oldState, ClientState.ViewState newState);
     }
 }

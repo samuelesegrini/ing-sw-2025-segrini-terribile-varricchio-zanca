@@ -1,6 +1,6 @@
 package it.polimi.ingsw.server.core;
 
-import it.polimi.ingsw.common.PlayerInfo;
+import it.polimi.ingsw.server.model.domain.player.Player;
 import it.polimi.ingsw.server.model.domain.adventure.card.AdventureCard;
 import it.polimi.ingsw.server.model.domain.general.GameModel;
 import it.polimi.ingsw.server.model.domain.general.config.GameConfigurationManager;
@@ -565,19 +565,9 @@ public class GameSession {
         }
     }
 
-    public List<PlayerInfo> getPlayers() {
+    public List<Player> getPlayers() {
         synchronized (lock) {
-            List<PlayerInfo> players = new ArrayList<>();
-            for (Map.Entry<String, PlayerState> entry : playerStates.entrySet()) {
-                String playerId = entry.getKey();
-                String nickname = playerRegistry.getPlayerNickname(playerId);
-                players.add(new PlayerInfo(
-                        playerId,
-                        nickname != null ? nickname : "Unknown",
-                        entry.getValue().isReady()
-                ));
-            }
-            return players;
+            return gameModel.getPlayers();
         }
     }
 

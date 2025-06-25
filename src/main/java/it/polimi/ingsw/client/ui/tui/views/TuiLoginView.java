@@ -1,6 +1,6 @@
 package it.polimi.ingsw.client.ui.tui.views;
 
-import it.polimi.ingsw.client.ClientModel;
+import it.polimi.ingsw.client.core.ClientState;
 import it.polimi.ingsw.client.ui.core.BaseUIView;
 import it.polimi.ingsw.client.ui.tui.TuiConsole;
 import it.polimi.ingsw.client.ui.tui.TuiContext;
@@ -23,8 +23,8 @@ public class TuiLoginView extends BaseUIView {
     }
     
     @Override
-    public ClientModel.ViewState getViewState() {
-        return ClientModel.ViewState.LOGIN;
+    public ClientState.ViewState getViewState() {
+        return ClientState.ViewState.LOGIN;
     }
     
     @Override

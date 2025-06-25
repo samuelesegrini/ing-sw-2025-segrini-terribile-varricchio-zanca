@@ -1,6 +1,6 @@
 package it.polimi.ingsw.common.message;
 
-import it.polimi.ingsw.client.ClientModel;
+import it.polimi.ingsw.client.core.ClientState;
 import it.polimi.ingsw.client.controller.ClientController;
 import it.polimi.ingsw.client.core.ClientState;
 import it.polimi.ingsw.client.network.NetworkClient;
@@ -29,12 +29,6 @@ public interface ClientMessageContext extends ClientContext, ClientEventContext 
     @Override
     ClientController getController();
     
-    /**
-     * Gets the client model for accessing and updating client state.
-     * @return The client model
-     */
-    @Override
-    ClientModel getModel();
     
     /**
      * Gets the current game state if available.

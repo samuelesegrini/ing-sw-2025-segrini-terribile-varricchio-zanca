@@ -205,33 +205,7 @@ public class ComponentTileView extends StackPane {
             
             // Rotate the direction based on current component direction
             Direction rotatedDirection = rotateDirection(originalDir, currentDirection);
-            
-            Circle connector = createConnectorCircle(connectorType);
-            positionConnector(connector, rotatedDirection);
-            connectorOverlay.getChildren().add(connector);
         }
-    }
-    
-    private Circle createConnectorCircle(ConnectorType type) {
-        Circle circle = new Circle(CONNECTOR_SIZE / 2);
-        circle.setStrokeWidth(1.5);
-        
-        switch (type) {
-            case ENERGY -> {
-                circle.setFill(Color.YELLOW);
-                circle.setStroke(Color.ORANGE);
-            }
-            case LIFE_SUPPORT -> {
-                circle.setFill(Color.LIGHTBLUE);
-                circle.setStroke(Color.BLUE);
-            }
-            case GENERIC -> {
-                circle.setFill(Color.LIGHTGRAY);
-                circle.setStroke(Color.GRAY);
-            }
-        }
-        
-        return circle;
     }
     
     private void positionConnector(Circle connector, Direction direction) {

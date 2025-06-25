@@ -1,27 +1,27 @@
 package it.polimi.ingsw.common.message.event;
 
-import it.polimi.ingsw.common.PlayerInfo;
+import it.polimi.ingsw.server.model.domain.player.Player;
 import java.util.List;
-import it.polimi.ingsw.client.ClientModel;
+import it.polimi.ingsw.client.core.ClientState;
 
 /**
  * Broadcast to all clients in a game lobby when its state changes (e.g., player joins/leaves).
  */
 public class GameLobbyUpdateEvent extends AbstractEvent {
-    private final List<PlayerInfo> players;
+    private final List<Player> players;
     private final int requiredPlayers;
 
-    public GameLobbyUpdateEvent(String gameId, List<PlayerInfo> players, int requiredPlayers) {
+    public GameLobbyUpdateEvent(String gameId, List<Player> players, int requiredPlayers) {
         this(gameId, players, requiredPlayers, null);
     }
 
-    public GameLobbyUpdateEvent(String gameId, List<PlayerInfo> players, int requiredPlayers, String excludePlayerId) {
+    public GameLobbyUpdateEvent(String gameId, List<Player> players, int requiredPlayers, String excludePlayerId) {
         super(EventType.GAME_LOBBY_UPDATE, gameId, excludePlayerId);
         this.players = List.copyOf(players);
         this.requiredPlayers = requiredPlayers;
     }
 
-    public List<PlayerInfo> getPlayers() {
+    public List<Player> getPlayers() {
         return players;
     }
 
@@ -46,11 +46,9 @@ public class GameLobbyUpdateEvent extends AbstractEvent {
     @Override
     public void handleOnClient(ClientEventContext context) {
         context.runOnUIThread(() -> {
-            if (context.getController() != null && context.getController().getModel() != null) {
-                ClientModel model = context.getController().getModel();
-                if (gameId.equals(model.getCurrentGameId())) {
-                    model.setPlayersInLobby(players);
-                }
+            ClientState clientState = context.getClientState();
+            if (clientState != null && gameId.equals(clientState.getCurrentGameId())) {
+                clientState.setPlayersInLobby(players);
             }
         });
     }

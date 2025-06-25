@@ -1,6 +1,6 @@
 package it.polimi.ingsw.server;
 
-import it.polimi.ingsw.common.GameInfo;
+import it.polimi.ingsw.server.model.domain.general.GameModel;
 import it.polimi.ingsw.common.message.EventPublisher;
 import it.polimi.ingsw.common.message.event.Event;
 import it.polimi.ingsw.common.message.event.PlayerLeftGameEvent;

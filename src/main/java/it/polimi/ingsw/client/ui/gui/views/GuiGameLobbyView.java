@@ -1,8 +1,8 @@
 package it.polimi.ingsw.client.ui.gui.views;
 
-import it.polimi.ingsw.client.ClientModel;
+import it.polimi.ingsw.client.core.ClientState;
 import it.polimi.ingsw.client.ui.core.BaseUIView;
-import it.polimi.ingsw.common.PlayerInfo;
+import it.polimi.ingsw.server.model.domain.player.Player;
 import it.polimi.ingsw.common.message.request.LeaveGameRequest;
 import it.polimi.ingsw.common.message.request.SetPlayerReadyRequest;
 import it.polimi.ingsw.common.message.request.StartGameRequest;
@@ -44,8 +44,8 @@ public class GuiGameLobbyView extends BaseUIView {
     }
 
     @Override
-    public ClientModel.ViewState getViewState() {
-        return ClientModel.ViewState.GAME_LOBBY;
+    public ClientState.ViewState getViewState() {
+        return ClientState.ViewState.GAME_LOBBY;
     }
 
     @Override
@@ -161,7 +161,7 @@ public class GuiGameLobbyView extends BaseUIView {
                 break;
             case "currentView":
                 // Handle view transitions
-                if (evt.getNewValue() == ClientModel.ViewState.GAME) {
+                if (evt.getNewValue() == ClientState.ViewState.GAME) {
                     // Game started, transition to game view will be handled by manager
                     context.getNotificationService().showSuccess("Game Started", "The game has begun!");
                 }
@@ -270,14 +270,14 @@ public class GuiGameLobbyView extends BaseUIView {
             return; // UI not loaded yet
         }
         
-        List<PlayerInfo> playersRaw = context.getModel().getPlayersInLobby();
+        List<Player> playersRaw = context.getModel().getPlayersInLobby();
         if (playersRaw != null) {
             // Deduplicate players by ID (keep the last occurrence)
-            Map<String, PlayerInfo> uniquePlayers = new LinkedHashMap<>();
-            for (PlayerInfo player : playersRaw) {
+            Map<String, Player> uniquePlayers = new LinkedHashMap<>();
+            for (Player player : playersRaw) {
                 uniquePlayers.put(player.getPlayerId(), player);
             }
-            List<PlayerInfo> players = new ArrayList<>(uniquePlayers.values());
+            List<Player> players = new ArrayList<>(uniquePlayers.values());
             
             playersVBox.getChildren().clear();
             
@@ -289,7 +289,7 @@ public class GuiGameLobbyView extends BaseUIView {
                 String currentPlayerId = context.getController().getPlayerId();
                 String hostId = getHostPlayerId();
                 
-                for (PlayerInfo player : players) {
+                for (Player player : players) {
                     VBox playerEntry = createPlayerEntry(player, 
                         player.getPlayerId().equals(hostId),
                         player.getPlayerId().equals(currentPlayerId));
@@ -299,7 +299,7 @@ public class GuiGameLobbyView extends BaseUIView {
         }
     }
     
-    private VBox createPlayerEntry(PlayerInfo player, boolean isHost, boolean isCurrentUser) {
+    private VBox createPlayerEntry(Player player, boolean isHost, boolean isCurrentUser) {
         VBox playerEntry = new VBox(5);
         playerEntry.getStyleClass().add("waiting-room-player-entry");
         playerEntry.setPadding(new Insets(10));
@@ -396,9 +396,9 @@ public class GuiGameLobbyView extends BaseUIView {
     }
 
     private boolean areAllPlayersReady() {
-        List<PlayerInfo> players = context.getModel().getPlayersInLobby();
+        List<Player> players = context.getModel().getPlayersInLobby();
         return players != null && !players.isEmpty() && 
-               players.stream().allMatch(PlayerInfo::isReady);
+               players.stream().allMatch(Player::isReady);
     }
 
     private void setupActions() {

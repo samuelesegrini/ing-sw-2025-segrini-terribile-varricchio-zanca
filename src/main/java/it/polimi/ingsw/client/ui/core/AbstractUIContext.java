@@ -1,7 +1,7 @@
 package it.polimi.ingsw.client.ui.core;
 
 import it.polimi.ingsw.client.controller.ClientController;
-import it.polimi.ingsw.client.ClientModel;
+import it.polimi.ingsw.client.core.ClientState;
 
 /**
  * Abstract base implementation of UIContext.
@@ -10,14 +10,14 @@ import it.polimi.ingsw.client.ClientModel;
 public abstract class AbstractUIContext implements UIContext {
     
     protected final ClientController controller;
-    protected final ClientModel model;
+    protected final ClientState clientState;
     protected final NotificationService notificationService;
     protected final ViewNavigator viewNavigator;
     protected final UIThreadService threadService;
     
     protected AbstractUIContext(ClientController controller) {
         this.controller = controller;
-        this.model = controller.getModel();
+        this.clientState = controller.getClientState();
         this.notificationService = createNotificationService();
         this.viewNavigator = createViewNavigator();
         this.threadService = createThreadService();
@@ -29,8 +29,8 @@ public abstract class AbstractUIContext implements UIContext {
     }
     
     @Override
-    public ClientModel getModel() {
-        return model;
+    public ClientState getClientState() {
+        return clientState;
     }
     
     @Override

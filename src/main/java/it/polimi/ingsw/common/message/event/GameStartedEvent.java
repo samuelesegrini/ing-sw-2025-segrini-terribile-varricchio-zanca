@@ -1,8 +1,9 @@
 package it.polimi.ingsw.common.message.event;
 
+import it.polimi.ingsw.client.core.ClientState;
+import it.polimi.ingsw.client.ui.Notification;
 import it.polimi.ingsw.client.ui.NotificationType;
 import it.polimi.ingsw.server.model.domain.general.GameModel;
-import it.polimi.ingsw.client.ClientModel;
 
 /**
  * Broadcast to all players in a game when the lobby is full and the game starts.
@@ -25,33 +26,22 @@ public class GameStartedEvent extends AbstractEvent {
     @Override
     public void handleOnClient(ClientEventContext context) {
         context.runOnUIThread(() -> {
-            // SIMPLIFIED: Direct model replacement instead of complex conversion
-            
-            // Update ClientModel for lobby/connection UI
-            if (context.getController() != null && context.getController().getModel() != null) {
-                ClientModel model = context.getController().getModel();
-                model.setCurrentView(ClientModel.ViewState.GAME);
-            }
-
-            // NEW: Simple direct GameModel usage via ClientState
-            if (context.getClientState() != null) {
-                context.getClientState().setGameModel(gameModel);
+            // Simple Direct Model Architecture: Update ClientState directly
+            ClientState clientState = context.getClientState();
+            if (clientState != null) {
+                clientState.setGameModel(gameModel);
+                clientState.setCurrentView(ClientState.ViewState.GAME);
             }
 
             // Show notification about game start
             if (context.getNotificationService() != null) {
                 context.getNotificationService().showNotification(
-                        new it.polimi.ingsw.client.ui.Notification(
+                        new Notification(
                                 "Game Started",
                                 "The building phase has begun! Build your ship before time runs out.",
                                 NotificationType.INFO
                         )
                 );
-            }
-
-            // SIMPLIFIED: Single property change notification instead of multiple
-            if (context.getController() != null && context.getController().getModel() != null) {
-                context.getController().getModel().firePropertyChange("gameStarted", false, true);
             }
         });
     }

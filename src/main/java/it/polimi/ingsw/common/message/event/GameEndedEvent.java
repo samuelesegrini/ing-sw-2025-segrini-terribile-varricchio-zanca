@@ -1,6 +1,8 @@
 package it.polimi.ingsw.common.message.event;
 
-import it.polimi.ingsw.client.ClientModel;
+import it.polimi.ingsw.client.core.ClientState;
+import it.polimi.ingsw.client.ui.Notification;
+import it.polimi.ingsw.client.ui.NotificationType;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -30,15 +32,11 @@ public class GameEndedEvent extends AbstractEvent {
     @Override
     public void handleOnClient(ClientEventContext context) {
         context.runOnUIThread(() -> {
-            // Update model state - game has ended
-            if (context.getController() != null && context.getController().getModel() != null) {
-                ClientModel model = context.getController().getModel();
-                if (gameId.equals(model.getCurrentGameId())) {
-                    // Note: setGameStarted method would need to be added to ClientModel if it doesn't exist
-                    // model.setGameStarted(false);
-                    model.setCurrentGame(null);
-                    model.setCurrentView(ClientModel.ViewState.LOBBY);
-                }
+            // Update client state - game has ended
+            ClientState clientState = context.getClientState();
+            if (clientState != null && gameId.equals(clientState.getCurrentGameId())) {
+                clientState.setCurrentGame(null);
+                clientState.setCurrentView(ClientState.ViewState.LOBBY);
             }
 
             // Show game results or end notification
@@ -51,16 +49,18 @@ public class GameEndedEvent extends AbstractEvent {
                             .forEach(entry -> scoreText.append(entry.getKey())
                                     .append(": ").append(entry.getValue()).append("\n"));
                     
-                    context.getNotificationService().showInfo(
+                    context.getNotificationService().showNotification(new Notification(
                             "Game Ended",
-                            scoreText.toString()
-                    );
+                            scoreText.toString(),
+                            NotificationType.INFO
+                    ));
                 } else {
                     // Show simple end notification
-                    context.getNotificationService().showWarning(
+                    context.getNotificationService().showNotification(new Notification(
                             "Game Ended",
-                            reason != null ? reason : "The game has ended"
-                    );
+                            reason != null ? reason : "The game has ended",
+                            NotificationType.WARNING
+                    ));
                 }
             }
 

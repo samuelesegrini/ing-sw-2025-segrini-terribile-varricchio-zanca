@@ -1,6 +1,8 @@
 package it.polimi.ingsw.common.message.event;
 
-import it.polimi.ingsw.client.ClientModel;
+import it.polimi.ingsw.client.core.ClientState;
+import it.polimi.ingsw.server.model.domain.player.Player;
+import it.polimi.ingsw.server.model.domain.general.GameModel;
 
 /**
  * Event broadcast when a player's ready status changes in the game lobby.
@@ -45,15 +47,6 @@ public class PlayerReadyChangedEvent extends AbstractEvent {
     @Override
     public void handleOnClient(ClientEventContext context) {
         context.runOnUIThread(() -> {
-            // Update model state if this is the current game
-            if (context.getController() != null && context.getController().getModel() != null) {
-                ClientModel model = context.getController().getModel();
-                if (gameId.equals(model.getCurrentGameId())) {
-                    // Update player ready status in the model
-                    model.setPlayerReadyStatus(playerId, ready);
-                }
-            }
-
             // Show notification for other players (not the one who changed status)
             if (!context.isLocalPlayer(playerId) && context.getNotificationService() != null) {
                 String message = ready 
@@ -65,13 +58,9 @@ public class PlayerReadyChangedEvent extends AbstractEvent {
                         message
                 );
             }
-
-            // Update lobby UI if available
-            // if (context.getGameUI() != null) {
-            //     // Note: This would need to be implemented based on the actual UI interface
-            //     // context.getGameUI().updatePlayerReadyStatus(playerId, ready);
-            //     // context.getGameUI().refreshLobbyView();
-            // }
+            
+            // Note: Player ready status is handled server-side and will be reflected
+            // in game lobby updates through other events or responses
         });
     }
 }

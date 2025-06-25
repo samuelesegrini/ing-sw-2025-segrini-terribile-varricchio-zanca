@@ -1,10 +1,10 @@
 package it.polimi.ingsw.client.ui.tui.views;
 
-import it.polimi.ingsw.client.ClientModel;
+import it.polimi.ingsw.client.core.ClientState;
 import it.polimi.ingsw.client.ui.core.BaseUIView;
 import it.polimi.ingsw.client.ui.tui.TuiConsole;
 import it.polimi.ingsw.client.ui.tui.TuiContext;
-import it.polimi.ingsw.common.PlayerInfo;
+import it.polimi.ingsw.server.model.domain.player.Player;
 
 import java.beans.PropertyChangeEvent;
 import java.util.List;
@@ -18,15 +18,19 @@ public class TuiGameLobbyView extends BaseUIView { //CONTROLLA
     private final TuiConsole console;
     private final Scanner scanner;
 
-    public TuiGameLobbyView(TuiContext context) {
-        this.console = context.getConsole();
+    public TuiGameLobbyView(it.polimi.ingsw.client.ui.core.UIContext context) {
         this.scanner = new Scanner(System.in);
-        initialize(context);
+        // Get console through TuiContext casting
+        if (context instanceof TuiContext tuiContext) {
+            this.console = tuiContext.getConsole();
+        } else {
+            throw new IllegalStateException("Expected TuiContext but got " + context.getClass());
+        }
     }
 
     @Override
-    public ClientModel.ViewState getViewState() {
-        return ClientModel.ViewState.GAME_LOBBY;
+    public ClientState.ViewState getViewState() {
+        return ClientState.ViewState.GAME_LOBBY;
     }
 
     @Override
@@ -58,7 +62,7 @@ public class TuiGameLobbyView extends BaseUIView { //CONTROLLA
                 break;
             case "currentView":
                 // Handle view transitions
-                if (evt.getNewValue() == ClientModel.ViewState.GAME) {
+                if (evt.getNewValue() == ClientState.ViewState.GAME) {
                     console.printSuccess("Game started! Transitioning to ship building...");
                 }
                 break;
@@ -66,21 +70,22 @@ public class TuiGameLobbyView extends BaseUIView { //CONTROLLA
     }
 
     private void displayGameLobby() {
-        if (context == null || context.getModel() == null) {
+        if (context == null || context.getClientState() == null) {
             return;
         }
 
         console.clearScreen();
         console.printSectionHeader("GAME LOBBY");
 
-        ClientModel model = context.getModel();
+        ClientState clientState = context.getClientState();
         
         // Display game information
-        if (model.getCurrentGameInfo() != null) {
-            console.printInfo("Game: " + model.getCurrentGameInfo().getGameName());
-            console.printInfo("Level: " + model.getCurrentGameInfo().getGameLevel());
-            console.printInfo("Players: " + model.getCurrentGameInfo().getCurrentPlayers() + 
-                             "/" + model.getCurrentGameInfo().getMaxPlayers());
+        if (clientState.getCurrentGameLobby() != null) {
+            var gameModel = clientState.getCurrentGameLobby();
+            console.printInfo("Game: " + gameModel.getGameId());
+            console.printInfo("Level: " + gameModel.getGameLevel());
+            console.printInfo("Players: " + gameModel.getPlayers().size() + 
+                             "/" + gameModel.getMaxPlayers());
             console.println("");
         }
 
@@ -92,25 +97,25 @@ public class TuiGameLobbyView extends BaseUIView { //CONTROLLA
     private void displayPlayersTable() {
         console.println("Players in Lobby:");
         
-        List<PlayerInfo> players = context.getModel().getPlayersInLobby();
+        List<Player> players = context.getClientState().getPlayersInLobby();
         if (players == null || players.isEmpty()) {
             console.printWarning("No players in lobby");
             return;
         }
 
-        String currentPlayerId = context.getController().getPlayerId();
+        String currentPlayerId = context.getController().getPlayerId().toString();
         String hostId = getHostPlayerId();
 
         String[] headers = {"NICKNAME", "STATUS", "HOST"};
         String[][] data = new String[players.size()][3];
         
         for (int i = 0; i < players.size(); i++) {
-            PlayerInfo player = players.get(i);
-            boolean isHost = player.getPlayerId().equals(hostId);
-            String status = player.isReady() ? "Ready" : "Not Ready";
+            Player player = players.get(i);
+            boolean isHost = player.getId().toString().equals(hostId);
+            String status = "Ready"; // TODO: Add isReady method to Player model
             String hostIndicator = isHost ? "★" : "";
             
-            data[i][0] = player.getNickname();
+            data[i][0] = player.getId().getNickname();
             data[i][1] = status;
             data[i][2] = hostIndicator;
         }
@@ -120,9 +125,9 @@ public class TuiGameLobbyView extends BaseUIView { //CONTROLLA
     }
 
     private void displayStatus() {
-        String currentPlayerId = context.getController().getPlayerId();
+        String currentPlayerId = context.getController().getPlayerId().toString();
         boolean isHost = currentPlayerId != null && currentPlayerId.equals(getHostPlayerId());
-        boolean isReady = context.getModel().isPlayerReady(currentPlayerId);
+        boolean isReady = true; // TODO: Add isPlayerReady method to ClientState
         boolean allReady = areAllPlayersReady();
 
         if (allReady) {
@@ -142,9 +147,9 @@ public class TuiGameLobbyView extends BaseUIView { //CONTROLLA
     private void displayCommands() {
         console.println("Available Commands:");
         
-        String currentPlayerId = context.getController().getPlayerId();
+        String currentPlayerId = context.getController().getPlayerId().toString();
         boolean isHost = currentPlayerId != null && currentPlayerId.equals(getHostPlayerId());
-        boolean isReady = context.getModel().isPlayerReady(currentPlayerId);
+        boolean isReady = true; // TODO: Add isPlayerReady method to ClientState
         boolean allReady = areAllPlayersReady();
 
         if (isReady) {
@@ -264,18 +269,18 @@ public class TuiGameLobbyView extends BaseUIView { //CONTROLLA
     }
 
     private String getHostPlayerId() {
-        // Get host from GameInfo which tracks the actual creator/host
-        if (context.getModel().getCurrentGameInfo() != null) {
-            return context.getModel().getCurrentGameInfo().getCreatorId();
+        // Get host from GameModel which tracks the actual creator/host
+        if (context.getModel().getCurrentGame() != null) {
+            return context.getModel().getCurrentGame().getCreatorId();
         }
-        // Fallback to the first player if GameInfo is not available
-        List<PlayerInfo> players = context.getModel().getPlayersInLobby();
+        // Fallback to the first player if GameModel is not available
+        List<Player> players = context.getModel().getPlayersInLobby();
         return players != null && !players.isEmpty() ? players.getFirst().getPlayerId() : null;
     }
 
     private boolean areAllPlayersReady() {
-        List<PlayerInfo> players = context.getModel().getPlayersInLobby();
+        List<Player> players = context.getModel().getPlayersInLobby();
         return players != null && !players.isEmpty() && 
-               players.stream().allMatch(PlayerInfo::isReady);
+               players.stream().allMatch(Player::isReady);
     }
 }

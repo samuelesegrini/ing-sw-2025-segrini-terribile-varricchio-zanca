@@ -1,10 +1,10 @@
 package it.polimi.ingsw.client.ui.tui.views;
 
-import it.polimi.ingsw.client.ClientModel;
+import it.polimi.ingsw.client.core.ClientState;
 import it.polimi.ingsw.client.ui.core.BaseUIView;
 import it.polimi.ingsw.client.ui.tui.TuiConsole;
 import it.polimi.ingsw.client.ui.tui.TuiContext;
-import it.polimi.ingsw.common.GameInfo;
+import it.polimi.ingsw.server.model.domain.general.GameModel;
 import it.polimi.ingsw.server.model.enums.GameLevel;
 import it.polimi.ingsw.server.model.enums.GamePhase;
 
@@ -26,8 +26,8 @@ public class TuiLobbyView extends BaseUIView {
     }
     
     @Override
-    public ClientModel.ViewState getViewState() {
-        return ClientModel.ViewState.LOBBY;
+    public ClientState.ViewState getViewState() {
+        return ClientState.ViewState.LOBBY;
     }
     
     @Override
@@ -85,7 +85,7 @@ public class TuiLobbyView extends BaseUIView {
     private void displayJoinableGames() {
         console.println("Available Games (Waiting for Players):");
 
-        List<GameInfo> games = context.getModel().getJoinableGames();
+        List<GameModel> games = context.getModel().getJoinableGames();
         if (games == null || games.isEmpty()) {
             console.println("No games available to join.");
             console.println("");
@@ -96,7 +96,7 @@ public class TuiLobbyView extends BaseUIView {
         String[][] data = new String[games.size()][4];
 
         for (int i = 0; i < games.size(); i++) {
-            GameInfo game = games.get(i);
+            GameModel game = games.get(i);
 
             data[i][0] = game.getGameId();
             data[i][1] = game.getGameName();
@@ -111,7 +111,7 @@ public class TuiLobbyView extends BaseUIView {
     private void displayInProgressGames() {
         console.println("Games in Progress:");
 
-        List<GameInfo> games = context.getModel().getGamesInProgress();
+        List<GameModel> games = context.getModel().getGamesInProgress();
         if (games == null || games.isEmpty()) {
             console.println("No games currently in progress.");
             console.println("");
@@ -122,7 +122,7 @@ public class TuiLobbyView extends BaseUIView {
         String[][] data = new String[games.size()][4];
 
         for (int i = 0; i < games.size(); i++) {
-            GameInfo game = games.get(i);
+            GameModel game = games.get(i);
 
             data[i][0] = game.getGameId();
             data[i][1] = game.getGameName();
@@ -137,7 +137,7 @@ public class TuiLobbyView extends BaseUIView {
     private void displayAvailableGames() {
         console.println("All Games:");
 
-        List<GameInfo> games = context.getModel().getAvailableGames();
+        List<GameModel> games = context.getModel().getAvailableGames();
         if (games == null || games.isEmpty()) {
             console.println("No games available.");
             return;
@@ -147,7 +147,7 @@ public class TuiLobbyView extends BaseUIView {
         String[][] data = new String[games.size()][5];
 
         for (int i = 0; i < games.size(); i++) {
-            GameInfo game = games.get(i);
+            GameModel game = games.get(i);
 
             data[i][0] = game.getGameId();
             data[i][1] = game.getGameName();

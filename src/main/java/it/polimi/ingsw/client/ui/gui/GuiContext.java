@@ -32,7 +32,7 @@ public class GuiContext extends AbstractUIContext {
     
     @Override
     protected ViewNavigator createViewNavigator() {
-        return new ViewNavigatorImpl(model);
+        return new ViewNavigatorImpl(clientState);
     }
     
     @Override

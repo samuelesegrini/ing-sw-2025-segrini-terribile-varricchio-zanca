@@ -39,19 +39,11 @@ public class PlaceTileResponse extends AbstractResponse {
     public void handleOnClient(ClientContext context) {
         if (isSuccess() && updatedShip != null && updatedDeck != null) {
             // NEW: Simple model replacement via ClientState
-            if (context instanceof ClientContextEnhanced enhancedContext) {
-                if (enhancedContext.getClientState() != null) {
-                    enhancedContext.getClientState().updateLocalPlayerShip(updatedShip);
-                    enhancedContext.getClientState().updateComponentDeck(updatedDeck);
-                    // UI refreshes automatically
-                }
+            if (context.getClientState() != null) {
+                context.getClientState().updateLocalPlayerShip(updatedShip);
+                context.getClientState().updateComponentDeck(updatedDeck);
+                // UI refreshes automatically
             }
-            // LEGACY: If ClientState not available, confirmation handled by event
         }
-    }
-    
-    // Interface to detect enhanced ClientContext with ClientState
-    public interface ClientContextEnhanced extends ClientContext {
-        it.polimi.ingsw.client.core.ClientState getClientState();
     }
 }

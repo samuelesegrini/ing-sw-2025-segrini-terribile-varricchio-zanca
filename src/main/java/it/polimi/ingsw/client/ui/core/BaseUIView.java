@@ -13,7 +13,6 @@ public abstract class BaseUIView implements UIView, UIRefreshable {
     protected UIContext context;
     protected boolean active = false;
     protected boolean initialized = false;
-    @Override
     public void initialize(UIContext context) {
         if (this.initialized) return;
         this.context = context;
@@ -23,7 +22,7 @@ public abstract class BaseUIView implements UIView, UIRefreshable {
         context.getClientState().registerRefreshableView(this);
         
         // Register for model changes for lobby/connection UI
-        context.getModel().addPropertyChangeListener(this);
+        context.getClientState().addPropertyChangeListener(this);
 
         LOGGER.info("Initialized view: " + getTitle());
     }
@@ -73,7 +72,7 @@ public abstract class BaseUIView implements UIView, UIRefreshable {
     public void dispose() {
         if (context != null) {
             context.getClientState().unregisterRefreshableView(this);
-            context.getModel().removePropertyChangeListener(this);
+            context.getClientState().removePropertyChangeListener(this);
         }
         active = false;
         initialized = false;

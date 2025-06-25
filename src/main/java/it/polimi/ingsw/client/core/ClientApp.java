@@ -1,9 +1,9 @@
 package it.polimi.ingsw.client.core;
 
-import it.polimi.ingsw.client.ClientModel;
 import it.polimi.ingsw.client.network.NetworkClient;
 import it.polimi.ingsw.client.ui.UIManager;
 import it.polimi.ingsw.client.ui.UIType;
+import it.polimi.ingsw.client.ui.UIContext;
 import it.polimi.ingsw.client.controller.ClientController;
 import java.util.Scanner;
 import java.util.logging.*;
@@ -17,7 +17,7 @@ public class ClientApp {
     private static final Logger LOGGER = Logger.getLogger(ClientApp.class.getName());
 
     private NetworkClient networkClient;
-    private ClientModel model;
+    private ClientState clientState;
     private ClientController controller;
     private UIManager uiManager;
 
@@ -50,10 +50,16 @@ public class ClientApp {
         LOGGER.info("Starting Galaxy Trucker Client with " + uiType + " interface");
 
         try {
-            // Initialize components
-            model = new ClientModel();
-            networkClient = new NetworkClient(model);
-            controller = new ClientController(model, networkClient);
+            // Initialize components following Simple Direct Model Architecture
+            clientState = new ClientState();
+            networkClient = new NetworkClient();
+            
+            // Create UIContext with null services for now (transitional approach)
+            UIContext uiContext = new UIContext(clientState, null, null, null);
+            controller = new ClientController(networkClient, uiContext);
+            
+            // Update UIContext with the actual controller
+            uiContext = new UIContext(clientState, controller, null, null);
             uiManager = new UIManager(uiType, controller);
 
             // Set up callbacks

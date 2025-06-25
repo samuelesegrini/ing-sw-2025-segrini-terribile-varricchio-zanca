@@ -1,6 +1,6 @@
 package it.polimi.ingsw.client.ui.gui;
 
-import it.polimi.ingsw.client.ClientModel;
+import it.polimi.ingsw.client.core.ClientState;
 import it.polimi.ingsw.client.controller.ClientController;
 import it.polimi.ingsw.client.ui.UI;
 import it.polimi.ingsw.client.ui.core.UIView;
@@ -33,7 +33,7 @@ public class GuiManager extends Application implements ViewNavigator.ViewStateCh
     
     private GuiContext context;
     private Stage primaryStage;
-    private Map<ClientModel.ViewState, UIView> views;
+    private Map<ClientState.ViewState, UIView> views;
     private UIView currentView;
     
     public GuiManager() {}
@@ -126,33 +126,33 @@ public class GuiManager extends Application implements ViewNavigator.ViewStateCh
         // Create and initialize all views
         GuiConnectionView connectionView = new GuiConnectionView(primaryStage);
         connectionView.initialize(context);
-        views.put(ClientModel.ViewState.CONNECTION, connectionView);
+        views.put(ClientState.ViewState.CONNECTION, connectionView);
         
         GuiLoginView loginView = new GuiLoginView(primaryStage);
         loginView.initialize(context);
-        views.put(ClientModel.ViewState.LOGIN, loginView);
+        views.put(ClientState.ViewState.LOGIN, loginView);
         
         GuiLobbyView lobbyView = new GuiLobbyView(primaryStage);
         lobbyView.initialize(context);
-        views.put(ClientModel.ViewState.LOBBY, lobbyView);
+        views.put(ClientState.ViewState.LOBBY, lobbyView);
 
         GuiGameLobbyView gameLobbyView = new GuiGameLobbyView(primaryStage);
         gameLobbyView.initialize(context);
-        views.put(ClientModel.ViewState.GAME_LOBBY, gameLobbyView);
+        views.put(ClientState.ViewState.GAME_LOBBY, gameLobbyView);
         
-        GuiShipBuildingView shipBuildingView = new GuiShipBuildingView(primaryStage, staticController);
+        GuiShipBuildingView shipBuildingView = new GuiShipBuildingView(primaryStage, staticController, context);
         shipBuildingView.initialize(context);
-        views.put(ClientModel.ViewState.GAME, shipBuildingView);
+        views.put(ClientState.ViewState.GAME, shipBuildingView);
         
         // TODO: Add other views
     }
     
     private void navigateToCurrentView() {
-        ClientModel.ViewState targetState = context.getModel().getCurrentView();
+        ClientState.ViewState targetState = context.getClientState().getCurrentView();
         showView(targetState);
     }
     
-    private void showView(ClientModel.ViewState viewState) {
+    private void showView(ClientState.ViewState viewState) {
         // Hide current view
         if (currentView != null && currentView.isActive()) {
             currentView.hide();
@@ -170,7 +170,7 @@ public class GuiManager extends Application implements ViewNavigator.ViewStateCh
     }
     
     @Override
-    public void onViewStateChanged(ClientModel.ViewState oldState, ClientModel.ViewState newState) {
+    public void onViewStateChanged(ClientState.ViewState oldState, ClientState.ViewState newState) {
         Platform.runLater(() -> showView(newState));
     }
     

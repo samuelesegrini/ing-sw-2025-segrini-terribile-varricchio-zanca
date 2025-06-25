@@ -1,6 +1,6 @@
 package it.polimi.ingsw.server.core;
 
-import it.polimi.ingsw.common.GameInfo;
+import it.polimi.ingsw.server.model.domain.general.GameModel;
 import it.polimi.ingsw.server.model.domain.general.config.GameConfigurationManager;
 import it.polimi.ingsw.server.model.enums.GameLevel;
 import it.polimi.ingsw.server.network.ServerNetworkManager;
@@ -153,20 +153,11 @@ public class GameSessionManager {
     /**
      * Gets all games (both available to join and in progress).
      */
-    public List<GameInfo> getAvailableGames() {
-        List<GameInfo> allGames = new ArrayList<>();
+    public List<GameModel> getAvailableGames() {
+        List<GameModel> allGames = new ArrayList<>();
 
         for (GameSession session : gameSessions.values()) {
-            allGames.add(new GameInfo(
-                    session.getGameId(),
-                    session.getGameName(),
-                    session.getCreatorId(),
-                    session.getMaxPlayers(),
-                    session.getPlayerCount(),
-                    session.getGameLevel(),
-                    session.getCurrentPhase(),
-                    session.getPlayers()
-            ));
+            allGames.add(session.getGameModel());
         }
 
         return allGames;

@@ -1,12 +1,11 @@
 package it.polimi.ingsw.client.controller;
 
-import it.polimi.ingsw.client.ClientModel;
 import it.polimi.ingsw.client.network.NetworkClient;
 import it.polimi.ingsw.client.ui.NotificationType;
 import it.polimi.ingsw.client.ui.core.NotificationService;
 import it.polimi.ingsw.client.ui.UIContext;
 import it.polimi.ingsw.client.core.ClientState;
-import it.polimi.ingsw.common.GameInfo;
+import it.polimi.ingsw.server.model.domain.player.PlayerId;
 import it.polimi.ingsw.common.message.*;
 import it.polimi.ingsw.common.message.event.ClientEventContext;
 import it.polimi.ingsw.common.message.event.Event;
@@ -20,7 +19,6 @@ import it.polimi.ingsw.common.message.response.LoginResponse;
 import it.polimi.ingsw.common.message.response.Response;
 import it.polimi.ingsw.server.model.enums.GameLevel;
 
-import java.util.ArrayList;
 import java.util.concurrent.CompletableFuture;
 import java.util.logging.*;
 
@@ -31,23 +29,17 @@ import java.util.logging.*;
 public class ClientController {
     private static final Logger LOGGER = Logger.getLogger(ClientController.class.getName());
 
-    private final ClientModel model;
     private final NetworkClient networkClient;
     private final MessageHandler messageHandler;
     
     private final UIContext uiContext;
     private final ClientState clientState;
 
-    public ClientController(ClientModel model, NetworkClient networkClient, UIContext uiContext) {
-        this.model = model;
+    public ClientController(NetworkClient networkClient, UIContext uiContext) {
         this.networkClient = networkClient;
         this.messageHandler = new MessageHandler();
         this.uiContext = uiContext;
         this.clientState = uiContext.getClientState();
-    }
-
-    public ClientModel getModel() {
-        return model;
     }
     
     public UIContext getUIContext() {
@@ -58,8 +50,8 @@ public class ClientController {
         return clientState;
     }
 
-    public String getPlayerId() {
-        return model.getPlayerId();
+    public PlayerId getPlayerId() {
+        return clientState.getPlayerId();
     }
 
     // Connection actions
@@ -77,14 +69,13 @@ public class ClientController {
         LOGGER.info("Connecting to " + host + ":" + port + " using " +
                 (useSocket ? "Socket" : "RMI"));
 
-        model.setServerHost(host);
-        model.setServerPort(port);
-
         return networkClient.connect(host, port, useSocket)
                 .thenApply(connected -> {
-                    model.setConnected(connected);
+                    clientState.setConnectionStatus(connected ? 
+                        ClientState.ConnectionStatus.CONNECTED : 
+                        ClientState.ConnectionStatus.FAILED);
                     if (connected) {
-                        model.setCurrentView(ClientModel.ViewState.LOGIN);
+                        clientState.setCurrentView(ClientState.ViewState.LOGIN);
                         LOGGER.info("Successfully connected to server");
                     } else {
                         LOGGER.warning("Failed to connect to server");
@@ -93,21 +84,21 @@ public class ClientController {
                 })
                 .exceptionally(ex -> {
                     LOGGER.log(Level.SEVERE, "Connection failed with exception", ex);
-                    model.setConnected(false);
+                    clientState.setConnectionStatus(ClientState.ConnectionStatus.FAILED);
                     return false;
                 });
     }
 
     public void disconnect() {
         networkClient.disconnect();
-        model.setConnected(false);
-        model.setAuthenticated(false);
-        model.setCurrentView(ClientModel.ViewState.CONNECTION);
+        clientState.setConnectionStatus(ClientState.ConnectionStatus.DISCONNECTED);
+        clientState.setPlayerInfo(null, null);
+        clientState.setCurrentView(ClientState.ViewState.CONNECTION);
     }
 
     // Authentication actions
     public CompletableFuture<Boolean> login(String nickname) {
-        if (!model.isConnected()) {
+        if (!clientState.isConnected()) {
             LOGGER.warning("Cannot login: not connected to server");
             return CompletableFuture.completedFuture(false);
         }
@@ -124,16 +115,14 @@ public class ClientController {
                 .thenApply(response -> {
                     if (response instanceof LoginResponse loginResp) {
                         if (loginResp.isSuccess()) {
-                            model.setPlayerId(loginResp.getPlayerId());
-                            model.setNickname(loginResp.getNickname());
-                            model.setAuthenticated(true);
-                            model.setCurrentView(ClientModel.ViewState.LOBBY);
+                            clientState.setPlayerInfo(new PlayerId(java.util.UUID.fromString(loginResp.getPlayerId()), loginResp.getNickname()), loginResp.getNickname());
+                            clientState.setCurrentView(ClientState.ViewState.LOBBY);
 
                             LOGGER.info("Login successful for player: " + loginResp.getNickname());
-                            // Request game list and handle the response to update the model
+                            // Request game list and handle the response to update the client state
                             requestGameList().thenAccept(gameListResponse -> {
                                 if (gameListResponse instanceof ListGamesResponse glr) {
-                                    model.setAvailableGames(glr.getGames());
+                                    clientState.setAvailableGames(glr.getGames());
                                 }
                             });
                             return true;
@@ -154,7 +143,7 @@ public class ClientController {
 
     // Game actions
     public CompletableFuture<Boolean> createGame(String gameName, int maxPlayers, String gameLevel) {
-        if (!model.isAuthenticated()) {
+        if (clientState.getPlayerId() == null) {
             LOGGER.warning("Cannot create game: not authenticated");
             return CompletableFuture.completedFuture(false);
         }
@@ -196,7 +185,7 @@ public class ClientController {
     }
 
     public CompletableFuture<Boolean> joinGame(String gameId) {
-        if (!model.isAuthenticated()) {
+        if (clientState.getPlayerId() == null) {
             LOGGER.warning("Cannot join game: not authenticated");
             return CompletableFuture.completedFuture(false);
         }
@@ -223,7 +212,7 @@ public class ClientController {
     }
 
     public CompletableFuture<Response> requestGameList() {
-        if (!model.isAuthenticated()) {
+        if (clientState.getPlayerId() == null) {
             LOGGER.warning("Cannot request game list: not authenticated");
             Response err = new ErrorResponse(null, "Not authenticated", ErrorResponse.AUTHENTICATION_ERROR);
             return CompletableFuture.completedFuture(err);
@@ -239,7 +228,7 @@ public class ClientController {
     }
 
     public CompletableFuture<Boolean> refreshGameList() {
-        if (!model.isAuthenticated()) {
+        if (clientState.getPlayerId() == null) {
             LOGGER.warning("Cannot refresh game list: not authenticated");
             return CompletableFuture.completedFuture(false);
         }
@@ -248,7 +237,7 @@ public class ClientController {
         return requestGameList()
                 .thenApply(response -> {
                     if (response.isSuccess() && response instanceof ListGamesResponse listGamesResponse) {
-                        model.setAvailableGames(listGamesResponse.getGames());
+                        clientState.setAvailableGames(listGamesResponse.getGames());
                         LOGGER.info("Game list refreshed successfully - " + listGamesResponse.getGames().size() + " games found");
                         return true;
                     } else {
@@ -264,7 +253,7 @@ public class ClientController {
 
     // Generic request sending method
     public CompletableFuture<Response> sendRequest(Request request) {
-        if (!model.isAuthenticated()) {
+        if (clientState.getPlayerId() == null) {
             LOGGER.warning("Cannot send request: not authenticated");
             Response err = new ErrorResponse(null, "Not authenticated", ErrorResponse.AUTHENTICATION_ERROR);
             return CompletableFuture.completedFuture(err);
@@ -279,7 +268,7 @@ public class ClientController {
 
     // Specific lobby action methods
     public CompletableFuture<Boolean> setPlayerReady(boolean ready) {
-        if (!model.isAuthenticated()) {
+        if (clientState.getPlayerId() == null) {
             LOGGER.warning("Cannot set player ready: not authenticated");
             return CompletableFuture.completedFuture(false);
         }
@@ -298,12 +287,12 @@ public class ClientController {
     }
 
     public CompletableFuture<Boolean> startGame() {
-        if (!model.isAuthenticated()) {
+        if (clientState.getPlayerId() == null) {
             LOGGER.warning("Cannot start game: not authenticated");
             return CompletableFuture.completedFuture(false);
         }
 
-        String gameId = model.getCurrentGameId();
+        String gameId = clientState.getCurrentGameId();
         if (gameId == null) {
             LOGGER.warning("Cannot start game: not in a game");
             return CompletableFuture.completedFuture(false);
@@ -323,12 +312,12 @@ public class ClientController {
     }
 
     public CompletableFuture<Boolean> leaveGame() {
-        if (!model.isAuthenticated()) {
+        if (clientState.getPlayerId() == null) {
             LOGGER.warning("Cannot leave game: not authenticated");
             return CompletableFuture.completedFuture(false);
         }
 
-        String gameId = model.getCurrentGameId();
+        String gameId = clientState.getCurrentGameId();
         if (gameId == null) {
             LOGGER.warning("Cannot leave game: not in a game");
             return CompletableFuture.completedFuture(false);
@@ -339,7 +328,7 @@ public class ClientController {
                 .thenApply(response -> {
                     if (response.isSuccess()) {
                         LOGGER.info("Left game successfully");
-                        model.setCurrentView(ClientModel.ViewState.LOBBY);
+                        clientState.setCurrentView(ClientState.ViewState.LOBBY);
                         return true;
                     } else {
                         LOGGER.warning("Failed to leave game: " + response.getErrorMessage());
@@ -350,7 +339,7 @@ public class ClientController {
 
     // Ship building actions
     public CompletableFuture<Boolean> placeTile(String componentType, int row, int col, int rotation) {
-        if (!model.isAuthenticated()) {
+        if (clientState.getPlayerId() == null) {
             LOGGER.warning("Cannot place tile: not authenticated");
             return CompletableFuture.completedFuture(false);
         }
@@ -381,7 +370,7 @@ public class ClientController {
     }
 
     public CompletableFuture<Boolean> takeTile() {
-        if (!model.isAuthenticated()) {
+        if (clientState.getPlayerId() == null) {
             LOGGER.warning("Cannot take tile: not authenticated");
             return CompletableFuture.completedFuture(false);
         }
@@ -402,7 +391,7 @@ public class ClientController {
     }
 
     public CompletableFuture<Boolean> requestFaceUpTile(String componentType) {
-        if (!model.isAuthenticated()) {
+        if (clientState.getPlayerId() == null) {
             LOGGER.warning("Cannot request face up tile: not authenticated");
             return CompletableFuture.completedFuture(false);
         }
@@ -428,7 +417,7 @@ public class ClientController {
     }
 
     public CompletableFuture<Boolean> returnTile(String componentType) {
-        if (!model.isAuthenticated()) {
+        if (clientState.getPlayerId() == null) {
             LOGGER.warning("Cannot return tile: not authenticated");
             return CompletableFuture.completedFuture(false);
         }
@@ -454,7 +443,7 @@ public class ClientController {
     }
 
     public CompletableFuture<Boolean> reserveComponent(String tileId) {
-        if (!model.isAuthenticated()) {
+        if (clientState.getPlayerId() == null) {
             LOGGER.warning("Cannot reserve component: not authenticated");
             return CompletableFuture.completedFuture(false);
         }
@@ -480,7 +469,7 @@ public class ClientController {
     }
 
     public CompletableFuture<Boolean> flipBuildingTimer() {
-        if (!model.isAuthenticated()) {
+        if (clientState.getPlayerId() == null) {
             LOGGER.warning("Cannot flip building timer: not authenticated");
             return CompletableFuture.completedFuture(false);
         }
@@ -501,7 +490,7 @@ public class ClientController {
     }
 
     public CompletableFuture<Boolean> validateShip() {
-        if (!model.isAuthenticated()) {
+        if (clientState.getPlayerId() == null) {
             LOGGER.warning("Cannot validate ship: not authenticated");
             return CompletableFuture.completedFuture(false);
         }
@@ -558,7 +547,7 @@ public class ClientController {
 
         private void handleResponse(Response response) {
             // Create client context
-            ClientContext context = new ClientContextImpl(model);
+            ClientContext context = new ClientContextImpl();
             response.handleOnClient(context);
         }
 
@@ -594,12 +583,13 @@ public class ClientController {
             
             @Override
             public String getLocalPlayerId() {
-                return model.getPlayerId();
+                return clientState.getPlayerId() != null ? clientState.getPlayerId().toString() : null;
             }
             
             @Override
             public boolean isLocalPlayer(String playerId) {
-                return playerId != null && playerId.equals(model.getPlayerId());
+                return playerId != null && clientState.getPlayerId() != null && 
+                       playerId.equals(clientState.getPlayerId().toString());
             }
             
             @Override
@@ -622,41 +612,39 @@ public class ClientController {
 
     /**
      * Implementation of ClientContext.
-     * ENHANCED VERSION: Supports both legacy ClientModel and new ClientState.
+     * Simple Direct Model Architecture: Uses only ClientState.
      */
     private class ClientContextImpl implements ClientContext {
 
-        private final ClientModel model;
-
-        public ClientContextImpl(ClientModel model) {
-            this.model = model;
-        }
-
         @Override
         public String getPlayerId() {
-            return model.getPlayerId();
+            return clientState.getPlayerId() != null ? clientState.getPlayerId().toString() : null;
         }
 
         @Override
         public String getGameId() {
-            return model.getCurrentGameId();
-        }
-
-        @Override
-        public ClientModel getModel() {
-            return model;
+            return clientState.getCurrentGameId();
         }
 
         @Override
         public void showNotification(String title, String message, NotificationType type) {
-            uiContext.getNotificationService().showNotification(title, message, type);
+            if (uiContext.getNotificationService() != null) {
+                it.polimi.ingsw.client.ui.Notification notification = 
+                    new it.polimi.ingsw.client.ui.Notification(title, message, type);
+                uiContext.getNotificationService().showNotification(notification);
+            }
         }
 
         @Override
         public void showError(String title, String message) {
-            uiContext.getNotificationService().showError(title, message);
+            if (uiContext.getNotificationService() != null) {
+                it.polimi.ingsw.client.ui.Notification notification = 
+                    new it.polimi.ingsw.client.ui.Notification(title, message, NotificationType.ERROR);
+                uiContext.getNotificationService().showNotification(notification);
+            }
         }
         
+        @Override
         public ClientState getClientState() {
             return clientState;
         }

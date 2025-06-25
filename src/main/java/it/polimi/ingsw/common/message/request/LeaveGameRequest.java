@@ -8,8 +8,8 @@ import it.polimi.ingsw.common.message.response.ErrorResponse;
 import it.polimi.ingsw.common.message.response.LeaveGameResponse;
 import it.polimi.ingsw.common.message.response.Response;
 import it.polimi.ingsw.common.message.validation.ValidationResult;
-import it.polimi.ingsw.common.GameInfo;
-import it.polimi.ingsw.common.PlayerInfo;
+import it.polimi.ingsw.server.model.domain.general.GameModel;
+import it.polimi.ingsw.server.model.domain.player.Player;
 import it.polimi.ingsw.server.core.GameSession;
 import it.polimi.ingsw.server.core.GameSessionManager;
 import it.polimi.ingsw.server.core.PlayerSessionRegistry;
@@ -96,19 +96,12 @@ public class LeaveGameRequest extends AbstractRequest {
      */
     private void publishLobbyUpdateEvent(RequestContext context, GameSession gameSession, 
                                        String gameId, PlayerSessionRegistry registry, String excludePlayerId) {
-        List<PlayerInfo> playerInfos = new ArrayList<>();
-        
-        // Build the player info list with current ready states
-        for (String pId : gameSession.getPlayerIds()) {
-            String pNickname = registry.getPlayerNickname(pId);
-            boolean isReady = gameSession.getPlayerState(pId) != null && 
-                             gameSession.getPlayerState(pId).isReady();
-            playerInfos.add(new PlayerInfo(pId, pNickname, isReady));
-        }
+        // Use server model directly - Simple Direct Model Architecture
+        List<Player> players = gameSession.getGameModel().getPlayers();
         
         // Create and publish the lobby update event (excluding the leaving player)
         GameLobbyUpdateEvent lobbyEvent = new GameLobbyUpdateEvent(
-                gameId, playerInfos, gameSession.getMaxPlayers(), excludePlayerId
+                gameId, players, gameSession.getMaxPlayers(), excludePlayerId
         );
         context.publishEvent(lobbyEvent);
     }
@@ -118,8 +111,8 @@ public class LeaveGameRequest extends AbstractRequest {
      */
     private void publishGamesListUpdateEvent(RequestContext context, GameSessionManager sessionManager, 
                                            PlayerSessionRegistry registry) {
-        // Get the current list of available games
-        List<GameInfo> availableGames = sessionManager.getAvailableGames();
+        // Get the current list of available games - use GameModel directly
+        List<GameModel> availableGames = sessionManager.getAvailableGameModels();
         
         // Create and publish the games list update event
         GamesListUpdateEvent gamesListEvent = new GamesListUpdateEvent(availableGames);

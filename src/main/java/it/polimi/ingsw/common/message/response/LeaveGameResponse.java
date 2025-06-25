@@ -1,7 +1,8 @@
 package it.polimi.ingsw.common.message.response;
 
+import it.polimi.ingsw.client.core.ClientState;
+import it.polimi.ingsw.client.ui.Notification;
 import it.polimi.ingsw.client.ui.NotificationType;
-import it.polimi.ingsw.client.ClientModel;
 
 import java.util.UUID;
 
@@ -17,24 +18,27 @@ public class LeaveGameResponse extends AbstractResponse {
     @Override
     public void handleOnClient(ClientContext context) {
         if (isSuccess()) {
-            // Update model state - clear current game and return to lobby
-            context.getModel().setCurrentGame(null);
-            context.getModel().setPlayersInLobby(new java.util.ArrayList<>());
-            context.getModel().setCurrentView(ClientModel.ViewState.LOBBY);
+            // Update client state - clear current game and return to lobby
+            ClientState clientState = context.getClientState();
+            if (clientState != null) {
+                clientState.setCurrentGame(null);
+                clientState.setPlayersInLobby(new java.util.ArrayList<>());
+                clientState.setCurrentView(ClientState.ViewState.LOBBY);
+            }
             
             // Show success notification
-            context.showNotification(
+            context.showNotification(new Notification(
                     "Left Game",
                     "You have left the game",
                     NotificationType.INFO
-            );
+            ));
         } else {
             // Show error notification
-            context.showNotification(
+            context.showNotification(new Notification(
                     "Failed to Leave",
                     getErrorMessage() != null ? getErrorMessage() : "Failed to leave game",
                     NotificationType.ERROR
-            );
+            ));
         }
     }
 

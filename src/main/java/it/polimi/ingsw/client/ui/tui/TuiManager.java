@@ -1,6 +1,6 @@
 package it.polimi.ingsw.client.ui.tui;
 
-import it.polimi.ingsw.client.ClientModel;
+import it.polimi.ingsw.client.core.ClientState;
 import it.polimi.ingsw.client.controller.ClientController;
 import it.polimi.ingsw.client.ui.core.UIView;
 import it.polimi.ingsw.client.ui.core.ViewNavigator;
@@ -21,7 +21,7 @@ public class TuiManager implements ViewNavigator.ViewStateChangeListener, it.pol
     
     private final TuiContext context;
     private final TuiConsole console;
-    private final Map<ClientModel.ViewState, UIView> views;
+    private final Map<ClientState.ViewState, UIView> views;
     private final AtomicBoolean running = new AtomicBoolean(false);
     
     private UIView currentView;
@@ -42,19 +42,19 @@ public class TuiManager implements ViewNavigator.ViewStateChangeListener, it.pol
         // Create and initialize all views
         TuiConnectionView connectionView = new TuiConnectionView();
         connectionView.initialize(context);
-        views.put(ClientModel.ViewState.CONNECTION, connectionView);
+        views.put(ClientState.ViewState.CONNECTION, connectionView);
         
         TuiLoginView loginView = new TuiLoginView(context);
-        views.put(ClientModel.ViewState.LOGIN, loginView);
+        views.put(ClientState.ViewState.LOGIN, loginView);
 
         TuiLobbyView lobbyView = new TuiLobbyView(context);
-        views.put(ClientModel.ViewState.LOBBY, lobbyView);
+        views.put(ClientState.ViewState.LOBBY, lobbyView);
 
         TuiGameLobbyView gameLobbyView = new TuiGameLobbyView(context);
-        views.put(ClientModel.ViewState.GAME_LOBBY, gameLobbyView);
+        views.put(ClientState.ViewState.GAME_LOBBY, gameLobbyView);
         
-        TuiShipBuildingView shipBuildingView = new TuiShipBuildingView(context);
-        views.put(ClientModel.ViewState.GAME, shipBuildingView);
+        TuiShipBuildingView shipBuildingView = new TuiShipBuildingView(context.getController(), context);
+        views.put(ClientState.ViewState.GAME, shipBuildingView);
         
         // TODO: Add other views (lobby browser) as they are migrated
         
@@ -89,11 +89,11 @@ public class TuiManager implements ViewNavigator.ViewStateChangeListener, it.pol
     }
     
     private void navigateToCurrentView() {
-        ClientModel.ViewState targetState = context.getModel().getCurrentView();
+        ClientState.ViewState targetState = context.getClientState().getCurrentView();
         showView(targetState);
     }
     
-    private void showView(ClientModel.ViewState viewState) {
+    private void showView(ClientState.ViewState viewState) {
         // Hide the current view
         if (currentView != null && currentView.isActive()) {
             currentView.hide();
@@ -111,7 +111,7 @@ public class TuiManager implements ViewNavigator.ViewStateChangeListener, it.pol
     }
     
     @Override
-    public void onViewStateChanged(ClientModel.ViewState oldState, ClientModel.ViewState newState) {
+    public void onViewStateChanged(ClientState.ViewState oldState, ClientState.ViewState newState) {
         showView(newState);
     }
     

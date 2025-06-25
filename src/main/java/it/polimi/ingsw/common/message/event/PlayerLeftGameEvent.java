@@ -1,6 +1,6 @@
 package it.polimi.ingsw.common.message.event;
 
-import it.polimi.ingsw.client.ClientModel;
+import it.polimi.ingsw.client.core.ClientState;
 
 /**
  * Event broadcast when a player leaves a game lobby or active game.

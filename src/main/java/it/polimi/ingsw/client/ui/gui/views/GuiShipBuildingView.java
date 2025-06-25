@@ -1,12 +1,12 @@
 package it.polimi.ingsw.client.ui.gui.views;
 
-import it.polimi.ingsw.client.ClientModel;
+import it.polimi.ingsw.client.core.ClientState;
 import it.polimi.ingsw.client.controller.ClientController;
 import it.polimi.ingsw.client.core.UIRefreshable;
 import it.polimi.ingsw.client.ui.UIContext;
 import it.polimi.ingsw.client.ui.core.BaseUIView;
 import it.polimi.ingsw.client.ui.gui.components.*;
-import it.polimi.ingsw.common.PlayerInfo;
+import it.polimi.ingsw.server.model.domain.player.Player;
 import it.polimi.ingsw.server.model.domain.ship.Position;
 import it.polimi.ingsw.server.model.domain.ship.Ship;
 import it.polimi.ingsw.server.model.domain.ship.components.Component;
@@ -58,8 +58,8 @@ public class GuiShipBuildingView extends BaseUIView implements UIRefreshable {
     }
 
     @Override
-    public ClientModel.ViewState getViewState() {
-        return ClientModel.ViewState.GAME;
+    public ClientState.ViewState getViewState() {
+        return ClientState.ViewState.GAME;
     }
 
     @Override

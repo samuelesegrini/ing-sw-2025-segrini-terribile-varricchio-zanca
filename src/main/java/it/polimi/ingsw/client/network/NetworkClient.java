@@ -1,6 +1,5 @@
 package it.polimi.ingsw.client.network;
 
-import it.polimi.ingsw.client.ClientModel;
 import it.polimi.ingsw.common.message.Message;
 import it.polimi.ingsw.common.message.request.Request;
 import it.polimi.ingsw.common.message.response.Response;
@@ -14,18 +13,17 @@ import java.util.logging.Logger;
 
 /**
  * Main network client that manages connections and message handling.
+ * Simple Direct Model Architecture: No ClientModel dependency.
  */
 public class NetworkClient {
     private static final Logger LOGGER = Logger.getLogger(NetworkClient.class.getName());
 
-    private final ClientModel model;
     private NetworkAdapter adapter;
     private Consumer<Message> messageHandler;
     private final Map<UUID, CompletableFuture<Response>> pendingRequests;
     private final ExecutorService messageExecutor;
 
-    public NetworkClient(ClientModel model) {
-        this.model = model;
+    public NetworkClient() {
         this.pendingRequests = new ConcurrentHashMap<>();
         this.messageExecutor = Executors.newSingleThreadExecutor(r -> {
             Thread t = new Thread(r);

@@ -1,6 +1,6 @@
 package it.polimi.ingsw.common.message.event;
 
-import it.polimi.ingsw.common.GameInfo;
+import it.polimi.ingsw.server.model.domain.general.GameModel;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -10,14 +10,14 @@ import java.util.List;
  * This includes when games are created, players join/leave, or games are deleted.
  */
 public class GamesListUpdateEvent extends AbstractEvent {
-    private final List<GameInfo> availableGames;
+    private final List<GameModel> availableGames;
 
-    public GamesListUpdateEvent(List<GameInfo> availableGames) {
+    public GamesListUpdateEvent(List<GameModel> availableGames) {
         super(EventType.GAMES_LIST_UPDATE, null, null); // Global event, no specific game or player
         this.availableGames = new ArrayList<>(availableGames);
     }
 
-    public List<GameInfo> getAvailableGames() {
+    public List<GameModel> getAvailableGames() {
         return new ArrayList<>(availableGames);
     }
 

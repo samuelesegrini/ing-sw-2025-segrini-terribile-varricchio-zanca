@@ -47,34 +47,10 @@ public class ComponentTakenEvent extends AbstractEvent {
     @Override
     public void handleOnClient(ClientEventContext context) {
         context.runOnUIThread(() -> {
-            // SIMPLIFIED: Direct model updates instead of complex conversion
-            
-            // NEW: Simple direct model update via ClientState
-            if (context.getClientState() != null) {
-                // Update the player in game model
-                context.getClientState().updatePlayer(player);
-                // Update the component deck state
-                context.getClientState().updateComponentDeck(updatedDeck);
-                // UI refreshes automatically via ClientState.refreshCurrentView()
-            } else {
-                // LEGACY: Fallback to LocalGameState for backward compatibility
-                if (context.isLocalPlayer(getPlayerId())) {
-                    if (component != null && component.getConnectors() != null) {
-                        // Create ComponentInstance from complete server data
-                        it.polimi.ingsw.client.core.state.ComponentInstance componentInstance = 
-                            new it.polimi.ingsw.client.core.state.ComponentInstance(
-                                component.getId(),
-                                component.getType(),
-                                component.getConnectors()
-                            );
-                        componentInstance.setDirection(component.getCurrentDirection());
-                        
-                        // Add to held tiles (hand) - not reservation area
-                        it.polimi.ingsw.client.core.state.LocalGameState.getInstance().addHeldTile(componentInstance);
-                        context.getController().getModel().firePropertyChange("heldTiles", null, null);
-                    }
-                }
-            }
+            // SIMPLIFIED: Direct model updates via ClientState
+            context.getClientState().updatePlayer(player);
+            context.getClientState().updateComponentDeck(updatedDeck);
+            // UI refreshes automatically via ClientState.refreshCurrentView()
 
             // Show notification - different message than reservation
             if (context.getNotificationService() != null) {

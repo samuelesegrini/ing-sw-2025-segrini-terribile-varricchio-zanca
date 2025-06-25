@@ -1,10 +1,10 @@
 package it.polimi.ingsw.common.message.event;
 
-import it.polimi.ingsw.client.ClientModel;
+import it.polimi.ingsw.client.core.ClientState;
 // REMOVED: LocalGameState no longer needed
 import it.polimi.ingsw.client.ui.Notification;
-import it.polimi.ingsw.common.GameInfo;
-import it.polimi.ingsw.common.PlayerInfo;
+import it.polimi.ingsw.server.model.domain.general.GameModel;
+import it.polimi.ingsw.server.model.domain.player.Player;
 import it.polimi.ingsw.client.ui.NotificationType;
 import it.polimi.ingsw.server.model.enums.GameLevel;
 import it.polimi.ingsw.server.model.enums.GamePhase;
@@ -42,8 +42,8 @@ public class GameCreatedEvent extends AbstractEvent {
         LOGGER.log(Level.SEVERE, "GameCreatedEvent received on client. Creator ID: " + creatorId + ". Is this the local player? " + context.isLocalPlayer(creatorId));
 
         // Create game info for the new game
-        PlayerInfo creatorInfo = new PlayerInfo(creatorId, creatorNickname, true);
-        GameInfo gameInfo = new GameInfo(gameId, gameName, creatorId, maxPlayers, 1, gameLevel,
+        Player creatorInfo = new Player(creatorId, creatorNickname, true);
+        GameModel gameInfo = new GameModel(gameId, gameName, creatorId, maxPlayers, 1, gameLevel,
                 GamePhase.SETUP, Collections.singletonList(creatorInfo));
 
         // Add game to available games list for all recipients
@@ -55,7 +55,7 @@ public class GameCreatedEvent extends AbstractEvent {
             
             // Set current game and transition to game lobby
             context.getController().getModel().setCurrentGame(gameInfo);
-            context.getController().getModel().setCurrentView(ClientModel.ViewState.GAME_LOBBY);
+            context.getController().getModel().setCurrentView(ClientState.ViewState.GAME_LOBBY);
 
         } else {
             // For other players, show a notification

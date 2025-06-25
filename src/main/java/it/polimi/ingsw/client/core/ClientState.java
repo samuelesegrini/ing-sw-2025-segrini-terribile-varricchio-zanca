@@ -1,9 +1,8 @@
 package it.polimi.ingsw.client.core;
 
-import it.polimi.ingsw.common.GameInfo;
 import it.polimi.ingsw.server.model.domain.general.GameModel;
 import it.polimi.ingsw.server.model.domain.player.Player;
-import it.polimi.ingsw.server.model.domain.player.PlayerId; // Added import
+import it.polimi.ingsw.server.model.domain.player.PlayerId;
 import it.polimi.ingsw.server.model.domain.ship.Ship;
 import it.polimi.ingsw.server.model.domain.general.ComponentDeck;
 import it.polimi.ingsw.server.model.enums.GamePhase;
@@ -36,9 +35,9 @@ public class ClientState {
     private String playerNickname;
 
     // Lobby State
-    private List<GameInfo> availableGames;
+    private List<GameModel> availableGames;
     private List<Player> playersInLobby;
-    private GameInfo currentGameLobby;
+    private GameModel currentGameLobby;
 
     // Game State (null when not in game)
     private GameModel gameModel;
@@ -77,21 +76,21 @@ public class ClientState {
     }
 
     // === Lobby Management ===
-    public void setAvailableGames(List<GameInfo> games) {
+    public void setAvailableGames(List<GameModel> games) {
         this.availableGames = games;
         pcs.firePropertyChange("availableGames", null, games);
     }
 
-    public List<GameInfo> getAvailableGames() {
+    public List<GameModel> getAvailableGames() {
         return availableGames;
     }
 
-    public void setCurrentGameLobby(GameInfo gameInfo) {
-        this.currentGameLobby = gameInfo;
-        pcs.firePropertyChange("currentGameLobby", null, gameInfo);
+    public void setCurrentGameLobby(GameModel gameModel) {
+        this.currentGameLobby = gameModel;
+        pcs.firePropertyChange("currentGameLobby", null, gameModel);
     }
 
-    public GameInfo getCurrentGameLobby() {
+    public GameModel getCurrentGameLobby() {
         return currentGameLobby;
     }
 
@@ -196,6 +195,10 @@ public class ClientState {
 
     public boolean isInGame() {
         return gameModel != null;
+    }
+    
+    public String getCurrentGameId() {
+        return currentGameLobby != null ? currentGameLobby.getGameId() : null;
     }
 
     // Simple UI Updates - Only Current View

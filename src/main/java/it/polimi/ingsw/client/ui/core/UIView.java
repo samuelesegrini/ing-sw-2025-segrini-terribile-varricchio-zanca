@@ -1,6 +1,6 @@
 package it.polimi.ingsw.client.ui.core;
 
-import it.polimi.ingsw.client.ClientModel;
+import it.polimi.ingsw.client.core.ClientState;
 import java.beans.PropertyChangeListener;
 
 /**
@@ -16,7 +16,7 @@ public interface UIView extends PropertyChangeListener {
     /**
      * Gets the view state this view represents.
      */
-    ClientModel.ViewState getViewState();
+    ClientState.ViewState getViewState();
     
     /**
      * Gets a human-readable title for this view.

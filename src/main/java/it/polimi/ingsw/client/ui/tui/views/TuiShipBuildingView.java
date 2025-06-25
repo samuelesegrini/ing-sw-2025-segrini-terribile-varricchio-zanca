@@ -1,6 +1,6 @@
 package it.polimi.ingsw.client.ui.tui.views;
 
-import it.polimi.ingsw.client.ClientModel;
+import it.polimi.ingsw.client.core.ClientState;
 import it.polimi.ingsw.client.controller.ClientController;
 import it.polimi.ingsw.client.ui.core.BaseUIView;
 import it.polimi.ingsw.client.ui.UIContext;
@@ -22,8 +22,8 @@ public class TuiShipBuildingView extends BaseUIView implements UIRefreshable {
     }
 
     @Override
-    public ClientModel.ViewState getViewState() {
-        return ClientModel.ViewState.GAME;
+    public ClientState.ViewState getViewState() {
+        return ClientState.ViewState.GAME;
     }
 
     @Override

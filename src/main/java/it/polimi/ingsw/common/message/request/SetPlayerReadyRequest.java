@@ -1,6 +1,6 @@
 package it.polimi.ingsw.common.message.request;
 
-import it.polimi.ingsw.common.PlayerInfo;
+import it.polimi.ingsw.server.model.domain.player.Player;
 import it.polimi.ingsw.common.message.event.GameLobbyUpdateEvent;
 import it.polimi.ingsw.common.message.event.PlayerReadyChangedEvent;
 import it.polimi.ingsw.common.message.response.Response;

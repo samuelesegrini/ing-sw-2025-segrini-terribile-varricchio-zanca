@@ -1,8 +1,7 @@
 package it.polimi.ingsw.common.message.request;
 
-import it.polimi.ingsw.common.ComponentData;
-import it.polimi.ingsw.common.GameInfo;
-import it.polimi.ingsw.common.PlayerInfo;
+import it.polimi.ingsw.server.model.domain.general.GameModel;
+import it.polimi.ingsw.server.model.domain.player.Player;
 import it.polimi.ingsw.common.message.event.GameStartedEvent;
 import it.polimi.ingsw.common.message.event.GamesListUpdateEvent;
 import it.polimi.ingsw.common.message.response.GenericSuccessResponse;
@@ -105,78 +104,13 @@ public class StartGameRequest extends AbstractRequest {
         }
         LOGGER.info("✅ GAME STARTED - Successfully started game: " + gameId);
 
-        // Prepare game started event
-        List<PlayerInfo> playerInfos = new ArrayList<>();
-        for (String pId : gameSession.getPlayerIds()) {
-            String pNickname = registry.getPlayerNickname(pId);
-            playerInfos.add(new PlayerInfo(pId, pNickname, true));
-        }
+        // Use server GameModel directly - Simple Direct Model Architecture
+        GameModel gameModel = gameSession.getGameModel();
 
-        // Build full building phase state maps with ComponentData
-        Map<String, Map<Position, ComponentData>> playerShipGrids = new HashMap<>();
-        Map<String, List<ComponentData>> playerAvailableTiles = new HashMap<>();
-        Map<String, List<ComponentData>> playerHeldTiles = new HashMap<>();
-
-        Map<String, Set<Position>> playerForbiddenPositions = new java.util.HashMap<>();
-        Map<String, Long> playerBuildingTimeRemaining = new java.util.HashMap<>();
-        Map<String, Boolean> playerTimerFlipped = new java.util.HashMap<>();
-
-        for (String pId : gameSession.getPlayerIds()) {
-            GameSession.ShipBuildingSyncState syncState = gameSession.getShipBuildingSyncState(pId);
-            if (syncState != null) {
-                // Convert ComponentType maps to ComponentData maps
-                Map<Position, ComponentData> shipGridData = new HashMap<>();
-                for (Map.Entry<Position, ComponentType> entry : syncState.shipGrid.entrySet()) {
-                    // Create ComponentData with minimal information for placed components
-                    ComponentData componentData = new ComponentData(
-                        "placed-" + entry.getValue().name() + "-" + entry.getKey().hashCode(),
-                        entry.getValue(),
-                        new HashMap<>() // Empty connectors map
-                    );
-                    shipGridData.put(entry.getKey(), componentData);
-                }
-                
-                List<ComponentData> availableData = new ArrayList<>();
-                // Get actual component data with real connectors from server
-                for (Map.Entry<String, Component> entry : gameSession.getAvailableComponents().entrySet()) {
-                    Component component = entry.getValue();
-                    ComponentData componentData = new ComponentData(
-                        entry.getKey(), // Use actual component ID
-                        component.getType(),
-                        component.getConnectors() // Use actual connectors from component
-                    );
-                    availableData.add(componentData);
-                }
-                
-                List<ComponentData> heldData = new ArrayList<>();
-                List<String> heldComponentIds = gameSession.getPlayerHeldComponents(pId);
-                for (String componentId : heldComponentIds) {
-                    Component component = gameSession.getAvailableComponent(componentId);
-                    if (component != null) {
-                        ComponentData componentData = new ComponentData(
-                            componentId, // Use actual component ID
-                            component.getType(),
-                            component.getConnectors() // Use actual connectors from component
-                        );
-                        heldData.add(componentData);
-                    }
-                }
-                
-                playerShipGrids.put(pId, shipGridData);
-                playerAvailableTiles.put(pId, availableData);
-                playerHeldTiles.put(pId, heldData);
-                playerForbiddenPositions.put(pId, syncState.forbiddenPositions);
-                playerBuildingTimeRemaining.put(pId, syncState.buildingTimeRemaining);
-                playerTimerFlipped.put(pId, syncState.timerFlipped);
-            }
-        }
+        // Simple Direct Model Architecture - no complex DTO conversion needed
         LOGGER.info("📢 EVENT PUBLISH - Publishing GameStartedEvent for game: " + gameId + 
-                   " with " + playerInfos.size() + " players entering building phase");
-        GameStartedEvent event = new GameStartedEvent(
-                gameId, playerInfos, gameSession.getShipGridConfig(),
-                playerShipGrids, playerAvailableTiles, playerHeldTiles,
-                playerForbiddenPositions, playerBuildingTimeRemaining, playerTimerFlipped
-        );
+                   " with " + gameModel.getPlayers().size() + " players entering building phase");
+        GameStartedEvent event = new GameStartedEvent(gameId, gameModel);
         context.publishEvent(event);
         LOGGER.fine("✅ EVENT PUBLISHED - GameStartedEvent sent to event system");
 
@@ -185,12 +119,12 @@ public class StartGameRequest extends AbstractRequest {
         LOGGER.fine("✅ GAMES LIST UPDATED - Games list update published after game phase change");
 
         LOGGER.info("🎉 START GAME SUCCESS - Game " + gameId + " successfully started with " + 
-                   playerInfos.size() + " players entering building phase");
+                   gameModel.getPlayers().size() + " players entering building phase");
         return new GenericSuccessResponse(getCorrelationId());
     }
 
     private void publishGamesListUpdateEvent(RequestContext context, GameSessionManager sessionManager) {
-        List<GameInfo> availableGames = sessionManager.getAvailableGames();
+        List<GameModel> availableGames = sessionManager.getAvailableGameModels();
         GamesListUpdateEvent gamesListEvent = new GamesListUpdateEvent(availableGames);
         context.publishEvent(gamesListEvent);
     }
