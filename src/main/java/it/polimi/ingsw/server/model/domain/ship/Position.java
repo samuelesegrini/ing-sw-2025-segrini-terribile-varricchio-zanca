@@ -2,9 +2,12 @@ package it.polimi.ingsw.server.model.domain.ship;
 
 import it.polimi.ingsw.server.model.enums.ship.Direction;
 
+import java.io.Serializable;
 import java.util.Objects;
 
-public class Position {
+public class Position implements Serializable {
+    private final static long serialVersionUID = 1L;
+
     private final int row;
     private final int col;
 

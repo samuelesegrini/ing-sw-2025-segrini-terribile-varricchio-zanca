@@ -5,11 +5,15 @@ import it.polimi.ingsw.server.model.domain.general.GameModel;
 import it.polimi.ingsw.server.model.enums.adventure.AdventureType;
 import it.polimi.ingsw.server.model.enums.adventure.CardLevel;
 
+import java.io.Serializable;
+
 /**
  * Represents a generic adventure card used in the game.
  * The specific behavior and effects of the card depend on its type and level.
  */
-public abstract class AdventureCard {
+public abstract class AdventureCard implements Serializable {
+    private final static long serialVersionUID = 1L;
+
     private String id;
     private CardLevel level;
     private String description;

@@ -13,9 +13,12 @@ import it.polimi.ingsw.server.model.domain.ship.components.Shield;
 import it.polimi.ingsw.server.model.enums.ship.ConnectorType;
 import it.polimi.ingsw.server.model.enums.ship.Direction;
 
+import java.io.Serializable;
 import java.util.*;
 
-public class Ship {
+public class Ship implements Serializable {
+    private final static long serialVersionUID = 1L;
+
     private GameLevel level;
     private Component[][] board;
     public Set<Position> forbiddenPositions;

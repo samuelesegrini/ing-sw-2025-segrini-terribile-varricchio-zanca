@@ -6,11 +6,14 @@ import it.polimi.ingsw.server.model.enums.ship.ComponentType;
 import it.polimi.ingsw.server.model.enums.ship.ConnectorType;
 import it.polimi.ingsw.server.model.enums.ship.Direction;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-public abstract class Component {
+public abstract class Component implements Serializable {
+    private final static long serialVersionUID = 1L;
+
     protected String id;
     protected ComponentType type;
     protected Direction direction;

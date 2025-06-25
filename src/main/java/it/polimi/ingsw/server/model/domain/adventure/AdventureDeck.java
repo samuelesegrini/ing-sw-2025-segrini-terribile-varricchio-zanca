@@ -5,6 +5,7 @@ import it.polimi.ingsw.server.model.util.PileIdentifier;
 import it.polimi.ingsw.server.model.domain.adventure.card.AdventureCard;
 import it.polimi.ingsw.server.model.domain.player.PlayerId;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -23,7 +24,9 @@ import java.util.LinkedList;
  *
  * It tracks which players are viewing which predictable piles during setup.
  */
-public class AdventureDeck {
+public class AdventureDeck implements Serializable {
+    private final static long serialVersionUID = 1L;
+
     private final GameLevel gameLevel;
     private List<List<AdventureCard>> uncoveredPiles; // For L2/L3 setup: the 3 predictable piles
     private LinkedList<AdventureCard> unknownOrTestFlightPile; // For L2/L3 setup: the 1 unknown pile; For TestFlight: all cards

@@ -1,8 +1,11 @@
 package it.polimi.ingsw.server.model.domain.player;
 
+import java.io.Serializable;
 import java.util.UUID;
 
-public class PlayerId {
+public class PlayerId implements Serializable {
+    private final static long serialVersionUID = 1L;
+
     private UUID value;
     private String nickname;
 

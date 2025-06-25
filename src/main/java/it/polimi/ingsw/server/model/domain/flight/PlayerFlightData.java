@@ -2,7 +2,11 @@ package it.polimi.ingsw.server.model.domain.flight;
 
 import it.polimi.ingsw.server.model.enums.flight.FlightStatus;
 
-public class PlayerFlightData {
+import java.io.Serializable;
+
+public class PlayerFlightData implements Serializable {
+    private final static long serialVersionUID = 1L;
+
     private int position;
     private int lapsCompleted;
     private int startPosition;

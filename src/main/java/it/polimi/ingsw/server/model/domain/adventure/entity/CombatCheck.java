@@ -4,10 +4,12 @@ import it.polimi.ingsw.server.model.domain.player.Player;
 import it.polimi.ingsw.server.model.enums.adventure.CombatAttributeType;
 import it.polimi.ingsw.server.model.enums.adventure.PenaltyType;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-public class CombatCheck {
+public class CombatCheck implements Serializable {
+    private final static long serialVersionUID = 1L;
 
     private CombatAttributeType attribute;
     private PenaltyType penaltyType;

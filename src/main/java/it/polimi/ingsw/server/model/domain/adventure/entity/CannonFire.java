@@ -3,7 +3,11 @@ package it.polimi.ingsw.server.model.domain.adventure.entity;
 import it.polimi.ingsw.server.model.enums.adventure.ShotIntensity;
 import it.polimi.ingsw.server.model.enums.ship.Direction;
 
-public class CannonFire {
+import java.io.Serializable;
+
+public class CannonFire implements Serializable {
+    private final static long serialVersionUID = 1L;
+
     private Direction approach;
     private ShotIntensity intensity;
 

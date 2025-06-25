@@ -2,13 +2,16 @@ package it.polimi.ingsw.server.model.domain.adventure.entity;
 
 import it.polimi.ingsw.server.model.enums.resource.GoodType;
 
+import java.io.Serializable;
 import java.util.Map;
 /**
  * Represents a planet in the game. A planet can be visited by a player during a Planets event.
  * Each planet has a list of goods available for collection, and players can land on the planet to pick them up.
  * The planet tracks whether it has been visited and allows querying the quantities of specific goods.
  */
-public class Planet {
+public class Planet implements Serializable {
+    private final static long serialVersionUID = 1L;
+
     private int number;
     private Map<GoodType, Integer> goodQuantities;
     private boolean visited;

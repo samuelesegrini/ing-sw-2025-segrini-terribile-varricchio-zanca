@@ -3,7 +3,10 @@ package it.polimi.ingsw.server.model.domain.adventure.entity;
 import it.polimi.ingsw.server.model.enums.adventure.ShotIntensity;
 import it.polimi.ingsw.server.model.enums.ship.Direction;
 
-public class Meteor {
+import java.io.Serializable;
+
+public class Meteor implements Serializable {
+    private final static long serialVersionUID = 1L;
 
     private ShotIntensity intensity;
     private Direction approach;
