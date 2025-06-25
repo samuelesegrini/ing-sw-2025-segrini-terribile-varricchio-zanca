@@ -44,7 +44,7 @@ public class CommandDispatcher {
                 Runtime.getRuntime().availableProcessors() * 2,
                 r -> {
                     Thread t = new Thread(r);
-                    t.setName("request-processor-" + t.getId());
+                    t.setName("request-processor-" + t.threadId());
                     return t;
                 }
         );

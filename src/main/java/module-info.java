@@ -39,7 +39,7 @@ module it.polimi.ingsw2025segriniterribilevarricchiozanca {
     exports it.polimi.ingsw.client.ui.tui;
     exports it.polimi.ingsw.client.ui.tui.views;
 
-    opens it.polimi.ingsw.client to javafx.fxml;
+    // NOTE: it.polimi.ingsw.client package removed - no Java files in root client package
     opens it.polimi.ingsw.client.core to javafx.fxml;
     opens it.polimi.ingsw.client.ui.gui to javafx.fxml;
     opens it.polimi.ingsw.client.ui.gui.views to javafx.fxml;

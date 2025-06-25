@@ -38,7 +38,7 @@ public class GameSessionManager {
         this.configManager = new GameConfigurationManager();
         this.gameExecutor = Executors.newCachedThreadPool(r -> {
             Thread t = new Thread(r);
-            t.setName("game-executor-" + t.getId());
+            t.setName("game-executor-" + t.threadId());
             return t;
         });
 

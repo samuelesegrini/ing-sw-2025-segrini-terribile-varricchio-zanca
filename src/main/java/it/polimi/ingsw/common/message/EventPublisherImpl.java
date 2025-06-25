@@ -33,7 +33,7 @@ public class EventPublisherImpl implements EventPublisher {
         this.sessionManager = sessionManager;
         this.eventExecutor = Executors.newCachedThreadPool(r -> {
             Thread t = new Thread(r);
-            t.setName("event-publisher-" + t.getId());
+            t.setName("event-publisher-" + t.threadId());
             t.setDaemon(true);
             return t;
         });
