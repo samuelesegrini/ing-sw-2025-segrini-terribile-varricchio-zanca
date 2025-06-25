@@ -57,6 +57,9 @@ class AdventureDeckTest {
         pileid = PileIdentifier.BOTTOM_LEFT;
         assertFalse(deck.canPlayerViewPile(playerid, pileid));
 
+        deck.startFlightPhase();
+        assertFalse(deck.canPlayerViewPile(playerid, pileid));
+
 
 
     }

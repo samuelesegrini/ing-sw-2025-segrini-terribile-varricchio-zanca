@@ -25,11 +25,22 @@ class DirectionTest {
 
         assertEquals(dir.getRotationSteps(dir, dir2), 2);
 
+        assertEquals(dir.getRotationSteps(dir, dir), 0);
+
         dir2 = Direction.LEFT;
         assertEquals(dir.getRotationSteps(dir, dir2),1);
 
         dir2 = Direction.DOWN;
         assertEquals(dir.getOpposite(), Direction.DOWN);
+
+        dir = Direction.RIGHT;
+        assertEquals(Direction.LEFT, dir.getOpposite());
+
+        dir = Direction.UP;
+        assertEquals(dir.getOpposite(), Direction.DOWN);
+
+        dir = Direction.LEFT;
+        assertEquals(dir.getOpposite(), Direction.RIGHT);
 
 
         assertEquals(dir2.rotateClockwise(), Direction.LEFT);

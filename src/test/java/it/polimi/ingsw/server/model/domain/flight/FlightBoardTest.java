@@ -1,3 +1,127 @@
+package it.polimi.ingsw.server.model.domain.flight;
+
+import it.polimi.ingsw.server.model.domain.flight.*;
+import it.polimi.ingsw.server.model.domain.player.Player;
+import it.polimi.ingsw.server.model.enums.flight.FlightStatus;
+import it.polimi.ingsw.server.model.enums.GameLevel;
+import it.polimi.ingsw.server.model.enums.player.PlayerOrder;
+import it.polimi.ingsw.server.model.enums.resource.GoodType;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import java.util.*;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+class FlightBoardTest {
+
+    private FlightBoard flightBoard;
+    private Player player1;
+    private Player player2;
+    private Player player3;
+    Route routeTestFlight = new Route(GameLevel.TEST_FLIGHT, 18, List.of(0, 1, 2, 4), null);
+    Route route;
+
+    @BeforeEach
+    void setUp() {
+        List<Integer> startingPositions;
+        startingPositions = new ArrayList<>();
+        startingPositions.add(1);
+        startingPositions.add(2);
+        startingPositions.add(3);
+
+        Map<PlayerOrder, Integer> positionBonus;
+        positionBonus = new HashMap<>();
+        positionBonus.put(PlayerOrder.FIRST, 4);
+        positionBonus.put(PlayerOrder.SECOND, 2);
+        positionBonus.put(PlayerOrder.THIRD, 1);
+
+        Map<GoodType, Integer> resourceBonus;
+        resourceBonus = new HashMap<>();
+        resourceBonus.put(GoodType.RED, 1);
+        resourceBonus.put(GoodType.BLUE, 2);
+        resourceBonus.put(GoodType.YELLOW, 3);
+        resourceBonus.put(GoodType.GREEN, 4);
+
+        RewardSystem rewardSystem;
+        rewardSystem = new RewardSystem(GameLevel.LEVEL_II, positionBonus, resourceBonus, 5, 1);
+        route = new Route(GameLevel.LEVEL_II, 30, startingPositions, rewardSystem);
+
+        flightBoard = new FlightBoard(GameLevel.TEST_FLIGHT, route, 3);
+
+
+    }
+
+    @Test
+    void testInitialPositionIsZero() {
+
+
+        flightBoard.registerPlayer(player1);
+        assertEquals(1, flightBoard.getPlayerData(player1).getPosition(), "La posizione iniziale dovrebbe essere 1");
+
+        flightBoard.registerPlayer(player2);
+        assertEquals(2, flightBoard.getPlayerData(player2).getPosition());
+
+        flightBoard.registerPlayer(player3);
+        assertEquals(3, flightBoard.getPlayerData(player3).getPosition());
+    }
+
+    @Test
+    void test() {
+        List<Integer> startingPositions;
+        startingPositions = new ArrayList<>();
+        startingPositions.add(1);
+        startingPositions.add(2);
+        startingPositions.add(3);
+
+        Map<PlayerOrder, Integer> positionBonus;
+        positionBonus = new HashMap<>();
+        positionBonus.put(PlayerOrder.FIRST, 4);
+        positionBonus.put(PlayerOrder.SECOND, 2);
+        positionBonus.put(PlayerOrder.THIRD, 1);
+
+        Map<GoodType, Integer> resourceBonus;
+        resourceBonus = new HashMap<>();
+        resourceBonus.put(GoodType.RED, 1);
+        resourceBonus.put(GoodType.BLUE, 2);
+        resourceBonus.put(GoodType.YELLOW, 3);
+        resourceBonus.put(GoodType.GREEN, 4);
+
+        RewardSystem rewardSystem;
+        rewardSystem = new RewardSystem(GameLevel.LEVEL_II, positionBonus, resourceBonus, 5, 1);
+        Route route = new Route(GameLevel.LEVEL_II, 30, startingPositions, rewardSystem);
+
+        flightBoard = new FlightBoard(GameLevel.TEST_FLIGHT, route, 3);
+        assertEquals(flightBoard.getRoute(), route);
+        assertEquals(flightBoard.getPlayerCount(), 3);
+        assertTrue(flightBoard.getCurrentOrder().isEmpty());
+
+        // Verifica che la FlightBoard sia creata correttamente
+        assertNotNull(flightBoard, "La FlightBoard dovrebbe essere creata correttamente.");
+
+        // Verifica che la route venga creata correttamente per TEST_FLIGHT
+
+            assertNotNull(flightBoard.getRoute(), "La route dovrebbe essere creata correttamente.");
+            assertEquals(30, flightBoard.getRoute().getLength(), "La lunghezza della route dovrebbe essere 18.");
+
+        List<Integer> expectedStartingPositions = Arrays.asList(1, 2, 3);
+        List<Integer> actualStartingPositions = flightBoard.getRoute().getStartingPositions();
+        assertEquals(expectedStartingPositions, actualStartingPositions, "Le posizioni di partenza per TEST_FLIGHT non sono corrette.");
+
+
+
+    }
+}
+
+
+
+
+
+
+
+
+
+
 /*
 package it.polimi.ingsw.server.model.domain.flight;
 
@@ -39,52 +163,6 @@ class FlightBoardTest {
         player3.getFlightData().setPosition(3, flightBoard.getRoute().getLength());
     }
 
-    @Test
-    void testFlightBoardCreation() {
-        // Verifica che la FlightBoard sia creata correttamente
-        assertNotNull(flightBoard, "La FlightBoard dovrebbe essere creata correttamente.");
-    }
-
-    @Test
-    void testRouteCreationForTestFlight() {
-        // Verifica che la route venga creata correttamente per TEST_FLIGHT
-        if (gameLevel == GameLevel.TEST_FLIGHT) {
-            assertNotNull(flightBoard.getRoute(), "La route dovrebbe essere creata correttamente.");
-            assertEquals(18, flightBoard.getRoute().getLength(), "La lunghezza della route per TEST_FLIGHT dovrebbe essere 18.");
-        }
-    }
-
-    @Test
-    void testRouteCreationForLevelII() {
-        gameLevel = GameLevel.LEVEL_II;
-        Route routeLevelII = new Route();
-        flightBoard = new FlightBoard(gameLevel, routeLevelII ,3);
-
-        // Verifica che la route venga creata correttamente per LEVEL_II
-        if (gameLevel == GameLevel.LEVEL_II) {
-            assertNotNull(flightBoard.getRoute(), "La route dovrebbe essere creata correttamente.");
-            assertEquals(24, flightBoard.getRoute().getLength(), "La lunghezza della route per LEVEL_II dovrebbe essere 24.");
-        }
-    }
-
-    @Test
-    void testStartingPositionsForTestFlight() {
-        List<Integer> expectedStartingPositions = Arrays.asList(4, 2, 1);
-        List<Integer> actualStartingPositions = flightBoard.getRoute().getStartingPositions();
-        assertEquals(expectedStartingPositions, actualStartingPositions, "Le posizioni di partenza per TEST_FLIGHT non sono corrette.");
-
-    }
-
-    @Test
-    void testStartingPositionsForLevelII() {
-        gameLevel = GameLevel.LEVEL_II;
-        Route routeLevelII = new Route();
-        flightBoard = new FlightBoard(gameLevel, routeLevelII ,3);
-        // Verifica che le posizioni di partenza siano corrette per LEVEL_II
-        List<Integer> expectedStartingPositions = Arrays.asList(6, 3, 1);
-        List<Integer> actualStartingPositions = flightBoard.getRoute().getStartingPositions();
-        assertEquals(expectedStartingPositions, actualStartingPositions, "Le posizioni di partenza per LEVEL_II non sono corrette.");
-    }
 
     @Test
     void testRegisterPlayer() {
