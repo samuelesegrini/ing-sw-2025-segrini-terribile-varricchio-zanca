@@ -3,13 +3,15 @@ package it.polimi.ingsw.server.model.domain.general;
 import it.polimi.ingsw.server.model.enums.GameLevel;
 import it.polimi.ingsw.server.model.domain.ship.components.Component;
 
+import java.io.Serializable;
 import java.util.*;
 
 /**
  * Represents a deck of ship components that players can draw from during the game.
  * Supports both face-down drawing and face-up returned components.
  */
-public class ComponentDeck {
+public class ComponentDeck implements Serializable {
+    private static final long serialVersionUID = 1L;
     private final List<Component> drawPile; // Face-down components
     private final List<Component> discardPile; // Permanently discarded
     private final List<Component> faceUpPile; // Face-up returned components

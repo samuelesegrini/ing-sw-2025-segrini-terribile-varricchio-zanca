@@ -2,6 +2,9 @@ package it.polimi.ingsw.server.model.domain.general;
 
 import it.polimi.ingsw.server.model.enums.GameLevel;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.Serializable;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.Executors;
@@ -11,7 +14,8 @@ import java.util.concurrent.TimeUnit;
  * Manages the building phase timer system for Level II games.
  * Implements the three-stage hourglass timer mechanics described in the game rules.
  */
-public class BuildingTimer {
+public class BuildingTimer implements Serializable {
+    private static final long serialVersionUID = 1L;
     private static final long TIMER_DURATION_MS = 90_000; // 1 minute 30 seconds
     
     public enum TimerState {
@@ -32,9 +36,9 @@ public class BuildingTimer {
     }
     
     private final GameLevel gameLevel;
-    private final ScheduledExecutorService executor;
+    private transient ScheduledExecutorService executor;
     private TimerState currentState;
-    private ScheduledFuture<?> currentTimer;
+    private transient ScheduledFuture<?> currentTimer;
     private long timerStartTime;
     private long timerDuration;
     private TimerEventListener eventListener;
@@ -161,6 +165,14 @@ public class BuildingTimer {
             currentTimer.cancel(false);
         }
         executor.shutdown();
+    }
+    
+    /**
+     * Reinitializes transient fields after deserialization
+     */
+    private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
+        in.defaultReadObject();
+        this.executor = Executors.newSingleThreadScheduledExecutor();
     }
     
     private void startFirstStage(String playerId) {

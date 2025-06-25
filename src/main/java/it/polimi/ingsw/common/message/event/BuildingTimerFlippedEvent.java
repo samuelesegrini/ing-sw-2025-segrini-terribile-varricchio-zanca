@@ -1,6 +1,6 @@
 package it.polimi.ingsw.common.message.event;
 
-import it.polimi.ingsw.client.core.state.LocalGameState;
+// REMOVED: LocalGameState no longer needed
 import it.polimi.ingsw.client.ui.NotificationType;
 
 import java.util.Map;

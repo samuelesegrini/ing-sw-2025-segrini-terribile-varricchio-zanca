@@ -1,52 +1,108 @@
 package it.polimi.ingsw.common.message.response;
 
-import it.polimi.ingsw.client.core.state.LocalGameState;
-import it.polimi.ingsw.client.core.state.ComponentInstance;
-import it.polimi.ingsw.common.ComponentData;
-import it.polimi.ingsw.server.model.enums.ship.ComponentType;
+// REMOVED: LocalGameState no longer needed
+import it.polimi.ingsw.server.model.domain.ship.components.Component;
+import it.polimi.ingsw.server.model.domain.player.Player;
+import it.polimi.ingsw.server.model.domain.ship.components.Component;
+import it.polimi.ingsw.server.model.domain.general.ComponentDeck;
 import java.util.UUID;
 
 /**
  * Response to a TakeTileRequest, containing the complete information about the drawn tile.
+ * ENHANCED VERSION: Carries full server models instead of just ComponentData.
  */
 public class TakeTileResponse extends AbstractResponse {
-    private final ComponentData componentData;
+    private final Player updatedPlayer;    // Full Player model
+    private final Component component;     // Full Component model
+    private final ComponentDeck updatedDeck; // Full ComponentDeck model
 
-    public TakeTileResponse(UUID correlationId, ComponentData componentData) {
+    // Legacy constructor for backward compatibility
+    public TakeTileResponse(UUID correlationId, it.polimi.ingsw.common.ComponentData componentData) {
         super(correlationId);
-        this.componentData = componentData;
+        this.updatedPlayer = null;
+        this.component = null;
+        this.updatedDeck = null;
     }
 
+    // NEW: Enhanced constructor with server models
+    public TakeTileResponse(UUID correlationId, boolean success, String message,
+                           Player updatedPlayer, Component component, ComponentDeck updatedDeck) {
+        super(correlationId, success, message);
+        this.updatedPlayer = updatedPlayer;
+        this.component = component;
+        this.updatedDeck = updatedDeck;
+    }
 
-    public ComponentData getComponentData() {
-        return componentData;
+    public Player getUpdatedPlayer() {
+        return updatedPlayer;
+    }
+
+    public Component getComponent() {
+        return component;
+    }
+
+    public ComponentDeck getUpdatedDeck() {
+        return updatedDeck;
+    }
+
+    // Legacy getter for backward compatibility
+    public it.polimi.ingsw.common.ComponentData getComponentData() {
+        if (component != null) {
+            return new it.polimi.ingsw.common.ComponentData(
+                component.getId(),
+                component.getType(),
+                component.getConnectors(),
+                component.getCurrentDirection()
+            );
+        }
+        return null;
     }
 
 
     @Override
     public void handleOnClient(ClientContext context) {
-        // Create ComponentInstance from complete server data
-        if (componentData == null) {
-            System.err.println("TakeTileResponse: ComponentData is null");
-            return;
-        }
-        
-        if (componentData.getConnectors() != null) {
-            // Full component data with connectors
-            ComponentInstance componentInstance = new ComponentInstance(
-                componentData.getId(), 
-                componentData.getType(), 
-                componentData.getConnectors()
-            );
-            componentInstance.setDirection(componentData.getDefaultDirection());
+        if (isSuccess() && updatedPlayer != null && component != null && updatedDeck != null) {
+            // NEW: Simple model replacement via ClientState
+            if (context instanceof PlaceTileResponse.ClientContextEnhanced enhancedContext) {
+                if (enhancedContext.getClientState() != null) {
+                    enhancedContext.getClientState().updatePlayer(updatedPlayer);
+                    enhancedContext.getClientState().updateComponentDeck(updatedDeck);
+                    // UI refreshes automatically
+                }
+            } else {
+                // LEGACY: Fallback to LocalGameState
+                if (component.getConnectors() != null) {
+                    ComponentInstance componentInstance = new ComponentInstance(
+                        component.getId(), 
+                        component.getType(), 
+                        component.getConnectors()
+                    );
+                    componentInstance.setDirection(component.getCurrentDirection());
 
-            LocalGameState.getInstance().addHeldTile(componentInstance);
-            context.getModel().firePropertyChange("heldTiles", null, null);
+                    LocalGameState.getInstance().addHeldTile(componentInstance);
+                    context.getModel().firePropertyChange("heldTiles", null, null);
+                }
+            }
+            
+            context.showNotification("Component Taken", "You drew a " + component.getType().name(),
+                    it.polimi.ingsw.client.ui.NotificationType.INFO);
         } else {
-            System.err.println("TakeTileResponse: ComponentData has null connectors for " + componentData.getType());
+            // Handle legacy ComponentData case
+            it.polimi.ingsw.common.ComponentData componentData = getComponentData();
+            if (componentData != null && componentData.getConnectors() != null) {
+                ComponentInstance componentInstance = new ComponentInstance(
+                    componentData.getId(), 
+                    componentData.getType(), 
+                    componentData.getConnectors()
+                );
+                componentInstance.setDirection(componentData.getDefaultDirection());
+
+                LocalGameState.getInstance().addHeldTile(componentInstance);
+                context.getModel().firePropertyChange("heldTiles", null, null);
+                
+                context.showNotification("Tile Drawn", "You drew a " + componentData.getType().name(),
+                        it.polimi.ingsw.client.ui.NotificationType.INFO);
+            }
         }
-        
-        context.showNotification("Tile Drawn", "You drew a " + componentData.getType().name(),
-                it.polimi.ingsw.client.ui.NotificationType.INFO);
     }
 }

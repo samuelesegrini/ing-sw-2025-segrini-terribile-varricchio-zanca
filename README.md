@@ -12,7 +12,11 @@ Galaxy Trucker is the Java implementation of the omonimus board game by Cranio C
 * [Diego Zanca](https://github.com/diego-zanca)
 
 ## The Project  
+
 This project is a Java-based software adaptation of the board game Galaxy Trucker, developed as the final project for the Software Engineering course. It features a distributed client-server architecture and follows the Model-View-Controller design pattern.  
+
+![image](src/main/resources/assets/images/logo.png)
+ 
 
 Game rules: [here](https://github.com/samuelesegrini/ing-sw-2025-segrini-terribile-varricchio-zanca/blob/main/documentation/rules-requirements/rules_refined.md);
 

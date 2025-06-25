@@ -130,56 +130,6 @@
     -fx-font-weight: bold;
 }
 
-/* Component Tile Inventory Styles */
-.tile-inventory-view {
-    -fx-background-color: transparent;
-}
-
-.tile-section {
-    -fx-background-color: #444444;
-    -fx-background-radius: 5;
-    -fx-padding: 8;
-}
-
-.tile-section-title {
-    -fx-font-size: 14px;
-    -fx-font-weight: bold;
-}
-
-.tile-section-title.available-title {
-    -fx-text-fill: #90EE90;
-}
-
-.tile-section-title.held-title {
-    -fx-text-fill: #FFD700;
-}
-
-.tile-count-label {
-    -fx-font-size: 12px;
-    -fx-text-fill: #cccccc;
-}
-
-.tile-count-label.tiles-full {
-    -fx-text-fill: #FF6B6B;
-    -fx-font-weight: bold;
-}
-
-.tile-scroll-pane {
-    -fx-background-color: transparent;
-    -fx-background: transparent;
-}
-
-.tile-scroll-pane .viewport {
-    -fx-background-color: transparent;
-}
-
-.tile-scroll-pane .scroll-bar {
-    -fx-background-color: #555555;
-}
-
-.available-tiles-pane, .held-tiles-pane {
-    -fx-background-color: transparent;
-}
 
 /* Component Tile Styles */
 .component-tile {
@@ -380,6 +330,46 @@
     -fx-border-width: 1;
 }
 
+.mini-ship-grid .ship-grid-cell.valid-cell {
+    -fx-background-color: #444455;
+    -fx-border-color: #666677;
+}
+
+.mini-ship-grid .ship-grid-cell.invalid-cell {
+    -fx-background-color: #1a1a1a;
+    -fx-border-color: #333333;
+    -fx-border-width: 0.5;
+    -fx-opacity: 0.6;
+}
+
+/* Reservation Area Styling */
+.mini-ship-grid .ship-grid-cell.reservation-area {
+    -fx-background-color: #2a2a3a;
+    -fx-border-color: #FFD700;
+    -fx-border-width: 1;
+    -fx-border-style: dashed;
+    -fx-background-radius: 2;
+    -fx-border-radius: 2;
+}
+
+.mini-ship-grid .ship-grid-cell.reservation-area:hover {
+    -fx-background-color: #3a3a4a;
+    -fx-border-color: #FFA500;
+}
+
+/* Reserved Component Styling */
+.component-tile.reserved-component {
+    -fx-border-color: #FFD700;
+    -fx-border-width: 2;
+    -fx-background-radius: 3;
+    -fx-border-radius: 3;
+    -fx-effect: dropshadow(gaussian, rgba(255,215,0,0.6), 6, 0.5, 0, 0);
+}
+
+.component-tile.reserved-component:hover {
+    -fx-effect: dropshadow(gaussian, rgba(255,215,0,0.8), 8, 0.7, 0, 0);
+}
+
 .component-tile.mini-tile {
     -fx-border-width: 1;
     -fx-background-radius: 2;
@@ -448,19 +438,71 @@
     -fx-border-color: #888888;
 }
 
-/* Hand Management Area */
+/* Enhanced Hand Management Area */
 .hand-management-area {
-    -fx-background-color: #3a3a3a;
-    -fx-background-radius: 8;
-    -fx-border-color: #555555;
-    -fx-border-width: 1;
-    -fx-border-radius: 8;
-    -fx-padding: 10;
+    -fx-background-color: transparent;
+    -fx-spacing: 15;
+    -fx-alignment: center;
 }
 
 .hand-management-area .section-title {
     -fx-text-fill: #FFD700;
     -fx-font-size: 14px;
+}
+
+/* Enhanced Hand View Styles */
+.enhanced-hand-view {
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.4), 10, 0.3, 0, 5);
+    -fx-background-radius: 15;
+    -fx-border-radius: 15;
+}
+
+.enhanced-hand-view:hover {
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.6), 12, 0.4, 0, 6);
+}
+
+/* Enhanced Hand Buttons */
+.enhanced-hand-button {
+    -fx-cursor: hand;
+    -fx-transition: all 0.2s ease;
+}
+
+.enhanced-hand-button:hover {
+    -fx-scale-x: 1.05;
+    -fx-scale-y: 1.05;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.4), 4, 0.5, 0, 3);
+}
+
+.enhanced-hand-button:pressed {
+    -fx-scale-x: 0.95;
+    -fx-scale-y: 0.95;
+}
+
+.enhanced-hand-button:disabled {
+    -fx-opacity: 0.5;
+    -fx-cursor: default;
+}
+
+/* Hand Slot Animations */
+.hand-slot-empty {
+    -fx-effect: dropshadow(gaussian, rgba(150,150,180,0.3), 5, 0.5, 0, 0);
+}
+
+.hand-slot-filled {
+    -fx-effect: dropshadow(gaussian, rgba(76,175,80,0.6), 8, 0.7, 0, 0);
+}
+
+/* Component in Hand Styling */
+.component-tile.in-hand {
+    -fx-effect: dropshadow(gaussian, rgba(255,215,0,0.8), 10, 0.8, 0, 0);
+    -fx-border-color: #FFD700;
+    -fx-border-width: 2;
+}
+
+.component-tile.in-hand:hover {
+    -fx-scale-x: 1.1;
+    -fx-scale-y: 1.1;
+    -fx-effect: dropshadow(gaussian, rgba(255,215,0,1.0), 12, 0.9, 0, 0);
 }
 
 /* Animation Support */

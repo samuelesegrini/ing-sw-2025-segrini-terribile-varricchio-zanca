@@ -518,8 +518,17 @@ public class GameSession {
     }
 
     public Player getPlayer(String playerId) {
+        System.out.println("[DEBUG] GameSession.getPlayer - Input playerId: " + playerId);
         PlayerId playerIdObj = PlayerId.fromString(playerId);
-        return gameModel.getPlayerById(playerIdObj);
+        System.out.println("[DEBUG] GameSession.getPlayer - Converted PlayerId: " + playerIdObj);
+        Player result = gameModel.getPlayerById(playerIdObj);
+        System.out.println("[DEBUG] GameSession.getPlayer - Result: " + (result != null ? result.getId() : "null"));
+        if (result == null) {
+            System.out.println("[DEBUG] GameSession.getPlayer - Available players in GameModel:");
+            gameModel.getPlayers().forEach(p -> 
+                System.out.println("[DEBUG]   - Player: " + p.getId() + ", Nickname: " + p.getId().getNickname()));
+        }
+        return result;
     }
 
     public GamePhase getCurrentPhase() {

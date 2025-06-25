@@ -75,6 +75,15 @@ public class PlayerSessionRegistry {
      */
     public String getPlayerIdForClient(String clientId) {
         PlayerSession session = clientToPlayerMap.get(clientId);
+        System.out.println("[DEBUG] PlayerSessionRegistry.getPlayerIdForClient - Client ID: " + clientId);
+        System.out.println("[DEBUG] PlayerSessionRegistry.getPlayerIdForClient - Session found: " + (session != null));
+        if (session != null) {
+            System.out.println("[DEBUG] PlayerSessionRegistry.getPlayerIdForClient - Player ID: " + session.playerId);
+        } else {
+            System.out.println("[DEBUG] PlayerSessionRegistry.getPlayerIdForClient - Available client mappings:");
+            clientToPlayerMap.forEach((key, value) -> 
+                System.out.println("[DEBUG]   - Client: " + key + " -> Player: " + value.playerId));
+        }
         return session != null ? session.playerId : null;
     }
 

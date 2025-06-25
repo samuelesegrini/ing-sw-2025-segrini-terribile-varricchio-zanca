@@ -6,9 +6,11 @@ import it.polimi.ingsw.server.model.enums.GameLevel;
 import it.polimi.ingsw.server.model.enums.GamePhase;
 import it.polimi.ingsw.server.model.enums.flight.FlightStatus;
 
+import java.io.Serializable;
 import java.util.*;
 
-public class FlightBoard {
+public class FlightBoard implements Serializable {
+    private static final long serialVersionUID = 1L;
     private final Route route;
     private int playerCount;
     private Map <Player, PlayerFlightData> playerDataMap;

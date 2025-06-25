@@ -1,9 +1,10 @@
 package it.polimi.ingsw.client.ui.gui.components;
 
 import it.polimi.ingsw.server.model.domain.ship.Position;
-import it.polimi.ingsw.client.core.state.LocalGameState;
-import it.polimi.ingsw.client.core.state.ComponentInstance;
-import it.polimi.ingsw.server.model.domain.general.config.ShipGridConfig;
+import it.polimi.ingsw.client.core.UIRefreshable;
+import it.polimi.ingsw.client.ui.UIContext;
+import it.polimi.ingsw.server.model.domain.ship.Ship;
+import it.polimi.ingsw.server.model.domain.ship.components.Component;
 import javafx.geometry.HPos;
 import javafx.geometry.Pos;
 import javafx.geometry.VPos;
@@ -21,11 +22,9 @@ import javafx.scene.paint.Color;
 import java.util.Set;
 
 /**
- * Pure ComponentInstance-based ship building grid.
- * Displays components with connectors, rotation, and placement validation.
- * NO ComponentType support - ComponentInstance only.
+ * Ship building grid using Simple Direct Model Architecture.
  */
-public class ShipGridView extends StackPane {
+public class ShipGridView extends StackPane implements UIRefreshable {
     
     public static final double DEFAULT_CELL_SIZE = 60;
     
@@ -33,7 +32,8 @@ public class ShipGridView extends StackPane {
     private double cellSize;
     private StackPane[][] cellPanes;
     private ShipGridClickHandler clickHandler;
-    private LocalGameState gameState;
+    private final UIContext uiContext;
+    
     private int gridRows = 5; // Will be updated from server
     private int gridCols = 7; // Will be updated from server
     
@@ -42,10 +42,10 @@ public class ShipGridView extends StackPane {
         void onCellRightClicked(int row, int col);
     }
     
-    public ShipGridView(double cellSize, ShipGridClickHandler clickHandler) {
+    public ShipGridView(UIContext uiContext, double cellSize, ShipGridClickHandler clickHandler) {
+        this.uiContext = uiContext;
         this.cellSize = cellSize;
         this.clickHandler = clickHandler;
-        this.gameState = LocalGameState.getInstance();
         
         getStyleClass().add("ship-grid-view");
         setAlignment(Pos.CENTER);
@@ -54,8 +54,8 @@ public class ShipGridView extends StackPane {
         createGridUI();
     }
     
-    public ShipGridView(ShipGridClickHandler clickHandler) {
-        this(DEFAULT_CELL_SIZE, clickHandler);
+    public ShipGridView(UIContext uiContext, ShipGridClickHandler clickHandler) {
+        this(uiContext, DEFAULT_CELL_SIZE, clickHandler);
     }
     
     private void createGridUI() {
@@ -144,13 +144,7 @@ public class ShipGridView extends StackPane {
             return false;
         }
         
-        // Use server-provided forbidden positions
-        if (gameState != null) {
-            Position position = new Position(row, col);
-            return !gameState.getForbiddenPositions().contains(position);
-        }
-        
-        return true; // Default to valid if no server configuration
+        return true; // Basic validation - server will validate placement
     }
     
     /**
@@ -233,42 +227,6 @@ public class ShipGridView extends StackPane {
         }
     }
     
-    /**
-     * Efficiently update grid from component data without full clear/rebuild
-     */
-    public void updateFromGridData(ComponentInstance[][] gridData) {
-        if (gridData == null) return;
-        
-        // Track which positions need updates
-        for (int row = 0; row < Math.min(gridRows, gridData.length); row++) {
-            for (int col = 0; col < Math.min(gridCols, gridData[row].length); col++) {
-                ComponentInstance newComponent = gridData[row][col];
-                ComponentTileView existingView = getComponentAt(row, col);
-                
-                // Check if we need to update this position
-                if (newComponent == null && existingView != null) {
-                    // Remove component that's no longer there
-                    removeComponent(row, col);
-                } else if (newComponent != null) {
-                    // Check if component changed
-                    if (existingView == null || 
-                        !newComponent.getId().equals(existingView.getComponentId()) ||
-                        !newComponent.getCurrentDirection().equals(existingView.getComponentInstance().getCurrentDirection())) {
-                        
-                        // Remove old component if exists
-                        if (existingView != null) {
-                            removeComponent(row, col);
-                        }
-                        
-                        // Add new component
-                        ComponentTileView newView = new ComponentTileView(newComponent);
-                        newView.setPlaced(true);
-                        placeComponent(newView, row, col);
-                    }
-                }
-            }
-        }
-    }
     
     /**
      * Highlight a cell (for drag and drop feedback)
@@ -297,28 +255,11 @@ public class ShipGridView extends StackPane {
         }
     }
     
-    /**
-     * Update the grid layout based on server configuration
-     * Call this when ship grid configuration is received from server
-     */
     public void updateGridLayout() {
-        // Update dimensions from server
-        int newRows = gameState != null ? gameState.getGridRows() : 5;
-        int newCols = gameState != null ? gameState.getGridCols() : 7;
-        
-        // Only rebuild if dimensions actually changed
-        if (newRows != gridRows || newCols != gridCols) {
-            gridRows = newRows;
-            gridCols = newCols;
-            
-            // Clear constraints and recreate with new dimensions
-            cellGrid.getRowConstraints().clear();
-            cellGrid.getColumnConstraints().clear();
-            cellGrid.getChildren().clear();
-            
-            // Recreate UI with new dimensions
-            createGridUI();
-        }
+        cellGrid.getRowConstraints().clear();
+        cellGrid.getColumnConstraints().clear();
+        cellGrid.getChildren().clear();
+        createGridUI();
     }
     
     /**
@@ -331,75 +272,140 @@ public class ShipGridView extends StackPane {
     }
     
     /**
+     * Update forbidden positions for mini views (when not using LocalGameState)
+     * This allows mini views to display forbidden positions from other players' perspectives
+     */
+    public void updateForbiddenPositions(Set<Position> forbiddenPositions) {
+        if (cellPanes == null) return;
+        
+        // Reset all cells to valid state first
+        for (int row = 0; row < gridRows; row++) {
+            for (int col = 0; col < gridCols; col++) {
+                StackPane cellPane = cellPanes[row][col];
+                if (cellPane != null) {
+                    cellPane.getStyleClass().removeAll("invalid-cell", "valid-cell");
+                    cellPane.setDisable(false);
+                    
+                    // Re-apply appropriate styling
+                    Position pos = new Position(row, col);
+                    if (forbiddenPositions != null && forbiddenPositions.contains(pos)) {
+                        cellPane.getStyleClass().add("invalid-cell");
+                        cellPane.setDisable(true);
+                        
+                        // Add visual indicator for forbidden cells (especially useful in mini views)
+                        boolean hasIndicator = cellPane.getChildren().stream()
+                            .anyMatch(node -> node instanceof Label && "✕".equals(((Label) node).getText()));
+                        
+                        if (!hasIndicator) {
+                            Label forbiddenIndicator = new Label("✕");
+                            forbiddenIndicator.setStyle("-fx-text-fill: #666666; -fx-font-size: " + 
+                                                       (cellSize < 40 ? "8px" : "12px") + "; -fx-font-weight: bold;");
+                            forbiddenIndicator.setMouseTransparent(true);
+                            cellPane.getChildren().add(forbiddenIndicator);
+                            StackPane.setAlignment(forbiddenIndicator, Pos.CENTER);
+                        }
+                    } else {
+                        cellPane.getStyleClass().add("valid-cell");
+                        
+                        // Remove any existing forbidden indicators
+                        cellPane.getChildren().removeIf(node -> 
+                            node instanceof Label && "✕".equals(((Label) node).getText()));
+                    }
+                }
+            }
+        }
+    }
+    
+    /**
+     * Mark specific cells as reservation areas (for mini views showing reserved components)
+     */
+    public void markReservationAreas(Set<Position> reservationPositions) {
+        if (cellPanes == null || reservationPositions == null) return;
+        
+        for (Position pos : reservationPositions) {
+            int row = pos.getRow();
+            int col = pos.getCol();
+            
+            if (row >= 0 && row < gridRows && col >= 0 && col < gridCols) {
+                StackPane cellPane = cellPanes[row][col];
+                if (cellPane != null) {
+                    cellPane.getStyleClass().add("reservation-area");
+                    
+                    // Add visual indicator for reservation areas
+                    boolean hasIndicator = cellPane.getChildren().stream()
+                        .anyMatch(node -> node instanceof Label && "R".equals(((Label) node).getText()));
+                    
+                    if (!hasIndicator) {
+                        Label reservationIndicator = new Label("R");
+                        reservationIndicator.setStyle("-fx-text-fill: #FFD700; -fx-font-size: " + 
+                                                     (cellSize < 40 ? "6px" : "10px") + "; -fx-font-weight: bold;");
+                        reservationIndicator.setMouseTransparent(true);
+                        cellPane.getChildren().add(reservationIndicator);
+                        StackPane.setAlignment(reservationIndicator, Pos.BOTTOM_RIGHT);
+                        reservationIndicator.setTranslateX(-2);
+                        reservationIndicator.setTranslateY(-2);
+                    }
+                }
+            }
+        }
+    }
+    
+    /**
      * Get the starting cabin position (always at 2,3)
      */
     public Position getStartingCabinPosition() {
         return new Position(2, 3);
     }
     
-    /**
-     * Update grid from server-provided game state
-     * This is the key method for the perfect initialization flow
-     */
-    public void updateFromGameState(LocalGameState gameState) {
-        if (gameState == null) return;
-        
-        // 1. Apply server-provided ship grid configuration
-        ShipGridConfig config = gameState.getShipGridConfig();
-        if (config != null) {
-            updateGridLayoutFromConfig(config);
-        }
-        
-        // 2. Apply forbidden positions from server
-        updateGridLayout(); // Recreate cells with new forbidden positions
-        
-        // 3. Place existing components from server state
-        updateComponentPlacements(gameState);
-        
-        // 4. Update background image if provided
-        updateBackgroundImage(gameState);
-    }
-    
-    private void updateGridLayoutFromConfig(ShipGridConfig config) {
-        // Update forbidden positions are already handled in LocalGameState
-        // This method can be extended for other config-specific updates
-    }
-    
-    private void updateComponentPlacements(LocalGameState gameState) {
-        // Clear existing components first
-        clearComponents();
-        
-        // Get ship grid as 2D array of ComponentInstances
-        ComponentInstance[][] shipGrid = gameState.getShipGrid();
-        
-        for (int row = 0; row < gameState.getGridRows(); row++) {
-            for (int col = 0; col < gameState.getGridCols(); col++) {
-                ComponentInstance component = shipGrid[row][col];
-                if (component != null) {
-                    // Create component view with unique instance and place it
-                    ComponentTileView componentView = new ComponentTileView(component);
-                    placeComponent(componentView, row, col);
-                }
+    @Override
+    public void refresh() {
+        if (uiContext.getClientState().isInGame()) {
+            Ship ship = uiContext.getClientState().getLocalPlayerShip();
+            if (ship != null) {
+                updateFromShip(ship);
             }
         }
     }
     
-    private void updateBackgroundImage(LocalGameState gameState) {
-        String backgroundImage = gameState.getShipGridBackgroundImage();
-        if (backgroundImage != null) {
-            // Apply CSS background image based on game level
-            String imageUrl = getClass().getResource("/images/" + backgroundImage).toExternalForm();
-            setStyle("-fx-background-image: url('" + imageUrl + "'); " +
-                    "-fx-background-size: contain; " +
-                    "-fx-background-repeat: no-repeat; " +
-                    "-fx-background-position: center;");
+    public void updateFromShip(Ship ship) {
+        if (ship == null) return;
+        
+        clearComponents();
+        
+        int shipRows = ship.getRows();
+        int shipCols = ship.getCols();
+        
+        if (shipRows != gridRows || shipCols != gridCols) {
+            gridRows = shipRows;
+            gridCols = shipCols;
+            updateGridLayout();
         }
+        
+        for (int row = 0; row < shipRows; row++) {
+            for (int col = 0; col < shipCols; col++) {
+                Component component = ship.getComponentAt(row, col);
+                if (component != null) {
+                    ComponentTileView componentView = createComponentTileView(component);
+                    placeComponent(componentView, row, col);
+                }
+            }
+        }
+        
+        updateForbiddenPositions(ship.getForbiddenPositions());
     }
     
+    private ComponentTileView createComponentTileView(Component component) {
+        return new ComponentTileView(component);
+    }
+
+    
     private void updateGridDimensions() {
-        if (gameState != null) {
-            gridRows = gameState.getGridRows();
-            gridCols = gameState.getGridCols();
+        if (uiContext.getClientState().isInGame()) {
+            Ship ship = uiContext.getClientState().getLocalPlayerShip();
+            if (ship != null) {
+                gridRows = ship.getRows();
+                gridCols = ship.getCols();
+            }
         }
     }
     
@@ -408,7 +414,7 @@ public class ShipGridView extends StackPane {
      */
     private void updateConnectorFeedback(int row, int col) {
         ComponentTileView placedComponent = getComponentAt(row, col);
-        if (placedComponent == null || placedComponent.getComponentInstance() == null) {
+        if (placedComponent == null || placedComponent.getComponent() == null) {
             return;
         }
         
@@ -424,8 +430,8 @@ public class ShipGridView extends StackPane {
         ComponentTileView sourceComponent = getComponentAt(sourceRow, sourceCol);
         
         if (adjacentComponent != null && sourceComponent != null && 
-            adjacentComponent.getComponentInstance() != null && 
-            sourceComponent.getComponentInstance() != null) {
+            adjacentComponent.getComponent() != null && 
+            sourceComponent.getComponent() != null) {
             
             // Visual feedback could be added here to show valid/invalid connections
             // For now, this serves as a hook for future connector visualization
@@ -435,8 +441,8 @@ public class ShipGridView extends StackPane {
     /**
      * Get all adjacent components for connection validation
      */
-    public ComponentInstance[] getAdjacentComponents(int row, int col) {
-        ComponentInstance[] adjacent = new ComponentInstance[4];
+    public Component[] getAdjacentComponents(int row, int col) {
+        Component[] adjacent = new Component[4];
         
         // UP, DOWN, LEFT, RIGHT
         ComponentTileView upComponent = getComponentAt(row - 1, col);
@@ -444,29 +450,16 @@ public class ShipGridView extends StackPane {
         ComponentTileView leftComponent = getComponentAt(row, col - 1);
         ComponentTileView rightComponent = getComponentAt(row, col + 1);
         
-        adjacent[0] = upComponent != null ? upComponent.getComponentInstance() : null;
-        adjacent[1] = downComponent != null ? downComponent.getComponentInstance() : null;
-        adjacent[2] = leftComponent != null ? leftComponent.getComponentInstance() : null;
-        adjacent[3] = rightComponent != null ? rightComponent.getComponentInstance() : null;
+        adjacent[0] = upComponent != null ? upComponent.getComponent() : null;
+        adjacent[1] = downComponent != null ? downComponent.getComponent() : null;
+        adjacent[2] = leftComponent != null ? leftComponent.getComponent() : null;
+        adjacent[3] = rightComponent != null ? rightComponent.getComponent() : null;
         
         return adjacent;
     }
     
-    /**
-     * Validate if a component can be placed at the given position based on connector rules
-     */
-    public boolean canPlaceComponentAt(ComponentInstance component, int row, int col) {
-        if (!isValidPosition(row, col) || getComponentAt(row, col) != null) {
-            return false;
-        }
-        
-        // Use game state for advanced placement validation
-        if (gameState != null) {
-            Position position = new Position(row, col);
-            return gameState.canPlaceComponent(component, position);
-        }
-        
-        return true; // Basic validation passed
+    public boolean canPlaceComponentAt(Component component, int row, int col) {
+        return isValidPosition(row, col) && getComponentAt(row, col) == null;
     }
     
     /**

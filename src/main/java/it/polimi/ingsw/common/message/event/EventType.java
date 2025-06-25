@@ -24,13 +24,15 @@ public enum EventType {
     GAME_SETTINGS_CHANGED,
 
     // Building phase events
+    BUILDING_PHASE_STARTED,
     TILE_DRAWN,
     TILE_PLACED,
     TILE_REMOVED,
     TILE_ROTATED,
     TILE_RETURNED,
     COMPONENT_OFFERED,
-    COMPONENT_RESERVED,
+    COMPONENT_TAKEN,      // NEW: For taking components to hand
+    COMPONENT_RESERVED,   // For actual reservation action
     BUILDING_TIMER_FLIPPED,
     SHIP_VALIDATION_COMPLETED,
     BUILDING_PHASE_COMPLETED,
@@ -38,6 +40,7 @@ public enum EventType {
     SHIP_BUILDING_STATE_SYNC,
 
     // Flight phase events
+    FLIGHT_PHASE_STARTED,
     ADVENTURE_CARD_DRAWN,
     PLAYER_POSITION_CHANGED,
     FLIGHT_POSITION_UPDATE,
@@ -55,4 +58,7 @@ public enum EventType {
     // Combat events
     COMBAT_STARTED,
     COMBAT_RESOLVED,
+
+    // State synchronization events
+    GAME_STATE_SYNC,
 }

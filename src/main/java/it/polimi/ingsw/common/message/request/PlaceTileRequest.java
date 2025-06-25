@@ -1,6 +1,6 @@
 package it.polimi.ingsw.common.message.request;
 
-import it.polimi.ingsw.common.message.event.TilePlacedEvent;
+import it.polimi.ingsw.common.message.event.ComponentPlacedEvent;
 import it.polimi.ingsw.common.message.response.ErrorResponse;
 import it.polimi.ingsw.common.message.response.PlaceTileResponse;
 import it.polimi.ingsw.common.message.response.Response;
@@ -72,8 +72,14 @@ public class PlaceTileRequest extends AbstractRequest {
 
         // Get player
         String playerId = context.getPlayerId();
+        System.out.println("[DEBUG] PlaceTileRequest - Player ID from context: " + playerId);
+        System.out.println("[DEBUG] PlaceTileRequest - Client ID: " + context.getSenderId());
         Player player = session.getPlayer(playerId);
+        System.out.println("[DEBUG] PlaceTileRequest - Player lookup result: " + (player != null ? player.getId() : "null"));
         if (player == null) {
+            System.out.println("[DEBUG] PlaceTileRequest - Available players in session:");
+            session.getGameModel().getPlayers().forEach(p -> 
+                System.out.println("[DEBUG]   - Player: " + p.getId() + ", Nickname: " + p.getId().getNickname()));
             return createErrorResponse("Player not found", ErrorResponse.INTERNAL_ERROR);
         }
 
@@ -112,20 +118,24 @@ public class PlaceTileRequest extends AbstractRequest {
             // Update ship stats
             ship.updateStats();
 
-            // Publish event
-            TilePlacedEvent event = new TilePlacedEvent(
+            // ENHANCED: Publish event with full server models
+            ComponentPlacedEvent event = new ComponentPlacedEvent(
                     session.getGameId(),
-                    playerId,
-                    context.getPlayerRegistry().getPlayerNickname(playerId),
-                    tileId,
-                    row,
-                    col,
-                    rotation,
-                    component.getType()
+                    player,                    // Full Player model
+                    component,                 // Full Component model  
+                    player.getShip(),          // Updated Ship model
+                    gameModel.getComponentDeck() // Updated ComponentDeck model
             );
             context.publishEvent(event);
 
-            return new PlaceTileResponse(getCorrelationId());
+            // ENHANCED: Return response with full server models
+            return new PlaceTileResponse(
+                getCorrelationId(),
+                true,
+                "Component placed successfully",
+                player.getShip(),           // Full Ship model
+                gameModel.getComponentDeck() // Full ComponentDeck model
+            );
 
         } catch (IllegalArgumentException e) {
             // Revert rotation

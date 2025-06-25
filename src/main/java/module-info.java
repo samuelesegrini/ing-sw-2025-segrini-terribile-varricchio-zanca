@@ -52,6 +52,5 @@ module it.polimi.ingsw2025segriniterribilevarricchiozanca {
 
     // --- Common packages ---
     exports it.polimi.ingsw.common;
-    exports it.polimi.ingsw.client.core.state;
-    opens it.polimi.ingsw.client.core.state to javafx.fxml;
+    // NOTE: client.core.state package removed as part of Simple Direct Model Architecture
 }
