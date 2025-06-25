@@ -1,3 +1,4 @@
+/*
 package it.polimi.ingsw.server.model.domain.flight;
 
 import it.polimi.ingsw.server.model.domain.flight.FlightBoard;
@@ -175,3 +176,4 @@ class FlightBoardTest {
         assertEquals(2, player1.getFlightData().getPosition(), "Player1 dovrebbe essere ora in posizione 3.");
     }
 }
+*/

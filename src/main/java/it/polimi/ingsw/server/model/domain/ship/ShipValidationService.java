@@ -282,7 +282,7 @@ public class ShipValidationService {
                     }
                     
                     // Check for placement errors
-                    List<Component> placementErrors = ship.checkPlacingErrors(component, GamePhase.BUILDING);
+                    List<Component> placementErrors = ship.checkPlacingErrors();
                     if (!placementErrors.isEmpty()) {
                         errors.add(String.format("Component at (%d,%d) violates placement rules", row, col));
                     }
