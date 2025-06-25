@@ -2,7 +2,7 @@ package it.polimi.ingsw.common.message;
 
 import it.polimi.ingsw.client.ClientModel;
 import it.polimi.ingsw.client.controller.ClientController;
-import it.polimi.ingsw.client.core.state.LocalGameState;
+import it.polimi.ingsw.client.core.ClientState;
 import it.polimi.ingsw.client.network.NetworkClient;
 import it.polimi.ingsw.client.ui.NotificationType;
 import it.polimi.ingsw.client.ui.core.NotificationService;
@@ -41,7 +41,7 @@ public interface ClientMessageContext extends ClientContext, ClientEventContext 
      * @return The local game state or null if not in game
      */
     @Override
-    LocalGameState getGameState();
+    ClientState getClientState();
     
     /**
      * Gets the notification service for showing notifications.

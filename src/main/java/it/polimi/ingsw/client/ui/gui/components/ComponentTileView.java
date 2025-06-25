@@ -1,6 +1,6 @@
 package it.polimi.ingsw.client.ui.gui.components;
 
-import it.polimi.ingsw.client.core.state.ComponentInstance;
+import it.polimi.ingsw.server.model.domain.ship.components.Component;
 import it.polimi.ingsw.server.model.enums.ship.ConnectorType;
 import it.polimi.ingsw.server.model.enums.ship.Direction;
 import javafx.geometry.Insets;
@@ -22,9 +22,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Pure ComponentInstance-based GUI component for displaying ship components.
+ * GUI component for displaying ship components using server Component model.
  * Shows component image, ID, connectors, and rotation state.
- * NO ComponentType fallbacks - ComponentInstance only.
  */
 public class ComponentTileView extends StackPane {
     
@@ -35,7 +34,7 @@ public class ComponentTileView extends StackPane {
     private static final Map<String, Image> imageCache = new ConcurrentHashMap<>();
     private static final Map<String, Boolean> loadAttempted = new ConcurrentHashMap<>();
     
-    private final ComponentInstance componentInstance;
+    private final Component component;
     private boolean isPlaced = false;
     private boolean isFaceUp = true;
     private boolean isInJunkyard = false;
@@ -49,14 +48,14 @@ public class ComponentTileView extends StackPane {
     private StackPane rotationIndicator;
     
     /**
-     * Constructor for ComponentInstance (ONLY constructor - no fallbacks)
+     * Constructor for Component
      */
-    public ComponentTileView(ComponentInstance componentInstance) {
-        if (componentInstance == null) {
-            throw new IllegalArgumentException("ComponentInstance cannot be null");
+    public ComponentTileView(Component component) {
+        if (component == null) {
+            throw new IllegalArgumentException("Component cannot be null");
         }
         
-        this.componentInstance = componentInstance;
+        this.component = component;
         
         initializeView();
         setupImage();
@@ -71,10 +70,10 @@ public class ComponentTileView extends StackPane {
      */
     public ComponentTileView(boolean isFaceDown) {
         if (!isFaceDown) {
-            throw new IllegalArgumentException("Use ComponentInstance constructor for face-up tiles");
+            throw new IllegalArgumentException("Use Component constructor for face-up tiles");
         }
         
-        this.componentInstance = null;
+        this.component = null;
         this.isFaceDown = true;
         this.isFaceUp = false;
         
@@ -91,11 +90,11 @@ public class ComponentTileView extends StackPane {
     }
     
     private void setupImage() {
-        if (componentInstance == null) return;
+        if (component == null) return;
         
         try {
-            String imagePath = componentInstance.getImageResourcePath();
-            if (imagePath == null || imagePath.isEmpty()) {
+            String imagePath = "/images/components/" + component.getType().name().toLowerCase() + ".png";
+            if (imagePath.isEmpty()) {
                 setupTextDisplay();
                 return;
             }
@@ -107,281 +106,232 @@ public class ComponentTileView extends StackPane {
                 return;
             }
             
-            // Check if we've already tried to load this image and failed
-            if (loadAttempted.containsKey(imagePath)) {
+            // Check if we've already tried loading this image and failed
+            if (loadAttempted.getOrDefault(imagePath, false)) {
                 setupTextDisplay();
                 return;
             }
             
-            // Mark as attempted and try to load
-            loadAttempted.put(imagePath, true);
-            
-            java.io.InputStream stream = getClass().getResourceAsStream(imagePath);
-            if (stream != null) {
-                try {
-                    Image image = new Image(stream);
-                    
-                    if (!image.isError()) {
-                        // Cache successful load
-                        imageCache.put(imagePath, image);
-                        createImageView(image);
-                        stream.close();
-                        return; // Successfully loaded
-                    }
-                    stream.close();
-                } catch (Exception e) {
-                    stream.close();
+            // Try to load the image
+            try {
+                Image image = new Image(getClass().getResourceAsStream(imagePath));
+                if (image.isError()) {
+                    loadAttempted.put(imagePath, true);
+                    setupTextDisplay();
+                } else {
+                    imageCache.put(imagePath, image);
+                    createImageView(image);
                 }
+            } catch (Exception e) {
+                loadAttempted.put(imagePath, true);
+                setupTextDisplay();
             }
             
-            System.err.println("Failed to load image: " + imagePath);
-            setupTextDisplay();
-            
         } catch (Exception e) {
-            System.err.println("Exception loading component image: " + componentInstance.getImagePath());
             setupTextDisplay();
         }
     }
     
     private void createImageView(Image image) {
         imageView = new ImageView(image);
-        imageView.setFitWidth(TILE_SIZE - 16);
-        imageView.setFitHeight(TILE_SIZE - 16);
+        imageView.setFitWidth(TILE_SIZE * 0.8);
+        imageView.setFitHeight(TILE_SIZE * 0.8);
         imageView.setPreserveRatio(true);
+        imageView.setSmooth(true);
         getChildren().add(imageView);
-        StackPane.setAlignment(imageView, Pos.CENTER);
     }
     
     private void setupTextDisplay() {
-        VBox textContainer = new VBox(2);
+        if (component == null) return;
+        
+        VBox textContainer = new VBox();
         textContainer.setAlignment(Pos.CENTER);
-        textContainer.setMaxWidth(TILE_SIZE - 8);
+        textContainer.setSpacing(2);
         
-        // Component symbol/type
-        componentLabel = new Label(componentInstance.getDisplaySymbol());
-        componentLabel.setFont(Font.font("Arial", FontWeight.BOLD, 16));
+        // Component type label
+        componentLabel = new Label(component.getType().name());
+        componentLabel.setFont(Font.font("Arial", FontWeight.BOLD, 10));
         componentLabel.setTextFill(Color.WHITE);
-        componentLabel.setAlignment(Pos.CENTER);
+        componentLabel.getStyleClass().add("component-type-label");
         
-        // Component ID (last 6 characters)
-        String shortId = componentInstance.getId();
-        if (shortId.length() > 6) {
-            shortId = shortId.substring(shortId.length() - 6);
-        }
-        idLabel = new Label(shortId);
-        idLabel.setFont(Font.font("Arial", FontWeight.NORMAL, 8));
+        // ID label
+        idLabel = new Label(component.getId());
+        idLabel.setFont(Font.font("Arial", 8));
         idLabel.setTextFill(Color.LIGHTGRAY);
-        idLabel.setAlignment(Pos.CENTER);
+        idLabel.getStyleClass().add("component-id-label");
         
         textContainer.getChildren().addAll(componentLabel, idLabel);
         getChildren().add(textContainer);
-        StackPane.setAlignment(textContainer, Pos.CENTER);
+    }
+    
+    private void setupFaceDownView() {
+        Rectangle faceDownRect = new Rectangle(TILE_SIZE * 0.9, TILE_SIZE * 0.9);
+        faceDownRect.setFill(Color.DARKGRAY);
+        faceDownRect.setStroke(Color.GRAY);
+        faceDownRect.setStrokeWidth(2);
+        faceDownRect.setArcWidth(5);
+        faceDownRect.setArcHeight(5);
         
-        // Set background color based on component type
-        Color bgColor = getComponentColor();
-        setStyle(String.format("-fx-background-color: rgb(%d,%d,%d); -fx-border-color: #333; -fx-border-width: 1; -fx-background-radius: 3;",
-            (int)(bgColor.getRed() * 255),
-            (int)(bgColor.getGreen() * 255),
-            (int)(bgColor.getBlue() * 255)
-        ));
+        Label faceDownLabel = new Label("?");
+        faceDownLabel.setFont(Font.font("Arial", FontWeight.BOLD, 24));
+        faceDownLabel.setTextFill(Color.WHITE);
+        
+        getChildren().addAll(faceDownRect, faceDownLabel);
     }
     
     private void setupConnectorOverlay() {
-        if (componentInstance == null) return;
+        if (component == null) return;
         
         connectorOverlay = new StackPane();
         connectorOverlay.setPrefSize(TILE_SIZE, TILE_SIZE);
         connectorOverlay.setMouseTransparent(true);
         
-        // Add connector indicators at each direction
-        for (Direction direction : Direction.values()) {
-            ConnectorType connectorType = componentInstance.getConnectorAt(direction);
-            if (connectorType != null && connectorType != ConnectorType.PLAIN) {
-                Circle connector = createConnectorIndicator(connectorType);
-                connectorOverlay.getChildren().add(connector);
-                positionConnector(connector, direction);
-            }
-        }
-        
+        updateConnectorDisplay();
         getChildren().add(connectorOverlay);
     }
     
-    private Circle createConnectorIndicator(ConnectorType type) {
-        Circle connector = new Circle(CONNECTOR_SIZE / 2);
+    private void updateConnectorDisplay() {
+        if (connectorOverlay == null || component == null) return;
         
-        Color color = switch (type != null ? type : ConnectorType.PLAIN) {
-            case UNIVERSAL -> Color.GOLD;
-            case DOUBLE -> Color.BLUE;
-            case SINGLE -> Color.GREEN;
-            case PLAIN -> Color.TRANSPARENT;
-        };
+        connectorOverlay.getChildren().clear();
         
-        connector.setFill(color);
-        connector.setStroke(Color.BLACK);
-        connector.setStrokeWidth(1);
+        Direction currentDirection = component.getCurrentDirection();
+        Map<Direction, ConnectorType> connectors = component.getConnectors();
         
-        return connector;
+        // Calculate connector positions based on current rotation
+        for (Map.Entry<Direction, ConnectorType> entry : connectors.entrySet()) {
+            Direction originalDir = entry.getKey();
+            ConnectorType connectorType = entry.getValue();
+            
+            // Rotate the direction based on current component direction
+            Direction rotatedDirection = rotateDirection(originalDir, currentDirection);
+            
+            Circle connector = createConnectorCircle(connectorType);
+            positionConnector(connector, rotatedDirection);
+            connectorOverlay.getChildren().add(connector);
+        }
+    }
+    
+    private Circle createConnectorCircle(ConnectorType type) {
+        Circle circle = new Circle(CONNECTOR_SIZE / 2);
+        circle.setStrokeWidth(1.5);
+        
+        switch (type) {
+            case ENERGY -> {
+                circle.setFill(Color.YELLOW);
+                circle.setStroke(Color.ORANGE);
+            }
+            case LIFE_SUPPORT -> {
+                circle.setFill(Color.LIGHTBLUE);
+                circle.setStroke(Color.BLUE);
+            }
+            case GENERIC -> {
+                circle.setFill(Color.LIGHTGRAY);
+                circle.setStroke(Color.GRAY);
+            }
+        }
+        
+        return circle;
     }
     
     private void positionConnector(Circle connector, Direction direction) {
-        double offset = (TILE_SIZE / 2) - (CONNECTOR_SIZE / 2) - 2;
+        double offset = TILE_SIZE / 2 - CONNECTOR_SIZE / 2;
         
         switch (direction) {
             case UP -> {
-                StackPane.setAlignment(connector, Pos.TOP_CENTER);
-                connector.setTranslateY(2);
+                connector.setTranslateX(0);
+                connector.setTranslateY(-offset);
             }
             case DOWN -> {
-                StackPane.setAlignment(connector, Pos.BOTTOM_CENTER);
-                connector.setTranslateY(-2);
+                connector.setTranslateX(0);
+                connector.setTranslateY(offset);
             }
             case LEFT -> {
-                StackPane.setAlignment(connector, Pos.CENTER_LEFT);
-                connector.setTranslateX(2);
+                connector.setTranslateX(-offset);
+                connector.setTranslateY(0);
             }
             case RIGHT -> {
-                StackPane.setAlignment(connector, Pos.CENTER_RIGHT);
-                connector.setTranslateX(-2);
+                connector.setTranslateX(offset);
+                connector.setTranslateY(0);
             }
         }
     }
     
-    private void setupRotationIndicator() {
-        if (componentInstance == null) return;
-        
-        rotationIndicator = new StackPane();
-        rotationIndicator.setPrefSize(16, 16);
-        rotationIndicator.setMaxSize(16, 16);
-        rotationIndicator.setMouseTransparent(true);
-        
-        // Small triangle indicating current direction
-        Label directionLabel = new Label(getDirectionSymbol());
-        directionLabel.setFont(Font.font("Arial", FontWeight.BOLD, 10));
-        directionLabel.setTextFill(Color.WHITE);
-        directionLabel.setStyle("-fx-background-color: rgba(0,0,0,0.7); -fx-background-radius: 8; -fx-padding: 1;");
-        
-        rotationIndicator.getChildren().add(directionLabel);
-        getChildren().add(rotationIndicator);
-        StackPane.setAlignment(rotationIndicator, Pos.TOP_RIGHT);
-        rotationIndicator.setTranslateX(-2);
-        rotationIndicator.setTranslateY(2);
+    private Direction rotateDirection(Direction original, Direction componentDirection) {
+        // Simple rotation logic - this might need adjustment based on your rotation system
+        int rotations = componentDirection.ordinal();
+        Direction[] directions = Direction.values();
+        int newIndex = (original.ordinal() + rotations) % directions.length;
+        return directions[newIndex];
     }
     
-    private String getDirectionSymbol() {
-        if (componentInstance == null) return "";
+    private void setupRotationIndicator() {
+        if (component == null) return;
         
-        return switch (componentInstance.getCurrentDirection()) {
+        rotationIndicator = new StackPane();
+        rotationIndicator.setPrefSize(15, 15);
+        rotationIndicator.setMaxSize(15, 15);
+        
+        Circle indicator = new Circle(6);
+        indicator.setFill(Color.WHITE);
+        indicator.setStroke(Color.BLACK);
+        indicator.setStrokeWidth(1);
+        
+        Direction rotatedDirection = component.getCurrentDirection();
+        String directionText = switch (rotatedDirection) {
             case UP -> "↑";
             case DOWN -> "↓";
             case LEFT -> "←";
             case RIGHT -> "→";
         };
-    }
-    
-    private void setupFaceDownView() {
-        try {
-            // Try to load the galaxy-sky.jpg image for face-down components
-            java.io.InputStream stream = getClass().getResourceAsStream("/assets/tiles/galaxy-sky.jpg");
-            if (stream != null) {
-                Image backImage = new Image(stream);
-                if (!backImage.isError()) {
-                    imageView = new ImageView(backImage);
-                    imageView.setFitWidth(TILE_SIZE - 4);
-                    imageView.setFitHeight(TILE_SIZE - 4);
-                    imageView.setPreserveRatio(true);
-                    getChildren().add(imageView);
-                    StackPane.setAlignment(imageView, Pos.CENTER);
-                    stream.close();
-                    return;
-                }
-                stream.close();
-            }
-        } catch (Exception e) {
-            System.err.println("Failed to load galaxy-sky.jpg for face-down component: " + e.getMessage());
-        }
         
-        // Fallback to original "?" display if image loading fails
-        componentLabel = new Label("?");
-        componentLabel.setFont(Font.font("Arial", FontWeight.BOLD, 24));
-        componentLabel.setTextFill(Color.WHITE);
-        componentLabel.setAlignment(Pos.CENTER);
+        Label dirLabel = new Label(directionText);
+        dirLabel.setFont(Font.font("Arial", FontWeight.BOLD, 8));
+        dirLabel.setTextFill(Color.BLACK);
         
-        getChildren().add(componentLabel);
-        StackPane.setAlignment(componentLabel, Pos.CENTER);
+        rotationIndicator.getChildren().addAll(indicator, dirLabel);
+        rotationIndicator.setTranslateX(TILE_SIZE / 2 - 10);
+        rotationIndicator.setTranslateY(-TILE_SIZE / 2 + 10);
         
-        setStyle("-fx-background-color: #4a4a4a; -fx-border-color: #666666; -fx-border-width: 2; -fx-background-radius: 3;");
+        getChildren().add(rotationIndicator);
     }
     
     private void setupTooltip() {
-        if (componentInstance == null) return;
+        if (component == null) return;
         
-        StringBuilder tooltipText = new StringBuilder();
-        tooltipText.append("Component: ").append(componentInstance.getDisplayName()).append("\n");
-        tooltipText.append("ID: ").append(componentInstance.getId()).append("\n");
-        tooltipText.append("Direction: ").append(componentInstance.getCurrentDirection()).append("\n");
-        tooltipText.append("Connectors:\n");
+        String displayText = component.getType().name();
+        String tooltipText = String.format(
+            "%s\nID: %s\nDirection: %s",
+            displayText,
+            component.getId(),
+            component.getCurrentDirection().name()
+        );
         
-        for (Direction dir : Direction.values()) {
-            ConnectorType connector = componentInstance.getConnectorAt(dir);
-            if (connector != ConnectorType.PLAIN) {
-                tooltipText.append("  ").append(dir.name()).append(": ").append(connector.name()).append("\n");
-            }
-        }
-        
-        Tooltip tooltip = new Tooltip(tooltipText.toString());
+        Tooltip tooltip = new Tooltip(tooltipText);
         Tooltip.install(this, tooltip);
     }
     
-    private Color getComponentColor() {
-        if (componentInstance == null) return Color.GRAY;
-        
-        return switch (componentInstance.getType()) {
-            case ENGINE_SINGLE, ENGINE_DOUBLE -> Color.ORANGE;
-            case CANNON_SINGLE, CANNON_DOUBLE -> Color.RED;
-            case CABIN, CABIN_START -> Color.YELLOW;
-            case CARGO_HOLD, CARGO_HOLD_SPECIAL -> Color.BROWN;
-            case BATTERY -> Color.PURPLE;
-            case SHIELD -> Color.CYAN;
-            case LIFE_SUPPORT_BROWN, LIFE_SUPPORT_PURPLE -> Color.PINK;
-            case STRUCTURAL -> Color.LIGHTGRAY;
-        };
-    }
-    
     private void updateAppearance() {
-        // Clear previous dynamic styles
-        getStyleClass().removeAll("placed-tile", "face-down", "in-junkyard", "selected-tile");
-        
-        if (isPlaced) {
-            getStyleClass().add("placed-tile");
-        }
-        
-        if (isInJunkyard) {
-            getStyleClass().add("in-junkyard");
-        }
-        
-        if (isSelected) {
-            getStyleClass().add("selected-tile");
-            setStyle(getStyle() + "; -fx-effect: dropshadow(gaussian, gold, 10, 0.8, 0, 0);");
-        }
+        getStyleClass().removeAll("component-placed", "component-selected", "component-junkyard", "component-face-down");
         
         if (isFaceDown) {
-            getStyleClass().add("face-down");
-        }
-        
-        // Update rotation indicator if it exists
-        if (rotationIndicator != null && componentInstance != null) {
-            Label directionLabel = (Label) rotationIndicator.getChildren().get(0);
-            directionLabel.setText(getDirectionSymbol());
+            getStyleClass().add("component-face-down");
+        } else if (isSelected) {
+            getStyleClass().add("component-selected");
+        } else if (isInJunkyard) {
+            getStyleClass().add("component-junkyard");
+        } else if (isPlaced) {
+            getStyleClass().add("component-placed");
         }
     }
     
-    // Public API methods
-    public ComponentInstance getComponentInstance() {
-        return componentInstance;
+    // Getters and setters
+    public Component getComponent() {
+        return component;
     }
     
     public String getComponentId() {
-        return componentInstance != null ? componentInstance.getId() : null;
+        return component != null ? component.getId() : "unknown";
     }
     
     public boolean isPlaced() {
@@ -389,33 +339,8 @@ public class ComponentTileView extends StackPane {
     }
     
     public void setPlaced(boolean placed) {
-        if (this.isPlaced != placed) {
-            this.isPlaced = placed;
-            updateAppearance();
-        }
-    }
-    
-    public boolean isFaceUp() {
-        return isFaceUp;
-    }
-    
-    public void setFaceUp(boolean faceUp) {
-        if (this.isFaceUp != faceUp) {
-            this.isFaceUp = faceUp;
-            this.isFaceDown = !faceUp;
-            updateAppearance();
-        }
-    }
-    
-    public boolean isInJunkyard() {
-        return isInJunkyard;
-    }
-    
-    public void setInJunkyard(boolean inJunkyard) {
-        if (this.isInJunkyard != inJunkyard) {
-            this.isInJunkyard = inJunkyard;
-            updateAppearance();
-        }
+        this.isPlaced = placed;
+        updateAppearance();
     }
     
     public boolean isSelected() {
@@ -423,56 +348,23 @@ public class ComponentTileView extends StackPane {
     }
     
     public void setSelected(boolean selected) {
-        if (this.isSelected != selected) {
-            this.isSelected = selected;
-            updateAppearance();
-        }
-    }
-    
-    public boolean isFaceDown() {
-        return isFaceDown;
-    }
-    
-    public void setFaceDown(boolean faceDown) {
-        if (this.isFaceDown != faceDown) {
-            this.isFaceDown = faceDown;
-            this.isFaceUp = !faceDown;
-            updateAppearance();
-        }
-    }
-    
-    /**
-     * Update the display after component rotation
-     */
-    public void refreshAfterRotation() {
-        // Clear and rebuild connector overlay
-        if (connectorOverlay != null) {
-            getChildren().remove(connectorOverlay);
-        }
-        setupConnectorOverlay();
+        this.isSelected = selected;
         updateAppearance();
     }
     
-    /**
-     * Create a copy of this component tile view with a new component instance
-     */
-    public ComponentTileView createCopy(ComponentInstance newInstance) {
-        ComponentTileView copy = new ComponentTileView(newInstance);
-        copy.setPlaced(this.isPlaced);
-        copy.setFaceUp(this.isFaceUp);
-        copy.setInJunkyard(this.isInJunkyard);
-        copy.setSelected(this.isSelected);
-        return copy;
+    public boolean isInJunkyard() {
+        return isInJunkyard;
     }
     
-    @Override
-    public String toString() {
-        return "ComponentTileView{" +
-                "componentInstance=" + componentInstance +
-                ", isPlaced=" + isPlaced +
-                ", isFaceUp=" + isFaceUp +
-                ", isInJunkyard=" + isInJunkyard +
-                ", isSelected=" + isSelected +
-                '}';
+    public void setInJunkyard(boolean inJunkyard) {
+        this.isInJunkyard = inJunkyard;
+        updateAppearance();
+    }
+    
+    public void refreshAfterRotation() {
+        if (component != null) {
+            updateConnectorDisplay();
+            setupRotationIndicator();
+        }
     }
 }

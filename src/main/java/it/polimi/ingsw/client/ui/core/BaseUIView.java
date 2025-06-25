@@ -2,23 +2,27 @@ package it.polimi.ingsw.client.ui.core;
 
 import java.beans.PropertyChangeEvent;
 import java.util.logging.Logger;
+import it.polimi.ingsw.client.core.UIRefreshable;
+import it.polimi.ingsw.client.ui.UIContext;
 
 /**
-
- Abstract base implementation for UI views.
- Provides common functionality and lifecycle management.
+ * Abstract base implementation for UI views with Simple Direct Model Architecture.
  */
-public abstract class BaseUIView implements UIView {
+public abstract class BaseUIView implements UIView, UIRefreshable {
     protected static final Logger LOGGER = Logger.getLogger(BaseUIView.class.getName());
     protected UIContext context;
     protected boolean active = false;
     protected boolean initialized = false;
     @Override
     public void initialize(UIContext context) {
-        if (this.initialized) return; // Prevent re-initialization
+        if (this.initialized) return;
         this.context = context;
         this.initialized = true;
-        // Register for model changes
+        
+        // Register with ClientState for automatic refresh
+        context.getClientState().registerRefreshableView(this);
+        
+        // Register for model changes for lobby/connection UI
         context.getModel().addPropertyChangeListener(this);
 
         LOGGER.info("Initialized view: " + getTitle());
@@ -50,10 +54,15 @@ public abstract class BaseUIView implements UIView {
             onRefresh();
         }
     }
+    
+    public void refreshFromServerModels() {
+        if (active && context != null) {
+            context.getThreadService().runOnUIThread(this::onRefresh);
+        }
+    }
     @Override
     public void propertyChange(PropertyChangeEvent evt) {
         if (active) {
-            // Run the update on the appropriate UI thread
             context.getThreadService().runOnUIThread(() -> {
                 onPropertyChange(evt);
                 refresh();
@@ -63,6 +72,7 @@ public abstract class BaseUIView implements UIView {
     @Override
     public void dispose() {
         if (context != null) {
+            context.getClientState().unregisterRefreshableView(this);
             context.getModel().removePropertyChangeListener(this);
         }
         active = false;

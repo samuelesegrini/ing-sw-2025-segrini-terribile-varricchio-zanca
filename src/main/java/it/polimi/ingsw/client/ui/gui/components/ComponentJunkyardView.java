@@ -1,6 +1,9 @@
 package it.polimi.ingsw.client.ui.gui.components;
 
-import it.polimi.ingsw.client.core.state.ComponentInstance;
+import it.polimi.ingsw.server.model.domain.ship.components.Component;
+import it.polimi.ingsw.client.core.UIRefreshable;
+import it.polimi.ingsw.client.ui.UIContext;
+import it.polimi.ingsw.server.model.domain.general.ComponentDeck;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -15,20 +18,18 @@ import java.util.List;
 import java.util.Random;
 
 /**
- * Physical-like junkyard pile view inspired by UITest implementation.
- * Creates a messy, scattered pile with both face-up and face-down components
- * that mimics real physical game behavior.
- * NO ComponentType support - ComponentInstance only.
+ * Junkyard pile view using Simple Direct Model Architecture.
  */
-public class ComponentJunkyardView extends VBox {
+public class ComponentJunkyardView extends VBox implements UIRefreshable {
     
     public interface JunkyardClickHandler {
         void onFaceDownTileClicked();
-        void onComponentClicked(ComponentInstance component);
+        void onComponentClicked(Component component);
     }
     
     private final JunkyardClickHandler clickHandler;
     private final Random random = new Random();
+    private final UIContext uiContext;
     
     // Main pile area
     private Label titleLabel;
@@ -36,12 +37,13 @@ public class ComponentJunkyardView extends VBox {
     private Label instructionLabel;
     
     // Component data
-    private List<ComponentInstance> availableComponents = new ArrayList<>();
-    private List<ComponentInstance> faceUpComponents = new ArrayList<>();
+    private List<Component> availableComponents = new ArrayList<>();
+    private List<Component> faceUpComponents = new ArrayList<>();
     private int faceDownCount = 0;
     private boolean populated = false;
 
-    public ComponentJunkyardView(JunkyardClickHandler clickHandler) {
+    public ComponentJunkyardView(UIContext uiContext, JunkyardClickHandler clickHandler) {
+        this.uiContext = uiContext;
         this.clickHandler = clickHandler;
         initializeView();
         setupPileSection();
@@ -123,19 +125,22 @@ public class ComponentJunkyardView extends VBox {
             }
             
             // Create shuffled list for scattered placement
-            List<ComponentInstance> componentsToPlace = new ArrayList<>(availableComponents);
+            List<Component> componentsToPlace = new ArrayList<>(availableComponents);
             Collections.shuffle(componentsToPlace, random);
             
-            int placedCount = 0;
-            for (ComponentInstance component : componentsToPlace) {
-                ComponentTileView tileView = new ComponentTileView(component);
+            int placedFaceDown = 0;
+            for (Component component : componentsToPlace) {
+                ComponentTileView tileView;
                 
-                // Randomly decide if component is face-up or face-down
                 // Face-up components from the faceUpComponents list, others face-down
                 boolean isFaceUp = faceUpComponents.contains(component);
-                if (!isFaceUp && placedCount < faceDownCount) {
-                    // This is a face-down component
-                    tileView.setFaceDown(true);
+                if (!isFaceUp && placedFaceDown < faceDownCount) {
+                    // Create face-down tile using face-down constructor
+                    tileView = new ComponentTileView(true);
+                    placedFaceDown++;
+                } else {
+                    // Create regular face-up tile
+                    tileView = new ComponentTileView(component);
                 }
                 
                 // Random position within content area
@@ -149,14 +154,17 @@ public class ComponentJunkyardView extends VBox {
                 tileView.setLayoutY(y);
                 tileView.setRotate(angle);
                 
-                // Click handler
+                // Click handler - for face-down tiles, we pass null component to trigger random draw
                 tileView.setOnMouseClicked(event -> {
-                    handleComponentClicked(component, tileView);
+                    if (tileView.isFaceDown()) {
+                        handleComponentClicked(null, tileView);
+                    } else {
+                        handleComponentClicked(component, tileView);
+                    }
                     event.consume();
                 });
                 
                 getChildren().add(tileView);
-                placedCount++;
             }
             
             // Ensure some components are brought to front for layering effect
@@ -186,9 +194,9 @@ public class ComponentJunkyardView extends VBox {
         }
     }
     
-    private void handleComponentClicked(ComponentInstance component, ComponentTileView tileView) {
+    private void handleComponentClicked(Component component, ComponentTileView tileView) {
         if (clickHandler != null) {
-            if (tileView.isFaceDown()) {
+            if (tileView.isFaceDown() || component == null) {
                 // Face-down tile clicked - treat as random draw
                 clickHandler.onFaceDownTileClicked();
             } else {
@@ -201,7 +209,7 @@ public class ComponentJunkyardView extends VBox {
     /**
      * Update the complete warehouse state
      */
-    public void updateWarehouse(List<ComponentInstance> allComponents, List<ComponentInstance> faceUpComponents, int faceDownCount) {
+    public void updateWarehouse(List<Component> allComponents, List<Component> faceUpComponents, int faceDownCount) {
         this.availableComponents = new ArrayList<>(allComponents);
         this.faceUpComponents = new ArrayList<>(faceUpComponents);
         this.faceDownCount = faceDownCount;
@@ -229,7 +237,7 @@ public class ComponentJunkyardView extends VBox {
     /**
      * Add a face-up component to the pile (when returned)
      */
-    public void addComponentFaceUp(ComponentInstance component) {
+    public void addComponentFaceUp(Component component) {
         if (!availableComponents.contains(component)) {
             availableComponents.add(component);
         }
@@ -245,7 +253,7 @@ public class ComponentJunkyardView extends VBox {
     /**
      * Remove a component from the pile
      */
-    public void removeComponent(ComponentInstance component) {
+    public void removeComponent(Component component) {
         availableComponents.remove(component);
         faceUpComponents.remove(component);
         
@@ -254,7 +262,7 @@ public class ComponentJunkyardView extends VBox {
         updateTitle();
     }
     
-    private void addComponentVisually(ComponentInstance component, boolean faceUp) {
+    private void addComponentVisually(Component component, boolean faceUp) {
         ComponentTileView tileView = new ComponentTileView(component);
         if (!faceUp) {
             tileView.setFaceDown(true);
@@ -284,11 +292,11 @@ public class ComponentJunkyardView extends VBox {
         }
     }
     
-    private void removeComponentVisually(ComponentInstance component) {
+    private void removeComponentVisually(Component component) {
         pileView.getChildren().removeIf(node -> {
             if (node instanceof ComponentTileView) {
                 ComponentTileView tileView = (ComponentTileView) node;
-                return component.equals(tileView.getComponentInstance());
+                return component.equals(tileView.getComponent());
             }
             return false;
         });
@@ -308,14 +316,14 @@ public class ComponentJunkyardView extends VBox {
     /**
      * Get all available components
      */
-    public List<ComponentInstance> getAvailableComponents() {
+    public List<Component> getAvailableComponents() {
         return new ArrayList<>(availableComponents);
     }
     
     /**
      * Get face-up components
      */
-    public List<ComponentInstance> getFaceUpComponents() {
+    public List<Component> getFaceUpComponents() {
         return new ArrayList<>(faceUpComponents);
     }
     
@@ -333,13 +341,6 @@ public class ComponentJunkyardView extends VBox {
         return availableComponents.isEmpty();
     }
     
-    /**
-     * Force repopulation of the pile (useful after major state changes)
-     */
-    public void refresh() {
-        populated = false;
-        Platform.runLater(() -> pileView.repopulatePile());
-    }
     
     /**
      * Set the size of the pile view
@@ -349,6 +350,24 @@ public class ComponentJunkyardView extends VBox {
         pileView.setMinSize(width * 0.7, height * 0.7);
     }
     
+    @Override
+    public void refresh() {
+        if (uiContext.getClientState().isInGame()) {
+            ComponentDeck deck = uiContext.getClientState().getComponentDeck();
+            if (deck != null) {
+                List<Component> availableComponents = deck.getAvailableComponents();
+                List<Component> faceUpComponents = deck.getFaceUpComponents();
+                    
+                updateWarehouse(availableComponents, faceUpComponents, 
+                    availableComponents.size() - faceUpComponents.size());
+            }
+        }
+        // Force repopulation after state updates
+        populated = false;
+        Platform.runLater(() -> pileView.repopulatePile());
+    }
+    
+
     @Override
     public String toString() {
         return "ComponentJunkyardView{" +

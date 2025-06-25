@@ -1,12 +1,12 @@
 package it.polimi.ingsw.common.message.request;
 
-import it.polimi.ingsw.common.ComponentData;
 import it.polimi.ingsw.common.message.response.ErrorResponse;
 import it.polimi.ingsw.common.message.response.Response;
 import it.polimi.ingsw.common.message.response.TakeTileResponse;
 import it.polimi.ingsw.server.core.GameSession;
 import it.polimi.ingsw.server.model.domain.general.ComponentDeck;
 import it.polimi.ingsw.server.model.domain.ship.components.Component;
+import it.polimi.ingsw.server.model.domain.player.Player;
 import it.polimi.ingsw.server.model.enums.GamePhase;
 
 import java.util.Optional;
@@ -34,36 +34,36 @@ public class TakeTileRequest extends AbstractRequest {
         }
 
         Component drawnComponent = drawnComponentOpt.get();
-        // The server should now associate this tile with the player, perhaps in a "held tile" state.
-        // For now, we just return it to the client.
+        
+        // Get player and update their state
+        Player player = session.getPlayer(context.getPlayerId());
+        if (player == null) {
+            return createErrorResponse("Player not found", ErrorResponse.INTERNAL_ERROR);
+        }
+        
+        // Add component to player's hand/held tiles
+        player.addHeldComponent(drawnComponent);
 
-        // Create complete component data including connectors
-        ComponentData componentData = new ComponentData(
-            drawnComponent.getId(),
-            drawnComponent.getType(),
-            drawnComponent.getConnectors(),
-            drawnComponent.getDirection()
+        // ENHANCED: Send response with full server models
+        TakeTileResponse response = new TakeTileResponse(
+            getCorrelationId(),
+            true,
+            "Component taken successfully", 
+            player,                    // Full Player model
+            drawnComponent,            // Full Component model
+            session.getGameModel().getComponentDeck() // Updated ComponentDeck model
         );
 
-        // Send response to requester
-        TakeTileResponse response = new TakeTileResponse(getCorrelationId(), componentData);
-
-        // Broadcast event to all clients
-        if (context.getEventPublisher() != null) {
-            String nickname = null;
-            if (context.getPlayerRegistry() != null) {
-                nickname = context.getPlayerRegistry().getPlayerNickname(context.getPlayerId());
-            }
-            context.getEventPublisher().publishEvent(
-                new it.polimi.ingsw.common.message.event.ComponentReservedEvent(
-                    session.getGameId(),
-                    componentData,
-                    context.getPlayerId(),
-                    nickname != null ? nickname : context.getPlayerId(),
-                    System.currentTimeMillis() + 60000 // 1 min reservation for example
-                )
-            );
-        }
+        // ENHANCED: Broadcast event with full server models
+        context.publishEvent(
+            new it.polimi.ingsw.common.message.event.ComponentTakenEvent(
+                session.getGameId(),
+                drawnComponent,        // Full Component model
+                player,                // Full Player model
+                session.getGameModel().getComponentDeck() // Updated ComponentDeck model
+            )
+        );
+        
         return response;
     }
 }

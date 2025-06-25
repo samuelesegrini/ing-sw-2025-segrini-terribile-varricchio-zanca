@@ -1,7 +1,7 @@
 package it.polimi.ingsw.common.message.event;
 
 import it.polimi.ingsw.server.model.enums.ship.ComponentType;
-import it.polimi.ingsw.client.core.state.ComponentInstance;
+import it.polimi.ingsw.server.model.domain.ship.components.Component;
 import it.polimi.ingsw.common.ComponentData;
 
 /**

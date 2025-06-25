@@ -5,11 +5,13 @@ import it.polimi.ingsw.server.model.domain.ship.Ship;
 import it.polimi.ingsw.server.model.enums.crew.CrewType;
 import it.polimi.ingsw.server.model.enums.player.PlayerColor;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
-public class Player {
+public class Player implements Serializable {
+    private static final long serialVersionUID = 1L;
     private final PlayerId playerId;
     private PlayerFlightData playerFlightData;
     private PlayerColor color;

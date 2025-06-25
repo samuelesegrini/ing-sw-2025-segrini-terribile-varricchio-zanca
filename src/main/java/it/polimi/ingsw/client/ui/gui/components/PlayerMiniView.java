@@ -1,6 +1,6 @@
 package it.polimi.ingsw.client.ui.gui.components;
 
-import it.polimi.ingsw.client.core.state.ComponentInstance;
+import it.polimi.ingsw.server.model.domain.ship.components.Component;
 import it.polimi.ingsw.server.model.domain.ship.Position;
 import javafx.geometry.Pos;
 import javafx.scene.control.Label;
@@ -8,12 +8,15 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
- * Pure ComponentInstance-based mini view for other players' ships.
+ * Pure Component-based mini view for other players' ships.
  * Shows player avatar, name, and a scaled-down version of their ship with component details.
- * NO ComponentType support - ComponentInstance only.
+ * NO ComponentType support - Component only.
  */
 public class PlayerMiniView extends VBox {
     
@@ -80,21 +83,127 @@ public class PlayerMiniView extends VBox {
     }
     
     /**
-     * Update the mini ship display with the player's current ship state - PURE ComponentInstance
+     * Update the mini ship display with ship state only (no reserved components)
      */
-    public void updateShipDisplay(Map<Position, ComponentInstance> shipGrid) {
+    public void updateShipDisplay(Map<Position, Component> shipGrid) {
+        updateShipDisplay(shipGrid, new ArrayList<>());
+    }
+    
+    /**
+     * Update the mini ship display with ship state and reserved components
+     */
+    public void updateShipDisplay(Map<Position, Component> shipGrid, List<Component> reservedComponents) {
         if (miniShipGrid == null || shipGrid == null) return;
         
         // Clear current ship
         miniShipGrid.clearComponents();
         
+        // Update forbidden positions in the mini grid (same for all players in the game)
+        LocalGameState gameState = LocalGameState.getInstance();
+        Set<Position> forbiddenPositions = gameState.getForbiddenPositions();
+        miniShipGrid.updateForbiddenPositions(forbiddenPositions);
+        
+        // Setup reservation areas in the first row (last two columns)
+        setupReservationAreas(reservedComponents);
+        
         // Component counters for stats
         int engines = 0, cannons = 0, crew = 0, cargo = 0, batteries = 0, shields = 0;
         
         // Place components according to ship state
-        for (Map.Entry<Position, ComponentInstance> entry : shipGrid.entrySet()) {
+        for (Map.Entry<Position, Component> entry : shipGrid.entrySet()) {
             Position pos = entry.getKey();
-            ComponentInstance component = entry.getValue();
+            Component component = entry.getValue();
+            
+            if (component != null) {
+                ComponentTileView tileView = new ComponentTileView(component);
+                tileView.setPlaced(true);
+                
+                // Scale down the tile for mini-view
+                tileView.setPrefSize(MINI_CELL_SIZE * 0.9, MINI_CELL_SIZE * 0.9);
+                tileView.setMaxSize(MINI_CELL_SIZE * 0.9, MINI_CELL_SIZE * 0.9);
+                tileView.getStyleClass().add("mini-tile");
+                
+                miniShipGrid.placeComponent(tileView, pos.getRow(), pos.getCol());
+                
+                // Count components for stats display
+                switch (component.getType()) {
+                    case ENGINE_SINGLE -> engines += 1;
+                    case ENGINE_DOUBLE -> engines += 2;
+                    case CANNON_SINGLE -> cannons += 1;
+                    case CANNON_DOUBLE -> cannons += 2;
+                    case CABIN, CABIN_START -> crew += 1;
+                    case CARGO_HOLD -> cargo += 1;
+                    case CARGO_HOLD_SPECIAL -> cargo += 2;
+                    case BATTERY -> batteries += 1;
+                    case SHIELD -> shields += 1;
+                }
+            }
+        }
+        
+        // Update stats display
+        shipStatsLabel.setText(String.format("E:%d C:%d R:%d G:%d B:%d S:%d", 
+                                            engines, cannons, crew, cargo, batteries, shields));
+    }
+    
+    /**
+     * Setup reservation areas and display reserved components
+     */
+    private void setupReservationAreas(List<Component> reservedComponents) {
+        LocalGameState gameState = LocalGameState.getInstance();
+        int gridCols = gameState.getGridCols();
+        
+        // Define reservation positions (last two columns of first row)
+        Position[] reservationPositions = {
+            new Position(0, gridCols - 2), // Second to last column, first row
+            new Position(0, gridCols - 1)  // Last column, first row
+        };
+        
+        // Mark reservation areas in the ship grid
+        miniShipGrid.markReservationAreas(Set.of(reservationPositions));
+        
+        // Place reserved components in reservation areas
+        for (int i = 0; i < Math.min(reservedComponents.size(), reservationPositions.length); i++) {
+            Component component = reservedComponents.get(i);
+            Position reservationPos = reservationPositions[i];
+            
+            ComponentTileView tileView = new ComponentTileView(component);
+            tileView.setPlaced(false); // Not actually placed on ship, just reserved
+            
+            // Scale down for mini-view and add special styling
+            tileView.setPrefSize(MINI_CELL_SIZE * 0.8, MINI_CELL_SIZE * 0.8);
+            tileView.setMaxSize(MINI_CELL_SIZE * 0.8, MINI_CELL_SIZE * 0.8);
+            tileView.getStyleClass().addAll("mini-tile", "reserved-component");
+            
+            // Set semi-transparent to indicate it's reserved, not placed
+            tileView.setOpacity(0.8);
+            
+            miniShipGrid.placeComponent(tileView, reservationPos.getRow(), reservationPos.getCol());
+        }
+    }
+    
+    
+    /**
+     * Complete update method with ship grid, forbidden positions, and reserved components
+     */
+    public void updateShipDisplay(Map<Position, Component> shipGrid, Set<Position> forbiddenPositions, List<Component> reservedComponents) {
+        if (miniShipGrid == null || shipGrid == null) return;
+        
+        // Clear current ship
+        miniShipGrid.clearComponents();
+        
+        // Update forbidden positions in the mini grid
+        miniShipGrid.updateForbiddenPositions(forbiddenPositions);
+        
+        // Setup reservation areas and components
+        setupReservationAreas(reservedComponents);
+        
+        // Component counters for stats
+        int engines = 0, cannons = 0, crew = 0, cargo = 0, batteries = 0, shields = 0;
+        
+        // Place components according to ship state
+        for (Map.Entry<Position, Component> entry : shipGrid.entrySet()) {
+            Position pos = entry.getKey();
+            Component component = entry.getValue();
             
             if (component != null) {
                 ComponentTileView tileView = new ComponentTileView(component);
@@ -225,11 +334,11 @@ public class PlayerMiniView extends VBox {
     }
     
     /**
-     * Update the mini-view with comprehensive player data
+     * Update the mini-view with all available data
      */
-    public void updatePlayerData(String name, Map<Position, ComponentInstance> shipGrid, String status, boolean isValidated) {
+    public void updatePlayerData(String name, Map<Position, Component> shipGrid, List<Component> reservedComponents, String status, boolean isValidated) {
         updatePlayerInfo(name);
-        updateShipDisplay(shipGrid);
+        updateShipDisplay(shipGrid, reservedComponents);
         setPlayerStatus(status);
         setShipValidated(isValidated);
     }

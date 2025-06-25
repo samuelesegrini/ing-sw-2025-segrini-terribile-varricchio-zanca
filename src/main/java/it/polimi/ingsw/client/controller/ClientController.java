@@ -4,6 +4,8 @@ import it.polimi.ingsw.client.ClientModel;
 import it.polimi.ingsw.client.network.NetworkClient;
 import it.polimi.ingsw.client.ui.NotificationType;
 import it.polimi.ingsw.client.ui.core.NotificationService;
+import it.polimi.ingsw.client.ui.UIContext;
+import it.polimi.ingsw.client.core.ClientState;
 import it.polimi.ingsw.common.GameInfo;
 import it.polimi.ingsw.common.message.*;
 import it.polimi.ingsw.common.message.event.ClientEventContext;
@@ -24,6 +26,7 @@ import java.util.logging.*;
 
 /**
  * Client controller that handles user actions and server messages.
+ * Uses Simple Direct Model Architecture with UIContext dependency injection.
  */
 public class ClientController {
     private static final Logger LOGGER = Logger.getLogger(ClientController.class.getName());
@@ -31,15 +34,28 @@ public class ClientController {
     private final ClientModel model;
     private final NetworkClient networkClient;
     private final MessageHandler messageHandler;
+    
+    private final UIContext uiContext;
+    private final ClientState clientState;
 
-    public ClientController(ClientModel model, NetworkClient networkClient) {
+    public ClientController(ClientModel model, NetworkClient networkClient, UIContext uiContext) {
         this.model = model;
         this.networkClient = networkClient;
         this.messageHandler = new MessageHandler();
+        this.uiContext = uiContext;
+        this.clientState = uiContext.getClientState();
     }
 
     public ClientModel getModel() {
         return model;
+    }
+    
+    public UIContext getUIContext() {
+        return uiContext;
+    }
+    
+    public ClientState getClientState() {
+        return clientState;
     }
 
     public String getPlayerId() {
@@ -437,6 +453,32 @@ public class ClientController {
                 });
     }
 
+    public CompletableFuture<Boolean> reserveComponent(String tileId) {
+        if (!model.isAuthenticated()) {
+            LOGGER.warning("Cannot reserve component: not authenticated");
+            return CompletableFuture.completedFuture(false);
+        }
+
+        if (tileId == null || tileId.trim().isEmpty()) {
+            LOGGER.warning("Cannot reserve component: invalid tile ID");
+            return CompletableFuture.completedFuture(false);
+        }
+
+        LOGGER.info("Reserving component: " + tileId);
+
+        ReserveTileRequest request = new ReserveTileRequest(tileId.trim());
+        return sendRequest(request)
+                .thenApply(response -> {
+                    if (response.isSuccess()) {
+                        LOGGER.info("Component reserved successfully");
+                        return true;
+                    } else {
+                        LOGGER.warning("Failed to reserve component: " + response.getErrorMessage());
+                        return false;
+                    }
+                });
+    }
+
     public CompletableFuture<Boolean> flipBuildingTimer() {
         if (!model.isAuthenticated()) {
             LOGGER.warning("Cannot flip building timer: not authenticated");
@@ -561,8 +603,8 @@ public class ClientController {
             }
             
             @Override
-            public it.polimi.ingsw.client.core.state.LocalGameState getGameState() {
-                return it.polimi.ingsw.client.core.state.LocalGameState.getInstance();
+            public it.polimi.ingsw.client.core.ClientState getClientState() {
+                return clientState;
             }
             
             @Override
@@ -580,6 +622,7 @@ public class ClientController {
 
     /**
      * Implementation of ClientContext.
+     * ENHANCED VERSION: Supports both legacy ClientModel and new ClientState.
      */
     private class ClientContextImpl implements ClientContext {
 
@@ -606,12 +649,16 @@ public class ClientController {
 
         @Override
         public void showNotification(String title, String message, NotificationType type) {
-            LOGGER.fine("UI Notification: " + title + " - " + message);
+            uiContext.getNotificationService().showNotification(title, message, type);
         }
 
         @Override
         public void showError(String title, String message) {
-            LOGGER.severe("UI Error: " + title + " - " + message);
+            uiContext.getNotificationService().showError(title, message);
+        }
+        
+        public ClientState getClientState() {
+            return clientState;
         }
     }
 }
