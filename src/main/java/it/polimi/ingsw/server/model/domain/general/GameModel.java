@@ -18,6 +18,7 @@ import it.polimi.ingsw.server.model.enums.player.PlayerColor;
 import it.polimi.ingsw.server.model.enums.player.PlayerOrder;
 import it.polimi.ingsw.server.model.enums.resource.GoodType;
 
+import java.io.Serializable;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -25,7 +26,8 @@ import java.util.stream.Collectors;
  * Represents the current state of the game, including the current player, the flight board,
  * the adventure deck, the list of players, and the current game phase.
  */
-public class GameModel {
+public class GameModel implements Serializable {
+    private static final long serialVersionUID = 1L;
     private final String gameId;
     private final GameLevel level;
     private final GameConfig config;
