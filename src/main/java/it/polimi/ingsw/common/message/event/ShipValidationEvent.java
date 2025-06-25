@@ -26,10 +26,10 @@ public class ShipValidationEvent extends AbstractEvent {
         context.runOnUIThread(() -> {
             if (context.isLocalPlayer(playerId)) {
                 // Update local game state with validation results
-                context.getGameState().setShipValidation(isValid, errors);
+                context.getClientState().setShipValidation(isValid, errors);
                 
                 // Update client model for UI binding
-                context.getController().getModel().setShipValidation(isValid, errors);
+                context.getController().getClientState().setShipValidation(isValid, errors);
                 
                 if (context.getNotificationService() != null) {
                     if (isValid) {
@@ -55,7 +55,7 @@ public class ShipValidationEvent extends AbstractEvent {
                 // Other player's validation result
                 if (isValid) {
                     // Mark player as ready in game state
-                    context.getGameState().setPlayerReady(playerId, true);
+                    context.getClientState().setPlayerReady(playerId, true);
                     
                     if (context.getNotificationService() != null) {
                         context.getNotificationService().showNotification(
@@ -69,7 +69,7 @@ public class ShipValidationEvent extends AbstractEvent {
                 }
                 
                 // Notify UI of player status change
-                context.getController().getModel().updatePlayerReadyStatus(playerId, isValid);
+                context.getController().getClientState().updatePlayerReadyStatus(playerId, isValid);
             }
         });
     }

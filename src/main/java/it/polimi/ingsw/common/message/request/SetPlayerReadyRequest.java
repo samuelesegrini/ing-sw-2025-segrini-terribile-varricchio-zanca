@@ -9,6 +9,7 @@ import it.polimi.ingsw.common.message.validation.ValidationResult;
 import it.polimi.ingsw.server.core.GameSession;
 import it.polimi.ingsw.server.core.GameSessionManager;
 import it.polimi.ingsw.server.core.PlayerSessionRegistry;
+import it.polimi.ingsw.server.model.domain.player.PlayerId;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -98,12 +99,15 @@ public class SetPlayerReadyRequest extends AbstractRequest {
     
     private void publishLobbyUpdateEvent(RequestContext context, GameSession gameSession, String gameId, String excludePlayerId) {
         PlayerSessionRegistry registry = context.getPlayerRegistry();
-        List<PlayerInfo> playerInfos = new ArrayList<>();
+        List<Player> playerInfos = new ArrayList<>();
         
         for (String pId : gameSession.getPlayerIds()) {
             String pNickname = registry.getPlayerNickname(pId);
             boolean isReady = gameSession.getPlayerState(pId) != null && gameSession.getPlayerState(pId).isReady();
-            playerInfos.add(new PlayerInfo(pId, pNickname, isReady));
+            PlayerId playerId = it.polimi.ingsw.server.model.domain.player.PlayerId.fromString(pNickname);
+            Player player = new Player(playerId);
+            player.setReady(isReady);
+            playerInfos.add(player);
         }
         
         GameLobbyUpdateEvent lobbyEvent = new GameLobbyUpdateEvent(

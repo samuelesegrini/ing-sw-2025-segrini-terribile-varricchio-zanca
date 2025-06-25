@@ -112,7 +112,7 @@ public class LeaveGameRequest extends AbstractRequest {
     private void publishGamesListUpdateEvent(RequestContext context, GameSessionManager sessionManager, 
                                            PlayerSessionRegistry registry) {
         // Get the current list of available games - use GameModel directly
-        List<GameModel> availableGames = sessionManager.getAvailableGameModels();
+        List<GameModel> availableGames = sessionManager.getAvailableGames();
         
         // Create and publish the games list update event
         GamesListUpdateEvent gamesListEvent = new GamesListUpdateEvent(availableGames);

@@ -38,8 +38,8 @@ public class FlightPhaseStartedEvent extends AbstractEvent {
             }
 
             // SIMPLIFIED: Single property change notification
-            if (context.getController() != null && context.getController().getModel() != null) {
-                context.getController().getModel().firePropertyChange("flightPhaseStarted", null, gameModel);
+            if (context.getController() != null && context.getController().getClientState() != null) {
+                context.getController().getClientState().firePropertyChange("flightPhaseStarted", null, gameModel);
             }
         });
     }

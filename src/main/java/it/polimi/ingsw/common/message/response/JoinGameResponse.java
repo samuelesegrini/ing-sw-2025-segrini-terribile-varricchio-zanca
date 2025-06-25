@@ -28,7 +28,7 @@ public class JoinGameResponse extends AbstractResponse {
             // Update client state - Simple Direct Model Architecture
             ClientState clientState = context.getClientState();
             if (clientState != null) {
-                clientState.setCurrentGame(gameModel);
+                clientState.setGameModel(gameModel);
                 if (gameModel != null) {
                     clientState.setPlayersInLobby(gameModel.getPlayers());
                 }
@@ -36,18 +36,18 @@ public class JoinGameResponse extends AbstractResponse {
             }
             
             // Show success notification
-            context.showNotification(new Notification(
+            context.showNotification(
                     "Joined Game",
                     "Successfully joined " + (gameModel != null && gameModel.getGameName() != null ? gameModel.getGameName() : "game"),
                     NotificationType.SUCCESS
-            ));
+            );
         } else {
             // Show error notification for failed join
-            context.showNotification(new Notification(
+            context.showNotification(
                     "Join Failed",
                     getErrorMessage() != null ? getErrorMessage() : "Failed to join game",
                     NotificationType.ERROR
-            ));
+            );
         }
     }
 

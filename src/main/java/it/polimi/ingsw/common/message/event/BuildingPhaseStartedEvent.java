@@ -29,7 +29,7 @@ public class BuildingPhaseStartedEvent extends AbstractEvent {
                 context.getClientState().setGameModel(gameModel);
             } else {
                 // LEGACY: Fallback to LocalGameState
-                if (context.getGameState() != null) {
+                if (context.getClientState() != null) {
                     // Note: syncWithGameModel method doesn't exist in current LocalGameState
                     // This is legacy code that needs to be replaced
                 }
@@ -47,8 +47,8 @@ public class BuildingPhaseStartedEvent extends AbstractEvent {
             }
 
             // SIMPLIFIED: Single property change notification
-            if (context.getController() != null && context.getController().getModel() != null) {
-                context.getController().getModel().firePropertyChange("buildingPhaseStarted", null, gameModel);
+            if (context.getController() != null && context.getController().getClientState() != null) {
+                context.getController().getClientState().firePropertyChange("buildingPhaseStarted", null, gameModel);
             }
         });
     }

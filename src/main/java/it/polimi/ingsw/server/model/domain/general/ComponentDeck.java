@@ -229,6 +229,25 @@ public class ComponentDeck implements Serializable {
     }
     
     /**
+     * Gets all available components that can be taken (draw pile + face-up)
+     * @return List of available components
+     */
+    public List<Component> getAvailableComponents() {
+        List<Component> available = new ArrayList<>();
+        available.addAll(drawPile);
+        available.addAll(faceUpPile);
+        return Collections.unmodifiableList(available);
+    }
+    
+    /**
+     * Gets the face-up components (alias for getFaceUpPile for compatibility)
+     * @return The face-up components
+     */
+    public List<Component> getFaceUpComponents() {
+        return getFaceUpPile();
+    }
+    
+    /**
      * Gets the total number of available components (draw pile + face-up + reserved)
      * @return Total available components
      */

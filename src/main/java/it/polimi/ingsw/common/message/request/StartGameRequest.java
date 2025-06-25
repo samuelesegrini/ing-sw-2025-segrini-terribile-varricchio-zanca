@@ -124,7 +124,7 @@ public class StartGameRequest extends AbstractRequest {
     }
 
     private void publishGamesListUpdateEvent(RequestContext context, GameSessionManager sessionManager) {
-        List<GameModel> availableGames = sessionManager.getAvailableGameModels();
+        List<GameModel> availableGames = sessionManager.getAvailableGames();
         GamesListUpdateEvent gamesListEvent = new GamesListUpdateEvent(availableGames);
         context.publishEvent(gamesListEvent);
     }

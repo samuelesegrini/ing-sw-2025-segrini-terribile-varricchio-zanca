@@ -29,18 +29,22 @@ public class TilePlacedEvent extends AbstractEvent {
 
     @Override
     public void handleOnClient(ClientEventContext context) {
-        LocalGameState gameState = context.getGameState();
+        var clientState = context.getClientState();
 
         // Update local ship state only for local player
         if (context.isLocalPlayer(playerId)) {
-            gameState.placeTile(playerId, tileId, row, col, rotation);
+            // Fire property change for tile placement
+            clientState.firePropertyChange("tilePlaced", null,
+                java.util.Map.of("playerId", playerId, "tileId", tileId, 
+                               "row", row, "col", col, "rotation", rotation));
         }
 
         context.runOnUIThread(() -> {
             if (context.isLocalPlayer(playerId)) {
                 // Our own action confirmed
-                context.getController().getModel().firePropertyChange("tileConfirmed", false, true);
-                context.getController().getModel().firePropertyChange("shipGridUpdated", null, gameState.getShipGrid());
+                context.getController().getClientState().firePropertyChange("tileConfirmed", false, true);
+                context.getController().getClientState().firePropertyChange("shipGridUpdated", null, 
+                    clientState.getLocalPlayerShip()); // Use the ship from client state
                 
                 // Show success notification
                 if (context.getNotificationService() != null) {
@@ -66,7 +70,7 @@ public class TilePlacedEvent extends AbstractEvent {
             }
 
             // Notify UI to refresh ship display
-            context.getController().getModel().firePropertyChange("opponentShipUpdated", null, Map.of(
+            context.getController().getClientState().firePropertyChange("opponentShipUpdated", null, Map.of(
                 "playerId", playerId,
                 "component", componentType,
                 "row", row,

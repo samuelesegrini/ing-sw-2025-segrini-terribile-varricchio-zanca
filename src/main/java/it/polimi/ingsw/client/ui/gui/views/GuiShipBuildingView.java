@@ -344,14 +344,15 @@ public class GuiShipBuildingView extends BaseUIView implements UIRefreshable {
         if (shipStatsLabel != null && ship != null) {
             try {
                 // Use server Ship's stats if available
-                int engines = ship.countComponentsByType(it.polimi.ingsw.server.model.enums.ship.ComponentType.ENGINE);
-                int cannons = ship.countComponentsByType(it.polimi.ingsw.server.model.enums.ship.ComponentType.CANNON);
-                int crew = ship.countComponentsByType(it.polimi.ingsw.server.model.enums.ship.ComponentType.CREW);
-                int cargo = ship.countComponentsByType(it.polimi.ingsw.server.model.enums.ship.ComponentType.CARGO);
+                ship.updateStats(); // Ensure stats are current
+                double engines = ship.getEngines();
+                double cannons = ship.getCannons();
+                int crew = ship.getCrew();
+                int batteries = ship.getBatteries();
                 
                 shipStatsLabel.setText(String.format(
-                    "Ship Stats: Engines: %d, Cannons: %d, Crew: %d, Cargo: %d",
-                    engines, cannons, crew, cargo
+                    "Ship Stats: Engines: %.1f, Cannons: %.1f, Crew: %d, Batteries: %d",
+                    engines, cannons, crew, batteries
                 ));
             } catch (Exception e) {
                 shipStatsLabel.setText("Ship Stats: Calculating...");

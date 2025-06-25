@@ -35,15 +35,15 @@ public class GameStateSyncEvent extends AbstractEvent {
                 // State version tracking can be added to ClientState if needed
             } else {
                 // LEGACY: Fallback to LocalGameState
-                if (context.getGameState() != null) {
+                if (context.getClientState() != null) {
                     // Note: syncWithGameModel and setStateVersion methods don't exist in current LocalGameState
                     // This is legacy code that needs to be replaced
                 }
             }
 
             // SIMPLIFIED: Single property change notification
-            if (context.getController() != null && context.getController().getModel() != null) {
-                context.getController().getModel().firePropertyChange("gameStateSync", null, gameModel);
+            if (context.getController() != null && context.getController().getClientState() != null) {
+                context.getController().getClientState().firePropertyChange("gameStateSync", null, gameModel);
             }
         });
     }

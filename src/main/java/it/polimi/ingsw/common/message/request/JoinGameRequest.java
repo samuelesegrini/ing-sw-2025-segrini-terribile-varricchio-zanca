@@ -141,7 +141,7 @@ public class JoinGameRequest extends AbstractRequest {
         LOGGER.fine("🔄 GAMES LIST UPDATE - Getting current available games from session manager");
         
         // Get the current list of available games - use GameModel directly
-        List<GameModel> availableGames = sessionManager.getAvailableGameModels();
+        List<GameModel> availableGames = sessionManager.getAvailableGames();
         
         LOGGER.fine("📤 GAMES LIST EVENT - Creating GamesListUpdateEvent for " + availableGames.size() + " available games");
         

@@ -1,5 +1,7 @@
 package it.polimi.ingsw.client.ui.gui.components;
 
+import it.polimi.ingsw.client.core.ClientState;
+import it.polimi.ingsw.client.ui.core.UIContext;
 import it.polimi.ingsw.server.model.domain.ship.components.Component;
 import it.polimi.ingsw.server.model.domain.ship.Position;
 import javafx.geometry.Pos;
@@ -8,7 +10,7 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 
-import java.util.ArrayList;
+import java.util.*;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -31,6 +33,7 @@ public class PlayerMiniView extends VBox {
     private Label playerNameLabel;
     private ShipGridView miniShipGrid;
     private Label shipStatsLabel;
+    private UIContext context;
     
     public PlayerMiniView(String playerId, String playerName) {
         this.playerId = playerId;
@@ -43,6 +46,14 @@ public class PlayerMiniView extends VBox {
         setMaxSize(MINI_VIEW_WIDTH, MINI_VIEW_HEIGHT);
         
         createUI();
+    }
+    
+    /**
+     * Sets the UI context for accessing client state
+     * @param context The UI context
+     */
+    public void setContext(UIContext context) {
+        this.context = context;
     }
     
     private void createUI() {
@@ -99,8 +110,12 @@ public class PlayerMiniView extends VBox {
         miniShipGrid.clearComponents();
         
         // Update forbidden positions in the mini grid (same for all players in the game)
-        LocalGameState gameState = LocalGameState.getInstance();
-        Set<Position> forbiddenPositions = gameState.getForbiddenPositions();
+        Set<Position> forbiddenPositions = Collections.emptySet();
+        if (context != null) {
+            ClientState clientState = context.getClientState();
+            forbiddenPositions = clientState.getLocalPlayerShip() != null ? 
+                clientState.getLocalPlayerShip().getForbiddenPositions() : Collections.emptySet();
+        }
         miniShipGrid.updateForbiddenPositions(forbiddenPositions);
         
         // Setup reservation areas in the first row (last two columns)
@@ -149,8 +164,13 @@ public class PlayerMiniView extends VBox {
      * Setup reservation areas and display reserved components
      */
     private void setupReservationAreas(List<Component> reservedComponents) {
-        LocalGameState gameState = LocalGameState.getInstance();
-        int gridCols = gameState.getGridCols();
+        int gridCols = 8; // Default grid cols, will be updated if context is available
+        if (context != null) {
+            ClientState clientState = context.getClientState();
+            if (clientState.getCurrentGame() != null && clientState.getLocalPlayerShip() != null) {
+                gridCols = clientState.getLocalPlayerShip().getCols();
+            }
+        }
         
         // Define reservation positions (last two columns of first row)
         Position[] reservationPositions = {

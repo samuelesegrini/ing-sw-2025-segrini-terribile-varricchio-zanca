@@ -26,7 +26,7 @@ public class ResourceUpdateEvent extends AbstractEvent {
     @Override
     public void handleOnClient(ClientEventContext context) {
         // Client updates the local model and UI for the specified player's resources.
-        // e.g., context.getGameState().updatePlayerResources(playerId, updatedResources);
+        // e.g., context.getClientState().updatePlayerResources(playerId, updatedResources);
         //      context.getGameUI().refreshPlayerPanel(playerId);
     }
 }

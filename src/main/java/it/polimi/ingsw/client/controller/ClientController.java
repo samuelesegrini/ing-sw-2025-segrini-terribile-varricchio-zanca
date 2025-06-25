@@ -4,12 +4,11 @@ import it.polimi.ingsw.client.network.NetworkClient;
 import it.polimi.ingsw.client.ui.NotificationType;
 import it.polimi.ingsw.client.ui.core.NotificationService;
 import it.polimi.ingsw.client.core.ClientState;
+import it.polimi.ingsw.client.ui.core.UIContext;
 import it.polimi.ingsw.server.model.domain.player.PlayerId;
 import it.polimi.ingsw.common.message.*;
 import it.polimi.ingsw.common.message.event.ClientEventContext;
 import it.polimi.ingsw.common.message.event.Event;
-import it.polimi.ingsw.common.message.event.GameCreatedEvent;
-import it.polimi.ingsw.common.message.event.GameEndedEvent;
 import it.polimi.ingsw.common.message.request.*;
 import it.polimi.ingsw.common.message.response.ClientContext;
 import it.polimi.ingsw.common.message.response.ErrorResponse;
@@ -31,7 +30,7 @@ public class ClientController {
     private final NetworkClient networkClient;
     private final MessageHandler messageHandler;
     
-    private final UIContext uiContext;
+    private UIContext uiContext;
     private final ClientState clientState;
 
     public ClientController(NetworkClient networkClient, UIContext uiContext) {
@@ -41,16 +40,31 @@ public class ClientController {
         this.clientState = uiContext.getClientState();
     }
     
+    public ClientController(NetworkClient networkClient, ClientState clientState) {
+        this.networkClient = networkClient;
+        this.messageHandler = new MessageHandler();
+        this.uiContext = null; // Will be set by UIManager when context is created
+        this.clientState = clientState;
+    }
+    
     public UIContext getUIContext() {
         return uiContext;
+    }
+    
+    public void setUIContext(UIContext uiContext) {
+        this.uiContext = uiContext;
     }
     
     public ClientState getClientState() {
         return clientState;
     }
 
-    public PlayerId getPlayerId() {
+    public String getPlayerId() {
         return clientState.getPlayerId();
+    }
+    
+    public PlayerId getPlayerIdObject() {
+        return clientState.getPlayerIdObject();
     }
 
     // Connection actions
@@ -582,13 +596,13 @@ public class ClientController {
             
             @Override
             public String getLocalPlayerId() {
-                return clientState.getPlayerId() != null ? clientState.getPlayerId().toString() : null;
+                return clientState.getPlayerId();
             }
             
             @Override
             public boolean isLocalPlayer(String playerId) {
                 return playerId != null && clientState.getPlayerId() != null && 
-                       playerId.equals(clientState.getPlayerId().toString());
+                       playerId.equals(clientState.getPlayerId());
             }
             
             @Override
@@ -617,7 +631,7 @@ public class ClientController {
 
         @Override
         public String getPlayerId() {
-            return clientState.getPlayerId() != null ? clientState.getPlayerId().toString() : null;
+            return clientState.getPlayerId();
         }
 
         @Override

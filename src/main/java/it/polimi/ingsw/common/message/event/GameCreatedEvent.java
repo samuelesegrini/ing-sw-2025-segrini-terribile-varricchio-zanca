@@ -41,21 +41,32 @@ public class GameCreatedEvent extends AbstractEvent {
     public void handleOnClient(ClientEventContext context) {
         LOGGER.log(Level.SEVERE, "GameCreatedEvent received on client. Creator ID: " + creatorId + ". Is this the local player? " + context.isLocalPlayer(creatorId));
 
-        // Create game info for the new game
-        Player creatorInfo = new Player(creatorId, creatorNickname, true);
-        GameModel gameInfo = new GameModel(gameId, gameName, creatorId, maxPlayers, 1, gameLevel,
-                GamePhase.SETUP, Collections.singletonList(creatorInfo));
+        // Create game info for the new game  
+        it.polimi.ingsw.server.model.domain.player.PlayerId playerId = 
+            it.polimi.ingsw.server.model.domain.player.PlayerId.fromString(creatorNickname);
+        Player creatorInfo = new Player(playerId);
+        creatorInfo.setReady(true);
+        
+        // Note: GameModel constructor requires (GameLevel, GameConfigurationManager, int maxPlayers)
+        // We can't create a full GameModel here, so we'll update the ClientState differently
 
-        // Add game to available games list for all recipients
-        context.getController().getModel().addAvailableGame(gameInfo);
+        // Notify UI about new game creation via property change
+        context.getController().getClientState().firePropertyChange("gameCreated", null, 
+            java.util.Map.of(
+                "gameId", gameId,
+                "gameName", gameName,
+                "creatorId", creatorId, 
+                "creatorNickname", creatorNickname,
+                "maxPlayers", maxPlayers,
+                "gameLevel", gameLevel.name()
+            ));
 
         // If this client is the creator, transition to game lobby
         if (context.isLocalPlayer(creatorId)) {
             LOGGER.log(Level.SEVERE, "This is the creator's client. Transitioning to game lobby " + gameId);
             
-            // Set current game and transition to game lobby
-            context.getController().getModel().setCurrentGame(gameInfo);
-            context.getController().getModel().setCurrentView(ClientState.ViewState.GAME_LOBBY);
+            // Transition to game lobby - the actual GameModel will be set by other events
+            context.getController().getClientState().setCurrentView(ClientState.ViewState.GAME_LOBBY);
 
         } else {
             // For other players, show a notification

@@ -21,24 +21,24 @@ public class LeaveGameResponse extends AbstractResponse {
             // Update client state - clear current game and return to lobby
             ClientState clientState = context.getClientState();
             if (clientState != null) {
-                clientState.setCurrentGame(null);
+                clientState.setGameModel(null);
                 clientState.setPlayersInLobby(new java.util.ArrayList<>());
                 clientState.setCurrentView(ClientState.ViewState.LOBBY);
             }
             
             // Show success notification
-            context.showNotification(new Notification(
+            context.showNotification(
                     "Left Game",
                     "You have left the game",
                     NotificationType.INFO
-            ));
+            );
         } else {
             // Show error notification
-            context.showNotification(new Notification(
+            context.showNotification(
                     "Failed to Leave",
                     getErrorMessage() != null ? getErrorMessage() : "Failed to leave game",
                     NotificationType.ERROR
-            ));
+            );
         }
     }
 

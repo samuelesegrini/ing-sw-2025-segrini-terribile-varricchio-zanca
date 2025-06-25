@@ -48,9 +48,9 @@ public class CombatStartedEvent extends AbstractEvent {
     public void handleOnClient(ClientEventContext context) {
         context.runOnUIThread(() -> {
             // Update game state with combat information
-            if (context.getGameState() != null) {
-                // context.getGameState().startCombat(enemyName, enemyStrength, combatType);
-                // context.getGameState().setCombatTimeLimit(decisionTimeLimit);
+            if (context.getClientState() != null) {
+                // context.getClientState().startCombat(enemyName, enemyStrength, combatType);
+                // context.getClientState().setCombatTimeLimit(decisionTimeLimit);
             }
 
             // Show combat notification

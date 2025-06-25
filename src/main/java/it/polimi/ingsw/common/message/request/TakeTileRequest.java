@@ -42,7 +42,7 @@ public class TakeTileRequest extends AbstractRequest {
         }
         
         // Add component to player's hand/held tiles
-        player.addHeldComponent(drawnComponent);
+        player.addComponent(drawnComponent);
 
         // ENHANCED: Send response with full server models
         TakeTileResponse response = new TakeTileResponse(

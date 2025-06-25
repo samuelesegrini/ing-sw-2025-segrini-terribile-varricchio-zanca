@@ -50,8 +50,10 @@ public class PlayerJoinedGameEvent extends AbstractEvent {
             for (int i = 0; i < availableGames.size(); i++) {
                 GameModel game = availableGames.get(i);
                 if (game.getGameId().equals(gameId)) {
-                    // Update player count in the game model
-                    game.setCurrentPlayers(currentPlayerCount);
+                    // Fire property change for player count update
+                    context.getController().getClientState().firePropertyChange("playerJoined", null,
+                        java.util.Map.of("gameId", gameId, "playerCount", currentPlayerCount, 
+                                        "playerNickname", playerNickname));
                     LOGGER.info("PlayerJoined: " + playerNickname + " -> " + gameId + " (" + currentPlayerCount + " players)");
                     break;
                 }

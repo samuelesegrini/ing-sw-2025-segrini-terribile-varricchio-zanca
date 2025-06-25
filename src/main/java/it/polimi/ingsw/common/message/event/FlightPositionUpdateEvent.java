@@ -20,7 +20,7 @@ public class FlightPositionUpdateEvent extends AbstractEvent {
     @Override
     public void handleOnClient(ClientEventContext context) {
         // Client updates its local model and refreshes the flight board UI.
-        // context.getGameState().updateFlightPositions(playerPositions);
+        // context.getClientState().updateFlightPositions(playerPositions);
         // context.getGameUI().refreshFlightBoard();
     }
 }

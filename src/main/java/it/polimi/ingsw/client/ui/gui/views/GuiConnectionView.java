@@ -130,9 +130,9 @@ public class GuiConnectionView extends BaseUIView {
         connectButton.setDefaultButton(true);
         connectButton.setOnAction(e -> handleConnect());
         if (context != null) {
-            connectButton.disableProperty().bind(context.getModel().connectedProperty());
-            hostnameField.disableProperty().bind(context.getModel().connectedProperty());
-            portField.disableProperty().bind(context.getModel().connectedProperty());
+            connectButton.disableProperty().bind(context.getClientState().connectedProperty());
+            hostnameField.disableProperty().bind(context.getClientState().connectedProperty());
+            portField.disableProperty().bind(context.getClientState().connectedProperty());
         }
 
         // Error label
@@ -197,7 +197,7 @@ public class GuiConnectionView extends BaseUIView {
     }
 
     private void updateConnectionStatus() {
-        if (context.getModel().isConnected()) {
+        if (context.getClientState().isConnected()) {
             statusLabel.setText("Connected to server");
             statusLabel.setTextFill(Color.GREEN);
         } else {

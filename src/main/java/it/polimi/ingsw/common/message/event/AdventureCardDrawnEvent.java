@@ -35,9 +35,9 @@ public class AdventureCardDrawnEvent extends AbstractEvent {
     public void handleOnClient(ClientEventContext context) {
         context.runOnUIThread(() -> {
             // Update game state with new adventure card
-            if (context.getGameState() != null) {
-                // context.getGameState().setCurrentAdventureCard(card);
-                // context.getGameState().setCardProgress(cardNumber, totalCards);
+            if (context.getClientState() != null) {
+                // context.getClientState().setCurrentAdventureCard(card);
+                // context.getClientState().setCardProgress(cardNumber, totalCards);
             }
 
             // Show adventure card notification

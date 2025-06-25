@@ -35,7 +35,7 @@ public class GameEndedEvent extends AbstractEvent {
             // Update client state - game has ended
             ClientState clientState = context.getClientState();
             if (clientState != null && gameId.equals(clientState.getCurrentGameId())) {
-                clientState.setCurrentGame(null);
+                clientState.setGameModel(null);
                 clientState.setCurrentView(ClientState.ViewState.LOBBY);
             }
 

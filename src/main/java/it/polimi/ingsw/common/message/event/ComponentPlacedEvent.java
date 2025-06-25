@@ -17,7 +17,7 @@ public class ComponentPlacedEvent extends AbstractEvent {
 
     public ComponentPlacedEvent(String gameId, Player player, Component component, 
                                Ship updatedShip, ComponentDeck updatedDeck) {
-        super(EventType.TILE_PLACED, gameId, player.getId());
+        super(EventType.TILE_PLACED, gameId, player.getId().toString());
         this.player = player;
         this.component = component;
         this.updatedShip = updatedShip;
@@ -42,7 +42,7 @@ public class ComponentPlacedEvent extends AbstractEvent {
 
     // Legacy getters for backward compatibility
     public String getPlayerId() {
-        return player.getId();
+        return player.getId().toString();
     }
 
     public String getPlayerNickname() {
@@ -84,8 +84,8 @@ public class ComponentPlacedEvent extends AbstractEvent {
             }
 
             // SIMPLIFIED: Single property change event instead of multiple
-            if (context.getController() != null && context.getController().getModel() != null) {
-                context.getController().getModel().firePropertyChange("componentPlaced", null, 
+            if (context.getController() != null && context.getController().getClientState() != null) {
+                context.getController().getClientState().firePropertyChange("componentPlaced", null, 
                     java.util.Map.of(
                         "playerId", getPlayerId(),
                         "component", component.getType(),

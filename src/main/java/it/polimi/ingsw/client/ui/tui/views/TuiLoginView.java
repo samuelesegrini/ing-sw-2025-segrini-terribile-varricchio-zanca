@@ -50,14 +50,14 @@ public class TuiLoginView extends BaseUIView {
     
     @Override
     protected void onRefresh() {
-        if (context.getModel().isLoggedIn()) {
-            console.printSuccess("Logged in as: " + context.getModel().getCurrentNickname());
+        if (context.getClientState().isLoggedIn()) {
+            console.printSuccess("Logged in as: " + context.getClientState().getCurrentNickname());
         }
     }
     
     private void promptForLogin() {
         // Loop as long as this view is active and we are not logged in
-        while (isActive() && !context.getModel().isLoggedIn()) {
+        while (isActive() && !context.getClientState().isLoggedIn()) {
             System.out.print("Enter nickname: ");
             String nickname = scanner.nextLine().trim();
 

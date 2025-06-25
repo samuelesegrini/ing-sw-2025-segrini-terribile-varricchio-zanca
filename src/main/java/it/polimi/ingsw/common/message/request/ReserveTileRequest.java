@@ -8,6 +8,7 @@ import it.polimi.ingsw.common.message.validation.ValidationResult;
 import it.polimi.ingsw.server.core.GameSession;
 import it.polimi.ingsw.server.model.domain.player.Player;
 import it.polimi.ingsw.server.model.domain.ship.components.Component;
+import it.polimi.ingsw.server.model.domain.general.ComponentDeck;
 import it.polimi.ingsw.server.model.enums.GamePhase;
 
 /**
@@ -63,15 +64,23 @@ public class ReserveTileRequest extends AbstractRequest {
         }
 
         try {
-            // Reserve component logic - move from hand to reserved area
-            player.reserveComponent(component);
+            // Reserve component logic - move to deck's reserved area
+            ComponentDeck deck = session.getGameModel().getComponentDeck();
+            boolean reserved = deck.reserveComponent(playerId, component);
+            
+            if (!reserved) {
+                return createErrorResponse("Cannot reserve component - maximum reservations reached", ErrorResponse.INVALID_STATE);
+            }
+            
+            // Remove component from player's hand since it's now reserved
+            player.clearHeldComponent();
 
             // Publish component taken event with full server models
             ComponentTakenEvent event = new ComponentTakenEvent(
                 session.getGameId(),
                 component,
-                playerId,
-                player.getNickname()
+                player,
+                deck
             );
             context.getEventPublisher().publishEvent(event);
 

@@ -55,9 +55,12 @@ public class ReturnTileRequest extends AbstractRequest {
         // Announce the component is available to all players
         ComponentOfferedEvent event = new ComponentOfferedEvent(
                 session.getGameId(), 
-                componentToReturn, 
-                context.getPlayerId(),
-                context.getPlayerNickname()
+                componentToReturn.getId(),
+                componentToReturn.getType().name(),
+                null, // Not offered to specific player - available to all
+                null, // Not offered to specific player
+                "Returned to face-up pile",
+                System.currentTimeMillis() + 300000 // 5 minute expiry
         );
         context.getEventPublisher().publishEvent(event);
 

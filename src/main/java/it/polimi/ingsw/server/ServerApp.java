@@ -288,16 +288,16 @@ public class ServerApp {
      Prints active games.
      */
     private void printGames() {
-        List<GameInfo> games = sessionManager.getAvailableGames();
+        List<GameModel> games = sessionManager.getAvailableGames();
         if (games.isEmpty()) {
             System.out.println("No active games");
         } else {
             System.out.println("Active Games:");
-            for (GameInfo game : games) {
-                System.out.println(" Game ID: " + game.gameId);
-                System.out.println(" Name: " + (game.gameName != null ? game.gameName : "Unnamed"));
-                System.out.println(" Players: " + game.currentPlayers + "/" + game.maxPlayers);
-                System.out.println(" Level: " + game.gameLevel);
+            for (GameModel game : games) {
+                System.out.println(" Game ID: " + game.getGameId());
+                System.out.println(" Name: " + (game.getGameName() != null ? game.getGameName() : "Unnamed"));
+                System.out.println(" Players: " + game.getPlayers().size() + "/" + game.getMaxPlayers());
+                System.out.println(" Level: " + game.getGameLevel());
                 System.out.println();
             }
         }

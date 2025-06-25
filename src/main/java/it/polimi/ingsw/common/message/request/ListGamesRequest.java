@@ -21,6 +21,6 @@ public class ListGamesRequest extends AbstractRequest {
         }
 
         GameSessionManager sessionManager = context.getSessionManager();
-        List<GameInfo> games = sessionManager.getAvailableGames();
+        List<GameModel> games = sessionManager.getAvailableGames();
         return new ListGamesResponse(getCorrelationId(), games);    }
 }

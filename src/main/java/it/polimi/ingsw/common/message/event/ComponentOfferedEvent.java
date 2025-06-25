@@ -53,8 +53,8 @@ public class ComponentOfferedEvent extends AbstractEvent {
     public void handleOnClient(ClientEventContext context) {
         context.runOnUIThread(() -> {
             // Update game state with component offer
-            if (context.getGameState() != null) {
-                // context.getGameState().addComponentOffer(tileId, offeredToPlayerId, offerExpiresAt);
+            if (context.getClientState() != null) {
+                // context.getClientState().addComponentOffer(tileId, offeredToPlayerId, offerExpiresAt);
             }
 
             // Show notification

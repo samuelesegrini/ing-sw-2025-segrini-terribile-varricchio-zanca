@@ -3,7 +3,6 @@ package it.polimi.ingsw.client.core;
 import it.polimi.ingsw.client.network.NetworkClient;
 import it.polimi.ingsw.client.ui.UIManager;
 import it.polimi.ingsw.client.ui.UIType;
-import it.polimi.ingsw.client.ui.UIContext;
 import it.polimi.ingsw.client.controller.ClientController;
 import java.util.Scanner;
 import java.util.logging.*;
@@ -54,12 +53,8 @@ public class ClientApp {
             clientState = new ClientState();
             networkClient = new NetworkClient();
             
-            // Create UIContext with null services for now (transitional approach)
-            UIContext uiContext = new UIContext(clientState, null, null, null);
-            controller = new ClientController(networkClient, uiContext);
-            
-            // Update UIContext with the actual controller
-            uiContext = new UIContext(clientState, controller, null, null);
+            // Create controller without UIContext first
+            controller = new ClientController(networkClient, clientState);
             uiManager = new UIManager(uiType, controller);
 
             // Set up callbacks

@@ -2,13 +2,12 @@ package it.polimi.ingsw.server.model.domain.player;
 
 import it.polimi.ingsw.server.model.domain.flight.PlayerFlightData;
 import it.polimi.ingsw.server.model.domain.ship.Ship;
+import it.polimi.ingsw.server.model.domain.ship.components.Component;
 import it.polimi.ingsw.server.model.enums.crew.CrewType;
 import it.polimi.ingsw.server.model.enums.player.PlayerColor;
 
 import java.io.Serializable;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 public class Player implements Serializable {
     private static final long serialVersionUID = 1L;
@@ -20,6 +19,8 @@ public class Player implements Serializable {
     private int crewMembers;
     private Ship ship;
     private int finalScore;
+    private Component heldComponent;
+    private boolean ready;
 
     /**
      * Creates a new player with the specified ID
@@ -36,6 +37,8 @@ public class Player implements Serializable {
         this.crew = new HashMap<>();
         this.credits = 0;
         this.crewMembers = 0;
+        this.heldComponent = null;
+        this.ready = false;
     }
 
     /**
@@ -55,6 +58,22 @@ public class Player implements Serializable {
 
     public PlayerId getId() {
         return this.playerId;
+    }
+    
+    /**
+     * Gets the player ID (alias for getId)
+     * @return The player ID
+     */
+    public PlayerId getPlayerId() {
+        return this.playerId;
+    }
+    
+    /**
+     * Gets the player's nickname from the PlayerId
+     * @return The player's nickname
+     */
+    public String getNickname() {
+        return this.playerId.getNickname();
     }
 
     public PlayerFlightData getFlightData() {
@@ -136,6 +155,74 @@ public class Player implements Serializable {
      */
     public void setFinalScore(int finalScore) {
         this.finalScore = finalScore;
+    }
+    
+    /**
+     * Gets the component currently held by the player
+     * @return List containing the held component (for compatibility), or empty list if none
+     */
+    public List<Component> getHeldComponents() {
+        return heldComponent != null ? List.of(heldComponent) : Collections.emptyList();
+    }
+    
+    /**
+     * Gets the single held component
+     * @return The held component, or null if none
+     */
+    public Component getHeldComponent() {
+        return heldComponent;
+    }
+    
+    /**
+     * Sets the component held by the player
+     * @param component The component to hold (replaces any existing one)
+     */
+    public void setHeldComponent(Component component) {
+        this.heldComponent = component;
+    }
+    
+    /**
+     * Adds a component to the player's hand (replaces any existing one)
+     * @param component The component to add
+     */
+    public void addComponent(Component component) {
+        this.heldComponent = component;
+    }
+    
+    /**
+     * Removes the held component from the player's hand
+     * @param component The component to remove
+     * @return true if the component was removed
+     */
+    public boolean removeComponent(Component component) {
+        if (this.heldComponent == component) {
+            this.heldComponent = null;
+            return true;
+        }
+        return false;
+    }
+    
+    /**
+     * Clears the held component
+     */
+    public void clearHeldComponent() {
+        this.heldComponent = null;
+    }
+    
+    /**
+     * Gets the ready status of the player
+     * @return true if the player is ready
+     */
+    public boolean isReady() {
+        return ready;
+    }
+    
+    /**
+     * Sets the ready status of the player
+     * @param ready true if the player is ready
+     */
+    public void setReady(boolean ready) {
+        this.ready = ready;
     }
 
     @Override

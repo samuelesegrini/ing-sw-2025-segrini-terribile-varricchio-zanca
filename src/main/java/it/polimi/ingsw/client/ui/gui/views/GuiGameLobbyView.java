@@ -234,7 +234,7 @@ public class GuiGameLobbyView extends BaseUIView {
     }
 
     private void updateLobbyDisplay() {
-        if (context == null || context.getModel() == null) {
+        if (context == null || context.getClientState() == null) {
             return;
         }
         
@@ -244,7 +244,7 @@ public class GuiGameLobbyView extends BaseUIView {
             return;
         }
 
-        ClientModel model = context.getModel();
+        ClientState model = context.getClientState();
         
         // Update game info
         if (model.getCurrentGameInfo() != null) {
@@ -270,12 +270,12 @@ public class GuiGameLobbyView extends BaseUIView {
             return; // UI not loaded yet
         }
         
-        List<Player> playersRaw = context.getModel().getPlayersInLobby();
+        List<Player> playersRaw = context.getClientState().getPlayersInLobby();
         if (playersRaw != null) {
             // Deduplicate players by ID (keep the last occurrence)
             Map<String, Player> uniquePlayers = new LinkedHashMap<>();
             for (Player player : playersRaw) {
-                uniquePlayers.put(player.getPlayerId(), player);
+                uniquePlayers.put(player.getId().toString(), player);
             }
             List<Player> players = new ArrayList<>(uniquePlayers.values());
             
@@ -286,13 +286,14 @@ public class GuiGameLobbyView extends BaseUIView {
                 noPlayersLabel.getStyleClass().add("waiting-room-no-players-label");
                 playersVBox.getChildren().add(noPlayersLabel);
             } else {
-                String currentPlayerId = context.getController().getPlayerId();
+                String currentPlayerId = context.getController().getPlayerId() != null ? 
+                    context.getController().getPlayerId() : null;
                 String hostId = getHostPlayerId();
                 
                 for (Player player : players) {
                     VBox playerEntry = createPlayerEntry(player, 
-                        player.getPlayerId().equals(hostId),
-                        player.getPlayerId().equals(currentPlayerId));
+                        player.getId().toString().equals(hostId),
+                        player.getId().toString().equals(currentPlayerId));
                     playersVBox.getChildren().add(playerEntry);
                 }
             }
@@ -310,7 +311,8 @@ public class GuiGameLobbyView extends BaseUIView {
         // Player name with host indicator
         String displayName = player.getNickname();
         if (displayName == null || displayName.trim().isEmpty()) {
-            displayName = "Player " + player.getPlayerId().substring(0, Math.min(8, player.getPlayerId().length()));
+            String playerIdStr = player.getId().toString();
+            displayName = "Player " + playerIdStr.substring(0, Math.min(8, playerIdStr.length()));
         }
         if (isHost) {
             displayName += " (Host)";
@@ -345,9 +347,10 @@ public class GuiGameLobbyView extends BaseUIView {
             return; // UI not loaded yet
         }
         
-        String currentPlayerId = context.getController().getPlayerId();
+        String currentPlayerId = context.getController().getPlayerId() != null ? 
+            context.getController().getPlayerId() : null;
         boolean isHost = currentPlayerId != null && currentPlayerId.equals(getHostPlayerId());
-        boolean isReady = context.getModel().isPlayerReady(currentPlayerId);
+        boolean isReady = context.getClientState().isPlayerReady(currentPlayerId);
         boolean allReady = areAllPlayersReady();
         
         // Show/hide host controls
@@ -380,23 +383,23 @@ public class GuiGameLobbyView extends BaseUIView {
         }
         
         // Update the game info label to include status
-        if (context.getModel().getCurrentGameInfo() != null) {
-            String baseInfo = "Level: " + context.getModel().getCurrentGameInfo().getGameLevel().toString().replace("_", " ");
+        if (context.getClientState().getCurrentGameInfo() != null) {
+            String baseInfo = "Level: " + context.getClientState().getCurrentGameInfo().getGameLevel().toString().replace("_", " ");
             gameInfoLabel.setText(baseInfo + "  |  " + status);
         }
     }
 
     private String getHostPlayerId() {
         // Get host from GameInfo which tracks the actual creator/host
-        if (context.getModel().getCurrentGameInfo() != null) {
-            return context.getModel().getCurrentGameInfo().getCreatorId();
+        if (context.getClientState().getCurrentGameInfo() != null) {
+            return context.getClientState().getCurrentGameInfo().getCreatorId();
         }
         // No fallback - if GameInfo is not available, no one is host
         return null;
     }
 
     private boolean areAllPlayersReady() {
-        List<Player> players = context.getModel().getPlayersInLobby();
+        List<Player> players = context.getClientState().getPlayersInLobby();
         return players != null && !players.isEmpty() && 
                players.stream().allMatch(Player::isReady);
     }
@@ -426,8 +429,9 @@ public class GuiGameLobbyView extends BaseUIView {
     }
     
     public void handleReadyButton() {
-        String playerId = context.getController().getPlayerId();
-        boolean currentReady = context.getModel().isPlayerReady(playerId);
+        String playerId = context.getController().getPlayerId() != null ? 
+            context.getController().getPlayerId() : null;
+        boolean currentReady = context.getClientState().isPlayerReady(playerId);
         
         context.getController().setPlayerReady(!currentReady);
     }

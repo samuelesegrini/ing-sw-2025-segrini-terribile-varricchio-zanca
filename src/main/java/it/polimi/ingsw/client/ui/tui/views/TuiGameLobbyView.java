@@ -103,7 +103,7 @@ public class TuiGameLobbyView extends BaseUIView { //CONTROLLA
             return;
         }
 
-        String currentPlayerId = context.getController().getPlayerId().toString();
+        String currentPlayerId = context.getController().getPlayerId();
         String hostId = getHostPlayerId();
 
         String[] headers = {"NICKNAME", "STATUS", "HOST"};
@@ -125,7 +125,7 @@ public class TuiGameLobbyView extends BaseUIView { //CONTROLLA
     }
 
     private void displayStatus() {
-        String currentPlayerId = context.getController().getPlayerId().toString();
+        String currentPlayerId = context.getController().getPlayerId();
         boolean isHost = currentPlayerId != null && currentPlayerId.equals(getHostPlayerId());
         boolean isReady = true; // TODO: Add isPlayerReady method to ClientState
         boolean allReady = areAllPlayersReady();
@@ -147,7 +147,7 @@ public class TuiGameLobbyView extends BaseUIView { //CONTROLLA
     private void displayCommands() {
         console.println("Available Commands:");
         
-        String currentPlayerId = context.getController().getPlayerId().toString();
+        String currentPlayerId = context.getController().getPlayerId();
         boolean isHost = currentPlayerId != null && currentPlayerId.equals(getHostPlayerId());
         boolean isReady = true; // TODO: Add isPlayerReady method to ClientState
         boolean allReady = areAllPlayersReady();
@@ -222,8 +222,9 @@ public class TuiGameLobbyView extends BaseUIView { //CONTROLLA
     }
 
     private void handleReadyCommand() {
-        String playerId = context.getController().getPlayerId();
-        if (!context.getModel().isPlayerReady(playerId)) {
+        String playerId = context.getController().getPlayerId() != null ? 
+            context.getController().getPlayerId() : null;
+        if (!context.getClientState().isPlayerReady(playerId)) {
             context.getController().setPlayerReady(true);
             console.printSuccess("Marked as ready!");
         } else {
@@ -232,8 +233,9 @@ public class TuiGameLobbyView extends BaseUIView { //CONTROLLA
     }
 
     private void handleUnreadyCommand() {
-        String playerId = context.getController().getPlayerId();
-        if (context.getModel().isPlayerReady(playerId)) {
+        String playerId = context.getController().getPlayerId() != null ? 
+            context.getController().getPlayerId() : null;
+        if (context.getClientState().isPlayerReady(playerId)) {
             context.getController().setPlayerReady(false);
             console.printSuccess("Marked as not ready!");
         } else {
@@ -242,7 +244,8 @@ public class TuiGameLobbyView extends BaseUIView { //CONTROLLA
     }
 
     private void handleStartCommand() {
-        String currentPlayerId = context.getController().getPlayerId();
+        String currentPlayerId = context.getController().getPlayerId() != null ? 
+            context.getController().getPlayerId() : null;
         if (!currentPlayerId.equals(getHostPlayerId())) {
             console.printError("Only the host can start the game!");
             return;
@@ -270,16 +273,16 @@ public class TuiGameLobbyView extends BaseUIView { //CONTROLLA
 
     private String getHostPlayerId() {
         // Get host from GameModel which tracks the actual creator/host
-        if (context.getModel().getCurrentGame() != null) {
-            return context.getModel().getCurrentGame().getCreatorId();
+        if (context.getClientState().getCurrentGame() != null) {
+            return context.getClientState().getCurrentGame().getCreatorId();
         }
         // Fallback to the first player if GameModel is not available
-        List<Player> players = context.getModel().getPlayersInLobby();
-        return players != null && !players.isEmpty() ? players.getFirst().getPlayerId() : null;
+        List<Player> players = context.getClientState().getPlayersInLobby();
+        return players != null && !players.isEmpty() ? players.getFirst().getId().toString() : null;
     }
 
     private boolean areAllPlayersReady() {
-        List<Player> players = context.getModel().getPlayersInLobby();
+        List<Player> players = context.getClientState().getPlayersInLobby();
         return players != null && !players.isEmpty() && 
                players.stream().allMatch(Player::isReady);
     }

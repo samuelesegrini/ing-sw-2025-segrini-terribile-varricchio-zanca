@@ -38,18 +38,18 @@ public class LoginResponse extends AbstractResponse {
             }
             
             // Show success notification
-            context.showNotification(new Notification(
+            context.showNotification(
                     "Login Successful",
                     "Welcome " + nickname + "!",
                     NotificationType.SUCCESS
-            ));
+            );
         } else {
             // Show error notification for failed login
-            context.showNotification(new Notification(
+            context.showNotification(
                     "Login Failed",
                     getErrorMessage() != null ? getErrorMessage() : "Login failed",
                     NotificationType.ERROR
-            ));
+            );
         }
     }
 

@@ -47,12 +47,11 @@ public class ReserveTileResponse extends AbstractResponse {
     public void handleOnClient(ClientContext context) {
         if (isSuccess() && updatedPlayer != null && component != null && updatedDeck != null) {
             // NEW: Simple model replacement via ClientState
-            if (context instanceof PlaceTileResponse.ClientContextEnhanced enhancedContext) {
-                if (enhancedContext.getClientState() != null) {
-                    enhancedContext.getClientState().updatePlayer(updatedPlayer);
-                    enhancedContext.getClientState().updateComponentDeck(updatedDeck);
-                    // UI refreshes automatically
-                }
+            if (context.getClientState() != null) {
+                // Update client state using existing methods
+                context.getClientState().updatePlayer(updatedPlayer);
+                context.getClientState().updateComponentDeck(updatedDeck);
+                // UI refreshes automatically
             }
             
             context.showNotification("Component Reserved", "Component reserved successfully",

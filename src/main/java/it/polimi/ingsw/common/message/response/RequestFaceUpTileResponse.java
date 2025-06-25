@@ -25,8 +25,8 @@ public class RequestFaceUpTileResponse extends AbstractResponse {
     public void handleOnClient(ClientContext context) {
         if (isSuccess() && tile != null) {
             // Update model state - player now holds this tile
-            if (context.getModel() != null) {
-                // context.getModel().setHeldTile(tile);
+            if (context.getClientState() != null) {
+                // context.getClientState().setHeldTile(tile);
             }
             
             // Show success notification

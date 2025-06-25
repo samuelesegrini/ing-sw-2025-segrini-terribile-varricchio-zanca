@@ -27,9 +27,9 @@ public class PhaseChangedEvent extends AbstractEvent {
     public void handleOnClient(ClientEventContext context) {
         context.runOnUIThread(() -> {
             // Update model state with new game phase
-            if (context.getGameState() != null) {
-                // context.getGameState().setCurrentPhase(newPhase);
-                // context.getGameState().setPhaseDuration(durationInSeconds);
+            if (context.getClientState() != null) {
+                // context.getClientState().setCurrentPhase(newPhase);
+                // context.getClientState().setPhaseDuration(durationInSeconds);
             }
 
             // Show phase transition notification

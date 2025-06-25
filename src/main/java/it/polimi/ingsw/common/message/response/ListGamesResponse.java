@@ -24,7 +24,7 @@ public class ListGamesResponse extends AbstractResponse {
     @Override
     public void handleOnClient(ClientContext context) {
         if (isSuccess()) {
-            context.getModel().setAvailableGames(games);
+            context.getClientState().setAvailableGames(games);
         } else {
             context.showError("Could not fetch games", getErrorMessage());
         }

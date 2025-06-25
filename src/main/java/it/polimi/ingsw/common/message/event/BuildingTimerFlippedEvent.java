@@ -44,9 +44,12 @@ public class BuildingTimerFlippedEvent extends AbstractEvent {
     public void handleOnClient(ClientEventContext context) {
         context.runOnUIThread(() -> {
             // Update game state with new timer information
-            var gameState = LocalGameState.getInstance();
-            gameState.updateBuildingTimer(newTimeRemaining);
-            gameState.setBuildingTimerFlipped(true);
+            var clientState = context.getClientState();
+            if (clientState != null) {
+                // Fire property change events for UI updates
+                clientState.firePropertyChange("buildingTimer", null, newTimeRemaining);
+                clientState.firePropertyChange("buildingTimerFlipped", null, true);
+            }
 
 
             // Show notification
@@ -81,10 +84,10 @@ public class BuildingTimerFlippedEvent extends AbstractEvent {
             }
 
             // Fire property change events for UI updates
-            if (context.getController() != null && context.getController().getModel() != null) {
-                context.getController().getModel().firePropertyChange("buildingTimerUpdated", 
+            if (context.getController() != null && context.getController().getClientState() != null) {
+                context.getController().getClientState().firePropertyChange("buildingTimerUpdated", 
                     null, newTimeRemaining);
-                context.getController().getModel().firePropertyChange("buildingTimerFlipped", 
+                context.getController().getClientState().firePropertyChange("buildingTimerFlipped", 
                     null, Map.of("playerId", playerId, "flipCount", flipCount));
             }
         });

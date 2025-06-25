@@ -34,7 +34,7 @@ public class ReconnectResponse extends AbstractResponse {
         return gameId;
     }
 
-    public Object getGameState() {
+    public Object getClientState() {
         return gameState;
     }
 
@@ -42,9 +42,10 @@ public class ReconnectResponse extends AbstractResponse {
     public void handleOnClient(ClientContext context) {
         if (isSuccess()) {
             // Update client model state with reconnection data
-            context.getModel().setPlayerId(playerId);
-            context.getModel().setNickname(nickname);
-            context.getModel().setAuthenticated(true);
+            it.polimi.ingsw.server.model.domain.player.PlayerId playerIdObj = 
+                it.polimi.ingsw.server.model.domain.player.PlayerId.fromString(nickname);
+            context.getClientState().setPlayerInfo(playerIdObj, nickname);
+            // setAuthenticated is handled by setPlayerInfo
             
             if (gameId != null) {
                 // Restore game state - this would need more sophisticated handling

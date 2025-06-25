@@ -122,8 +122,8 @@ public class GuiLoginView extends BaseUIView {
         loginButton.setDefaultButton(true);
         loginButton.setOnAction(e -> handleLogin());
         if (context != null) {
-            loginButton.disableProperty().bind(context.getModel().authenticatedProperty());
-            nicknameField.disableProperty().bind(context.getModel().authenticatedProperty());
+            loginButton.disableProperty().bind(context.getClientState().authenticatedProperty());
+            nicknameField.disableProperty().bind(context.getClientState().authenticatedProperty());
         }
 
         // Requirements label (smaller, muted, below the button)
@@ -189,8 +189,8 @@ public class GuiLoginView extends BaseUIView {
     }
 
     private void updateLoginStatus() {
-        if (context.getModel().isLoggedIn()) {
-            statusLabel.setText("Logged in as: " + context.getModel().getCurrentNickname());
+        if (context.getClientState().isLoggedIn()) {
+            statusLabel.setText("Logged in as: " + context.getClientState().getCurrentNickname());
             statusLabel.setTextFill(Color.GREEN);
         } else {
             statusLabel.setText("");

@@ -161,6 +161,43 @@ public class Ship implements Serializable {
     public Component[][] getBoard() {
         return board;
     }
+    
+    /**
+     * Gets the number of rows in the ship grid
+     * @return The number of rows
+     */
+    public int getRows() {
+        return board.length;
+    }
+    
+    /**
+     * Gets the number of columns in the ship grid
+     * @return The number of columns
+     */
+    public int getCols() {
+        return board[0].length;
+    }
+    
+    /**
+     * Gets the component at the specified position
+     * @param row The row index
+     * @param col The column index
+     * @return The component at that position, or null if empty
+     */
+    public Component getComponentAt(int row, int col) {
+        if (row >= 0 && row < board.length && col >= 0 && col < board[0].length) {
+            return board[row][col];
+        }
+        return null;
+    }
+    
+    /**
+     * Gets the set of forbidden positions on this ship
+     * @return The set of forbidden positions
+     */
+    public Set<Position> getForbiddenPositions() {
+        return Collections.unmodifiableSet(forbiddenPositions);
+    }
 
     public Set<Component> getReservedComponents() {
         return reservedComponents;

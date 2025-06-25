@@ -17,7 +17,7 @@ public class ComponentTakenEvent extends AbstractEvent {
 
     public ComponentTakenEvent(String gameId, Component component, 
                               Player player, ComponentDeck updatedDeck) {
-        super(EventType.COMPONENT_TAKEN, gameId, player.getId());
+        super(EventType.COMPONENT_TAKEN, gameId, player.getId().toString());
         this.component = component;
         this.player = player;
         this.updatedDeck = updatedDeck;
@@ -37,7 +37,7 @@ public class ComponentTakenEvent extends AbstractEvent {
 
     // Legacy getters for backward compatibility
     public String getPlayerId() {
-        return player.getId();
+        return player.getId().toString();
     }
 
     public String getPlayerNickname() {
@@ -70,8 +70,8 @@ public class ComponentTakenEvent extends AbstractEvent {
             }
 
             // SIMPLIFIED: Single property change event instead of multiple
-            if (context.getController() != null && context.getController().getModel() != null) {
-                context.getController().getModel().firePropertyChange("componentTaken", null, 
+            if (context.getController() != null && context.getController().getClientState() != null) {
+                context.getController().getClientState().firePropertyChange("componentTaken", null, 
                     java.util.Map.of(
                         "tileId", component.getId(),
                         "tileType", component.getType().name(),

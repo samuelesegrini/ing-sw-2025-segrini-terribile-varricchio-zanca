@@ -499,5 +499,45 @@ public class GameModel implements Serializable {
     public BuildingTimer getBuildingTimer() {
         return buildingTimer;
     }
+    
+    /**
+     * Gets the game name (currently returns gameId)
+     * @return The game name
+     */
+    public String getGameName() {
+        return gameId;
+    }
+    
+    /**
+     * Gets the game level (alias for getLevel for compatibility)
+     * @return The game level
+     */
+    public GameLevel getGameLevel() {
+        return level;
+    }
+    
+    /**
+     * Gets the current number of players
+     * @return The current number of players
+     */
+    public int getCurrentPlayers() {
+        return players.size();
+    }
+    
+    /**
+     * Gets the maximum number of players allowed
+     * @return The maximum number of players
+     */
+    public int getMaxPlayers() {
+        return maxPlayers;
+    }
+    
+    /**
+     * Gets the creator/host ID of the game (first player who joined)
+     * @return The creator player ID as string, or null if no players
+     */
+    public String getCreatorId() {
+        return players.isEmpty() ? null : players.get(0).getId().toString();
+    }
 
 }

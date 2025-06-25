@@ -26,6 +26,10 @@ public abstract class AbstractResponse extends AbstractMessage implements Respon
         this(correlationId, true, null, null);
     }
     
+    protected AbstractResponse(UUID correlationId, boolean success, String errorMessage) {
+        this(correlationId, success, errorMessage, null);
+    }
+    
     @Override
     public UUID getCorrelationId() {
         return correlationId;

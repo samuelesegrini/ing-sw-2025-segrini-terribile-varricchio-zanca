@@ -78,7 +78,7 @@ public class RequestFaceUpTileRequest extends AbstractRequest {
             
             // Broadcast component taken event to all clients
             context.getEventPublisher().publishEvent(
-                new ComponentTakenEvent(gameId, component, playerId, playerNickname)
+                new ComponentTakenEvent(gameId, component, player, gameSession.getGameModel().getComponentDeck())
             );
             
             // Return response with tile details

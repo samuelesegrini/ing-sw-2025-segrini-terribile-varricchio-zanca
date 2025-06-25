@@ -69,7 +69,7 @@ public class TuiLobbyView extends BaseUIView {
     }
 
     private void displayLobby() {
-        if (context == null || context.getModel() == null) {
+        if (context == null || context.getClientState() == null) {
             return;
         }
 
@@ -85,7 +85,7 @@ public class TuiLobbyView extends BaseUIView {
     private void displayJoinableGames() {
         console.println("Available Games (Waiting for Players):");
 
-        List<GameModel> games = context.getModel().getJoinableGames();
+        List<GameModel> games = context.getClientState().getJoinableGames();
         if (games == null || games.isEmpty()) {
             console.println("No games available to join.");
             console.println("");
@@ -111,7 +111,7 @@ public class TuiLobbyView extends BaseUIView {
     private void displayInProgressGames() {
         console.println("Games in Progress:");
 
-        List<GameModel> games = context.getModel().getGamesInProgress();
+        List<GameModel> games = context.getClientState().getGamesInProgress();
         if (games == null || games.isEmpty()) {
             console.println("No games currently in progress.");
             console.println("");
@@ -137,7 +137,7 @@ public class TuiLobbyView extends BaseUIView {
     private void displayAvailableGames() {
         console.println("All Games:");
 
-        List<GameModel> games = context.getModel().getAvailableGames();
+        List<GameModel> games = context.getClientState().getAvailableGames();
         if (games == null || games.isEmpty()) {
             console.println("No games available.");
             return;

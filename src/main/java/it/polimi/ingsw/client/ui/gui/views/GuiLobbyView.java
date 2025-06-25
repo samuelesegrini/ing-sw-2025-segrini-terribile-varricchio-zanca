@@ -126,7 +126,7 @@ public class GuiLobbyView extends BaseUIView {
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
         
-        String nickname = (context != null && context.getModel() != null) ? context.getModel().getNickname() : null;
+        String nickname = (context != null && context.getClientState() != null) ? context.getClientState().getNickname() : null;
         if (nickname == null || nickname.trim().isEmpty()) {
             nickname = "Guest Player";
         }
@@ -434,8 +434,8 @@ public class GuiLobbyView extends BaseUIView {
     
     private void handleLogout() {
         // Clear authentication and return to login view
-        context.getModel().setAuthenticated(false);
-        context.getModel().setCurrentView(ClientState.ViewState.LOGIN);
+        context.getClientState().setAuthenticated(false);
+        context.getClientState().setCurrentView(ClientState.ViewState.LOGIN);
     }
 
     private void fetchGameListFromServer() {
@@ -463,7 +463,7 @@ public class GuiLobbyView extends BaseUIView {
     private void renderGamesListUI() {
         LOGGER.info("Updating games list");
         
-        List<GameModel> availableGames = context.getModel().getAvailableGames();
+        List<GameModel> availableGames = context.getClientState().getAvailableGames();
         if (availableGames == null) {
             LOGGER.warning("Available games is null, hiding loading anyway");
             showLoading(false);
@@ -591,8 +591,8 @@ public class GuiLobbyView extends BaseUIView {
     }
     
     private void refreshPlayerNickname() {
-        if (context != null && context.getModel() != null && playerLabel != null) {
-            String currentNickname = context.getModel().getNickname();
+        if (context != null && context.getClientState() != null && playerLabel != null) {
+            String currentNickname = context.getClientState().getNickname();
             if (currentNickname != null && !currentNickname.trim().isEmpty()) {
                 playerLabel.setText("Player: " + currentNickname);
             }
@@ -643,8 +643,8 @@ public class GuiLobbyView extends BaseUIView {
         LOGGER.info("Waiting for game list to be populated via property change events");
         
         // If we already have games, update the display immediately
-        if (context != null && context.getModel() != null && 
-            context.getModel().getAvailableGames() != null) {
+        if (context != null && context.getClientState() != null && 
+            context.getClientState().getAvailableGames() != null) {
             LOGGER.info("Games already available, updating display");
             Platform.runLater(this::renderGamesListUI);
         } else {

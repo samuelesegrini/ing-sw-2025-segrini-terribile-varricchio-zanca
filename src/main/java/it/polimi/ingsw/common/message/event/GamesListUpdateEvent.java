@@ -24,7 +24,7 @@ public class GamesListUpdateEvent extends AbstractEvent {
     @Override
     public void handleOnClient(ClientEventContext context) {
         // Update the available games list in the client model
-        context.getController().getModel().setAvailableGames(availableGames);
+        context.getController().getClientState().setAvailableGames(availableGames);
     }
 
     @Override

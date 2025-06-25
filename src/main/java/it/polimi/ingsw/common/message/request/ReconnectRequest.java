@@ -74,7 +74,7 @@ public class ReconnectRequest extends AbstractRequest {
                 playerId,
                 nickname,
                 gameId,
-                gameSession != null ? gameSession.getGameState() : null
+                null // Client state is managed on client side, not passed from server
         );
     }
 }

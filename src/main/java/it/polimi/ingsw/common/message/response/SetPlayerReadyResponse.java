@@ -27,7 +27,7 @@ public class SetPlayerReadyResponse extends AbstractResponse {
             // Update the model with the new ready status
             String playerId = context.getPlayerId();
             if (playerId != null) {
-                context.getModel().setPlayerReadyStatus(playerId, ready);
+                context.getClientState().setPlayerReadyStatus(playerId, ready);
             }
             
             // Show confirmation notification

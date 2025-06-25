@@ -67,8 +67,8 @@ public class CombatResolvedEvent extends AbstractEvent {
     public void handleOnClient(ClientEventContext context) {
         context.runOnUIThread(() -> {
             // Update game state with combat results
-            if (context.getGameState() != null) {
-                // context.getGameState().resolveCombat(playerId, outcome, reward, penalty);
+            if (context.getClientState() != null) {
+                // context.getClientState().resolveCombat(playerId, outcome, reward, penalty);
             }
 
             // Show combat result notification
