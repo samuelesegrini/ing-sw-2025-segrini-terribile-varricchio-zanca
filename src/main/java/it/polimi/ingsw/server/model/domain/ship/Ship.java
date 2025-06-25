@@ -17,7 +17,6 @@ import java.util.*;
 
 public class Ship {
     private GameLevel level;
-    private final Player player;
     private Component[][] board;
     public Set<Position> forbiddenPositions;
     private Set<Component> reservedComponents;
@@ -39,9 +38,16 @@ public class Ship {
     private int chargingBatteries;
 
 
-    public Ship(Player player, GameLevel level) {
-        this.player = player;
-        this.board = new Component[5][7];
+
+    /**
+     * Creates a new ship with the specified level and ship grid configuration.
+     * 
+     * @param level The game level (TEST_FLIGHT, LEVEL_II, etc.)
+     * @param shipGridConfig The ship grid configuration containing forbidden positions
+     */
+    public Ship(GameLevel level, it.polimi.ingsw.server.model.domain.general.config.ShipGridConfig shipGridConfig) {
+        this.level = level;
+        this.board = new Component[shipGridConfig.rows()][shipGridConfig.cols()];
         reservedComponents = new HashSet<>();
         lostComponents = new HashSet<>();
         this.resources = new HashMap<>() {{
@@ -54,39 +60,11 @@ public class Ship {
         specialGoodsCapacity = 0;
         normalGoods = 0;
         specialGoods = 0;
-
-        this.level = level;
-        if (level == GameLevel.TEST_FLIGHT) {
-            forbiddenPositions = new HashSet<>() {{
-                add(new Position(0, 0));
-                add(new Position(0, 1));
-                add(new Position(0, 2));
-                add(new Position(0, 4));
-                add(new Position(0, 5));
-                add(new Position(0, 6));
-                add(new Position(1, 0));
-                add(new Position(1, 1));
-                add(new Position(1, 5));
-                add(new Position(1, 6));
-                add(new Position(2, 0));
-                add(new Position(2, 6));
-                add(new Position(3, 0));
-                add(new Position(3, 6));
-                add(new Position(4, 0));
-                add(new Position(4, 3));
-                add(new Position(4, 6));
-            }};
-        } else if (level == GameLevel.LEVEL_II) {
-            forbiddenPositions = new HashSet<>() {{
-                add(new Position(0, 0));
-                add(new Position(0, 1));
-                add(new Position(0, 3));
-                add(new Position(0, 5));
-                add(new Position(0, 6));
-                add(new Position(1, 0));
-                add(new Position(1, 6));
-                add(new Position(4, 3));
-            }};
+        
+        // Load forbidden positions from configuration
+        forbiddenPositions = new HashSet<>();
+        for (var posConfig : shipGridConfig.forbiddenPositions()) {
+            forbiddenPositions.add(new Position(posConfig.x(), posConfig.y()));
         }
     }
 
@@ -175,10 +153,6 @@ public class Ship {
 
     public void setLevel(GameLevel level) {
         this.level = level;
-    }
-
-    public Player getPlayer() {
-        return player;
     }
 
     public Component[][] getBoard() {
@@ -859,7 +833,7 @@ public class Ship {
         // Se un errore viene scoperto quando la nave è già in volo, il giocatore, oltre a correggere l’errore
         // deve pagare alla banca 1 credito cosmico
         if(phase == GamePhase.FLIGHT) {
-            getPlayer().subtractCredits(1);
+            // TODO: Credit penalty should be handled by calling code
         }
         return (wrongPlacing.isEmpty());
     }
@@ -986,7 +960,20 @@ public class Ship {
 
         for (Set<Position> group : connectedGroups) {
             // Crea una nuova nave con le stesse caratteristiche di questa
-            Ship newShip = new Ship(this.player, getLevel());
+            // Note: This creates a basic ship structure for split ships after damage
+            // For split ships, use the same grid configuration as the original
+            var defaultShipConfig = new it.polimi.ingsw.server.model.domain.general.config.ShipGridConfig(
+                "",  // image not needed for split ships
+                this.board.length,  // same rows
+                this.board[0].length,  // same cols  
+                new java.util.ArrayList<>(),  // no reserved positions for split ships
+                new java.util.ArrayList<>(
+                    this.forbiddenPositions.stream()
+                        .map(pos -> new it.polimi.ingsw.server.model.domain.general.config.PositionConfig(pos.getRow(), pos.getCol()))
+                        .toList()
+                )  // same forbidden positions
+            );
+            Ship newShip = new Ship(getLevel(), defaultShipConfig);
 
             // Copia i componenti rilevanti nella nuova nave
             for (Position pos : group) {
