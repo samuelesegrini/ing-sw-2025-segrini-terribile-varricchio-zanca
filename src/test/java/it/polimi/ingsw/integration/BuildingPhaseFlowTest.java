@@ -1,6 +1,5 @@
 package it.polimi.ingsw.integration;
 
-import it.polimi.ingsw.common.ComponentData;
 import it.polimi.ingsw.common.message.request.RequestContextImpl;
 import it.polimi.ingsw.common.message.request.LoginRequest;
 import it.polimi.ingsw.common.message.request.CreateGameRequest;
@@ -124,7 +123,7 @@ class BuildingPhaseFlowTest {
         
         GameSession session = gameSessionManager.getGameSession(gameId);
         assertNotNull(session, "Game session should exist");
-        assertEquals(GamePhase.BUILDING, session.getCurrentPhase(), "Game should be in building phase");
+        assertEquals(GamePhase.BUILDING, session.getGameModel().getCurrentPhase(), "Game should be in building phase");
     }
 
     @Test
@@ -140,7 +139,7 @@ class BuildingPhaseFlowTest {
         assertInstanceOf(TakeTileResponse.class, response);
         
         TakeTileResponse takeTileResponse = (TakeTileResponse) response;
-        ComponentData componentData = takeTileResponse.getComponentData();
+        Component componentData = takeTileResponse.getComponent();
         assertNotNull(componentData, "Response should contain component data");
         assertNotNull(componentData.getId(), "Component should have an ID");
         assertNotNull(componentData.getType(), "Component should have a type");
@@ -177,7 +176,7 @@ class BuildingPhaseFlowTest {
         // Player 1 takes a tile
         TakeTileRequest takeTileRequest = new TakeTileRequest();
         TakeTileResponse takeTileResponse = (TakeTileResponse) takeTileRequest.execute(context1);
-        ComponentData componentData = takeTileResponse.getComponentData();
+        Component componentData = takeTileResponse.getComponent();
         
         // Place the component at position (2, 3) with no rotation
         PlaceTileRequest placeTileRequest = new PlaceTileRequest(
@@ -195,7 +194,8 @@ class BuildingPhaseFlowTest {
         Player player = session.getPlayer(playerId);
         Ship ship = player.getShip();
         
-        assertNotNull(ship.getBoard()[2][3], "Component should be placed at specified position");
+        Component placedComponent = ship.getComponentAt(2, 3);
+        assertNotNull(placedComponent, "Component should be placed at specified position");
     }
 
     @Test
@@ -206,7 +206,7 @@ class BuildingPhaseFlowTest {
         // Player 1 takes a tile
         TakeTileRequest takeTileRequest = new TakeTileRequest();
         TakeTileResponse takeTileResponse = (TakeTileResponse) takeTileRequest.execute(context1);
-        ComponentData componentData = takeTileResponse.getComponentData();
+        Component componentData = takeTileResponse.getComponent();
         
         // Try to place component outside grid bounds
         PlaceTileRequest placeTileRequest = new PlaceTileRequest(
@@ -231,7 +231,7 @@ class BuildingPhaseFlowTest {
         // Player 1 takes first tile
         TakeTileRequest takeTileRequest1 = new TakeTileRequest();
         TakeTileResponse takeTileResponse1 = (TakeTileResponse) takeTileRequest1.execute(context1);
-        ComponentData componentData1 = takeTileResponse1.getComponentData();
+        Component componentData1 = takeTileResponse1.getComponent();
         
         // Place first component
         PlaceTileRequest placeTileRequest1 = new PlaceTileRequest(
@@ -243,7 +243,7 @@ class BuildingPhaseFlowTest {
         // Player 1 takes second tile
         TakeTileRequest takeTileRequest2 = new TakeTileRequest();
         TakeTileResponse takeTileResponse2 = (TakeTileResponse) takeTileRequest2.execute(context1);
-        ComponentData componentData2 = takeTileResponse2.getComponentData();
+        Component componentData2 = takeTileResponse2.getComponent();
         
         // Try to place second component at same position
         PlaceTileRequest placeTileRequest2 = new PlaceTileRequest(
@@ -268,7 +268,7 @@ class BuildingPhaseFlowTest {
         // Player 1 takes a tile
         TakeTileRequest takeTileRequest = new TakeTileRequest();
         TakeTileResponse takeTileResponse = (TakeTileResponse) takeTileRequest.execute(context1);
-        ComponentData componentData = takeTileResponse.getComponentData();
+        Component componentData = takeTileResponse.getComponent();
         
         // Reserve the component
         ReserveTileRequest reserveTileRequest = new ReserveTileRequest(componentData.getId());
@@ -303,7 +303,7 @@ class BuildingPhaseFlowTest {
         // Player 1 takes a tile
         TakeTileRequest takeTileRequest = new TakeTileRequest();
         TakeTileResponse takeTileResponse = (TakeTileResponse) takeTileRequest.execute(context1);
-        ComponentData componentData = takeTileResponse.getComponentData();
+        Component componentData = takeTileResponse.getComponent();
         
         // Place component with 90-degree rotation
         PlaceTileRequest placeTileRequest = new PlaceTileRequest(
@@ -324,7 +324,7 @@ class BuildingPhaseFlowTest {
         // Player 1 takes a tile
         TakeTileRequest takeTileRequest = new TakeTileRequest();
         TakeTileResponse takeTileResponse = (TakeTileResponse) takeTileRequest.execute(context1);
-        ComponentData componentData = takeTileResponse.getComponentData();
+        Component componentData = takeTileResponse.getComponent();
         
         // Try to place component with invalid rotation
         PlaceTileRequest placeTileRequest = new PlaceTileRequest(
@@ -349,7 +349,7 @@ class BuildingPhaseFlowTest {
         // Player 1 takes and places a tile
         TakeTileRequest takeTileRequest1 = new TakeTileRequest();
         TakeTileResponse takeTileResponse1 = (TakeTileResponse) takeTileRequest1.execute(context1);
-        ComponentData componentData1 = takeTileResponse1.getComponentData();
+        Component componentData1 = takeTileResponse1.getComponent();
         
         PlaceTileRequest placeTileRequest1 = new PlaceTileRequest(
             componentData1.getId(), 2, 3, 0
@@ -359,7 +359,7 @@ class BuildingPhaseFlowTest {
         // Player 2 takes and places a tile
         TakeTileRequest takeTileRequest2 = new TakeTileRequest();
         TakeTileResponse takeTileResponse2 = (TakeTileResponse) takeTileRequest2.execute(context2);
-        ComponentData componentData2 = takeTileResponse2.getComponentData();
+        Component componentData2 = takeTileResponse2.getComponent();
         
         PlaceTileRequest placeTileRequest2 = new PlaceTileRequest(
             componentData2.getId(), 1, 2, 0  // Position (1,2) is valid, (1,1) is forbidden
@@ -377,8 +377,10 @@ class BuildingPhaseFlowTest {
         Player player1 = session.getPlayer(playerId1);
         Player player2 = session.getPlayer(playerId2);
         
-        assertNotNull(player1.getShip().getBoard()[2][3], "Player 1 should have component placed");
-        assertNotNull(player2.getShip().getBoard()[1][2], "Player 2 should have component placed");
+        Component player1Component = player1.getShip().getComponentAt(2, 3);
+        Component player2Component = player2.getShip().getComponentAt(1, 2);
+        assertNotNull(player1Component, "Player 1 should have component placed");
+        assertNotNull(player2Component, "Player 2 should have component placed");
     }
 
     @Test
@@ -390,7 +392,7 @@ class BuildingPhaseFlowTest {
         // Player 1 takes a tile
         TakeTileRequest takeTileRequest = new TakeTileRequest();
         TakeTileResponse takeTileResponse = (TakeTileResponse) takeTileRequest.execute(context1);
-        ComponentData componentData = takeTileResponse.getComponentData();
+        Component componentData = takeTileResponse.getComponent();
         
         // Player 1 places the tile
         PlaceTileRequest placeTileRequest = new PlaceTileRequest(
@@ -405,7 +407,8 @@ class BuildingPhaseFlowTest {
         boolean foundTakeEvent = capturedEvents.stream()
             .anyMatch(event -> event.getClass().getSimpleName().contains("ComponentTaken"));
         boolean foundPlaceEvent = capturedEvents.stream()
-            .anyMatch(event -> event.getClass().getSimpleName().contains("TilePlaced"));
+            .anyMatch(event -> event.getClass().getSimpleName().contains("ComponentPlaced") || 
+                              event.getClass().getSimpleName().contains("TilePlaced"));
         
         assertTrue(foundTakeEvent || foundPlaceEvent, "Should have captured building-related events");
     }
@@ -442,7 +445,7 @@ class BuildingPhaseFlowTest {
         // Player 1 takes a tile
         TakeTileRequest takeTileRequest = new TakeTileRequest();
         TakeTileResponse takeTileResponse = (TakeTileResponse) takeTileRequest.execute(context1);
-        ComponentData componentData = takeTileResponse.getComponentData();
+        Component componentData = takeTileResponse.getComponent();
         
         // Test various out-of-bounds positions
         int[][] invalidPositions = {

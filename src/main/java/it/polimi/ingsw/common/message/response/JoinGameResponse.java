@@ -28,11 +28,33 @@ public class JoinGameResponse extends AbstractResponse {
             // Update client state - Simple Direct Model Architecture
             ClientState clientState = context.getClientState();
             if (clientState != null) {
-                clientState.setGameModel(gameModel);
+                // Set current game lobby for UI display (critical for lobby view text)
+                clientState.setCurrentGameLobby(gameModel);
+                
                 if (gameModel != null) {
                     clientState.setPlayersInLobby(gameModel.getPlayers());
                 }
-                clientState.setCurrentView(ClientState.ViewState.GAME_LOBBY);
+                
+                // Navigate using proper ViewNavigator
+                if (context.getController() == null) {
+                    throw new IllegalStateException("Controller not available - cannot navigate to GAME_LOBBY after joining game");
+                }
+                
+                if (context.getController().getUIContext() != null && 
+                    context.getController().getUIContext().getViewNavigator() != null) {
+                    
+                    boolean success = context.getController().getUIContext().getViewNavigator()
+                        .navigateTo(ClientState.ViewState.GAME_LOBBY, "Joined game: " + 
+                                   (gameModel != null ? gameModel.getGameName() : "Unknown"));
+                    
+                    if (!success) {
+                        String reason = context.getController().getUIContext().getViewNavigator()
+                            .getNavigationFailureReason(ClientState.ViewState.GAME_LOBBY);
+                        throw new IllegalStateException("Failed to navigate to GAME_LOBBY after joining game: " + reason);
+                    }
+                } else {
+                    throw new IllegalStateException("ViewNavigator not available - cannot navigate to GAME_LOBBY after joining game");
+                }
             }
             
             // Show success notification

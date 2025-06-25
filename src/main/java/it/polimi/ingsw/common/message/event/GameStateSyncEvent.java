@@ -27,23 +27,11 @@ public class GameStateSyncEvent extends AbstractEvent {
     @Override
     public void handleOnClient(ClientEventContext context) {
         context.runOnUIThread(() -> {
-            // SIMPLIFIED: Direct model replacement for state synchronization
-            
-            // NEW: Simple direct GameModel usage via ClientState
+            // Simple direct GameModel replacement for state synchronization
             if (context.getClientState() != null) {
                 context.getClientState().setGameModel(gameModel);
-                // State version tracking can be added to ClientState if needed
-            } else {
-                // LEGACY: Fallback to LocalGameState
-                if (context.getClientState() != null) {
-                    // Note: syncWithGameModel and setStateVersion methods don't exist in current LocalGameState
-                    // This is legacy code that needs to be replaced
-                }
-            }
-
-            // SIMPLIFIED: Single property change notification
-            if (context.getController() != null && context.getController().getClientState() != null) {
-                context.getController().getClientState().firePropertyChange("gameStateSync", null, gameModel);
+                // UI refreshes automatically via ClientState.refreshCurrentView()
+                // State version tracking can be added to ClientState if needed for optimization
             }
         });
     }

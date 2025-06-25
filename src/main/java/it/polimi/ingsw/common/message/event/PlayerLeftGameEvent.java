@@ -39,12 +39,60 @@ public class PlayerLeftGameEvent extends AbstractEvent {
     @Override
     public void handleOnClient(ClientEventContext context) {
         context.runOnUIThread(() -> {
-            // Only show notification for remaining players (not the leaving player)
-            if (!context.isLocalPlayer(playerId) && context.getNotificationService() != null) {
-                context.getNotificationService().showWarning(
-                        "Player Left",
-                        playerNickname + " left the game"
-                );
+            ClientState clientState = context.getClientState();
+            
+            // Update lobby state by removing the leaving player
+            if (clientState != null && clientState.getCurrentGameLobby() != null) {
+                // Remove player from current game lobby
+                try {
+                    it.polimi.ingsw.server.model.domain.general.GameModel currentGame = clientState.getCurrentGameLobby();
+                    it.polimi.ingsw.server.model.domain.player.PlayerId leavingPlayerId = 
+                        it.polimi.ingsw.server.model.domain.player.PlayerId.fromString(playerId);
+                    
+                    // Remove player from the game model
+                    boolean removed = currentGame.removePlayer(leavingPlayerId);
+                    if (removed) {
+                        // Trigger UI refresh after player removal
+                        clientState.setCurrentGameLobby(currentGame);
+                        java.util.logging.Logger.getLogger(PlayerLeftGameEvent.class.getName())
+                            .info("Removed player " + playerNickname + " from lobby");
+                    }
+                } catch (Exception e) {
+                    java.util.logging.Logger.getLogger(PlayerLeftGameEvent.class.getName())
+                        .warning("Failed to remove player from lobby: " + e.getMessage());
+                }
+            }
+            
+            // If this is the local player leaving, should navigate back to lobby
+            if (context.isLocalPlayer(playerId)) {
+                // Local player left the game - navigate back to LOBBY
+                if (context.getController().getUIContext() != null && 
+                    context.getController().getUIContext().getViewNavigator() != null) {
+                    
+                    boolean success = context.getController().getUIContext().getViewNavigator()
+                        .navigateTo(ClientState.ViewState.LOBBY, "Left game: " + getGameId());
+                    
+                    if (!success) {
+                        String reason = context.getController().getUIContext().getViewNavigator()
+                            .getNavigationFailureReason(ClientState.ViewState.LOBBY);
+                        java.util.logging.Logger.getLogger(PlayerLeftGameEvent.class.getName())
+                            .severe("Failed to navigate to LOBBY after leaving game - Reason: " + reason);
+                    }
+                } else {
+                    java.util.logging.Logger.getLogger(PlayerLeftGameEvent.class.getName())
+                        .severe("ViewNavigator not available - cannot navigate to LOBBY after leaving game");
+                }
+                
+                // Clear current game lobby for local player
+                clientState.setCurrentGameLobby(null);
+            } else {
+                // Only show notification for remaining players (not the leaving player)
+                if (context.getNotificationService() != null) {
+                    context.getNotificationService().showWarning(
+                            "Player Left",
+                            playerNickname + " left the game"
+                    );
+                }
             }
         });
     }

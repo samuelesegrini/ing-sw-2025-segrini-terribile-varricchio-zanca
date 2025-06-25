@@ -66,6 +66,41 @@ public class ClientController {
     public PlayerId getPlayerIdObject() {
         return clientState.getPlayerIdObject();
     }
+    
+    /**
+     * Safely attempts to navigate to a view state using ViewNavigator.
+     * Falls back to direct ClientState manipulation if ViewNavigator is not available.
+     * 
+     * @param viewState The target view state
+     * @param context The navigation context/reason
+     * @return true if navigation was attempted (doesn't guarantee success)
+     */
+    private boolean attemptNavigation(ClientState.ViewState viewState, String context) {
+        if (uiContext != null && uiContext.getViewNavigator() != null) {
+            boolean success = uiContext.getViewNavigator().navigateTo(viewState, context);
+            if (!success) {
+                String reason = uiContext.getViewNavigator().getNavigationFailureReason(viewState);
+                LOGGER.warning("Failed to navigate to " + viewState + " - Reason: " + reason + " (Context: " + context + ")");
+                
+                // In some cases, we might want to show this to the user
+                if (uiContext.getNotificationService() != null) {
+                    uiContext.getNotificationService().showNotification(
+                        new it.polimi.ingsw.client.ui.Notification(
+                            "Navigation Error", 
+                            "Cannot navigate to " + viewState + ": " + reason,
+                            it.polimi.ingsw.client.ui.NotificationType.WARNING
+                        )
+                    );
+                }
+            }
+            return success;
+        } else {
+            // Fallback: direct state manipulation (for backward compatibility)
+            LOGGER.info("ViewNavigator not available, using direct state manipulation for navigation to " + viewState);
+            clientState.setCurrentView(viewState);
+            return true; // Assume success for fallback
+        }
+    }
 
     // Connection actions
     public CompletableFuture<Boolean> connect(String host, int port, boolean useSocket) {
@@ -88,7 +123,7 @@ public class ClientController {
                         ClientState.ConnectionStatus.CONNECTED : 
                         ClientState.ConnectionStatus.FAILED);
                     if (connected) {
-                        clientState.setCurrentView(ClientState.ViewState.LOGIN);
+                        attemptNavigation(ClientState.ViewState.LOGIN, "Successful connection to server");
                         LOGGER.info("Successfully connected to server");
                     } else {
                         LOGGER.warning("Failed to connect to server");
@@ -106,7 +141,8 @@ public class ClientController {
         networkClient.disconnect();
         clientState.setConnectionStatus(ClientState.ConnectionStatus.DISCONNECTED);
         clientState.setPlayerInfo(null, null);
-        clientState.setCurrentView(ClientState.ViewState.CONNECTION);
+        
+        attemptNavigation(ClientState.ViewState.CONNECTION, "Disconnected from server");
     }
 
     // Authentication actions
@@ -129,7 +165,8 @@ public class ClientController {
                     if (response instanceof LoginResponse loginResp) {
                         if (loginResp.isSuccess()) {
                             clientState.setPlayerInfo(new PlayerId(java.util.UUID.fromString(loginResp.getPlayerId()), loginResp.getNickname()), loginResp.getNickname());
-                            clientState.setCurrentView(ClientState.ViewState.LOBBY);
+                            
+                            attemptNavigation(ClientState.ViewState.LOBBY, "Login successful for " + loginResp.getNickname());
 
                             LOGGER.info("Login successful for player: " + loginResp.getNickname());
                             // Request game list and handle the response to update the client state
@@ -213,6 +250,8 @@ public class ClientController {
                 .thenApply(response -> {
                     if (response.isSuccess()) {
                         LOGGER.info("Successfully joined game: " + gameId);
+                        
+                        attemptNavigation(ClientState.ViewState.GAME_LOBBY, "Joined game: " + gameId);
                     } else {
                         LOGGER.warning("Failed to join game: " + response.getErrorMessage());
                     }
@@ -341,7 +380,8 @@ public class ClientController {
                 .thenApply(response -> {
                     if (response.isSuccess()) {
                         LOGGER.info("Left game successfully");
-                        clientState.setCurrentView(ClientState.ViewState.LOBBY);
+                        
+                        attemptNavigation(ClientState.ViewState.LOBBY, "Left game successfully");
                         return true;
                     } else {
                         LOGGER.warning("Failed to leave game: " + response.getErrorMessage());
@@ -660,6 +700,11 @@ public class ClientController {
         @Override
         public ClientState getClientState() {
             return clientState;
+        }
+        
+        @Override
+        public ClientController getController() {
+            return ClientController.this;
         }
     }
 }

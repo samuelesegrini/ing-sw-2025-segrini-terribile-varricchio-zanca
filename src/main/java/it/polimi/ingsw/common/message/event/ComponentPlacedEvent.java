@@ -83,16 +83,6 @@ public class ComponentPlacedEvent extends AbstractEvent {
                 }
             }
 
-            // SIMPLIFIED: Single property change event instead of multiple
-            if (context.getController() != null && context.getController().getClientState() != null) {
-                context.getController().getClientState().firePropertyChange("componentPlaced", null, 
-                    java.util.Map.of(
-                        "playerId", getPlayerId(),
-                        "component", component.getType(),
-                        "position", component.getPosition()
-                    )
-                );
-            }
         });
     }
 }

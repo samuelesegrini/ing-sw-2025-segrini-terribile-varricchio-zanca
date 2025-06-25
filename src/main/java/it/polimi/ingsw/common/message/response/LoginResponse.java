@@ -34,7 +34,10 @@ public class LoginResponse extends AbstractResponse {
             ClientState clientState = context.getClientState();
             if (clientState != null) {
                 clientState.setPlayerInfo(new it.polimi.ingsw.server.model.domain.player.PlayerId(java.util.UUID.fromString(playerId), nickname), nickname);
-                clientState.setCurrentView(ClientState.ViewState.LOBBY);
+                
+                // Note: View navigation is now handled by ClientController.login() method
+                // to ensure proper ViewNavigator usage. This response handler should not
+                // directly change views to maintain architectural consistency.
             }
             
             // Show success notification

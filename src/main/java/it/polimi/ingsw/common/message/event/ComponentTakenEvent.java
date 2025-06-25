@@ -69,16 +69,6 @@ public class ComponentTakenEvent extends AbstractEvent {
                 );
             }
 
-            // SIMPLIFIED: Single property change event instead of multiple
-            if (context.getController() != null && context.getController().getClientState() != null) {
-                context.getController().getClientState().firePropertyChange("componentTaken", null, 
-                    java.util.Map.of(
-                        "tileId", component.getId(),
-                        "tileType", component.getType().name(),
-                        "playerId", getPlayerId()
-                    )
-                );
-            }
         });
     }
 }

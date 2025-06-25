@@ -10,8 +10,6 @@ import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 
-import java.beans.PropertyChangeListener;
-import java.beans.PropertyChangeSupport;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -49,8 +47,6 @@ public class ClientState {
     private UIRefreshable currentViewComponent;
     private final Set<UIRefreshable> registeredViews = ConcurrentHashMap.newKeySet();
 
-    // Property change support for lobby/connection UI
-    private final PropertyChangeSupport pcs = new PropertyChangeSupport(this);
     
     // JavaFX properties for UI binding
     private final BooleanProperty connectedProperty = new SimpleBooleanProperty(false);
@@ -58,10 +54,9 @@ public class ClientState {
 
     // === Connection Management ===
     public void setConnectionStatus(ConnectionStatus status) {
-        ConnectionStatus old = this.connectionStatus;
         this.connectionStatus = status;
         connectedProperty.set(status == ConnectionStatus.CONNECTED);
-        pcs.firePropertyChange("connectionStatus", old, status);
+        refreshCurrentViewOnly();
     }
 
     public ConnectionStatus getConnectionStatus() {
@@ -72,7 +67,7 @@ public class ClientState {
         this.playerId = playerId;
         this.playerNickname = nickname;
         authenticatedProperty.set(playerId != null);
-        pcs.firePropertyChange("playerInfo", null, Map.of("id", playerId, "nickname", nickname));
+        refreshCurrentViewOnly();
     }
 
     public String getPlayerId() {
@@ -98,7 +93,7 @@ public class ClientState {
     // === Lobby Management ===
     public void setAvailableGames(List<GameModel> games) {
         this.availableGames = games;
-        pcs.firePropertyChange("availableGames", null, games);
+        refreshCurrentViewOnly();
     }
 
     public List<GameModel> getAvailableGames() {
@@ -124,7 +119,7 @@ public class ClientState {
 
     public void setCurrentGameLobby(GameModel gameModel) {
         this.currentGameLobby = gameModel;
-        pcs.firePropertyChange("currentGameLobby", null, gameModel);
+        refreshCurrentViewOnly();
     }
 
     public GameModel getCurrentGameLobby() {
@@ -133,7 +128,7 @@ public class ClientState {
 
     public void setPlayersInLobby(List<Player> players) {
         this.playersInLobby = players;
-        pcs.firePropertyChange("playersInLobby", null, players);
+        refreshCurrentViewOnly();
     }
 
     public List<Player> getPlayersInLobby() {
@@ -196,8 +191,6 @@ public class ClientState {
             registeredViews.add(viewComponent);
             Platform.runLater(() -> viewComponent.refresh());
         }
-
-        pcs.firePropertyChange("currentView", oldView, viewState);
     }
 
     public ViewState getCurrentView() {
@@ -205,9 +198,8 @@ public class ClientState {
     }
 
     public void setCurrentView(ViewState viewState) {
-        ViewState oldView = this.currentView;
         this.currentView = viewState;
-        pcs.firePropertyChange("currentView", oldView, viewState);
+        refreshCurrentViewOnly();
     }
 
     // === Direct Model Access (Game) ===
@@ -341,35 +333,6 @@ public class ClientState {
         refreshCurrentViewOnly();
     }
 
-    // Property change listener support for lobby/connection UI
-    public void addPropertyChangeListener(PropertyChangeListener listener) {
-        pcs.addPropertyChangeListener(listener);
-    }
-
-    public void removePropertyChangeListener(PropertyChangeListener listener) {
-        pcs.removePropertyChangeListener(listener);
-    }
-
-    public void addPropertyChangeListener(String propertyName, PropertyChangeListener listener) {
-        pcs.addPropertyChangeListener(propertyName, listener);
-    }
-
-    public void removePropertyChangeListener(String propertyName, PropertyChangeListener listener) {
-        pcs.removePropertyChangeListener(propertyName, listener);
-    }
-    
-    // === Property Change Methods ===
-    
-    /**
-     * Fires a property change event
-     * @param propertyName Property name
-     * @param oldValue Old value
-     * @param newValue New value
-     */
-    public void firePropertyChange(String propertyName, Object oldValue, Object newValue) {
-        pcs.firePropertyChange(propertyName, oldValue, newValue);
-        refreshCurrentViewOnly();
-    }
     
     // === Missing Methods for Response Handlers ===
     
@@ -383,7 +346,7 @@ public class ClientState {
             for (Player player : playersInLobby) {
                 if (player.getId().equals(playerId)) {
                     player.setReady(ready);
-                    pcs.firePropertyChange("playerReadyStatus", null, Map.of("playerId", playerId, "ready", ready));
+                    // Player ready status updated directly in model
                     refreshCurrentViewOnly();
                     break;
                 }
@@ -397,7 +360,7 @@ public class ClientState {
      * @param errors List of validation errors
      */
     public void setShipValidation(boolean isValid, java.util.List<String> errors) {
-        pcs.firePropertyChange("shipValidation", null, java.util.Map.of("valid", isValid, "errors", errors));
+        // Ship validation result stored directly
         refreshCurrentViewOnly();
     }
     

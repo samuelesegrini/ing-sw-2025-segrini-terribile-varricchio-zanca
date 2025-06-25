@@ -29,24 +29,10 @@ public class TilePlacedEvent extends AbstractEvent {
 
     @Override
     public void handleOnClient(ClientEventContext context) {
-        var clientState = context.getClientState();
-
-        // Update local ship state only for local player
-        if (context.isLocalPlayer(playerId)) {
-            // Fire property change for tile placement
-            clientState.firePropertyChange("tilePlaced", null,
-                java.util.Map.of("playerId", playerId, "tileId", tileId, 
-                               "row", row, "col", col, "rotation", rotation));
-        }
-
         context.runOnUIThread(() -> {
+            // Show appropriate notifications
             if (context.isLocalPlayer(playerId)) {
-                // Our own action confirmed
-                context.getController().getClientState().firePropertyChange("tileConfirmed", false, true);
-                context.getController().getClientState().firePropertyChange("shipGridUpdated", null, 
-                    clientState.getLocalPlayerShip()); // Use the ship from client state
-                
-                // Show success notification
+                // Our own action confirmed - show success notification
                 if (context.getNotificationService() != null) {
                     context.getNotificationService().showNotification(
                         new it.polimi.ingsw.client.ui.Notification(
@@ -68,14 +54,9 @@ public class TilePlacedEvent extends AbstractEvent {
                     );
                 }
             }
-
-            // Notify UI to refresh ship display
-            context.getController().getClientState().firePropertyChange("opponentShipUpdated", null, Map.of(
-                "playerId", playerId,
-                "component", componentType,
-                "row", row,
-                "col", col
-            ));
+            
+            // NOTE: Model updates and UI refresh should be handled by newer events like ComponentPlacedEvent
+            // that carry full server models. This legacy event only handles notifications.
         });
     }
 }

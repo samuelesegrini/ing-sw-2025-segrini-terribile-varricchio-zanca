@@ -21,8 +21,7 @@ public abstract class BaseUIView implements UIView, UIRefreshable {
         // Register with ClientState for automatic refresh
         context.getClientState().registerRefreshableView(this);
         
-        // Register for model changes for lobby/connection UI
-        context.getClientState().addPropertyChangeListener(this);
+        // Model changes handled via refresh() calls, no property listeners needed
 
         LOGGER.info("Initialized view: " + getTitle());
     }
@@ -61,18 +60,12 @@ public abstract class BaseUIView implements UIView, UIRefreshable {
     }
     @Override
     public void propertyChange(PropertyChangeEvent evt) {
-        if (active) {
-            context.getThreadService().runOnUIThread(() -> {
-                onPropertyChange(evt);
-                refresh();
-            });
-        }
+        // Property change events no longer used - refresh() called directly
     }
     @Override
     public void dispose() {
         if (context != null) {
             context.getClientState().unregisterRefreshableView(this);
-            context.getClientState().removePropertyChangeListener(this);
         }
         active = false;
         initialized = false;

@@ -50,28 +50,16 @@ public class GameCreatedEvent extends AbstractEvent {
         // Note: GameModel constructor requires (GameLevel, GameConfigurationManager, int maxPlayers)
         // We can't create a full GameModel here, so we'll update the ClientState differently
 
-        // Notify UI about new game creation via property change
-        context.getController().getClientState().firePropertyChange("gameCreated", null, 
-            java.util.Map.of(
-                "gameId", gameId,
-                "gameName", gameName,
-                "creatorId", creatorId, 
-                "creatorNickname", creatorNickname,
-                "maxPlayers", maxPlayers,
-                "gameLevel", gameLevel.name()
-            ));
-
-        // If this client is the creator, transition to game lobby
-        if (context.isLocalPlayer(creatorId)) {
-            LOGGER.log(Level.SEVERE, "This is the creator's client. Transitioning to game lobby " + gameId);
-            
-            // Transition to game lobby - the actual GameModel will be set by other events
-            context.getController().getClientState().setCurrentView(ClientState.ViewState.GAME_LOBBY);
-
-        } else {
-            // For other players, show a notification
-            context.runOnUIThread(() -> {
-                if (context.getNotificationService() != null) {
+        // Notify all players about the new game creation (but don't handle creator navigation)
+        // Creator navigation is handled by CreateGameResponse
+        context.runOnUIThread(() -> {
+            if (context.getNotificationService() != null) {
+                if (context.isLocalPlayer(creatorId)) {
+                    // For creator: just a confirmation that the event was received
+                    // (CreateGameResponse already handled the navigation)
+                    LOGGER.info("GameCreatedEvent received for creator - CreateGameResponse should have handled navigation");
+                } else {
+                    // For other players: show notification about the new game
                     String gameDesc = gameName != null ? "'" + gameName + "'" : "a new game";
                     context.getNotificationService().showNotification(new Notification(
                             "Game Created",
@@ -79,8 +67,8 @@ public class GameCreatedEvent extends AbstractEvent {
                             NotificationType.INFO
                     ));
                 }
-            });
-        }
+            }
+        });
     }
 
     @Override

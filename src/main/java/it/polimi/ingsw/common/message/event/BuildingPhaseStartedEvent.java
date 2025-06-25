@@ -22,17 +22,32 @@ public class BuildingPhaseStartedEvent extends AbstractEvent {
     @Override
     public void handleOnClient(ClientEventContext context) {
         context.runOnUIThread(() -> {
-            // SIMPLIFIED: Direct model replacement instead of complex sync
-            
-            // NEW: Simple direct GameModel usage via ClientState
+            // Update game model with building phase state
             if (context.getClientState() != null) {
                 context.getClientState().setGameModel(gameModel);
-            } else {
-                // LEGACY: Fallback to LocalGameState
-                if (context.getClientState() != null) {
-                    // Note: syncWithGameModel method doesn't exist in current LocalGameState
-                    // This is legacy code that needs to be replaced
+                
+                // Ensure we're in GAME view to see the building phase UI
+                if (context.getController().getUIContext() != null && 
+                    context.getController().getUIContext().getViewNavigator() != null &&
+                    context.getClientState().getCurrentView() != it.polimi.ingsw.client.core.ClientState.ViewState.GAME) {
+                    
+                    boolean success = context.getController().getUIContext().getViewNavigator()
+                        .navigateTo(it.polimi.ingsw.client.core.ClientState.ViewState.GAME, 
+                                   "Building phase started - entering ship building");
+                    
+                    if (!success) {
+                        String reason = context.getController().getUIContext().getViewNavigator()
+                            .getNavigationFailureReason(it.polimi.ingsw.client.core.ClientState.ViewState.GAME);
+                        java.util.logging.Logger.getLogger(BuildingPhaseStartedEvent.class.getName())
+                            .severe("Failed to navigate to GAME for building phase - Reason: " + reason);
+                    }
+                } else if (context.getClientState().getCurrentView() != it.polimi.ingsw.client.core.ClientState.ViewState.GAME) {
+                    java.util.logging.Logger.getLogger(BuildingPhaseStartedEvent.class.getName())
+                        .severe("ViewNavigator not available - cannot navigate to GAME for building phase");
                 }
+                
+                java.util.logging.Logger.getLogger(BuildingPhaseStartedEvent.class.getName())
+                    .info("Building phase started - game model updated");
             }
 
             // Show notification about phase transition
@@ -44,11 +59,6 @@ public class BuildingPhaseStartedEvent extends AbstractEvent {
                         NotificationType.INFO
                     )
                 );
-            }
-
-            // SIMPLIFIED: Single property change notification
-            if (context.getController() != null && context.getController().getClientState() != null) {
-                context.getController().getClientState().firePropertyChange("buildingPhaseStarted", null, gameModel);
             }
         });
     }

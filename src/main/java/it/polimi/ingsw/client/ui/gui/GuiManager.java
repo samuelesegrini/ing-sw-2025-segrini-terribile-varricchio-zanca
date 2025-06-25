@@ -96,6 +96,9 @@ public class GuiManager extends Application implements ViewNavigator.ViewStateCh
         // Create GUI context
         context = new GuiContext(staticController, primaryStage);
         
+        // CRITICAL: Set the UI context on the controller so it can access ViewNavigator
+        staticController.setUIContext(context);
+        
         // Set the current UI context for global access (needed for message handling)
         UIContextProvider.setCurrent(context);
         

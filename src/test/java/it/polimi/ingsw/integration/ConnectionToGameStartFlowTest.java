@@ -134,8 +134,9 @@ class ConnectionToGameStartFlowTest {
         assertInstanceOf(GenericSuccessResponse.class, startGameResponse);
         
         // Verify game session exists and is started
-        assertNotNull(gameSessionManager.getGameSession(gameId), "Game session should exist");
-        assertTrue(gameSessionManager.getGameSession(gameId).isStarted(), "Game should be in started state");
+        var gameSession = gameSessionManager.getGameSession(gameId);
+        assertNotNull(gameSession, "Game session should exist");
+        assertTrue(gameSession.isStarted(), "Game should be in started state");
     }
 
     @Test

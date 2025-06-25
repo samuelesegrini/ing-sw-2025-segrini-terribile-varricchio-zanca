@@ -20,34 +20,38 @@ public class ViewNavigatorImpl implements ViewNavigator {
         this.clientState = clientState;
         this.currentViewState = clientState.getCurrentView();
         
-        // Listen to client state changes to keep in sync
-        clientState.addPropertyChangeListener(evt -> {
-            if ("currentView".equals(evt.getPropertyName())) {
-                ClientState.ViewState newState = (ClientState.ViewState) evt.getNewValue();
-                onViewStateChanged(currentViewState, newState);
-                currentViewState = newState;
-            }
-        });
+        // View state changes handled via direct navigation calls, no property listeners needed
     }
     
     @Override
     public boolean navigateTo(ClientState.ViewState viewState) {
+        return navigateTo(viewState, null);
+    }
+    
+    @Override
+    public boolean navigateTo(ClientState.ViewState viewState, String context) {
         if (viewState == null) {
             LOGGER.warning("Cannot navigate to null view state");
             return false;
         }
         
         if (!canNavigateTo(viewState)) {
-            LOGGER.warning("Cannot navigate to view state: " + viewState + " from current state: " + currentViewState);
+            String reason = getNavigationFailureReason(viewState);
+            LOGGER.warning("Cannot navigate to view state: " + viewState + " from current state: " + currentViewState + 
+                         (reason != null ? " - Reason: " + reason : ""));
             return false;
         }
         
         ClientState.ViewState oldState = currentViewState;
         
         try {
-            // Update the client state, which will trigger property change events
+            // Update the client state and notify listeners directly
             clientState.setCurrentView(viewState);
-            LOGGER.info("Successfully navigated from " + oldState + " to " + viewState);
+            onViewStateChanged(oldState, viewState);
+            currentViewState = viewState;
+            
+            String contextMsg = context != null ? " (Context: " + context + ")" : "";
+            LOGGER.info("Successfully navigated from " + oldState + " to " + viewState + contextMsg);
             return true;
         } catch (Exception e) {
             LOGGER.severe("Failed to navigate to view state " + viewState + ": " + e.getMessage());
@@ -62,38 +66,66 @@ public class ViewNavigatorImpl implements ViewNavigator {
     
     @Override
     public boolean canNavigateTo(ClientState.ViewState viewState) {
+        return getNavigationFailureReason(viewState) == null;
+    }
+    
+    @Override
+    public String getNavigationFailureReason(ClientState.ViewState viewState) {
         if (viewState == null) {
-            return false;
+            return "Target view state is null";
         }
         
         // Define navigation rules based on current state and model data
         switch (currentViewState) {
             case CONNECTION:
                 // From connection, can only go to login if connected
-                return viewState == ClientState.ViewState.LOGIN && clientState.isConnected();
+                if (viewState == ClientState.ViewState.LOGIN) {
+                    if (!clientState.isConnected()) {
+                        return "Not connected to server";
+                    }
+                    return null; // Navigation allowed
+                }
+                return "From CONNECTION view, can only navigate to LOGIN";
                 
             case LOGIN:
                 // From login, can go to lobby if logged in
-                return viewState == ClientState.ViewState.LOBBY && (clientState.getPlayerId() != null);
+                if (viewState == ClientState.ViewState.LOBBY) {
+                    if (clientState.getPlayerId() == null) {
+                        return "Not authenticated (no player ID)";
+                    }
+                    return null; // Navigation allowed
+                }
+                return "From LOGIN view, can only navigate to LOBBY";
                 
             case LOBBY:
                 // From lobby, can go to game lobby or back to login
-                return viewState == ClientState.ViewState.GAME_LOBBY ||
-                       viewState == ClientState.ViewState.LOGIN;
+                if (viewState == ClientState.ViewState.GAME_LOBBY || viewState == ClientState.ViewState.LOGIN) {
+                    return null; // Navigation allowed
+                }
+                return "From LOBBY view, can only navigate to GAME_LOBBY or LOGIN";
                        
             case GAME_LOBBY:
                 // From game lobby, can go to game when it starts or back to lobby
-                return (viewState == ClientState.ViewState.GAME && clientState.getCurrentGameId() != null) ||
-                       viewState == ClientState.ViewState.LOBBY;
+                if (viewState == ClientState.ViewState.GAME) {
+                    if (clientState.getCurrentGameId() == null) {
+                        return "Not in a game (no game ID)";
+                    }
+                    return null; // Navigation allowed
+                } else if (viewState == ClientState.ViewState.LOBBY) {
+                    return null; // Navigation allowed
+                }
+                return "From GAME_LOBBY view, can only navigate to GAME or LOBBY";
                        
             case GAME:
                 // From game, can go back to lobby or to login
-                return viewState == ClientState.ViewState.LOBBY || 
-                       viewState == ClientState.ViewState.LOGIN;
+                if (viewState == ClientState.ViewState.LOBBY || viewState == ClientState.ViewState.LOGIN) {
+                    return null; // Navigation allowed
+                }
+                return "From GAME view, can only navigate to LOBBY or LOGIN";
                        
             default:
                 // For unknown states, allow navigation
-                return true;
+                return null;
         }
     }
     

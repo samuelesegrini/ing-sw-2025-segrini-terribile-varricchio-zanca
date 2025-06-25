@@ -30,7 +30,24 @@ public class GameStartedEvent extends AbstractEvent {
             ClientState clientState = context.getClientState();
             if (clientState != null) {
                 clientState.setGameModel(gameModel);
-                clientState.setCurrentView(ClientState.ViewState.GAME);
+                
+                // Use ViewNavigator for proper navigation instead of direct state manipulation
+                if (context.getController().getUIContext() != null && 
+                    context.getController().getUIContext().getViewNavigator() != null) {
+                    
+                    boolean success = context.getController().getUIContext().getViewNavigator()
+                        .navigateTo(ClientState.ViewState.GAME, "Game started - entering building phase");
+                    
+                    if (!success) {
+                        String reason = context.getController().getUIContext().getViewNavigator()
+                            .getNavigationFailureReason(ClientState.ViewState.GAME);
+                        java.util.logging.Logger.getLogger(GameStartedEvent.class.getName())
+                            .severe("Failed to navigate to GAME after game started - Reason: " + reason);
+                    }
+                } else {
+                    java.util.logging.Logger.getLogger(GameStartedEvent.class.getName())
+                        .severe("ViewNavigator not available - cannot navigate to GAME after game started");
+                }
             }
 
             // Show notification about game start

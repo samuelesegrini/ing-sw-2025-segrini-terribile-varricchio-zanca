@@ -53,15 +53,6 @@ public class ShipDamagedEvent extends AbstractEvent {
 
     @Override
     public void handleOnClient(ClientEventContext context) {
-        // Update game state with damage
-        var clientState = context.getClientState();
-        if (clientState != null) {
-            // Fire property change for ship damage
-            clientState.firePropertyChange("shipDamaged", null, 
-                java.util.Map.of("playerId", playerId, "row", row, "col", col, 
-                               "damageSource", damageSource, "componentLost", componentLost));
-        }
-
         context.runOnUIThread(() -> {
             // Show notification about the damage
             if (context.getNotificationService() != null) {

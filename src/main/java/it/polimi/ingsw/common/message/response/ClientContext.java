@@ -10,6 +10,7 @@ public interface ClientContext {
     String getPlayerId();
     String getGameId();
     ClientState getClientState();
+    it.polimi.ingsw.client.controller.ClientController getController();
     void showNotification(String title, String message, NotificationType type);
     void showError(String title, String message);
 }

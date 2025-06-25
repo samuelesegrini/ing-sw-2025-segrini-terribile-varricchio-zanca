@@ -175,12 +175,17 @@ public class GuiConnectionView extends BaseUIView {
         showLoading(true);
         context.getController().connect(hostname, port, true)
             .thenAccept(success -> {
-                showLoading(false);
-                if (success) {
-                    // On success, the model's view will change, triggering navigation.
-                } else {
-                    showError("Could not connect to the server. Please check the address and port.");
-                }
+                // Ensure UI updates happen on JavaFX Application Thread
+                javafx.application.Platform.runLater(() -> {
+                    showLoading(false);
+                    if (success) {
+                        // On success, the ViewNavigator will handle view transition
+                        // which should trigger GuiManager.onViewStateChanged()
+                        updateConnectionStatus();
+                    } else {
+                        showError("Could not connect to the server. Please check the address and port.");
+                    }
+                });
             });
     }
 
