@@ -27,7 +27,7 @@ Project requirements: [here](https://github.com/samuelesegrini/ing-sw-2025-segri
 * Source code of [unity tests]();
 * [JavaDoc]();
 * [Coverage]() report;
-* Client-Server Communication Protocol [Documentation]();
+* Client-Server Communication Protocol [Documentation](Client_Server_Communication_Protocol_Documentation.pdf);
 
 ## Implemented Features 
 
