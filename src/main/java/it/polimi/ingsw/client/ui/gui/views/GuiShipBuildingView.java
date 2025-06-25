@@ -3,7 +3,7 @@ package it.polimi.ingsw.client.ui.gui.views;
 import it.polimi.ingsw.client.core.ClientState;
 import it.polimi.ingsw.client.controller.ClientController;
 import it.polimi.ingsw.client.core.UIRefreshable;
-import it.polimi.ingsw.client.ui.UIContext;
+import it.polimi.ingsw.client.ui.core.UIContext;
 import it.polimi.ingsw.client.ui.core.BaseUIView;
 import it.polimi.ingsw.client.ui.gui.components.*;
 import it.polimi.ingsw.server.model.domain.player.Player;

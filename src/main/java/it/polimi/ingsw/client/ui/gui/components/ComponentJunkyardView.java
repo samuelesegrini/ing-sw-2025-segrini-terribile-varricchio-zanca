@@ -2,7 +2,7 @@ package it.polimi.ingsw.client.ui.gui.components;
 
 import it.polimi.ingsw.server.model.domain.ship.components.Component;
 import it.polimi.ingsw.client.core.UIRefreshable;
-import it.polimi.ingsw.client.ui.UIContext;
+import it.polimi.ingsw.client.ui.core.UIContext;
 import it.polimi.ingsw.server.model.domain.general.ComponentDeck;
 import javafx.application.Platform;
 import javafx.geometry.Insets;

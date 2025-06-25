@@ -3,7 +3,7 @@ package it.polimi.ingsw.client.ui.core;
 import java.beans.PropertyChangeEvent;
 import java.util.logging.Logger;
 import it.polimi.ingsw.client.core.UIRefreshable;
-import it.polimi.ingsw.client.ui.UIContext;
+import it.polimi.ingsw.client.ui.core.UIContext;
 
 /**
  * Abstract base implementation for UI views with Simple Direct Model Architecture.

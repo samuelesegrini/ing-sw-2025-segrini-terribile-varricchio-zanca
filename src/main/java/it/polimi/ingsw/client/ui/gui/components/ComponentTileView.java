@@ -341,4 +341,13 @@ public class ComponentTileView extends StackPane {
             setupRotationIndicator();
         }
     }
+    
+    public boolean isFaceDown() {
+        return isFaceDown;
+    }
+    
+    public void setFaceDown(boolean faceDown) {
+        this.isFaceDown = faceDown;
+        updateAppearance();
+    }
 }

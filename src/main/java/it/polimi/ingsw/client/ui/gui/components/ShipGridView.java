@@ -2,7 +2,7 @@ package it.polimi.ingsw.client.ui.gui.components;
 
 import it.polimi.ingsw.server.model.domain.ship.Position;
 import it.polimi.ingsw.client.core.UIRefreshable;
-import it.polimi.ingsw.client.ui.UIContext;
+import it.polimi.ingsw.client.ui.core.UIContext;
 import it.polimi.ingsw.server.model.domain.ship.Ship;
 import it.polimi.ingsw.server.model.domain.ship.components.Component;
 import javafx.geometry.HPos;
@@ -56,6 +56,19 @@ public class ShipGridView extends StackPane implements UIRefreshable {
     
     public ShipGridView(UIContext uiContext, ShipGridClickHandler clickHandler) {
         this(uiContext, DEFAULT_CELL_SIZE, clickHandler);
+    }
+    
+    // Constructor for mini-views that don't need UIContext functionality
+    public ShipGridView(double cellSize, ShipGridClickHandler clickHandler) {
+        this.uiContext = null; // Mini-views don't need full context
+        this.cellSize = cellSize;
+        this.clickHandler = clickHandler;
+        
+        getStyleClass().add("ship-grid-view");
+        setAlignment(Pos.CENTER);
+        
+        updateGridDimensions();
+        createGridUI();
     }
     
     private void createGridUI() {

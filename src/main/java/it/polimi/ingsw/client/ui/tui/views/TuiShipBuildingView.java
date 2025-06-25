@@ -3,7 +3,7 @@ package it.polimi.ingsw.client.ui.tui.views;
 import it.polimi.ingsw.client.core.ClientState;
 import it.polimi.ingsw.client.controller.ClientController;
 import it.polimi.ingsw.client.ui.core.BaseUIView;
-import it.polimi.ingsw.client.ui.UIContext;
+import it.polimi.ingsw.client.ui.core.UIContext;
 import it.polimi.ingsw.client.core.UIRefreshable;
 
 import java.beans.PropertyChangeEvent;

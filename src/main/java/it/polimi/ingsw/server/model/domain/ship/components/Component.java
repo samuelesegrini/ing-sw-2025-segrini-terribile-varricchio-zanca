@@ -45,6 +45,14 @@ public abstract class Component implements Serializable {
     public Direction getDirection() {
         return direction;
     }
+    
+    /**
+     * Alias for getDirection() for UI compatibility.
+     * @return current direction of the component
+     */
+    public Direction getCurrentDirection() {
+        return getDirection();
+    }
 
     public Position getPosition() {
         return position;
@@ -142,5 +150,13 @@ public abstract class Component implements Serializable {
      */
     public boolean isReserved() {
         return reservedBy != null;
+    }
+    
+    /**
+     * Returns a display-friendly name for this component.
+     * @return display name based on component type
+     */
+    public String getDisplayName() {
+        return type.toString().toLowerCase().replace("_", " ");
     }
 }
