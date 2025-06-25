@@ -37,6 +37,9 @@ public class FlightBoard implements Serializable {
     public PlayerFlightData getPlayerData(Player player){
         return playerDataMap.get(player);
     }
+    public Map<Player, PlayerFlightData> getPlayerDataMap() {
+        return playerDataMap;
+    }
 
    /**
      * Returns the leading player in the current order of players.

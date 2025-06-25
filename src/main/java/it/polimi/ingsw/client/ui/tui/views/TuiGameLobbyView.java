@@ -18,14 +18,10 @@ public class TuiGameLobbyView extends BaseUIView { //CONTROLLA
     private final TuiConsole console;
     private final Scanner scanner;
 
-    public TuiGameLobbyView(it.polimi.ingsw.client.ui.core.UIContext context) {
+    public TuiGameLobbyView(TuiContext context) {
+        this.console = context.getConsole();
         this.scanner = new Scanner(System.in);
-        // Get console through TuiContext casting
-        if (context instanceof TuiContext tuiContext) {
-            this.console = tuiContext.getConsole();
-        } else {
-            throw new IllegalStateException("Expected TuiContext but got " + context.getClass());
-        }
+        initialize(context);
     }
 
     @Override

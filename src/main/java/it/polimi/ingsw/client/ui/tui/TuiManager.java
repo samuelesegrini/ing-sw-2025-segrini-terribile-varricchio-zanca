@@ -2,6 +2,7 @@ package it.polimi.ingsw.client.ui.tui;
 
 import it.polimi.ingsw.client.core.ClientState;
 import it.polimi.ingsw.client.controller.ClientController;
+import it.polimi.ingsw.client.ui.UI;
 import it.polimi.ingsw.client.ui.core.UIView;
 import it.polimi.ingsw.client.ui.core.ViewNavigator;
 import it.polimi.ingsw.client.ui.tui.views.*;
@@ -15,7 +16,7 @@ import java.util.logging.Logger;
 /**
  * New TUI manager using the unified architecture.
  */
-public class TuiManager implements ViewNavigator.ViewStateChangeListener, it.polimi.ingsw.client.ui.UI {
+public class TuiManager implements ViewNavigator.ViewStateChangeListener, UI {
     
     private static final Logger LOGGER = Logger.getLogger(TuiManager.class.getName());
     
@@ -39,7 +40,6 @@ public class TuiManager implements ViewNavigator.ViewStateChangeListener, it.pol
     }
     
     private void initializeViews() {
-        // Create and initialize all views
         TuiConnectionView connectionView = new TuiConnectionView();
         connectionView.initialize(context);
         views.put(ClientState.ViewState.CONNECTION, connectionView);
@@ -53,10 +53,11 @@ public class TuiManager implements ViewNavigator.ViewStateChangeListener, it.pol
         TuiGameLobbyView gameLobbyView = new TuiGameLobbyView(context);
         views.put(ClientState.ViewState.GAME_LOBBY, gameLobbyView);
         
-        TuiShipBuildingView shipBuildingView = new TuiShipBuildingView(context.getController(), context);
+        TuiShipBuildingView shipBuildingView = new TuiShipBuildingView(context);
         views.put(ClientState.ViewState.GAME, shipBuildingView);
         
-        // TODO: Add other views (lobby browser) as they are migrated
+        TuiFlightView flightView = new TuiFlightView(context);
+        views.put(ClientState.ViewState.GAME, shipBuildingView);
         
         LOGGER.info("Initialized " + views.size() + " TUI views");
     }
