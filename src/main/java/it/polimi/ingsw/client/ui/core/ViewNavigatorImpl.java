@@ -75,6 +75,11 @@ public class ViewNavigatorImpl implements ViewNavigator {
             return "Target view state is null";
         }
         
+        // Allow self-navigation for data refresh/updates - this is always valid
+        if (viewState == currentViewState) {
+            return null; // Self-navigation always allowed
+        }
+        
         // Define navigation rules based on current state and model data
         switch (currentViewState) {
             case CONNECTION:
@@ -97,14 +102,21 @@ public class ViewNavigatorImpl implements ViewNavigator {
                 return "From CONNECTION view, can only navigate to LOGIN or LOBBY (if authenticated)";
                 
             case LOGIN:
-                // From login, can go to lobby if logged in
+                // From login, can go to lobby if logged in, or directly to game lobby if joining a game
                 if (viewState == ClientState.ViewState.LOBBY) {
                     if (clientState.getPlayerId() == null) {
                         return "Not authenticated (no player ID)";
                     }
                     return null; // Navigation allowed
                 }
-                return "From LOGIN view, can only navigate to LOBBY";
+                if (viewState == ClientState.ViewState.GAME_LOBBY) {
+                    if (clientState.getPlayerId() == null) {
+                        return "Not authenticated (no player ID)";
+                    }
+                    // Allow direct LOGIN -> GAME_LOBBY when joining a game
+                    return null; // Navigation allowed
+                }
+                return "From LOGIN view, can only navigate to LOBBY or GAME_LOBBY (if joining a game)";
                 
             case LOBBY:
                 // From lobby, can go to game lobby or back to login

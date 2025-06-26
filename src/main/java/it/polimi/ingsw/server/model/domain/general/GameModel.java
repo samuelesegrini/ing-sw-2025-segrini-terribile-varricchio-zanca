@@ -481,17 +481,6 @@ public class GameModel implements Serializable {
     }
     
     /**
-     * Attempts to flip the building timer to the next stage (legacy String overload).
-     * @param playerIdString The player attempting to flip the timer
-     * @param playerHasCompletedShip Whether the player has completed their ship
-     * @return true if timer was successfully flipped, false otherwise
-     */
-    public boolean flipBuildingTimer(String playerIdString, boolean playerHasCompletedShip) {
-        PlayerId playerId = PlayerId.fromString(playerIdString);
-        return flipBuildingTimer(playerId, playerHasCompletedShip);
-    }
-    
-    /**
      * Gets the current building timer state
      */
     public BuildingTimer.TimerState getBuildingTimerState() {

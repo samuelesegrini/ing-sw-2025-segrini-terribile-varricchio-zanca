@@ -35,7 +35,7 @@ public class JoinGameResponse extends AbstractResponse {
                     clientState.setPlayersInLobby(gameModel.getPlayers());
                 }
                 
-                // Navigate using proper ViewNavigator
+                // Navigate to GAME_LOBBY using proper ViewNavigator
                 if (context.getController() == null) {
                     throw new IllegalStateException("Controller not available - cannot navigate to GAME_LOBBY after joining game");
                 }

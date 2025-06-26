@@ -321,8 +321,8 @@ public class GameSession {
     private void startBuildingPhase() {
         LOGGER.info("Phase: BUILDING -> " + gameId);
 
-        // Set timer for building phase (from config)
-        int buildingTimeMinutes = 1;
+        // Set timer for building phase (from config) - disabled to prevent auto-flight transition
+        int buildingTimeMinutes = 0;
 
         if (buildingTimeMinutes > 0) {
             ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
