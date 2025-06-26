@@ -6,6 +6,7 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.StackPane;
@@ -27,6 +28,7 @@ public class GuiConnectionView extends BaseUIView {
     private Stage stage;
     private TextField hostnameField;
     private TextField portField;
+    private ComboBox<String> protocolComboBox;
     private Button connectButton;
     private Label statusLabel;
     private ProgressIndicator loadingIndicator;
@@ -115,13 +117,22 @@ public class GuiConnectionView extends BaseUIView {
         hostnameField.getStyleClass().add("text-field-styled");
         hostnameField.setPrefWidth(300);
 
+        Label protocolLabel = new Label("Protocol:");
+        protocolLabel.getStyleClass().add("login-form-label");
+        protocolComboBox = new ComboBox<>();
+        protocolComboBox.getItems().addAll("Socket", "RMI");
+        protocolComboBox.setValue("Socket");
+        protocolComboBox.getStyleClass().add("combo-box-styled");
+        protocolComboBox.setPrefWidth(300);
+        protocolComboBox.setOnAction(e -> updateDefaultPort());
+
         Label portLabel = new Label("Port:");
         portLabel.getStyleClass().add("login-form-label");
         portField = new TextField("12345");
         portField.getStyleClass().add("text-field-styled");
         portField.setPrefWidth(300);
 
-        formBox.getChildren().addAll(hostnameLabel, hostnameField, portLabel, portField);
+        formBox.getChildren().addAll(hostnameLabel, hostnameField, protocolLabel, protocolComboBox, portLabel, portField);
 
         // Connect button
         connectButton = new Button("CONNECT");
@@ -133,6 +144,7 @@ public class GuiConnectionView extends BaseUIView {
             connectButton.disableProperty().bind(context.getClientState().connectedProperty());
             hostnameField.disableProperty().bind(context.getClientState().connectedProperty());
             portField.disableProperty().bind(context.getClientState().connectedProperty());
+            protocolComboBox.disableProperty().bind(context.getClientState().connectedProperty());
         }
 
         // Error label
@@ -161,10 +173,17 @@ public class GuiConnectionView extends BaseUIView {
     private void handleConnect() {
         String hostname = hostnameField.getText().trim();
         String portText = portField.getText().trim();
+        String protocol = protocolComboBox.getValue();
+        
         if (hostname.isEmpty()) {
             showError("Hostname cannot be empty");
             return;
         }
+        if (protocol == null) {
+            showError("Please select a protocol");
+            return;
+        }
+        
         int port;
         try {
             port = Integer.parseInt(portText);
@@ -172,8 +191,10 @@ public class GuiConnectionView extends BaseUIView {
             showError("Port must be a valid number");
             return;
         }
+        
+        boolean useSocket = "Socket".equals(protocol);
         showLoading(true);
-        context.getController().connect(hostname, port, true)
+        context.getController().connect(hostname, port, useSocket)
             .thenAccept(success -> {
                 // Ensure UI updates happen on JavaFX Application Thread
                 javafx.application.Platform.runLater(() -> {
@@ -183,7 +204,7 @@ public class GuiConnectionView extends BaseUIView {
                         // which should trigger GuiManager.onViewStateChanged()
                         updateConnectionStatus();
                     } else {
-                        showError("Could not connect to the server. Please check the address and port.");
+                        showError("Could not connect to the server via " + protocol + ". Please check the address and port.");
                     }
                 });
             });
@@ -203,6 +224,15 @@ public class GuiConnectionView extends BaseUIView {
                 errorLabel.setVisible(false);
             }
         });
+    }
+
+    private void updateDefaultPort() {
+        String protocol = protocolComboBox.getValue();
+        if ("RMI".equals(protocol)) {
+            portField.setText("1099");
+        } else {
+            portField.setText("12345");
+        }
     }
 
     private void updateConnectionStatus() {

@@ -372,11 +372,11 @@ public class GuiGameLobbyView extends BaseUIView {
     }
 
     private String getHostPlayerId() {
-        // Get host from GameInfo which tracks the actual creator/host
-        if (context.getClientState().getCurrentGameInfo() != null) {
-            return context.getClientState().getCurrentGameInfo().getCreatorId();
+        // Get host from GameModel which tracks the actual creator/host
+        if (context.getClientState().getCurrentGameLobby() != null) {
+            return context.getClientState().getCurrentGameLobby().getCreatorId();
         }
-        // No fallback - if GameInfo is not available, no one is host
+        // No fallback - if GameModel is not available, no one is host
         return null;
     }
 

@@ -252,8 +252,8 @@ public class TuiGameLobbyView extends BaseUIView { //CONTROLLA
 
     private String getHostPlayerId() {
         // Get host from GameModel which tracks the actual creator/host
-        if (context.getClientState().getCurrentGame() != null) {
-            return context.getClientState().getCurrentGame().getCreatorId();
+        if (context.getClientState().getCurrentGameLobby() != null) {
+            return context.getClientState().getCurrentGameLobby().getCreatorId();
         }
         // Fallback to the first player if GameModel is not available
         List<Player> players = context.getClientState().getPlayersInLobby();
