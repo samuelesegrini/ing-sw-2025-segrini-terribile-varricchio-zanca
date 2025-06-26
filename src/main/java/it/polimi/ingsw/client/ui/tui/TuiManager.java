@@ -57,11 +57,11 @@ public class TuiManager implements ViewNavigator.ViewStateChangeListener, UI {
         TuiGameLobbyView gameLobbyView = new TuiGameLobbyView(context);
         views.put(ClientState.ViewState.GAME_LOBBY, gameLobbyView);
         
-        TuiShipBuildingView shipBuildingView = new TuiShipBuildingView(context);
-        views.put(ClientState.ViewState.GAME, shipBuildingView);
+//        TuiShipBuildingView shipBuildingView = new TuiShipBuildingView(context);
+//        views.put(ClientState.ViewState.GAME, shipBuildingView);
         
         TuiFlightView flightView = new TuiFlightView(context);
-        views.put(ClientState.ViewState.GAME, shipBuildingView);
+        views.put(ClientState.ViewState.GAME, flightView);
         
         LOGGER.info("Initialized " + views.size() + " TUI views");
     }
