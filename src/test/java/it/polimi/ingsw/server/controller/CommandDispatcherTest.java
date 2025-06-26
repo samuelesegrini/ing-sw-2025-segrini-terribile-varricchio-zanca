@@ -1,5 +1,7 @@
 package it.polimi.ingsw.server.controller;
 
+import it.polimi.ingsw.common.message.EventPublisher;
+import it.polimi.ingsw.common.message.event.Event;
 import it.polimi.ingsw.common.message.request.Request;
 import it.polimi.ingsw.common.message.request.RequestContext;
 import it.polimi.ingsw.common.message.response.ClientContext;
@@ -38,6 +40,7 @@ class CommandDispatcherTest {
     private GameSessionManager sessionManager;
     private PlayerSessionRegistry playerRegistry;
     private ServerNetworkManager networkManager;
+    private EventPublisher eventPublisher;
     private ConcurrentHashMap<String, String> networkClientToGamePlayerMap;
     private TestNetworkAdapter testAdapter;
 
@@ -45,7 +48,8 @@ class CommandDispatcherTest {
     void setUp() throws Exception {
         playerRegistry = new PlayerSessionRegistry();
         networkManager = new ServerNetworkManager();
-        sessionManager = new GameSessionManager(networkManager, playerRegistry);
+        eventPublisher = new TestEventPublisher(); // Create test event publisher
+        sessionManager = new GameSessionManager(networkManager, playerRegistry, eventPublisher);
         networkClientToGamePlayerMap = new ConcurrentHashMap<>();
 
         // Create test adapter to intercept messages
@@ -446,6 +450,38 @@ class CommandDispatcherTest {
         } catch (Exception e) {
             throw new RuntimeException("Failed to setup test client", e);
         }
+    }
+}
+
+// Test EventPublisher implementation
+class TestEventPublisher implements EventPublisher {
+    private final List<Object> publishedEvents = Collections.synchronizedList(new ArrayList<>());
+
+    public void publishEvent(Object event) {
+        publishedEvents.add(event);
+    }
+
+    public List<Object> getPublishedEvents() {
+        return new ArrayList<>(publishedEvents);
+    }
+
+    public void clearEvents() {
+        publishedEvents.clear();
+    }
+
+    @Override
+    public void publishEvent(Event event) {
+
+    }
+
+    @Override
+    public void publishEventToClient(Event event, String clientId) {
+
+    }
+
+    @Override
+    public void publishEventToGame(Event event, String gameId) {
+
     }
 }
 

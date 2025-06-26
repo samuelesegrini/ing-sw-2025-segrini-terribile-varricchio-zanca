@@ -1,10 +1,12 @@
 package it.polimi.ingsw.server.core;
 
+import it.polimi.ingsw.common.message.event.Event;
 import it.polimi.ingsw.server.model.domain.general.GameModel;
 import it.polimi.ingsw.server.model.domain.general.config.GameConfigurationManager;
 import it.polimi.ingsw.server.model.domain.player.PlayerId;
 import it.polimi.ingsw.server.model.enums.GameLevel;
 import it.polimi.ingsw.server.network.ServerNetworkManager;
+import it.polimi.ingsw.common.message.EventPublisher;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.AfterEach;
@@ -19,15 +21,47 @@ class GameSessionManagerTest {
     private GameSessionManager gameSessionManager;
     private ServerNetworkManager networkManager;
     private PlayerSessionRegistry playerRegistry;
+    private EventPublisher eventPublisher;
     private PlayerId testPlayerId1;
     private PlayerId testPlayerId2;
     private PlayerId testPlayerId3;
 
+    // Dummy EventPublisher for testing
+    private static class DummyEventPublisher implements EventPublisher {
+        @Override
+        public void publishEvent(Event event) {
+
+        }
+
+        @Override
+        public void publishEventToClient(Event event, String clientId) {
+
+        }
+
+        @Override
+        public void publishEventToGame(Event event, String gameId) {
+
+        }
+        // Implement required methods with no-op behavior for testing
+        // Add methods as needed based on your EventPublisher interface
+    }
+
+    // Dummy ServerNetworkManager for testing
+    private static class DummyServerNetworkManager extends ServerNetworkManager {
+        // Override methods as needed with no-op behavior for testing
+    }
+
+    // Dummy PlayerSessionRegistry for testing
+    private static class DummyPlayerSessionRegistry extends PlayerSessionRegistry {
+        // Override methods as needed with no-op behavior for testing
+    }
+
     @BeforeEach
     void setUp() {
         // Create test dependencies
-        networkManager = new ServerNetworkManager(); // TODO: Implement if needed
-        playerRegistry = new PlayerSessionRegistry();
+        networkManager = new DummyServerNetworkManager();
+        playerRegistry = new DummyPlayerSessionRegistry();
+        eventPublisher = new DummyEventPublisher();
 
         // Create test player IDs using fromString to ensure consistency
         // This ensures that toString() and fromString() work correctly together
@@ -35,8 +69,8 @@ class GameSessionManagerTest {
         testPlayerId2 = PlayerId.fromString("player2");
         testPlayerId3 = PlayerId.fromString("player3");
 
-        // Initialize GameSessionManager
-        gameSessionManager = new GameSessionManager(networkManager, playerRegistry);
+        // Initialize GameSessionManager with the new constructor signature
+        gameSessionManager = new GameSessionManager(networkManager, playerRegistry, eventPublisher);
     }
 
     @AfterEach
@@ -441,6 +475,21 @@ class GameSessionManagerTest {
         // Verify all games are tracked
         List<GameModel> availableGames = gameSessionManager.getAvailableGames();
         assertEquals(numThreads, availableGames.size(), "All games should be available");
+    }
+
+    @Test
+    void testSetEventPublisher() {
+        // Given - Create a game first
+        String gameId = gameSessionManager.createGame(testPlayerId1, 4, GameLevel.TEST_FLIGHT, "Test Game");
+        assertNotNull(gameId, "Game should be created");
+
+        // When - Set a new event publisher
+        EventPublisher newEventPublisher = new DummyEventPublisher();
+        gameSessionManager.setEventPublisher(newEventPublisher);
+
+        // Then - No exception should be thrown and the game should still be accessible
+        GameSession session = gameSessionManager.getGameSession(gameId);
+        assertNotNull(session, "Game session should still exist after setting new event publisher");
     }
 
     @Test

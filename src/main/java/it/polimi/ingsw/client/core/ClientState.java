@@ -279,11 +279,13 @@ public class ClientState {
     public BooleanProperty authenticatedProperty() {
         return authenticatedProperty;
     }
-    
+
+    //public String getCurrentGameId() {
+    //    return currentGameId != null ? currentGameId : (currentGameLobby != null ? currentGameLobby.getGameId() : null);
+    //}
     public String getCurrentGameId() {
-        return currentGameId != null ? currentGameId : (currentGameLobby != null ? currentGameLobby.getGameId() : null);
+        return currentGameLobby != null ? currentGameLobby.getGameId() : currentGameId;
     }
-    
     // === Current Game Lobby Basic Info Management ===
     
     public void setCurrentGameId(String gameId) {
@@ -362,6 +364,7 @@ public class ClientState {
             this.playerNickname = null;
         }
         // If setting to true, playerId should already be set via setPlayerInfo
+        Platform.runLater(() -> authenticatedProperty.set(authenticated));
     }
     
     /**
@@ -408,6 +411,9 @@ public class ClientState {
     }
 
     public void unregisterRefreshableView(UIView view) {
+        if (view == null) {
+            return; // Nothing to unregister
+        }
         registeredViews.remove(view);
         if (currentViewComponent == view) {
             currentViewComponent = null;
