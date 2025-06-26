@@ -1,6 +1,7 @@
 package it.polimi.ingsw.common.message.response;
 
 import it.polimi.ingsw.client.ui.NotificationType;
+import it.polimi.ingsw.server.model.domain.player.PlayerId;
 
 import java.util.UUID;
 
@@ -25,9 +26,9 @@ public class SetPlayerReadyResponse extends AbstractResponse {
     public void handleOnClient(ClientContext context) {
         if (isSuccess()) {
             // Update the model with the new ready status
-            String playerId = context.getPlayerId();
+            PlayerId playerId = context.getPlayerId();
             if (playerId != null) {
-                context.getClientState().setPlayerReadyStatus(playerId, ready);
+                context.getClientState().setPlayerReadyStatus(playerId.toString(), ready);
             }
             
             // Show confirmation notification

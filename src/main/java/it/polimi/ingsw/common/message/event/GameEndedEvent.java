@@ -36,7 +36,25 @@ public class GameEndedEvent extends AbstractEvent {
             ClientState clientState = context.getClientState();
             if (clientState != null && gameId.equals(clientState.getCurrentGameId())) {
                 clientState.setGameModel(null);
-                clientState.setCurrentView(ClientState.ViewState.LOBBY);
+                
+                // Use ViewNavigator for consistent navigation
+                if (context.getController() != null && 
+                    context.getController().getUIContext() != null && 
+                    context.getController().getUIContext().getViewNavigator() != null) {
+                    
+                    boolean success = context.getController().getUIContext().getViewNavigator()
+                        .navigateTo(ClientState.ViewState.LOBBY, "Game ended - returning to lobby");
+                    
+                    if (!success) {
+                        String reason = context.getController().getUIContext().getViewNavigator()
+                            .getNavigationFailureReason(ClientState.ViewState.LOBBY);
+                        System.err.println("GameEndedEvent: ViewNavigator failed, using fallback - Reason: " + reason);
+                        clientState.setCurrentView(ClientState.ViewState.LOBBY);
+                    }
+                } else {
+                    System.err.println("GameEndedEvent: ViewNavigator not available, using direct navigation fallback");
+                    clientState.setCurrentView(ClientState.ViewState.LOBBY);
+                }
             }
 
             // Show game results or end notification

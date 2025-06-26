@@ -5,6 +5,7 @@ import it.polimi.ingsw.client.core.ClientState;
 import it.polimi.ingsw.client.ui.Notification;
 import it.polimi.ingsw.server.model.domain.general.GameModel;
 import it.polimi.ingsw.server.model.domain.player.Player;
+import it.polimi.ingsw.server.model.domain.player.PlayerId;
 import it.polimi.ingsw.client.ui.NotificationType;
 import it.polimi.ingsw.server.model.enums.GameLevel;
 import it.polimi.ingsw.server.model.enums.GamePhase;
@@ -20,13 +21,13 @@ import java.util.logging.Logger;
 public class GameCreatedEvent extends AbstractEvent {
     private static final Logger LOGGER = Logger.getLogger(GameCreatedEvent.class.getName());
     private final String gameId;
-    private final String creatorId;
+    private final PlayerId creatorId;
     private final String creatorNickname;
     private final int maxPlayers;
     private final GameLevel gameLevel;
     private final String gameName;
 
-    public GameCreatedEvent(String gameId, String creatorId, String creatorNickname,
+    public GameCreatedEvent(String gameId, PlayerId creatorId, String creatorNickname,
                             int maxPlayers, GameLevel gameLevel, String gameName) {
         super(EventType.GAME_CREATED, null, creatorId);
         this.gameId = gameId;
@@ -36,15 +37,14 @@ public class GameCreatedEvent extends AbstractEvent {
         this.gameLevel = gameLevel;
         this.gameName = gameName;
     }
+    
 
     @Override
     public void handleOnClient(ClientEventContext context) {
-        LOGGER.log(Level.SEVERE, "GameCreatedEvent received on client. Creator ID: " + creatorId + ". Is this the local player? " + context.isLocalPlayer(creatorId));
+        LOGGER.info("GameCreatedEvent received on client. Creator ID: " + creatorId + ". Is this the local player? " + context.isLocalPlayer(creatorId));
 
         // Create game info for the new game  
-        it.polimi.ingsw.server.model.domain.player.PlayerId playerId = 
-            it.polimi.ingsw.server.model.domain.player.PlayerId.fromString(creatorNickname);
-        Player creatorInfo = new Player(playerId);
+        Player creatorInfo = new Player(creatorId);
         creatorInfo.setReady(true);
         
         // Note: GameModel constructor requires (GameLevel, GameConfigurationManager, int maxPlayers)
@@ -73,26 +73,28 @@ public class GameCreatedEvent extends AbstractEvent {
 
     @Override
     public boolean shouldSendTo(String clientId, EventFilterContext context) {
-        String playerId = context.getPlayerIdForClient(clientId);
+        PlayerId playerId = context.getPlayerIdForClient(clientId);
         if (playerId == null) {
             return false;
         }
 
         // Always send to the creator of the game
-        if (playerId.equals(this.creatorId)) {
+        if (this.creatorId.equals(playerId)) {
             return true;
         }
 
-        // For other players, send if they are not in this game (i.e., in the lobby)
-        return !context.isClientInGame(clientId, gameId);
+        // For other players in the lobby, always send the notification
+        // Since this is a global lobby event, send to all authenticated clients
+        return true;
     }
 
     public String getGameName() {
         return  gameName;
     }
-    public  String getCreatorId() {
+    public PlayerId getCreatorId() {
         return creatorId;
     }
+    
     public String getCreatorNickname() {
         return  creatorNickname;
     }

@@ -1,6 +1,7 @@
 package it.polimi.ingsw.common.message.event;
 
 import it.polimi.ingsw.common.message.AbstractMessage;
+import it.polimi.ingsw.server.model.domain.player.PlayerId;
 
 /**
  * Abstract base class for events.
@@ -8,14 +9,15 @@ import it.polimi.ingsw.common.message.AbstractMessage;
 public abstract class AbstractEvent extends AbstractMessage implements Event {
     private final EventType eventType;
     protected final String gameId;
-    protected final String sourcePlayerId;
+    protected final PlayerId sourcePlayerId;
     
-    protected AbstractEvent(EventType eventType, String gameId, String sourcePlayerId) {
+    protected AbstractEvent(EventType eventType, String gameId, PlayerId sourcePlayerId) {
         super();
         this.eventType = eventType;
         this.gameId = gameId;
         this.sourcePlayerId = sourcePlayerId;
     }
+    
     
     @Override
     public EventType getEventType() {
@@ -28,7 +30,7 @@ public abstract class AbstractEvent extends AbstractMessage implements Event {
     }
     
     @Override
-    public String getSourcePlayerId() {
+    public PlayerId getSourcePlayerId() {
         return sourcePlayerId;
     }
     

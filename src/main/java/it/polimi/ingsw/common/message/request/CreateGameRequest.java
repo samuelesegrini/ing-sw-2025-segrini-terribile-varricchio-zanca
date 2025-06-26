@@ -1,13 +1,16 @@
 package it.polimi.ingsw.common.message.request;
 
+import it.polimi.ingsw.server.core.GameSession;
 import it.polimi.ingsw.server.model.domain.general.GameModel;
 import it.polimi.ingsw.common.message.event.GameCreatedEvent;
+import it.polimi.ingsw.common.message.event.GamesListUpdateEvent;
 import it.polimi.ingsw.common.message.response.CreateGameResponse;
 import it.polimi.ingsw.common.message.response.ErrorResponse;
 import it.polimi.ingsw.common.message.response.Response;
 import it.polimi.ingsw.common.message.validation.ValidationResult;
 import it.polimi.ingsw.server.core.GameSessionManager;
 import it.polimi.ingsw.server.core.PlayerSessionRegistry;
+import it.polimi.ingsw.server.model.domain.player.PlayerId;
 import it.polimi.ingsw.server.model.enums.GameLevel;
 
 import java.util.List;
@@ -73,7 +76,7 @@ public class CreateGameRequest extends AbstractRequest {
         LOGGER.fine("✅ GAME VALIDATION - Game parameters passed validation");
 
         // Check authentication
-        String playerId = context.getPlayerId();
+        PlayerId playerId = context.getPlayerId();
         if (playerId == null) {
             LOGGER.warning("❌ CREATE GAME FAILED - Client " + context.getSenderId() + " is not authenticated");
             return createErrorResponse("Authentication required", ErrorResponse.AUTHENTICATION_ERROR);
@@ -114,9 +117,20 @@ public class CreateGameRequest extends AbstractRequest {
         context.publishEvent(event);
         LOGGER.fine("✅ EVENT PUBLISHED - GameCreatedEvent sent to event system");
 
+        // Publish games list update event so all clients get updated game list
+        List<GameModel> availableGames = sessionManager.getAvailableGames();
+        GamesListUpdateEvent gamesListEvent = new GamesListUpdateEvent(availableGames);
+        LOGGER.info("📢 GAMES LIST UPDATE - Publishing GamesListUpdateEvent with " + availableGames.size() + " games");
+        context.publishEvent(gamesListEvent);
+        LOGGER.fine("✅ GAMES LIST PUBLISHED - GamesListUpdateEvent sent to event system");
+
+        // Get the GameModel for the creator (who is already added to the game)
+        GameSession gameSession = sessionManager.getGameSession(gameId);
+        GameModel gameModel = gameSession != null ? gameSession.getGameModel() : null;
+        
         LOGGER.info("🎉 CREATE GAME SUCCESS - Returning CreateGameResponse for game: " + gameId + 
-                   " to creator: " + creatorNickname + " (" + playerId + ")");
-        return new CreateGameResponse(getCorrelationId(), gameId, gameName, maxPlayers, gameLevel);
+                   " to creator: " + creatorNickname + " (" + playerId + ") with GameModel");
+        return new CreateGameResponse(getCorrelationId(), gameId, gameName, maxPlayers, gameLevel, gameModel);
     }
 
 }

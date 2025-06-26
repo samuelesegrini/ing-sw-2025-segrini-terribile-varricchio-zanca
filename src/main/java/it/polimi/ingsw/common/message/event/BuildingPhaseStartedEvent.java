@@ -22,35 +22,53 @@ public class BuildingPhaseStartedEvent extends AbstractEvent {
     @Override
     public void handleOnClient(ClientEventContext context) {
         context.runOnUIThread(() -> {
+            java.util.logging.Logger logger = java.util.logging.Logger.getLogger(BuildingPhaseStartedEvent.class.getName());
+            
             // Update game model with building phase state
-            if (context.getClientState() != null) {
-                context.getClientState().setGameModel(gameModel);
+            if (context.getClientState() == null) {
+                logger.severe("ClientState is null - cannot update game model for building phase");
+                return;
+            }
+            
+            context.getClientState().setGameModel(gameModel);
+            logger.info("Building phase started - game model updated");
+            
+            // Navigate to GAME view if not already there
+            if (context.getClientState().getCurrentView() != it.polimi.ingsw.client.core.ClientState.ViewState.GAME) {
                 
-                // Ensure we're in GAME view to see the building phase UI
-                if (context.getController().getUIContext() != null && 
-                    context.getController().getUIContext().getViewNavigator() != null &&
-                    context.getClientState().getCurrentView() != it.polimi.ingsw.client.core.ClientState.ViewState.GAME) {
-                    
-                    boolean success = context.getController().getUIContext().getViewNavigator()
-                        .navigateTo(it.polimi.ingsw.client.core.ClientState.ViewState.GAME, 
-                                   "Building phase started - entering ship building");
-                    
-                    if (!success) {
-                        String reason = context.getController().getUIContext().getViewNavigator()
-                            .getNavigationFailureReason(it.polimi.ingsw.client.core.ClientState.ViewState.GAME);
-                        java.util.logging.Logger.getLogger(BuildingPhaseStartedEvent.class.getName())
-                            .severe("Failed to navigate to GAME for building phase - Reason: " + reason);
-                    }
-                } else if (context.getClientState().getCurrentView() != it.polimi.ingsw.client.core.ClientState.ViewState.GAME) {
-                    java.util.logging.Logger.getLogger(BuildingPhaseStartedEvent.class.getName())
-                        .severe("ViewNavigator not available - cannot navigate to GAME for building phase");
+                if (context.getController() == null || context.getController().getUIContext() == null || 
+                    context.getController().getUIContext().getViewNavigator() == null) {
+                    logger.severe("ViewNavigator not available - cannot navigate to GAME view for building phase. " +
+                                 "Controller or UIContext not properly initialized.");
+                    return;
                 }
                 
-                java.util.logging.Logger.getLogger(BuildingPhaseStartedEvent.class.getName())
-                    .info("Building phase started - game model updated");
+                boolean success = context.getController().getUIContext().getViewNavigator()
+                    .navigateTo(it.polimi.ingsw.client.core.ClientState.ViewState.GAME, 
+                               "Building phase started - entering ship building");
+                
+                if (!success) {
+                    String reason = context.getController().getUIContext().getViewNavigator()
+                        .getNavigationFailureReason(it.polimi.ingsw.client.core.ClientState.ViewState.GAME);
+                    logger.severe("Failed to navigate to GAME view for building phase - Reason: " + reason);
+                    
+                    // Show error notification to user
+                    if (context.getNotificationService() != null) {
+                        context.getNotificationService().showNotification(
+                            new it.polimi.ingsw.client.ui.Notification(
+                                "Navigation Error",
+                                "Cannot enter building phase view: " + reason,
+                                NotificationType.ERROR
+                            )
+                        );
+                    }
+                    return;
+                } else {
+                    logger.info("Successfully navigated to GAME view for building phase");
+                }
             }
 
-            // Show notification about phase transition
+            // Show success notification about phase transition
             if (context.getNotificationService() != null) {
                 context.getNotificationService().showNotification(
                     new it.polimi.ingsw.client.ui.Notification(

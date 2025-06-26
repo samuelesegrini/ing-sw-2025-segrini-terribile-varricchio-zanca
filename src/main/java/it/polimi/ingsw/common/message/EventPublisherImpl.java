@@ -5,6 +5,7 @@ import it.polimi.ingsw.common.message.event.EventFilterContext;
 import it.polimi.ingsw.server.core.GameSession;
 import it.polimi.ingsw.server.core.GameSessionManager;
 import it.polimi.ingsw.server.core.PlayerSessionRegistry;
+import it.polimi.ingsw.server.model.domain.player.PlayerId;
 import it.polimi.ingsw.server.network.ServerNetworkManager;
 
 import java.util.HashSet;
@@ -95,7 +96,7 @@ public class EventPublisherImpl implements EventPublisher {
 
         @Override
         public boolean isClientInGame(String clientId, String gameId) {
-            String playerId = playerRegistry.getPlayerIdForClient(clientId);
+            PlayerId playerId = playerRegistry.getPlayerIdForClient(clientId);
             if (playerId == null) return false;
 
             GameSession session = sessionManager.getGameSessionForPlayer(playerId);
@@ -103,7 +104,7 @@ public class EventPublisherImpl implements EventPublisher {
         }
 
         @Override
-        public String getPlayerIdForClient(String clientId) {
+        public PlayerId getPlayerIdForClient(String clientId) {
             return playerRegistry.getPlayerIdForClient(clientId);
         }
 
@@ -113,7 +114,7 @@ public class EventPublisherImpl implements EventPublisher {
             GameSession session = sessionManager.getGameSession(gameId);
 
             if (session != null) {
-                for (String playerId : session.getPlayerIds()) {
+                for (PlayerId playerId : session.getPlayerIds()) {
                     String clientId = playerRegistry.getClientIdForPlayer(playerId);
                     if (clientId != null) {
                         clients.add(clientId);

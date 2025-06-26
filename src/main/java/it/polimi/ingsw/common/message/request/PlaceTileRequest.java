@@ -8,6 +8,7 @@ import it.polimi.ingsw.common.message.validation.ValidationResult;
 import it.polimi.ingsw.server.core.GameSession;
 import it.polimi.ingsw.server.model.domain.general.GameModel;
 import it.polimi.ingsw.server.model.domain.player.Player;
+import it.polimi.ingsw.server.model.domain.player.PlayerId;
 import it.polimi.ingsw.server.model.domain.ship.Position;
 import it.polimi.ingsw.server.model.domain.ship.Ship;
 import it.polimi.ingsw.server.model.domain.ship.components.Component;
@@ -71,7 +72,7 @@ public class PlaceTileRequest extends AbstractRequest {
         }
 
         // Get player
-        String playerId = context.getPlayerId();
+        PlayerId playerId = context.getPlayerId();
         System.out.println("[DEBUG] PlaceTileRequest - Player ID from context: " + playerId);
         System.out.println("[DEBUG] PlaceTileRequest - Client ID: " + context.getSenderId());
         Player player = session.getPlayer(playerId);

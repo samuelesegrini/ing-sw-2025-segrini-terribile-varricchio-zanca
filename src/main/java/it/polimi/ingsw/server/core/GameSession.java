@@ -2,6 +2,8 @@ package it.polimi.ingsw.server.core;
 
 import it.polimi.ingsw.server.model.domain.player.Player;
 import it.polimi.ingsw.server.model.domain.adventure.card.AdventureCard;
+import it.polimi.ingsw.server.model.domain.adventure.AdventureDeck;
+import it.polimi.ingsw.server.model.domain.general.ComponentDeck;
 import it.polimi.ingsw.server.model.domain.general.GameModel;
 import it.polimi.ingsw.server.model.domain.general.config.GameConfigurationManager;
 import it.polimi.ingsw.server.model.domain.player.Player;
@@ -20,20 +22,20 @@ public class GameSession {
 
     private final String gameId;
     private final String gameName;
-    private final String creatorId;
+    private final PlayerId creatorId;
     private final GameModel gameModel;
     private final int maxPlayers;
-    private final Map<String, PlayerState> playerStates;
+    private final Map<PlayerId, PlayerState> playerStates;
     private final GameConfigurationManager configManager;
     private final PlayerSessionRegistry playerRegistry;
     private final Object lock = new Object();
 
     // Building phase management
     private final Map<String, Component> availableComponents;
-    private final Map<String, String> componentOwnership; // componentId -> playerId
+    private final Map<String, PlayerId> componentOwnership; // componentId -> playerId
     private final Set<String> usedComponents;
     private final Map<String, Component> faceUpComponents; // Face-up components pile
-    private final Map<String, List<String>> playerHeldComponents; // playerId -> list of componentIds
+    private final Map<PlayerId, List<String>> playerHeldComponents; // playerId -> list of componentIds
 
     // Turn management
     private int currentPlayerIndex = 0;
@@ -45,7 +47,7 @@ public class GameSession {
     private volatile boolean started;
     private volatile boolean ended;
 
-    public GameSession(String gameId, String gameName, String creatorId,
+    public GameSession(String gameId, String gameName, PlayerId creatorId,
                        int maxPlayers, GameLevel gameLevel,
                        GameConfigurationManager configManager,
                        PlayerSessionRegistry playerRegistry) {
@@ -55,7 +57,12 @@ public class GameSession {
         this.maxPlayers = maxPlayers;
         this.configManager = configManager;
         this.playerRegistry = playerRegistry;
-        this.gameModel = new GameModel(gameLevel, configManager, maxPlayers);
+        // Create decks from configuration manager
+        ComponentDeck componentDeck = configManager.createComponentDeck(gameLevel);
+        AdventureDeck adventureDeck = configManager.createAdventureDeck(gameLevel);
+        
+        this.gameModel = new GameModel(gameId, gameName, gameLevel, configManager.getConfigForLevel(gameLevel), 
+                                     componentDeck, adventureDeck, maxPlayers);
         this.playerStates = new ConcurrentHashMap<>();
         this.availableComponents = new ConcurrentHashMap<>();
         this.componentOwnership = new ConcurrentHashMap<>();
@@ -66,40 +73,87 @@ public class GameSession {
         this.started = false;
         this.ended = false;
 
-        // Add creator as first player
-        addPlayer(creatorId);
+        // Add creator as first player and mark them as ready
+        LOGGER.info("🎯 CREATOR SETUP - Adding creator " + creatorId + " to game " + gameId);
+        boolean addedSuccessfully = addPlayer(creatorId);
+        LOGGER.info("🎯 CREATOR ADDED - Result: " + addedSuccessfully + " for creator " + creatorId);
         
+        // Ensure creator is always ready by default (double-check)
         PlayerState creatorState = playerStates.get(creatorId);
         if (creatorState != null) {
+            boolean wasAlreadyReady = creatorState.isReady();
             creatorState.setReady(true);
+            LOGGER.info("🎯 CREATOR READY STATUS - Creator " + creatorId + " was ready: " + wasAlreadyReady + ", now ready: " + creatorState.isReady());
+            
+            // Debug: Print all player states
+            LOGGER.info("🎯 ALL PLAYERS STATUS in game " + gameId + ":");
+            for (Map.Entry<PlayerId, PlayerState> entry : playerStates.entrySet()) {
+                LOGGER.info("  - Player " + entry.getKey() + ": ready=" + entry.getValue().isReady());
+            }
+        } else {
+            LOGGER.severe("🎯 CREATOR ERROR - Failed to set creator " + creatorId + " as ready - PlayerState not found");
         }
+    }
+    
+    // Legacy constructor for backward compatibility
+    public GameSession(String gameId, String gameName, String creatorIdString,
+                       int maxPlayers, GameLevel gameLevel,
+                       GameConfigurationManager configManager,
+                       PlayerSessionRegistry playerRegistry) {
+        this(gameId, gameName, PlayerId.fromString(creatorIdString), maxPlayers, gameLevel, configManager, playerRegistry);
     }
 
     /**
      * Adds a player to the game session.
      */
-    public boolean addPlayer(String playerId) {
+    public boolean addPlayer(PlayerId playerId) {
         synchronized (lock) {
             if (started || playerStates.size() >= maxPlayers) {
                 return false;
             }
 
             PlayerState state = new PlayerState(playerId);
+            LOGGER.info("🎯 ADD PLAYER - Created PlayerState for " + playerId + ", initial ready: " + state.isReady());
+            
+            // If this is the creator (first player), mark them as ready
+            boolean isCreator = playerId.equals(creatorId);
+            LOGGER.info("🎯 CREATOR CHECK - Is " + playerId + " the creator " + creatorId + "? " + isCreator);
+            
+            if (isCreator) {
+                state.setReady(true);
+                LOGGER.info("🎯 CREATOR READY - Set creator " + playerId + " as ready in PlayerState, now ready: " + state.isReady());
+            }
+            
             playerStates.put(playerId, state);
+            LOGGER.info("🎯 PLAYER STORED - Player " + playerId + " stored in playerStates with ready: " + state.isReady());
 
             // Add to game model
-            PlayerId playerIdObj = PlayerId.fromString(playerId);
-            gameModel.addPlayer(playerIdObj, playerId);
+            gameModel.addPlayer(playerId, playerId.getNickname());
+            LOGGER.info("🎯 GAME MODEL - Added player " + playerId + " to GameModel");
+            
+            // Synchronize ready status between PlayerState and Player object
+            if (isCreator) {
+                syncPlayerReadyStatus(playerId, true);
+                LOGGER.info("🎯 SYNC READY - Synchronized creator ready status to GameModel Player object");
+            }
 
-            LOGGER.info("Joined: " + playerId + " -> " + gameId);
+            LOGGER.info("🎯 JOIN SUCCESS - " + playerId + " -> " + gameId + (isCreator ? " (creator - ready: " + state.isReady() + ")" : ""));
             return true;
         }
+    }
+    
+    /**
+     * Adds a player to the game session (legacy String overload).
+     */
+    public boolean addPlayer(String playerIdString) {
+        PlayerId playerId = PlayerId.fromString(playerIdString);
+        return addPlayer(playerId);
     }
 
     /**
      * Removes a player from the game session.
      */
-    public boolean removePlayer(String playerId) {
+    public boolean removePlayer(PlayerId playerId) {
         synchronized (lock) {
             PlayerState removed = playerStates.remove(playerId);
             if (removed == null) {
@@ -107,8 +161,7 @@ public class GameSession {
             }
 
             // Remove from game model
-            PlayerId playerIdObj = PlayerId.fromString(playerId);
-            gameModel.removePlayer(playerIdObj);
+            gameModel.removePlayer(playerId);
 
             // Return player's components to pool
             returnPlayerComponents(playerId);
@@ -125,18 +178,36 @@ public class GameSession {
             return true;
         }
     }
+    
+    /**
+     * Removes a player from the game session (legacy String overload).
+     */
+    public boolean removePlayer(String playerIdString) {
+        PlayerId playerId = PlayerId.fromString(playerIdString);
+        return removePlayer(playerId);
+    }
 
     /**
      * Sets a player's ready status.
+     * Creator can change their ready status just like any other player.
      */
-    public void setPlayerReady(String playerId, boolean ready) {
+    public void setPlayerReady(PlayerId playerId, boolean ready) {
         synchronized (lock) {
             PlayerState state = playerStates.get(playerId);
             if (state != null) {
+                boolean isCreator = playerId.equals(creatorId);
                 state.setReady(ready);
-                LOGGER.info("Ready: " + playerId + "=" + ready);
+                LOGGER.info("Ready: " + playerId + "=" + ready + (isCreator ? " (creator)" : ""));
             }
         }
+    }
+    
+    /**
+     * Sets a player's ready status (legacy String overload).
+     */
+    public void setPlayerReady(String playerIdString, boolean ready) {
+        PlayerId playerId = PlayerId.fromString(playerIdString);
+        setPlayerReady(playerId, ready);
     }
 
     /**
@@ -291,11 +362,19 @@ public class GameSession {
     /**
      * Marks a component as used by a player.
      */
-    public void useComponent(String componentId, String playerId) {
+    public void useComponent(String componentId, PlayerId playerId) {
         synchronized (lock) {
             usedComponents.add(componentId);
             componentOwnership.put(componentId, playerId);
         }
+    }
+    
+    /**
+     * Marks a component as used by a player (legacy String overload).
+     */
+    public void useComponent(String componentId, String playerIdString) {
+        PlayerId playerId = PlayerId.fromString(playerIdString);
+        useComponent(componentId, playerId);
     }
 
     /**
@@ -322,10 +401,10 @@ public class GameSession {
     /**
      * Returns all components owned by a player.
      */
-    private void returnPlayerComponents(String playerId) {
+    private void returnPlayerComponents(PlayerId playerId) {
         synchronized (lock) {
             List<String> toReturn = new ArrayList<>();
-            for (Map.Entry<String, String> entry : componentOwnership.entrySet()) {
+            for (Map.Entry<String, PlayerId> entry : componentOwnership.entrySet()) {
                 if (entry.getValue().equals(playerId)) {
                     toReturn.add(entry.getKey());
                 }
@@ -353,7 +432,7 @@ public class GameSession {
     /**
      * Reserves a face-up component for a player.
      */
-    public void reserveFaceUpComponent(String componentId, String playerId) {
+    public void reserveFaceUpComponent(String componentId, PlayerId playerId) {
         synchronized (lock) {
             Component component = faceUpComponents.remove(componentId);
             if (component != null) {
@@ -365,14 +444,30 @@ public class GameSession {
             }
         }
     }
+    
+    /**
+     * Reserves a face-up component for a player (legacy String overload).
+     */
+    public void reserveFaceUpComponent(String componentId, String playerIdString) {
+        PlayerId playerId = PlayerId.fromString(playerIdString);
+        reserveFaceUpComponent(componentId, playerId);
+    }
 
     /**
      * Gets the list of components held by a player.
      */
-    public List<String> getPlayerHeldComponents(String playerId) {
+    public List<String> getPlayerHeldComponents(PlayerId playerId) {
         synchronized (lock) {
             return new ArrayList<>(playerHeldComponents.getOrDefault(playerId, new ArrayList<>()));
         }
+    }
+    
+    /**
+     * Gets the list of components held by a player (legacy String overload).
+     */
+    public List<String> getPlayerHeldComponents(String playerIdString) {
+        PlayerId playerId = PlayerId.fromString(playerIdString);
+        return getPlayerHeldComponents(playerId);
     }
 
     /**
@@ -432,7 +527,7 @@ public class GameSession {
      * Validates all player ships.
      */
     private void validateAllShips() {
-        for (String playerId : playerStates.keySet()) {
+        for (PlayerId playerId : playerStates.keySet()) {
             Player player = getPlayer(playerId);
             if (player != null) {
                 player.getShip().updateStats();
@@ -493,9 +588,10 @@ public class GameSession {
         return gameName;
     }
 
-    public String getCreatorId() {
+    public PlayerId getCreatorId() {
         return creatorId;
     }
+    
 
     public GameModel getGameModel() {
         return gameModel;
@@ -511,17 +607,16 @@ public class GameSession {
         }
     }
 
-    public Set<String> getPlayerIds() {
+    public Set<PlayerId> getPlayerIds() {
         synchronized (lock) {
             return new HashSet<>(playerStates.keySet());
         }
     }
+    
 
-    public Player getPlayer(String playerId) {
+    public Player getPlayer(PlayerId playerId) {
         System.out.println("[DEBUG] GameSession.getPlayer - Input playerId: " + playerId);
-        PlayerId playerIdObj = PlayerId.fromString(playerId);
-        System.out.println("[DEBUG] GameSession.getPlayer - Converted PlayerId: " + playerIdObj);
-        Player result = gameModel.getPlayerById(playerIdObj);
+        Player result = gameModel.getPlayerById(playerId);
         System.out.println("[DEBUG] GameSession.getPlayer - Result: " + (result != null ? result.getId() : "null"));
         if (result == null) {
             System.out.println("[DEBUG] GameSession.getPlayer - Available players in GameModel:");
@@ -529,6 +624,14 @@ public class GameSession {
                 System.out.println("[DEBUG]   - Player: " + p.getId() + ", Nickname: " + p.getId().getNickname()));
         }
         return result;
+    }
+    
+    /**
+     * Gets a player by string ID (legacy compatibility).
+     */
+    public Player getPlayer(String playerIdString) {
+        PlayerId playerId = PlayerId.fromString(playerIdString);
+        return getPlayer(playerId);
     }
 
     public GamePhase getCurrentPhase() {
@@ -575,10 +678,18 @@ public class GameSession {
         return availableComponents.get(componentId);
     }
     
-    public PlayerState getPlayerState(String playerId) {
+    public PlayerState getPlayerState(PlayerId playerId) {
         synchronized (lock) {
             return playerStates.get(playerId);
         }
+    }
+    
+    /**
+     * Gets player state by string ID (legacy compatibility).
+     */
+    public PlayerState getPlayerState(String playerIdString) {
+        PlayerId playerId = PlayerId.fromString(playerIdString);
+        return getPlayerState(playerId);
     }
     
     public boolean areAllPlayersReady() {
@@ -590,17 +701,25 @@ public class GameSession {
         }
     }
     
-    public boolean isCreator(String playerId) {
+    public boolean isCreator(PlayerId playerId) {
         synchronized (lock) {
             return creatorId != null && creatorId.equals(playerId);
         }
+    }
+    
+    /**
+     * Checks if a player is the creator (legacy String overload).
+     */
+    public boolean isCreator(String playerIdString) {
+        PlayerId playerId = PlayerId.fromString(playerIdString);
+        return isCreator(playerId);
     }
     
     public it.polimi.ingsw.server.model.domain.general.config.ShipGridConfig getShipGridConfig() {
         return gameModel.getConfig().shipGridConfig();
     }
     
-    public ShipBuildingSyncState getShipBuildingSyncState(String playerId) {
+    public ShipBuildingSyncState getShipBuildingSyncState(PlayerId playerId) {
         synchronized (lock) {
             ShipBuildingSyncState syncState = new ShipBuildingSyncState();
             
@@ -654,6 +773,14 @@ public class GameSession {
         }
     }
     
+    /**
+     * Gets ship building sync state by string ID (legacy compatibility).
+     */
+    public ShipBuildingSyncState getShipBuildingSyncState(String playerIdString) {
+        PlayerId playerId = PlayerId.fromString(playerIdString);
+        return getShipBuildingSyncState(playerId);
+    }
+    
     public static class ShipBuildingSyncState {
         public final Map<it.polimi.ingsw.server.model.domain.ship.Position, it.polimi.ingsw.server.model.enums.ship.ComponentType> shipGrid = new HashMap<>();
         public final List<it.polimi.ingsw.server.model.enums.ship.ComponentType> availableTiles = new ArrayList<>();
@@ -668,11 +795,11 @@ public class GameSession {
      * Inner class to track player state within the game.
      */
     public static class PlayerState {
-        private final String playerId;
+        private final PlayerId playerId;
         private volatile boolean ready = false;
         private volatile boolean shipValidated = false;
 
-        public PlayerState(String playerId) {
+        public PlayerState(PlayerId playerId) {
             this.playerId = playerId;
         }
 
@@ -690,6 +817,10 @@ public class GameSession {
 
         public void setShipValidated(boolean validated) {
             this.shipValidated = validated;
+        }
+        
+        public PlayerId getPlayerId() {
+            return playerId;
         }
     }
 }

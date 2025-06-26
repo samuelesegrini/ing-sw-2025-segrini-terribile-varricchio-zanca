@@ -2,6 +2,7 @@ package it.polimi.ingsw.common.message.event;
 
 // REMOVED: LocalGameState no longer needed
 import it.polimi.ingsw.server.model.enums.ship.ComponentType;
+import it.polimi.ingsw.server.model.domain.player.PlayerId;
 import it.polimi.ingsw.client.ui.Notification;
 import it.polimi.ingsw.client.ui.NotificationType;
 
@@ -18,7 +19,7 @@ public class ShipDamagedEvent extends AbstractEvent {
 
     public ShipDamagedEvent(String gameId, String playerId, String playerNickname,
                             int row, int col, String damageSource, ComponentType componentLost) {
-        super(EventType.SHIP_DAMAGED, gameId, playerId);
+        super(EventType.SHIP_DAMAGED, gameId, PlayerId.fromString(playerId));
         this.playerId = playerId;
         this.playerNickname = playerNickname;
         this.row = row;

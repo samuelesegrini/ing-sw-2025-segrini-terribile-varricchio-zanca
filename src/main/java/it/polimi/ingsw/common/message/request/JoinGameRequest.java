@@ -10,6 +10,7 @@ import it.polimi.ingsw.server.core.GameSession;
 import it.polimi.ingsw.server.core.GameSessionManager;
 import it.polimi.ingsw.server.core.PlayerSessionRegistry;
 import it.polimi.ingsw.server.model.domain.player.Player;
+import it.polimi.ingsw.server.model.domain.player.PlayerId;
 import it.polimi.ingsw.common.message.event.GameLobbyUpdateEvent;
 import it.polimi.ingsw.common.message.event.GamesListUpdateEvent;
 
@@ -41,6 +42,13 @@ public class JoinGameRequest extends AbstractRequest {
     public Response execute(RequestContext context) {
         LOGGER.info("🚪 JOIN GAME REQUEST - Player attempting to join game: " + gameId + " from client: " + context.getSenderId());
         
+        // Debug: Get current available games to compare
+        List<it.polimi.ingsw.server.model.domain.general.GameModel> availableGames = context.getSessionManager().getAvailableGames();
+        LOGGER.info("🎮 AVAILABLE GAMES ON SERVER: " + availableGames.size());
+        for (it.polimi.ingsw.server.model.domain.general.GameModel game : availableGames) {
+            LOGGER.info("  - Game ID: " + game.getGameId() + ", Name: " + game.getGameName());
+        }
+        
         ValidationResult validation = validate();
         if (!validation.isValid()) {
             LOGGER.warning("❌ JOIN GAME FAILED - Validation error for gameId '" + gameId + "': " + validation.getErrorMessage());
@@ -49,7 +57,7 @@ public class JoinGameRequest extends AbstractRequest {
         LOGGER.fine("✅ JOIN VALIDATION - GameId '" + gameId + "' passed validation");
 
         // Check authentication
-        String playerId = context.getPlayerId();
+        PlayerId playerId = context.getPlayerId();
         if (playerId == null) {
             LOGGER.warning("❌ JOIN GAME FAILED - Client " + context.getSenderId() + " is not authenticated");
             return createErrorResponse("Authentication required", ErrorResponse.AUTHENTICATION_ERROR);
@@ -64,7 +72,14 @@ public class JoinGameRequest extends AbstractRequest {
         GameSession gameSession = sessionManager.getGameSession(gameId);
         if (gameSession == null) {
             LOGGER.warning("❌ JOIN GAME FAILED - Game not found: " + gameId);
-            return createErrorResponse("Game not found", ErrorResponse.NOT_FOUND);
+            
+            // Send updated games list to help client recover from stale data
+            LOGGER.info("📤 RECOVERY - Sending fresh games list to client to recover from stale data");
+            List<it.polimi.ingsw.server.model.domain.general.GameModel> currentGames = sessionManager.getAvailableGames();
+            it.polimi.ingsw.common.message.event.GamesListUpdateEvent recoveryEvent = new it.polimi.ingsw.common.message.event.GamesListUpdateEvent(currentGames);
+            context.publishEvent(recoveryEvent);
+            
+            return createErrorResponse("Game not found - games list updated", ErrorResponse.NOT_FOUND);
         }
         LOGGER.fine("✅ GAME FOUND - Game " + gameId + " exists");
 
@@ -76,6 +91,10 @@ public class JoinGameRequest extends AbstractRequest {
         LOGGER.fine("✅ GAME JOINABLE - Game " + gameId + " can accept new players");
 
         LOGGER.info("🚪 JOINING GAME - Calling sessionManager.joinGame() for player: " + playerId + " to game: " + gameId);
+        LOGGER.info("🔍 BEFORE JOIN - Available games in SessionManager:");
+        for (it.polimi.ingsw.server.model.domain.general.GameModel game : sessionManager.getAvailableGames()) {
+            LOGGER.info("  - Available: " + game.getGameId() + " (Name: " + game.getGameName() + ")");
+        }
         boolean joined = sessionManager.joinGame(gameId, playerId);
         if (!joined) {
             LOGGER.severe("❌ JOIN GAME FAILED - SessionManager.joinGame() returned false for player: " + playerId + " and game: " + gameId);
@@ -117,7 +136,7 @@ public class JoinGameRequest extends AbstractRequest {
      * Publishes a lobby update event to synchronize all clients with current lobby state.
      */
     private void publishLobbyUpdateEvent(RequestContext context, GameSession gameSession, 
-                                       String gameId, PlayerSessionRegistry registry, String excludePlayerId) {
+                                       String gameId, PlayerSessionRegistry registry, PlayerId excludePlayerId) {
         LOGGER.fine("🔄 LOBBY UPDATE EVENT - Getting players from GameModel");
         
         // Use server model directly - Simple Direct Model Architecture

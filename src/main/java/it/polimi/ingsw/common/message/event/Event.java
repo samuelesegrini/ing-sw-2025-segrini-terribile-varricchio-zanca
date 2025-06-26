@@ -1,6 +1,7 @@
 package it.polimi.ingsw.common.message.event;
 
 import it.polimi.ingsw.common.message.Message;
+import it.polimi.ingsw.server.model.domain.player.PlayerId;
 
 /**
  * Interface for event messages that represent state changes.
@@ -23,7 +24,16 @@ public interface Event extends Message {
      * Gets the player ID who triggered this event.
      * @return The source player ID or null
      */
-    String getSourcePlayerId();
+    PlayerId getSourcePlayerId();
+    
+    /**
+     * Gets the player ID who triggered this event as string (legacy compatibility).
+     * @return The source player ID as string or null
+     */
+    default String getSourcePlayerIdString() {
+        PlayerId playerId = getSourcePlayerId();
+        return playerId != null ? playerId.toString() : null;
+    }
     
     /**
      * Handles this event on the client side.

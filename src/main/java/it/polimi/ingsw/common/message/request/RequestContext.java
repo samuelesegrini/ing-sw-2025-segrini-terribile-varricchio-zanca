@@ -6,6 +6,7 @@ import it.polimi.ingsw.server.core.GameSessionManager;
 import it.polimi.ingsw.server.core.PlayerSessionRegistry;
 import it.polimi.ingsw.server.network.ServerNetworkManager;
 import it.polimi.ingsw.common.message.event.Event;
+import it.polimi.ingsw.server.model.domain.player.PlayerId;
 
 /**
  * Context for executing requests on the server.
@@ -22,7 +23,16 @@ public interface RequestContext {
      * Gets the player ID if the sender is authenticated.
      * @return The player ID or null if not authenticated
      */
-    String getPlayerId();
+    PlayerId getPlayerId();
+    
+    /**
+     * Gets the player ID as string if the sender is authenticated (legacy compatibility).
+     * @return The player ID string or null if not authenticated
+     */
+    default String getPlayerIdString() {
+        PlayerId playerId = getPlayerId();
+        return playerId != null ? playerId.toString() : null;
+    }
 
     /**
      * Gets the game session manager.

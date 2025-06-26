@@ -2,6 +2,7 @@ package it.polimi.ingsw.common.message.event;
 
 // REMOVED: LocalGameState no longer needed
 import it.polimi.ingsw.client.ui.NotificationType;
+import it.polimi.ingsw.server.model.domain.player.PlayerId;
 
 import java.util.Map;
 
@@ -17,7 +18,7 @@ public class BuildingTimerFlippedEvent extends AbstractEvent {
 
     public BuildingTimerFlippedEvent(String gameId, String playerId, String playerNickname, 
                                     long newTimeRemaining, int flipCount) {
-        super(EventType.BUILDING_TIMER_FLIPPED, gameId, playerId);
+        super(EventType.BUILDING_TIMER_FLIPPED, gameId, PlayerId.fromString(playerId));
         this.playerId = playerId;
         this.playerNickname = playerNickname;
         this.newTimeRemaining = newTimeRemaining;

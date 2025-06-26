@@ -23,7 +23,25 @@ public class LeaveGameResponse extends AbstractResponse {
             if (clientState != null) {
                 clientState.setGameModel(null);
                 clientState.setPlayersInLobby(new java.util.ArrayList<>());
-                clientState.setCurrentView(ClientState.ViewState.LOBBY);
+                
+                // Use ViewNavigator through controller for consistent navigation
+                if (context.getController() != null && 
+                    context.getController().getUIContext() != null && 
+                    context.getController().getUIContext().getViewNavigator() != null) {
+                    
+                    boolean success = context.getController().getUIContext().getViewNavigator()
+                        .navigateTo(ClientState.ViewState.LOBBY, "Left game successfully");
+                    
+                    if (!success) {
+                        String reason = context.getController().getUIContext().getViewNavigator()
+                            .getNavigationFailureReason(ClientState.ViewState.LOBBY);
+                        System.err.println("LeaveGameResponse: ViewNavigator failed, using fallback - Reason: " + reason);
+                        clientState.setCurrentView(ClientState.ViewState.LOBBY);
+                    }
+                } else {
+                    System.err.println("LeaveGameResponse: ViewNavigator not available, using direct navigation fallback");
+                    clientState.setCurrentView(ClientState.ViewState.LOBBY);
+                }
             }
             
             // Show success notification

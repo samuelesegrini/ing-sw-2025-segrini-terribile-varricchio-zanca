@@ -7,6 +7,7 @@ import it.polimi.ingsw.common.message.validation.ValidationResult;
 import it.polimi.ingsw.common.message.event.PlayerReconnectedEvent;
 import it.polimi.ingsw.server.core.GameSession;
 import it.polimi.ingsw.server.core.PlayerSessionRegistry;
+import it.polimi.ingsw.server.model.domain.player.PlayerId;
 
 /**
  * Request to reconnect to an existing session.
@@ -62,7 +63,7 @@ public class ReconnectRequest extends AbstractRequest {
             boolean wasInActiveGame = gameSession.isStarted();
             PlayerReconnectedEvent event = new PlayerReconnectedEvent(
                     gameId,
-                    playerId,
+                    PlayerId.fromString(playerId),
                     nickname,
                     wasInActiveGame
             );
@@ -71,7 +72,7 @@ public class ReconnectRequest extends AbstractRequest {
 
         return new ReconnectResponse(
                 getCorrelationId(),
-                playerId,
+                playerId.toString(),
                 nickname,
                 gameId,
                 null // Client state is managed on client side, not passed from server

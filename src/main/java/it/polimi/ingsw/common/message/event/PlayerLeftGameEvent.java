@@ -1,24 +1,27 @@
 package it.polimi.ingsw.common.message.event;
 
 import it.polimi.ingsw.client.core.ClientState;
+import it.polimi.ingsw.server.model.domain.player.PlayerId;
 
 /**
  * Event broadcast when a player leaves a game lobby or active game.
  * Updates the player list and notifies remaining players.
  */
 public class PlayerLeftGameEvent extends AbstractEvent {
-    private final String playerId;
+    private final PlayerId playerId;
     private final String playerNickname;
 
-    public PlayerLeftGameEvent(String gameId, String playerId, String playerNickname) {
+    public PlayerLeftGameEvent(String gameId, PlayerId playerId, String playerNickname) {
         super(EventType.PLAYER_LEFT_GAME, gameId, playerId);
         this.playerId = playerId;
         this.playerNickname = playerNickname;
     }
+    
 
-    public String getPlayerId() {
+    public PlayerId getPlayerId() {
         return playerId;
     }
+    
 
     public String getPlayerNickname() {
         return playerNickname;
@@ -27,7 +30,7 @@ public class PlayerLeftGameEvent extends AbstractEvent {
     @Override
     public boolean shouldSendTo(String clientId, EventFilterContext context) {
         // Don't send to the leaving player (they already have the response)
-        String playerId = context.getPlayerIdForClient(clientId);
+        PlayerId playerId = context.getPlayerIdForClient(clientId);
         if (this.playerId.equals(playerId)) {
             return false;
         }
@@ -46,8 +49,7 @@ public class PlayerLeftGameEvent extends AbstractEvent {
                 // Remove player from current game lobby
                 try {
                     it.polimi.ingsw.server.model.domain.general.GameModel currentGame = clientState.getCurrentGameLobby();
-                    it.polimi.ingsw.server.model.domain.player.PlayerId leavingPlayerId = 
-                        it.polimi.ingsw.server.model.domain.player.PlayerId.fromString(playerId);
+                    PlayerId leavingPlayerId = playerId;
                     
                     // Remove player from the game model
                     boolean removed = currentGame.removePlayer(leavingPlayerId);

@@ -16,7 +16,6 @@ import javafx.scene.layout.*;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 
-import java.beans.PropertyChangeEvent;
 import java.util.*;
 
 /**
@@ -151,23 +150,6 @@ public class GuiGameLobbyView extends BaseUIView {
         });
     }
 
-    @Override
-    protected void onPropertyChange(PropertyChangeEvent evt) {
-        switch (evt.getPropertyName()) {
-            case "playersInLobby":
-            case "currentGameInfo":
-            case "playerReady":
-                updateLobbyDisplay();
-                break;
-            case "currentView":
-                // Handle view transitions
-                if (evt.getNewValue() == ClientState.ViewState.GAME) {
-                    // Game started, transition to game view will be handled by manager
-                    context.getNotificationService().showSuccess("Game Started", "The game has begun!");
-                }
-                break;
-        }
-    }
 
     private VBox createGameInfoSection() {
         VBox gameInfoSection = new VBox();

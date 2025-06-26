@@ -6,7 +6,6 @@ import it.polimi.ingsw.client.ui.tui.TuiConsole;
 import it.polimi.ingsw.client.ui.tui.TuiContext;
 import it.polimi.ingsw.server.model.domain.player.Player;
 
-import java.beans.PropertyChangeEvent;
 import java.util.List;
 import java.util.Scanner;
 
@@ -48,22 +47,6 @@ public class TuiGameLobbyView extends BaseUIView { //CONTROLLA
         displayGameLobby();
     }
 
-    @Override
-    protected void onPropertyChange(PropertyChangeEvent evt) {
-        switch (evt.getPropertyName()) {
-            case "playersInLobby":
-            case "currentGameInfo":
-            case "playerReady":
-                displayGameLobby();
-                break;
-            case "currentView":
-                // Handle view transitions
-                if (evt.getNewValue() == ClientState.ViewState.GAME) {
-                    console.printSuccess("Game started! Transitioning to ship building...");
-                }
-                break;
-        }
-    }
 
     private void displayGameLobby() {
         if (context == null || context.getClientState() == null) {
@@ -108,7 +91,7 @@ public class TuiGameLobbyView extends BaseUIView { //CONTROLLA
         for (int i = 0; i < players.size(); i++) {
             Player player = players.get(i);
             boolean isHost = player.getId().toString().equals(hostId);
-            String status = "Ready"; // TODO: Add isReady method to Player model
+            String status = player.isReady() ? "Ready" : "Not Ready";
             String hostIndicator = isHost ? "★" : "";
             
             data[i][0] = player.getId().getNickname();
@@ -123,7 +106,7 @@ public class TuiGameLobbyView extends BaseUIView { //CONTROLLA
     private void displayStatus() {
         String currentPlayerId = context.getController().getPlayerId();
         boolean isHost = currentPlayerId != null && currentPlayerId.equals(getHostPlayerId());
-        boolean isReady = true; // TODO: Add isPlayerReady method to ClientState
+        boolean isReady = context.getClientState().isPlayerReady(currentPlayerId);
         boolean allReady = areAllPlayersReady();
 
         if (allReady) {
@@ -145,7 +128,7 @@ public class TuiGameLobbyView extends BaseUIView { //CONTROLLA
         
         String currentPlayerId = context.getController().getPlayerId();
         boolean isHost = currentPlayerId != null && currentPlayerId.equals(getHostPlayerId());
-        boolean isReady = true; // TODO: Add isPlayerReady method to ClientState
+        boolean isReady = context.getClientState().isPlayerReady(currentPlayerId);
         boolean allReady = areAllPlayersReady();
 
         if (isReady) {

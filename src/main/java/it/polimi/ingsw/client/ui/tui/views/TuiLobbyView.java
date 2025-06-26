@@ -4,7 +4,7 @@ import it.polimi.ingsw.client.core.ClientState;
 import it.polimi.ingsw.client.ui.core.BaseUIView;
 import it.polimi.ingsw.client.ui.tui.TuiConsole;
 import it.polimi.ingsw.client.ui.tui.TuiContext;
-import it.polimi.ingsw.server.model.domain.general.GameModel;
+import it.polimi.ingsw.common.model.GameInfo;
 import it.polimi.ingsw.server.model.enums.GameLevel;
 import it.polimi.ingsw.server.model.enums.GamePhase;
 
@@ -58,15 +58,6 @@ public class TuiLobbyView extends BaseUIView {
         displayLobby();
     }
 
-    @Override
-    protected void onPropertyChange(java.beans.PropertyChangeEvent evt) {
-        switch (evt.getPropertyName()) {
-            case "availableGames":
-            case "inProgressGames":
-                displayLobby();
-                break;
-        }
-    }
 
     private void displayLobby() {
         if (context == null || context.getClientState() == null) {
@@ -85,7 +76,7 @@ public class TuiLobbyView extends BaseUIView {
     private void displayJoinableGames() {
         console.println("Available Games (Waiting for Players):");
 
-        List<GameModel> games = context.getClientState().getJoinableGames();
+        List<GameInfo> games = context.getClientState().getJoinableGames();
         if (games == null || games.isEmpty()) {
             console.println("No games available to join.");
             console.println("");
@@ -96,12 +87,12 @@ public class TuiLobbyView extends BaseUIView {
         String[][] data = new String[games.size()][4];
 
         for (int i = 0; i < games.size(); i++) {
-            GameModel game = games.get(i);
+            GameInfo game = games.get(i);
 
             data[i][0] = game.getGameId();
             data[i][1] = game.getGameName();
             data[i][2] = game.getGameLevel().toString();
-            data[i][3] = game.getCurrentPlayers() + "/" + game.getMaxPlayers();
+            data[i][3] = game.getCurrentPlayerCount() + "/" + game.getMaxPlayers();
         }
 
         console.printTable(headers, data);
@@ -111,7 +102,7 @@ public class TuiLobbyView extends BaseUIView {
     private void displayInProgressGames() {
         console.println("Games in Progress:");
 
-        List<GameModel> games = context.getClientState().getGamesInProgress();
+        List<GameInfo> games = context.getClientState().getGamesInProgress();
         if (games == null || games.isEmpty()) {
             console.println("No games currently in progress.");
             console.println("");
@@ -122,12 +113,12 @@ public class TuiLobbyView extends BaseUIView {
         String[][] data = new String[games.size()][4];
 
         for (int i = 0; i < games.size(); i++) {
-            GameModel game = games.get(i);
+            GameInfo game = games.get(i);
 
             data[i][0] = game.getGameId();
             data[i][1] = game.getGameName();
             data[i][2] = getPhaseDisplayText(game.getCurrentPhase());
-            data[i][3] = game.getCurrentPlayers() + "/" + game.getMaxPlayers();
+            data[i][3] = game.getCurrentPlayerCount() + "/" + game.getMaxPlayers();
         }
 
         console.printTable(headers, data);
@@ -137,7 +128,7 @@ public class TuiLobbyView extends BaseUIView {
     private void displayAvailableGames() {
         console.println("All Games:");
 
-        List<GameModel> games = context.getClientState().getAvailableGames();
+        List<GameInfo> games = context.getClientState().getAvailableGames();
         if (games == null || games.isEmpty()) {
             console.println("No games available.");
             return;
@@ -147,13 +138,13 @@ public class TuiLobbyView extends BaseUIView {
         String[][] data = new String[games.size()][5];
 
         for (int i = 0; i < games.size(); i++) {
-            GameModel game = games.get(i);
+            GameInfo game = games.get(i);
 
             data[i][0] = game.getGameId();
             data[i][1] = game.getGameName();
             data[i][2] = game.getGameLevel().toString();
             data[i][3] = getPhaseDisplayText(game.getCurrentPhase());
-            data[i][4] = game.getCurrentPlayers() + "/" + game.getMaxPlayers();
+            data[i][4] = game.getCurrentPlayerCount() + "/" + game.getMaxPlayers();
         }
 
         console.printTable(headers, data);

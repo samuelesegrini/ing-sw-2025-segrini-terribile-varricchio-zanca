@@ -1,5 +1,6 @@
 package it.polimi.ingsw.common.message.event;
 
+import it.polimi.ingsw.server.model.domain.player.PlayerId;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -14,11 +15,23 @@ public class ShipValidationEvent extends AbstractEvent {
 
     public ShipValidationEvent(String gameId, String playerId, String playerNickname,
                                boolean isValid, List<String> errors) {
-        super(EventType.SHIP_VALIDATION_COMPLETED, gameId, playerId);
+        super(EventType.SHIP_VALIDATION_COMPLETED, gameId, PlayerId.fromString(playerId));
         this.playerId = playerId;
         this.playerNickname = playerNickname;
         this.isValid = isValid;
         this.errors = new ArrayList<>(errors);
+    }
+
+    @Override
+    public boolean shouldSendTo(String clientId, EventFilterContext context) {
+        // Don't send to the requesting client (they get the response instead)
+        PlayerId clientPlayerId = context.getPlayerIdForClient(clientId);
+        if (PlayerId.fromString(playerId).equals(clientPlayerId)) {
+            return false; // Exclude the requesting client
+        }
+        
+        // Use default game filtering for other clients
+        return super.shouldSendTo(clientId, context);
     }
 
     @Override

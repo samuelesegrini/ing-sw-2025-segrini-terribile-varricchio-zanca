@@ -1,5 +1,6 @@
 package it.polimi.ingsw.client.core;
 
+import it.polimi.ingsw.common.model.GameInfo;
 import it.polimi.ingsw.server.model.domain.general.GameModel;
 import it.polimi.ingsw.server.model.domain.player.Player;
 import it.polimi.ingsw.server.model.domain.player.PlayerId;
@@ -35,9 +36,15 @@ public class ClientState {
     private String playerNickname;
 
     // Lobby State
-    private List<GameModel> availableGames;
+    private List<GameInfo> availableGames;
     private List<Player> playersInLobby;
     private GameModel currentGameLobby;
+    
+    // Current game lobby basic info (for display when GameModel not yet available)
+    private String currentGameId;
+    private String currentGameName;
+    private it.polimi.ingsw.server.model.enums.GameLevel currentGameLevel;
+    private int currentGameMaxPlayers;
 
     // Game State (null when not in game)
     private GameModel gameModel;
@@ -91,30 +98,39 @@ public class ClientState {
     }
 
     // === Lobby Management ===
-    public void setAvailableGames(List<GameModel> games) {
+    public void setAvailableGames(List<GameInfo> games) {
         this.availableGames = games;
         refreshCurrentViewOnly();
     }
 
-    public List<GameModel> getAvailableGames() {
+    public List<GameInfo> getAvailableGames() {
         return availableGames;
     }
     
     /**
-     * Gets joinable games (alias for getAvailableGames)
+     * Gets joinable games (filtered from available games)
      * @return List of joinable games
      */
-    public List<GameModel> getJoinableGames() {
-        return availableGames;
+    public List<GameInfo> getJoinableGames() {
+        if (availableGames == null) {
+            return List.of();
+        }
+        return availableGames.stream()
+                .filter(GameInfo::isJoinable)
+                .collect(java.util.stream.Collectors.toList());
     }
     
     /**
-     * Gets games in progress (stub - returns empty for now)
+     * Gets games in progress (filtered from available games)
      * @return List of games in progress
      */
-    public List<GameModel> getGamesInProgress() {
-        // TODO: Implement filtering for games in progress
-        return List.of();
+    public List<GameInfo> getGamesInProgress() {
+        if (availableGames == null) {
+            return List.of();
+        }
+        return availableGames.stream()
+                .filter(GameInfo::isStarted)
+                .collect(java.util.stream.Collectors.toList());
     }
 
     public void setCurrentGameLobby(GameModel gameModel) {
@@ -251,7 +267,41 @@ public class ClientState {
     }
     
     public String getCurrentGameId() {
-        return currentGameLobby != null ? currentGameLobby.getGameId() : null;
+        return currentGameId != null ? currentGameId : (currentGameLobby != null ? currentGameLobby.getGameId() : null);
+    }
+    
+    // === Current Game Lobby Basic Info Management ===
+    
+    public void setCurrentGameId(String gameId) {
+        this.currentGameId = gameId;
+        refreshCurrentViewOnly();
+    }
+    
+    public void setCurrentGameName(String gameName) {
+        this.currentGameName = gameName;
+        refreshCurrentViewOnly();
+    }
+    
+    public void setCurrentGameLevel(it.polimi.ingsw.server.model.enums.GameLevel gameLevel) {
+        this.currentGameLevel = gameLevel;
+        refreshCurrentViewOnly();
+    }
+    
+    public void setCurrentGameMaxPlayers(int maxPlayers) {
+        this.currentGameMaxPlayers = maxPlayers;
+        refreshCurrentViewOnly();
+    }
+    
+    public String getCurrentGameName() {
+        return currentGameName;
+    }
+    
+    public it.polimi.ingsw.server.model.enums.GameLevel getCurrentGameLevel() {
+        return currentGameLevel;
+    }
+    
+    public int getCurrentGameMaxPlayers() {
+        return currentGameMaxPlayers;
     }
     
     /**
@@ -263,13 +313,28 @@ public class ClientState {
     }
     
     /**
-     * Checks if a player is ready (stub - needs proper implementation)
+     * Checks if a player is ready
      * @param playerId The player ID to check
      * @return true if ready, false otherwise
      */
     public boolean isPlayerReady(String playerId) {
-        // TODO: Implement proper ready state checking
-        // This should query the game model or maintain ready state
+        if (playersInLobby != null) {
+            for (Player player : playersInLobby) {
+                if (player.getId().toString().equals(playerId)) {
+                    return player.isReady();
+                }
+            }
+        }
+        
+        // Also check current game lobby if available
+        if (currentGameLobby != null && currentGameLobby.getPlayers() != null) {
+            for (Player player : currentGameLobby.getPlayers()) {
+                if (player.getId().toString().equals(playerId)) {
+                    return player.isReady();
+                }
+            }
+        }
+        
         return false;
     }
     
@@ -309,9 +374,17 @@ public class ClientState {
         return getNickname();
     }
 
-    // Simple UI Updates - Only Current View
+    // UI Updates - Refresh registered views
     private void refreshCurrentViewOnly() {
-        if (currentViewComponent != null) {
+        // Refresh all registered views - they'll decide if they're active
+        for (UIRefreshable view : registeredViews) {
+            if (view != null) {
+                Platform.runLater(() -> view.refresh());
+            }
+        }
+        
+        // Also refresh the current view component if it exists and isn't already in the set
+        if (currentViewComponent != null && !registeredViews.contains(currentViewComponent)) {
             Platform.runLater(() -> currentViewComponent.refresh());
         }
     }
@@ -342,15 +415,32 @@ public class ClientState {
      * @param ready The ready status
      */
     public void setPlayerReadyStatus(String playerId, boolean ready) {
+        boolean updated = false;
+        
+        // Update in playersInLobby
         if (playersInLobby != null) {
             for (Player player : playersInLobby) {
-                if (player.getId().equals(playerId)) {
+                if (player.getId().toString().equals(playerId)) {
                     player.setReady(ready);
-                    // Player ready status updated directly in model
-                    refreshCurrentViewOnly();
+                    updated = true;
                     break;
                 }
             }
+        }
+        
+        // Also update in current game lobby if available
+        if (currentGameLobby != null && currentGameLobby.getPlayers() != null) {
+            for (Player player : currentGameLobby.getPlayers()) {
+                if (player.getId().toString().equals(playerId)) {
+                    player.setReady(ready);
+                    updated = true;
+                    break;
+                }
+            }
+        }
+        
+        if (updated) {
+            refreshCurrentViewOnly();
         }
     }
     

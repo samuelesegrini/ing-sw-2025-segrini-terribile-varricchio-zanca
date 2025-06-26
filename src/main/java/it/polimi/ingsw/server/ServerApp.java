@@ -8,6 +8,7 @@ import it.polimi.ingsw.common.message.event.PlayerDisconnectedEvent;
 import it.polimi.ingsw.common.message.event.PlayerReconnectedEvent;
 import it.polimi.ingsw.server.controller.CommandDispatcher;
 import it.polimi.ingsw.server.core.*;
+import it.polimi.ingsw.server.model.domain.player.PlayerId;
 import it.polimi.ingsw.server.monitor.ConnectionMonitorService;
 import it.polimi.ingsw.server.network.RMIServerAdapter;
 import it.polimi.ingsw.server.network.ServerNetworkManager;
@@ -160,7 +161,7 @@ public class ServerApp {
      */
     private void handleClientDisconnect(String clientId) {
 
-        String playerId = playerRegistry.getPlayerIdForClient(clientId);
+        PlayerId playerId = playerRegistry.getPlayerIdForClient(clientId);
         if (playerId != null) {
             String nickname = playerRegistry.getPlayerNickname(playerId);
 

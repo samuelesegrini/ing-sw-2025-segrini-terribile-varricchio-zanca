@@ -1,5 +1,6 @@
 package it.polimi.ingsw.common.message.event;
 
+import it.polimi.ingsw.server.model.domain.player.PlayerId;
 import java.util.Set;
 
 /**
@@ -7,7 +8,8 @@ import java.util.Set;
  */
 public interface EventFilterContext {
     boolean isClientInGame(String clientId, String gameId);
-    String getPlayerIdForClient(String clientId);
+    PlayerId getPlayerIdForClient(String clientId);
     Set<String> getClientsInGame(String gameId);
     Set<String> getAllClients();
+    
 }

@@ -6,18 +6,15 @@ import it.polimi.ingsw.client.ui.core.BaseUIView;
 import it.polimi.ingsw.client.ui.core.UIContext;
 import it.polimi.ingsw.client.core.UIRefreshable;
 
-import java.beans.PropertyChangeEvent;
 
 /**
  * Simplified TUI Ship Building view for Simple Direct Model Architecture.
  * NOTE: This is a simplified stub - full TUI implementation pending.
  */
 public class TuiShipBuildingView extends BaseUIView implements UIRefreshable {
-    private ClientController controller;
     private UIContext uiContext;
 
-    public TuiShipBuildingView(ClientController controller, UIContext uiContext) {
-        this.controller = controller;
+    public TuiShipBuildingView(UIContext uiContext) {
         this.uiContext = uiContext;
     }
 
@@ -70,8 +67,4 @@ public class TuiShipBuildingView extends BaseUIView implements UIRefreshable {
         }
     }
 
-    @Override
-    protected void onPropertyChange(PropertyChangeEvent evt) {
-        refresh();
-    }
 }

@@ -2,6 +2,7 @@ package it.polimi.ingsw.common.message.event;
 
 import it.polimi.ingsw.server.model.domain.ship.components.Component;
 import it.polimi.ingsw.server.model.domain.player.Player;
+import it.polimi.ingsw.server.model.domain.player.PlayerId;
 import it.polimi.ingsw.server.model.domain.general.ComponentDeck;
 
 /**
@@ -17,7 +18,7 @@ public class ComponentTakenEvent extends AbstractEvent {
 
     public ComponentTakenEvent(String gameId, Component component, 
                               Player player, ComponentDeck updatedDeck) {
-        super(EventType.COMPONENT_TAKEN, gameId, player.getId().toString());
+        super(EventType.COMPONENT_TAKEN, gameId, player.getId());
         this.component = component;
         this.player = player;
         this.updatedDeck = updatedDeck;
@@ -35,13 +36,28 @@ public class ComponentTakenEvent extends AbstractEvent {
         return updatedDeck;
     }
 
-    // Legacy getters for backward compatibility
-    public String getPlayerId() {
-        return player.getId().toString();
+    /**
+     * Gets the player ID.
+     */
+    public PlayerId getPlayerId() {
+        return player.getId();
     }
+    
 
     public String getPlayerNickname() {
         return player.getNickname();
+    }
+
+    @Override
+    public boolean shouldSendTo(String clientId, EventFilterContext context) {
+        // Don't send to the requesting client (they get the response instead)
+        PlayerId clientPlayerId = context.getPlayerIdForClient(clientId);
+        if (player.getId().equals(clientPlayerId)) {
+            return false; // Exclude the requesting client
+        }
+        
+        // Use default game filtering for other clients
+        return super.shouldSendTo(clientId, context);
     }
 
     @Override

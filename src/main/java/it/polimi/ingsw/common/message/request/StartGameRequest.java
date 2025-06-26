@@ -2,6 +2,7 @@ package it.polimi.ingsw.common.message.request;
 
 import it.polimi.ingsw.server.model.domain.general.GameModel;
 import it.polimi.ingsw.server.model.domain.player.Player;
+import it.polimi.ingsw.server.model.domain.player.PlayerId;
 import it.polimi.ingsw.common.message.event.GameStartedEvent;
 import it.polimi.ingsw.common.message.event.GamesListUpdateEvent;
 import it.polimi.ingsw.common.message.response.GenericSuccessResponse;
@@ -53,7 +54,7 @@ public class StartGameRequest extends AbstractRequest {
         }
         LOGGER.fine("✅ START VALIDATION - GameId '" + gameId + "' passed validation");
 
-        String playerId = context.getPlayerId();
+        PlayerId playerId = context.getPlayerId();
         if (playerId == null) {
             LOGGER.warning("❌ START GAME FAILED - Client " + context.getSenderId() + " is not authenticated");
             return createErrorResponse("Authentication required", "AUTHENTICATION_ERROR");

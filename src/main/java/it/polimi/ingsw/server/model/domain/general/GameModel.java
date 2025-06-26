@@ -6,7 +6,6 @@ import it.polimi.ingsw.server.model.domain.flight.FlightBoard;
 import it.polimi.ingsw.server.model.domain.flight.RewardSystem;
 import it.polimi.ingsw.server.model.domain.flight.Route;
 import it.polimi.ingsw.server.model.domain.general.config.FlightBoardConfig;
-import it.polimi.ingsw.server.model.domain.general.config.GameConfigurationManager;
 import it.polimi.ingsw.server.model.domain.general.config.RewardSystemConfig;
 import it.polimi.ingsw.server.model.domain.player.Player;
 import it.polimi.ingsw.server.model.domain.general.config.GameConfig;
@@ -29,10 +28,10 @@ import java.util.stream.Collectors;
 public class GameModel implements Serializable {
     private static final long serialVersionUID = 1L;
     private final String gameId;
+    private final String gameName;
     private final GameLevel level;
     private final GameConfig config;
     private final List<Player> players;
-    private final GameConfigurationManager configManager;
     private final int maxPlayers;
     
     private GamePhase currentPhase;
@@ -45,22 +44,29 @@ public class GameModel implements Serializable {
     private BuildingTimer buildingTimer;
 
     /**
-     * Creates a new game model with the specified difficulty level, configuration, and number of players.
+     * Creates a new game model with the specified game ID, name, difficulty level, configuration, and number of players.
      * 
+     * @param gameId The unique identifier for this game.
+     * @param gameName The display name for this game.
      * @param level The difficulty level of the game.
-     * @param configManager The configuration manager for the game.
+     * @param config The game configuration for this level.
+     * @param componentDeck The component deck for this game.
+     * @param adventureDeck The adventure deck for this game.
      * @param playerCount The number of players who will participate in the game.
      * @throws IllegalArgumentException if playerCount is not within valid range
      */
-    public GameModel(GameLevel level, GameConfigurationManager configManager, int playerCount) {
+    public GameModel(String gameId, String gameName, GameLevel level, GameConfig config, ComponentDeck componentDeck, 
+                     it.polimi.ingsw.server.model.domain.adventure.AdventureDeck adventureDeck, int playerCount) {
         if (playerCount < 2 || playerCount > 4) {
             throw new IllegalArgumentException("Player count must be between 2 and 4");
         }
 
-        this.gameId = UUID.randomUUID().toString();
+        this.gameId = gameId;
+        this.gameName = gameName;
         this.level = level;
-        this.configManager = configManager;
-        this.config = configManager.getConfigForLevel(level);
+        this.config = config;
+        this.componentDeck = componentDeck;
+        this.adventureDeck = adventureDeck;
         this.players = new ArrayList<>();
         this.currentPhase = GamePhase.SETUP;
         this.currentPlayerIndex = 0;
@@ -96,8 +102,7 @@ public class GameModel implements Serializable {
         Player player = new Player(playerId, assignedColor);
         
         // Create ship separately with proper configuration
-        var gameConfig = configManager.getConfigForLevel(level);
-        var shipGridConfig = gameConfig.shipGridConfig();
+        var shipGridConfig = config.shipGridConfig();
         var ship = new it.polimi.ingsw.server.model.domain.ship.Ship(level, shipGridConfig);
         
         // Assign ship to player
@@ -130,8 +135,7 @@ public class GameModel implements Serializable {
             throw new IllegalStateException("Game already initialized");
         }
 
-        GameConfig gameCfg = configManager.getConfigForLevel(level);
-        FlightBoardConfig fbCfg = gameCfg.flightBoardConfig();
+        FlightBoardConfig fbCfg = config.flightBoardConfig();
         RewardSystemConfig rsCfg = fbCfg.rewardSystem();
 
         // Convert RewardSystemConfig to RewardSystem
@@ -145,8 +149,6 @@ public class GameModel implements Serializable {
 
         Route route = new Route(level, Integer.parseInt(fbCfg.length()), new ArrayList<>(fbCfg.startingPositions()), rewardSystem);
         this.flightBoard = new FlightBoard(level, route, players.size());
-        this.adventureDeck = configManager.createAdventureDeck(level);
-        this.componentDeck = configManager.createComponentDeck(level);
         
         // Initialize player positions on flight board (ships initialized during addPlayer)
         for (Player player : players) {
@@ -471,11 +473,22 @@ public class GameModel implements Serializable {
      * @param playerHasCompletedShip Whether the player has completed their ship
      * @return true if timer was successfully flipped, false otherwise
      */
-    public boolean flipBuildingTimer(String playerId, boolean playerHasCompletedShip) {
+    public boolean flipBuildingTimer(PlayerId playerId, boolean playerHasCompletedShip) {
         if (buildingTimer != null && currentPhase == GamePhase.BUILDING) {
-            return buildingTimer.flipTimer(playerId, playerHasCompletedShip);
+            return buildingTimer.flipTimer(playerId.toString(), playerHasCompletedShip);
         }
         return false;
+    }
+    
+    /**
+     * Attempts to flip the building timer to the next stage (legacy String overload).
+     * @param playerIdString The player attempting to flip the timer
+     * @param playerHasCompletedShip Whether the player has completed their ship
+     * @return true if timer was successfully flipped, false otherwise
+     */
+    public boolean flipBuildingTimer(String playerIdString, boolean playerHasCompletedShip) {
+        PlayerId playerId = PlayerId.fromString(playerIdString);
+        return flipBuildingTimer(playerId, playerHasCompletedShip);
     }
     
     /**
@@ -501,11 +514,11 @@ public class GameModel implements Serializable {
     }
     
     /**
-     * Gets the game name (currently returns gameId)
+     * Gets the game name
      * @return The game name
      */
     public String getGameName() {
-        return gameId;
+        return gameName;
     }
     
     /**

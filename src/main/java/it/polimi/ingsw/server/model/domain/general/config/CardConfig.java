@@ -1,5 +1,6 @@
 package it.polimi.ingsw.server.model.domain.general.config;
 
+import java.io.Serializable;
 import java.util.Map;
 
 /**
@@ -10,4 +11,4 @@ public record CardConfig(
     String type,
     String description,
     Map<String, Object> properties
-) {} 
+) implements Serializable {} 

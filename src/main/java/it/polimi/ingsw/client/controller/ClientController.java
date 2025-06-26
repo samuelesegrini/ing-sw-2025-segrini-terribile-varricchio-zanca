@@ -70,37 +70,36 @@ public class ClientController {
     
     /**
      * Safely attempts to navigate to a view state using ViewNavigator.
-     * Falls back to direct ClientState manipulation if ViewNavigator is not available.
+     * ViewNavigator is REQUIRED for consistent state management.
      * 
      * @param viewState The target view state
      * @param context The navigation context/reason
-     * @return true if navigation was attempted (doesn't guarantee success)
+     * @return true if navigation was successful, false otherwise
      */
     private boolean attemptNavigation(ClientState.ViewState viewState, String context) {
-        if (uiContext != null && uiContext.getViewNavigator() != null) {
-            boolean success = uiContext.getViewNavigator().navigateTo(viewState, context);
-            if (!success) {
-                String reason = uiContext.getViewNavigator().getNavigationFailureReason(viewState);
-                LOGGER.warning("Failed to navigate to " + viewState + " - Reason: " + reason + " (Context: " + context + ")");
-                
-                // In some cases, we might want to show this to the user
-                if (uiContext.getNotificationService() != null) {
-                    uiContext.getNotificationService().showNotification(
-                        new it.polimi.ingsw.client.ui.Notification(
-                            "Navigation Error", 
-                            "Cannot navigate to " + viewState + ": " + reason,
-                            it.polimi.ingsw.client.ui.NotificationType.WARNING
-                        )
-                    );
-                }
-            }
-            return success;
-        } else {
-            // Fallback: direct state manipulation (for backward compatibility)
-            LOGGER.info("ViewNavigator not available, using direct state manipulation for navigation to " + viewState);
-            clientState.setCurrentView(viewState);
-            return true; // Assume success for fallback
+        if (uiContext == null || uiContext.getViewNavigator() == null) {
+            LOGGER.severe("ViewNavigator not available - cannot navigate to " + viewState + 
+                         ". This indicates a serious initialization problem.");
+            return false;
         }
+        
+        boolean success = uiContext.getViewNavigator().navigateTo(viewState, context);
+        if (!success) {
+            String reason = uiContext.getViewNavigator().getNavigationFailureReason(viewState);
+            LOGGER.warning("Failed to navigate to " + viewState + " - Reason: " + reason + " (Context: " + context + ")");
+            
+            // Show error to user for critical navigation failures
+            if (uiContext.getNotificationService() != null) {
+                uiContext.getNotificationService().showNotification(
+                    new it.polimi.ingsw.client.ui.Notification(
+                        "Navigation Error", 
+                        "Cannot navigate to " + viewState + ": " + reason,
+                        it.polimi.ingsw.client.ui.NotificationType.WARNING
+                    )
+                );
+            }
+        }
+        return success;
     }
 
     // Connection actions
@@ -165,7 +164,7 @@ public class ClientController {
                 .thenApply(response -> {
                     if (response instanceof LoginResponse loginResp) {
                         if (loginResp.isSuccess()) {
-                            clientState.setPlayerInfo(new PlayerId(java.util.UUID.fromString(loginResp.getPlayerId()), loginResp.getNickname()), loginResp.getNickname());
+                            clientState.setPlayerInfo(loginResp.getPlayerId(), loginResp.getNickname());
                             
                             attemptNavigation(ClientState.ViewState.LOBBY, "Login successful for " + loginResp.getNickname());
 
@@ -255,6 +254,18 @@ public class ClientController {
                         attemptNavigation(ClientState.ViewState.GAME_LOBBY, "Joined game: " + gameId);
                     } else {
                         LOGGER.warning("Failed to join game: " + response.getErrorMessage());
+                        
+                        // If join failed due to "Game not found", refresh the games list
+                        if (response.getErrorMessage() != null && response.getErrorMessage().contains("Game not found")) {
+                            LOGGER.info("🔄 AUTO-REFRESH - Join failed due to game not found, refreshing games list");
+                            refreshGameList().thenAccept(refreshSuccess -> {
+                                if (refreshSuccess) {
+                                    LOGGER.info("✅ Games list refreshed after join failure");
+                                } else {
+                                    LOGGER.warning("❌ Failed to refresh games list after join failure");
+                                }
+                            });
+                        }
                     }
                     return response.isSuccess();
                 })
@@ -636,14 +647,14 @@ public class ClientController {
             }
             
             @Override
-            public String getLocalPlayerId() {
-                return clientState.getPlayerId();
+            public PlayerId getLocalPlayerId() {
+                return clientState.getPlayerIdObject();
             }
             
             @Override
-            public boolean isLocalPlayer(String playerId) {
-                return playerId != null && clientState.getPlayerId() != null && 
-                       playerId.equals(clientState.getPlayerId());
+            public boolean isLocalPlayer(PlayerId playerId) {
+                return playerId != null && clientState.getPlayerIdObject() != null && 
+                       playerId.equals(clientState.getPlayerIdObject());
             }
             
             @Override
@@ -671,8 +682,8 @@ public class ClientController {
     private class ClientContextImpl implements ClientContext {
 
         @Override
-        public String getPlayerId() {
-            return clientState.getPlayerId();
+        public PlayerId getPlayerId() {
+            return clientState.getPlayerIdObject();
         }
 
         @Override

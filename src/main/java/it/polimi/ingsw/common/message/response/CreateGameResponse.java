@@ -13,37 +13,35 @@ public class CreateGameResponse extends AbstractResponse {
     private final String gameName;
     private final int maxPlayers;
     private final it.polimi.ingsw.server.model.enums.GameLevel gameLevel;
+    private final it.polimi.ingsw.server.model.domain.general.GameModel gameModel;
 
     public CreateGameResponse(UUID correlationId, String gameId, String gameName, 
-                            int maxPlayers, GameLevel gameLevel) {
+                            int maxPlayers, GameLevel gameLevel, 
+                            it.polimi.ingsw.server.model.domain.general.GameModel gameModel) {
         super(correlationId);
         this.gameId = gameId;
         this.gameName = gameName;
         this.maxPlayers = maxPlayers;
         this.gameLevel = gameLevel;
+        this.gameModel = gameModel;
     }
 
     public String getGameId() {
         return gameId;
     }
 
+    public it.polimi.ingsw.server.model.domain.general.GameModel getGameModel() {
+        return gameModel;
+    }
+
     @Override
     public void handleOnClient(ClientContext context) {
         // Game created successfully - handle creator's navigation and state
         if (context.getClientState() != null) {
-            // Set the current game lobby - create a minimal GameModel for the lobby
-            try {
-                // Create a minimal GameModel for the lobby state
-                it.polimi.ingsw.server.model.domain.general.config.GameConfigurationManager configManager = 
-                    new it.polimi.ingsw.server.model.domain.general.config.GameConfigurationManager();
-                it.polimi.ingsw.server.model.domain.general.GameModel gameLobby = 
-                    new it.polimi.ingsw.server.model.domain.general.GameModel(gameLevel, configManager, maxPlayers);
-                    
-                context.getClientState().setCurrentGameLobby(gameLobby);
-            } catch (Exception e) {
-                java.util.logging.Logger.getLogger(CreateGameResponse.class.getName())
-                    .warning("Failed to create GameModel for lobby: " + e.getMessage());
-                // Continue without setting the game lobby - navigation might still work
+            // Set the current game lobby for the creator (who is automatically added to the game)
+            context.getClientState().setCurrentGameLobby(gameModel);
+            if (gameModel != null) {
+                context.getClientState().setPlayersInLobby(gameModel.getPlayers());
             }
             
             // Navigate creator to GAME_LOBBY using proper ViewNavigator

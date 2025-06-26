@@ -20,7 +20,6 @@ import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.stage.Stage;
 
-import java.beans.PropertyChangeEvent;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -84,12 +83,9 @@ public class GuiShipBuildingView extends BaseUIView implements UIRefreshable {
         stage.setScene(scene);
         stage.setTitle("Galaxy Trucker - " + getTitle());
         
-        // Register with ClientState for automatic refresh
+        // Register with ClientState for automatic refresh using new architecture
         if (uiContext != null && uiContext.getClientState() != null) {
-            uiContext.getClientState().setCurrentView(
-                uiContext.getClientState().getCurrentView(), 
-                this
-            );
+            uiContext.getClientState().registerRefreshableView(this);
         }
         
         if (!stage.isShowing()) {
@@ -370,9 +366,4 @@ public class GuiShipBuildingView extends BaseUIView implements UIRefreshable {
         });
     }
 
-    @Override
-    protected void onPropertyChange(PropertyChangeEvent evt) {
-        // Handle property changes for lobby/connection state
-        refresh();
-    }
 }

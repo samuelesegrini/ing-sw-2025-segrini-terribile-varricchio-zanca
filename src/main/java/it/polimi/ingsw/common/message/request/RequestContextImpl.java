@@ -6,6 +6,7 @@ import it.polimi.ingsw.server.core.GameSession;
 import it.polimi.ingsw.server.core.GameSessionManager;
 import it.polimi.ingsw.server.core.PlayerSessionRegistry;
 import it.polimi.ingsw.server.network.ServerNetworkManager;
+import it.polimi.ingsw.server.model.domain.player.PlayerId;
 
 import java.util.Map;
 
@@ -40,7 +41,7 @@ public class RequestContextImpl implements RequestContext {
     }
 
     @Override
-    public String getPlayerId() {
+    public PlayerId getPlayerId() {
         return playerRegistry.getPlayerIdForClient(senderId);
     }
 
@@ -71,7 +72,7 @@ public class RequestContextImpl implements RequestContext {
 
     @Override
     public GameSession getGameSession() {
-        String playerId = getPlayerId();
+        PlayerId playerId = getPlayerId();
         if (playerId == null) {
             return null;
         }
@@ -79,7 +80,7 @@ public class RequestContextImpl implements RequestContext {
     }    
     @Override
     public String getGameId() {
-        String playerId = getPlayerId();
+        PlayerId playerId = getPlayerId();
         if (playerId == null) {
             return null;
         }
@@ -88,7 +89,7 @@ public class RequestContextImpl implements RequestContext {
     
     @Override
     public String getPlayerNickname() {
-        String playerId = getPlayerId();
+        PlayerId playerId = getPlayerId();
         if (playerId == null) {
             return null;
         }

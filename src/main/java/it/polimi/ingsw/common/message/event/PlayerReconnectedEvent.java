@@ -1,22 +1,24 @@
 package it.polimi.ingsw.common.message.event;
 
+import it.polimi.ingsw.server.model.domain.player.PlayerId;
+
 /**
  * Event broadcast when a player reconnects to a game session.
  * Only notifies other players in the same game, showing that the player is back online.
  */
 public class PlayerReconnectedEvent extends AbstractEvent {
-    private final String playerId;
+    private final PlayerId playerId;
     private final String playerNickname;
     private final boolean wasInActiveGame; // Whether reconnection happened during active gameplay
 
-    public PlayerReconnectedEvent(String gameId, String playerId, String playerNickname, boolean wasInActiveGame) {
+    public PlayerReconnectedEvent(String gameId, PlayerId playerId, String playerNickname, boolean wasInActiveGame) {
         super(EventType.PLAYER_RECONNECTED, gameId, playerId);
         this.playerId = playerId;
         this.playerNickname = playerNickname;
         this.wasInActiveGame = wasInActiveGame;
     }
 
-    public String getPlayerId() {
+    public PlayerId getPlayerId() {
         return playerId;
     }
 
@@ -31,7 +33,7 @@ public class PlayerReconnectedEvent extends AbstractEvent {
     @Override
     public boolean shouldSendTo(String clientId, EventFilterContext context) {
         // Don't send to the reconnected player (they get the reconnection response)
-        String playerIdForClient = context.getPlayerIdForClient(clientId);
+        PlayerId playerIdForClient = context.getPlayerIdForClient(clientId);
         if (this.playerId.equals(playerIdForClient)) {
             return false;
         }

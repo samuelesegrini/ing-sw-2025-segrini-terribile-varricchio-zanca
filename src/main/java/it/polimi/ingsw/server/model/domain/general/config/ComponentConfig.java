@@ -1,5 +1,6 @@
 package it.polimi.ingsw.server.model.domain.general.config;
 
+import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 
@@ -11,4 +12,4 @@ public record ComponentConfig(
     String type,
     List<String> connectors,
     Map<String, Object> properties
-) {} 
+) implements Serializable {} 

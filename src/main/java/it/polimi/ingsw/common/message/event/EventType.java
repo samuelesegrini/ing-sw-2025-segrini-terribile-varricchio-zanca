@@ -32,6 +32,7 @@ public enum EventType {
     TILE_RETURNED,
     COMPONENT_OFFERED,
     COMPONENT_TAKEN,      // NEW: For taking components to hand
+    COMPONENT_PLACED,     // NEW: For placing components on ship
     COMPONENT_RESERVED,   // For actual reservation action
     BUILDING_TIMER_FLIPPED,
     SHIP_VALIDATION_COMPLETED,

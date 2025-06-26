@@ -7,6 +7,7 @@ import it.polimi.ingsw.common.message.response.ReserveTileResponse;
 import it.polimi.ingsw.common.message.validation.ValidationResult;
 import it.polimi.ingsw.server.core.GameSession;
 import it.polimi.ingsw.server.model.domain.player.Player;
+import it.polimi.ingsw.server.model.domain.player.PlayerId;
 import it.polimi.ingsw.server.model.domain.ship.components.Component;
 import it.polimi.ingsw.server.model.domain.general.ComponentDeck;
 import it.polimi.ingsw.server.model.enums.GamePhase;
@@ -50,7 +51,7 @@ public class ReserveTileRequest extends AbstractRequest {
         }
 
         // Get player
-        String playerId = context.getPlayerId();
+        PlayerId playerId = context.getPlayerId();
         Player player = session.getPlayer(playerId);
         if (player == null) {
             return createErrorResponse("Player not found", ErrorResponse.INTERNAL_ERROR);
@@ -66,7 +67,7 @@ public class ReserveTileRequest extends AbstractRequest {
         try {
             // Reserve component logic - move to deck's reserved area
             ComponentDeck deck = session.getGameModel().getComponentDeck();
-            boolean reserved = deck.reserveComponent(playerId, component);
+            boolean reserved = deck.reserveComponent(playerId.toString(), component);
             
             if (!reserved) {
                 return createErrorResponse("Cannot reserve component - maximum reservations reached", ErrorResponse.INVALID_STATE);

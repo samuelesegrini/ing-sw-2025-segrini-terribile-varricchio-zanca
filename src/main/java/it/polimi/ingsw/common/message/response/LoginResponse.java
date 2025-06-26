@@ -3,6 +3,7 @@ package it.polimi.ingsw.common.message.response;
 import it.polimi.ingsw.client.core.ClientState;
 import it.polimi.ingsw.client.ui.Notification;
 import it.polimi.ingsw.client.ui.NotificationType;
+import it.polimi.ingsw.server.model.domain.player.PlayerId;
 
 import java.util.UUID;
 
@@ -10,18 +11,20 @@ import java.util.UUID;
  * Response to a successful login request.
  */
 public class LoginResponse extends AbstractResponse {
-    private final String playerId;
+    private final PlayerId playerId;
     private final String nickname;
 
-    public LoginResponse(UUID correlationId, String playerId, String nickname) {
+    public LoginResponse(UUID correlationId, PlayerId playerId, String nickname) {
         super(correlationId);
         this.playerId = playerId;
         this.nickname = nickname;
     }
+    
 
-    public String getPlayerId() {
+    public PlayerId getPlayerId() {
         return playerId;
     }
+    
 
     public String getNickname() {
         return nickname;
@@ -33,7 +36,7 @@ public class LoginResponse extends AbstractResponse {
             // Update client state
             ClientState clientState = context.getClientState();
             if (clientState != null) {
-                clientState.setPlayerInfo(new it.polimi.ingsw.server.model.domain.player.PlayerId(java.util.UUID.fromString(playerId), nickname), nickname);
+                clientState.setPlayerInfo(playerId, nickname);
                 
                 // Note: View navigation is now handled by ClientController.login() method
                 // to ensure proper ViewNavigator usage. This response handler should not

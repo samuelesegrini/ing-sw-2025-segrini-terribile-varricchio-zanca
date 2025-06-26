@@ -12,7 +12,6 @@ import it.polimi.ingsw.server.model.domain.ship.Ship;
 import it.polimi.ingsw.server.model.domain.ship.components.Component;
 import it.polimi.ingsw.server.model.enums.ship.Direction;
 
-import java.beans.PropertyChangeEvent;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
@@ -61,15 +60,6 @@ public class TuiFlightView extends BaseUIView {
         displayFullInterface();
     }
 
-    @Override
-    protected void onPropertyChange(PropertyChangeEvent evt) {
-        refreshNeeded = true;
-        switch (evt.getPropertyName()) {
-            case "shipGridUpdated":
-                displayFullInterface();
-                break;
-        }
-    }
 
     private void displayFullInterface() {
         console.clearScreen();

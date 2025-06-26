@@ -1,23 +1,25 @@
 package it.polimi.ingsw.common.message.event;
 
+import it.polimi.ingsw.server.model.domain.player.PlayerId;
+
 /**
  * Event broadcast when a player disconnects from a game session (network disconnection).
  * This is different from PlayerLeftGameEvent which is for intentional leaving.
  * Only notifies other players in the same game, showing that the player is temporarily unavailable.
  */
 public class PlayerDisconnectedEvent extends AbstractEvent {
-    private final String playerId;
+    private final PlayerId playerId;
     private final String playerNickname;
     private final boolean isInActiveGame; // Whether disconnection happened during active gameplay
 
-    public PlayerDisconnectedEvent(String gameId, String playerId, String playerNickname, boolean isInActiveGame) {
+    public PlayerDisconnectedEvent(String gameId, PlayerId playerId, String playerNickname, boolean isInActiveGame) {
         super(EventType.PLAYER_DISCONNECTED, gameId, playerId);
         this.playerId = playerId;
         this.playerNickname = playerNickname;
         this.isInActiveGame = isInActiveGame;
     }
 
-    public String getPlayerId() {
+    public PlayerId getPlayerId() {
         return playerId;
     }
 
@@ -32,7 +34,7 @@ public class PlayerDisconnectedEvent extends AbstractEvent {
     @Override
     public boolean shouldSendTo(String clientId, EventFilterContext context) {
         // Don't send to the disconnected player (they're not connected anyway)
-        String playerIdForClient = context.getPlayerIdForClient(clientId);
+        PlayerId playerIdForClient = context.getPlayerIdForClient(clientId);
         if (this.playerId.equals(playerIdForClient)) {
             return false;
         }

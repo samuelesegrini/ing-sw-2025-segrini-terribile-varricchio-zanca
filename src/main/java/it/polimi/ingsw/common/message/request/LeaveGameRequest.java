@@ -10,6 +10,7 @@ import it.polimi.ingsw.common.message.response.Response;
 import it.polimi.ingsw.common.message.validation.ValidationResult;
 import it.polimi.ingsw.server.model.domain.general.GameModel;
 import it.polimi.ingsw.server.model.domain.player.Player;
+import it.polimi.ingsw.server.model.domain.player.PlayerId;
 import it.polimi.ingsw.server.core.GameSession;
 import it.polimi.ingsw.server.core.GameSessionManager;
 import it.polimi.ingsw.server.core.PlayerSessionRegistry;
@@ -48,7 +49,7 @@ public class LeaveGameRequest extends AbstractRequest {
         }
 
         // Check authentication
-        String playerId = context.getPlayerId();
+        PlayerId playerId = context.getPlayerId();
         if (playerId == null) {
             return createErrorResponse("Authentication required", "AUTHENTICATION_ERROR");
         }
@@ -82,7 +83,7 @@ public class LeaveGameRequest extends AbstractRequest {
             context.publishEvent(new GameEndedEvent(gameId, "All players left", null));
         } else {
             // Update lobby state for remaining players (exclude the leaving player)
-            publishLobbyUpdateEvent(context, gameSession, gameId, registry, playerId);
+            publishLobbyUpdateEvent(context, gameSession, gameId, registry, playerId.toString());
         }
 
         // Broadcast updated games list to all clients in main lobby
@@ -101,7 +102,7 @@ public class LeaveGameRequest extends AbstractRequest {
         
         // Create and publish the lobby update event (excluding the leaving player)
         GameLobbyUpdateEvent lobbyEvent = new GameLobbyUpdateEvent(
-                gameId, players, gameSession.getMaxPlayers(), excludePlayerId
+                gameId, players, gameSession.getMaxPlayers(), PlayerId.fromString(excludePlayerId)
         );
         context.publishEvent(lobbyEvent);
     }

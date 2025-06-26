@@ -4,6 +4,7 @@ import it.polimi.ingsw.common.message.response.*;
 import it.polimi.ingsw.common.message.response.LoginResponse;
 import it.polimi.ingsw.common.message.validation.ValidationResult;
 import it.polimi.ingsw.server.core.PlayerSessionRegistry;
+import it.polimi.ingsw.server.model.domain.player.PlayerId;
 
 import java.util.UUID;
 import java.util.regex.Pattern;
@@ -84,8 +85,8 @@ public class LoginRequest extends AbstractRequest {
         }
         LOGGER.fine("✅ NICKNAME AVAILABLE - Nickname '" + trimmedNickname + "' is available");
 
-        // Create player
-        String playerId = UUID.randomUUID().toString();
+        // Create player with PlayerId
+        PlayerId playerId = PlayerId.fromString(trimmedNickname);
         LOGGER.info("👤 PLAYER CREATION - Generated playerId: " + playerId + " for nickname: '" + trimmedNickname + "'");
         
         boolean registered = registry.registerPlayer(

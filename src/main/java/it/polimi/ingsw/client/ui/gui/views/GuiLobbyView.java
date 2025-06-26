@@ -3,7 +3,7 @@ package it.polimi.ingsw.client.ui.gui.views;
 import it.polimi.ingsw.client.core.ClientState;
 import it.polimi.ingsw.client.ui.core.BaseUIView;
 import it.polimi.ingsw.client.ui.core.UIContext;
-import it.polimi.ingsw.server.model.domain.general.GameModel;
+import it.polimi.ingsw.common.model.GameInfo;
 import it.polimi.ingsw.common.message.request.CreateGameRequest;
 import it.polimi.ingsw.common.message.request.JoinGameRequest;
 import it.polimi.ingsw.common.message.request.ListGamesRequest;
@@ -21,7 +21,6 @@ import javafx.scene.layout.*;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 
-import java.beans.PropertyChangeEvent;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -435,7 +434,20 @@ public class GuiLobbyView extends BaseUIView {
     private void handleLogout() {
         // Clear authentication and return to login view
         context.getClientState().setAuthenticated(false);
-        context.getClientState().setCurrentView(ClientState.ViewState.LOGIN);
+        
+        // Use ViewNavigator for consistent navigation
+        if (context.getViewNavigator() != null) {
+            boolean success = context.getViewNavigator().navigateTo(ClientState.ViewState.LOGIN, "User logout");
+            if (!success) {
+                String reason = context.getViewNavigator().getNavigationFailureReason(ClientState.ViewState.LOGIN);
+                LOGGER.warning("Failed to navigate to LOGIN after logout - Reason: " + reason);
+                // Fallback: direct state manipulation only if ViewNavigator fails
+                context.getClientState().setCurrentView(ClientState.ViewState.LOGIN);
+            }
+        } else {
+            LOGGER.warning("ViewNavigator not available for logout navigation - using direct state manipulation");
+            context.getClientState().setCurrentView(ClientState.ViewState.LOGIN);
+        }
     }
 
     private void fetchGameListFromServer() {
@@ -463,7 +475,15 @@ public class GuiLobbyView extends BaseUIView {
     private void renderGamesListUI() {
         LOGGER.info("Updating games list");
         
-        List<GameModel> availableGames = context.getClientState().getAvailableGames();
+        List<GameInfo> availableGames = context.getClientState().getAvailableGames();
+        
+        // Debug: Log what games we have
+        if (availableGames != null) {
+            LOGGER.info("🎮 CLIENT DISPLAY - Rendering " + availableGames.size() + " games:");
+            for (GameInfo game : availableGames) {
+                LOGGER.info("  - Displaying Game ID: " + game.getGameId() + ", Name: " + game.getGameName());
+            }
+        }
         if (availableGames == null) {
             LOGGER.warning("Available games is null, hiding loading anyway");
             showLoading(false);
@@ -479,11 +499,11 @@ public class GuiLobbyView extends BaseUIView {
         boolean hasWaitingGames = false;
         boolean hasInProgressGames = false;
         
-        for (GameModel game : availableGames) {
+        for (GameInfo game : availableGames) {
             Node gameCard = createGameCard(game);
             
-            // Separate games based on their current phase
-            if (game.getCurrentPhase() == GamePhase.SETUP) {
+            // Separate games based on joinability
+            if (game.isJoinable()) {
                 waitingGamesFlowPane.getChildren().add(gameCard);
                 hasWaitingGames = true;
             } else {
@@ -505,7 +525,7 @@ public class GuiLobbyView extends BaseUIView {
         LOGGER.info("Games list update complete, loading indicator hidden");
     }
     
-    private Node createGameCard(GameModel game) {
+    private Node createGameCard(GameInfo game) {
         VBox card = new VBox(10);
         card.getStyleClass().addAll("panel-light-accent-box", "lobby-game-entry-pane");
         card.setPrefWidth(280);
@@ -528,7 +548,7 @@ public class GuiLobbyView extends BaseUIView {
         
         // Player count
         Label playersLabel = new Label(String.format("%d/%d players", 
-            game.getCurrentPlayers(), game.getMaxPlayers()));
+            game.getCurrentPlayerCount(), game.getMaxPlayers()));
         playersLabel.getStyleClass().add("lobby-players-label");
         
         // Add separator
@@ -539,13 +559,17 @@ public class GuiLobbyView extends BaseUIView {
         
         // Action button
         Button actionButton;
-        if (game.getCurrentPhase() == GamePhase.SETUP) {
+        if (game.isJoinable()) {
             actionButton = new Button("JOIN GAME");
             actionButton.getStyleClass().addAll("button", "button-primary", "lobby-join-game-button");
             actionButton.setOnAction(e -> joinGame(game));
-        } else {
+        } else if (game.isStarted()) {
             actionButton = new Button("IN PROGRESS");
             actionButton.getStyleClass().addAll("button", "button-secondary", "lobby-in-progress-button");
+            actionButton.setDisable(true);
+        } else {
+            actionButton = new Button("FULL");
+            actionButton.getStyleClass().addAll("button", "button-secondary", "lobby-full-button");
             actionButton.setDisable(true);
         }
         actionButton.setMaxWidth(Double.MAX_VALUE);
@@ -573,7 +597,8 @@ public class GuiLobbyView extends BaseUIView {
         return noGamesLabel;
     }
     
-    private void joinGame(GameModel game) {
+    private void joinGame(GameInfo game) {
+        LOGGER.info("🚪 CLIENT JOIN - User clicked to join game ID: " + game.getGameId() + ", Name: " + game.getGameName());
         showLoading(true);
         statusLabel.setText("Joining game...");
         
@@ -696,37 +721,6 @@ public class GuiLobbyView extends BaseUIView {
         Platform.runLater(this::renderGamesListUI);
     }
     
-    @Override
-    protected void onPropertyChange(PropertyChangeEvent evt) {
-        LOGGER.info("Property change received: " + evt.getPropertyName());
-        switch (evt.getPropertyName()) {
-            case "availableGames":
-                LOGGER.info("Available games property changed, updating list");
-                renderGamesListUI();
-                break;
-            case "currentView":
-                // Hide loading when view changes away from lobby
-                ClientState.ViewState newView = (ClientState.ViewState) evt.getNewValue();
-                LOGGER.info("View changed to: " + newView);
-                if (newView != ClientState.ViewState.LOBBY) {
-                    showLoading(false);
-                }
-                break;
-            case "nickname":
-                // Update player label when nickname changes
-                String newNickname = (String) evt.getNewValue();
-                LOGGER.info("Nickname changed to: " + newNickname);
-                if (playerLabel != null) {
-                    if (newNickname == null || newNickname.trim().isEmpty()) {
-                        newNickname = "Guest Player";
-                    }
-                    playerLabel.setText("Player: " + newNickname);
-                }
-                break;
-            default:
-                LOGGER.fine("Unhandled property change: " + evt.getPropertyName());
-        }
-    }
 
     @Override
     public String getTitle() {

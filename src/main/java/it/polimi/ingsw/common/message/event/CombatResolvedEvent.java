@@ -2,6 +2,7 @@ package it.polimi.ingsw.common.message.event;
 
 import it.polimi.ingsw.client.ui.Notification;
 import it.polimi.ingsw.client.ui.NotificationType;
+import it.polimi.ingsw.server.model.domain.player.PlayerId;
 
 /**
  * Event broadcast when a combat encounter is resolved.
@@ -20,7 +21,7 @@ public class CombatResolvedEvent extends AbstractEvent {
     public CombatResolvedEvent(String gameId, String enemyName, String playerId, String playerNickname,
                               int playerStrength, int enemyStrength, CombatOutcome outcome,
                               CombatReward reward, CombatPenalty penalty) {
-        super(EventType.COMBAT_RESOLVED, gameId, playerId);
+        super(EventType.COMBAT_RESOLVED, gameId, PlayerId.fromString(playerId));
         this.enemyName = enemyName;
         this.playerId = playerId;
         this.playerNickname = playerNickname;

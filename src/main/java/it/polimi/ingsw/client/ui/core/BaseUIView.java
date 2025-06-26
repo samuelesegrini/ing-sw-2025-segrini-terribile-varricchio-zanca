@@ -1,6 +1,5 @@
 package it.polimi.ingsw.client.ui.core;
 
-import java.beans.PropertyChangeEvent;
 import java.util.logging.Logger;
 import it.polimi.ingsw.client.core.UIRefreshable;
 import it.polimi.ingsw.client.ui.core.UIContext;
@@ -59,10 +58,6 @@ public abstract class BaseUIView implements UIView, UIRefreshable {
         }
     }
     @Override
-    public void propertyChange(PropertyChangeEvent evt) {
-        // Property change events no longer used - refresh() called directly
-    }
-    @Override
     public void dispose() {
         if (context != null) {
             context.getClientState().unregisterRefreshableView(this);
@@ -88,11 +83,6 @@ public abstract class BaseUIView implements UIView, UIRefreshable {
      Subclasses should override this to update their display.
      */
     protected abstract void onRefresh();
-    /**
-     Called when a property change event occurs.
-     Subclasses can override this to handle specific property changes.
-     */
-    protected void onPropertyChange(PropertyChangeEvent evt) {}
     /**
      Called when the view is being disposed.
      Subclasses should override this to clean up resources.

@@ -2,12 +2,12 @@ package it.polimi.ingsw.common.message;
 
 import it.polimi.ingsw.client.core.ClientState;
 import it.polimi.ingsw.client.controller.ClientController;
-import it.polimi.ingsw.client.core.ClientState;
 import it.polimi.ingsw.client.network.NetworkClient;
 import it.polimi.ingsw.client.ui.NotificationType;
 import it.polimi.ingsw.client.ui.core.NotificationService;
 import it.polimi.ingsw.common.message.event.ClientEventContext;
 import it.polimi.ingsw.common.message.response.ClientContext;
+import it.polimi.ingsw.server.model.domain.player.PlayerId;
 
 /**
  * Unified context interface that provides all necessary client resources
@@ -66,14 +66,14 @@ public interface ClientMessageContext extends ClientContext, ClientEventContext 
      * @return The local player ID
      */
     @Override
-    String getLocalPlayerId();
+    PlayerId getLocalPlayerId();
     
     /**
      * Gets the current player ID (alias for getLocalPlayerId for ClientContext compatibility).
      * @return The player ID
      */
     @Override
-    default String getPlayerId() {
+    default PlayerId getPlayerId() {
         return getLocalPlayerId();
     }
     
@@ -90,7 +90,7 @@ public interface ClientMessageContext extends ClientContext, ClientEventContext 
      * @return true if it's the local player
      */
     @Override
-    boolean isLocalPlayer(String playerId);
+    boolean isLocalPlayer(PlayerId playerId);
     
     /**
      * Runs the given action on the UI thread.

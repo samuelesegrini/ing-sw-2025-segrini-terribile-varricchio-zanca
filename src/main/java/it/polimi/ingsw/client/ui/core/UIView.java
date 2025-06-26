@@ -1,7 +1,6 @@
 package it.polimi.ingsw.client.ui.core;
 
 import it.polimi.ingsw.client.core.ClientState;
-import java.beans.PropertyChangeListener;
 
 /**
  * Unified view interface for all UI implementations.
@@ -11,7 +10,7 @@ import java.beans.PropertyChangeListener;
  * - refresh(): Called when the model changes, to update the view.
  * - dispose(): Cleans up resources and listeners.
  */
-public interface UIView extends PropertyChangeListener {
+public interface UIView {
     
     /**
      * Gets the view state this view represents.

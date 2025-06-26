@@ -1,5 +1,6 @@
 package it.polimi.ingsw.common.message.event;
 
+import it.polimi.ingsw.server.model.domain.player.PlayerId;
 
 /**
  * Event broadcast when a component tile is offered to a specific player.
@@ -16,7 +17,7 @@ public class ComponentOfferedEvent extends AbstractEvent {
     public ComponentOfferedEvent(String gameId, String tileId, String tileType, 
                                 String offeredToPlayerId, String offeredToPlayerNickname,
                                 String reason, long offerExpiresAt) {
-        super(EventType.COMPONENT_OFFERED, gameId, offeredToPlayerId);
+        super(EventType.COMPONENT_OFFERED, gameId, PlayerId.fromString(offeredToPlayerId));
         this.tileId = tileId;
         this.tileType = tileType;
         this.offeredToPlayerId = offeredToPlayerId;

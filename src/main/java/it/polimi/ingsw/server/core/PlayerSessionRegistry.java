@@ -1,5 +1,6 @@
 package it.polimi.ingsw.server.core;
 
+import it.polimi.ingsw.server.model.domain.player.PlayerId;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
@@ -11,10 +12,10 @@ public class PlayerSessionRegistry {
     private static final Logger LOGGER = Logger.getLogger(PlayerSessionRegistry.class.getName());
 
     private final Map<String, PlayerSession> clientToPlayerMap; // clientId -> PlayerSession
-    private final Map<String, String> playerToClientMap; // playerId -> clientId
-    private final Map<String, PlayerSession> playerSessions; // playerId -> PlayerSession
+    private final Map<PlayerId, String> playerToClientMap; // playerId -> clientId
+    private final Map<PlayerId, PlayerSession> playerSessions; // playerId -> PlayerSession
     private final Set<String> activeNicknames;
-    private final Map<String, String> reconnectTokens; // playerId -> token
+    private final Map<PlayerId, String> reconnectTokens; // playerId -> token
 
     public PlayerSessionRegistry() {
         this.clientToPlayerMap = new ConcurrentHashMap<>();
@@ -27,7 +28,7 @@ public class PlayerSessionRegistry {
     /**
      * Registers a new player.
      */
-    public boolean registerPlayer(String clientId, String playerId, String nickname) {
+    public boolean registerPlayer(String clientId, PlayerId playerId, String nickname) {
         // Check if nickname is already in use
         if (!activeNicknames.add(nickname)) {
             LOGGER.warning("Nickname " + nickname + " already in use");
@@ -46,6 +47,7 @@ public class PlayerSessionRegistry {
         LOGGER.info("Registered player " + nickname + " (ID: " + playerId + ")");
         return true;
     }
+    
 
     /**
      * Unregisters a player.
@@ -73,7 +75,7 @@ public class PlayerSessionRegistry {
     /**
      * Gets player ID for a client.
      */
-    public String getPlayerIdForClient(String clientId) {
+    public PlayerId getPlayerIdForClient(String clientId) {
         PlayerSession session = clientToPlayerMap.get(clientId);
         System.out.println("[DEBUG] PlayerSessionRegistry.getPlayerIdForClient - Client ID: " + clientId);
         System.out.println("[DEBUG] PlayerSessionRegistry.getPlayerIdForClient - Session found: " + (session != null));
@@ -86,34 +88,52 @@ public class PlayerSessionRegistry {
         }
         return session != null ? session.playerId : null;
     }
+    
 
     /**
      * Gets client ID for a player.
      */
-    public String getClientIdForPlayer(String playerId) {
+    public String getClientIdForPlayer(PlayerId playerId) {
         return playerToClientMap.get(playerId);
     }
+    
 
     /**
      * Gets player nickname.
      */
-    public String getPlayerNickname(String playerId) {
+    public String getPlayerNickname(PlayerId playerId) {
         PlayerSession session = playerSessions.get(playerId);
         return session != null ? session.nickname : null;
+    }
+    
+    /**
+     * Gets player nickname (legacy String overload).
+     */
+    public String getPlayerNickname(String playerIdString) {
+        PlayerId playerId = PlayerId.fromString(playerIdString);
+        return getPlayerNickname(playerId);
     }
 
     /**
      * Validates reconnection attempt.
      */
-    public boolean validateReconnection(String playerId, String token) {
+    public boolean validateReconnection(PlayerId playerId, String token) {
         String storedToken = reconnectTokens.get(playerId);
         return storedToken != null && storedToken.equals(token);
+    }
+    
+    /**
+     * Validates reconnection attempt (legacy String overload).
+     */
+    public boolean validateReconnection(String playerIdString, String token) {
+        PlayerId playerId = PlayerId.fromString(playerIdString);
+        return validateReconnection(playerId, token);
     }
 
     /**
      * Restores a player session after reconnection.
      */
-    public void restoreSession(String newClientId, String playerId) {
+    public void restoreSession(String newClientId, PlayerId playerId) {
         PlayerSession session = playerSessions.get(playerId);
         if (session != null) {
             // Remove old mapping if exists
@@ -130,6 +150,14 @@ public class PlayerSessionRegistry {
 
             LOGGER.info("Restored session for player " + session.nickname);
         }
+    }
+    
+    /**
+     * Restores a player session after reconnection (legacy String overload).
+     */
+    public void restoreSession(String newClientId, String playerIdString) {
+        PlayerId playerId = PlayerId.fromString(playerIdString);
+        restoreSession(newClientId, playerId);
     }
 
     /**
@@ -153,7 +181,7 @@ public class PlayerSessionRegistry {
         PlayerSession session = clientToPlayerMap.get(clientId);
         if (session != null) {
             Map<String, String> info = new HashMap<>();
-            info.put("playerId", session.playerId);
+            info.put("playerId", session.playerId.toString());
             info.put("nickname", session.nickname);
             info.put("connected", String.valueOf(session.isConnected));
             return info;
@@ -165,12 +193,12 @@ public class PlayerSessionRegistry {
      * Inner class representing a player session.
      */
     private static class PlayerSession {
-        private final String playerId;
+        private final PlayerId playerId;
         private String clientId;
         private final String nickname;
         private volatile boolean isConnected;
 
-        public PlayerSession(String playerId, String clientId, String nickname) {
+        public PlayerSession(PlayerId playerId, String clientId, String nickname) {
             this.playerId = playerId;
             this.clientId = clientId;
             this.nickname = nickname;

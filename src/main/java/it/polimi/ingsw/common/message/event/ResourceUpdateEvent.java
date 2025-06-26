@@ -1,5 +1,6 @@
 package it.polimi.ingsw.common.message.event;
 
+import it.polimi.ingsw.server.model.domain.player.PlayerId;
 import java.util.Map;
 
 /**
@@ -10,7 +11,7 @@ public class ResourceUpdateEvent extends AbstractEvent {
     private final Map<String, Integer> updatedResources;
 
     public ResourceUpdateEvent(String gameId, String playerId, Map<String, Integer> updatedResources) {
-        super(EventType.RESOURCE_UPDATE, gameId, playerId);
+        super(EventType.RESOURCE_UPDATE, gameId, PlayerId.fromString(playerId));
         this.playerId = playerId;
         this.updatedResources = Map.copyOf(updatedResources);
     }

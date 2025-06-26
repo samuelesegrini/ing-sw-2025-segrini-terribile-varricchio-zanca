@@ -5,6 +5,7 @@ import it.polimi.ingsw.common.message.response.RequestFaceUpTileResponse;
 import it.polimi.ingsw.common.message.response.Response;
 import it.polimi.ingsw.common.message.validation.ValidationResult;
 import it.polimi.ingsw.common.message.event.ComponentTakenEvent;
+import it.polimi.ingsw.server.model.domain.player.PlayerId;
 
 /**
  * Request sent by a player to take a specific face-up tile from the communal pile.
@@ -40,7 +41,7 @@ public class RequestFaceUpTileRequest extends AbstractRequest {
 
         // Get game session
         String gameId = context.getGameId();
-        String playerId = context.getPlayerId();
+        PlayerId playerId = context.getPlayerId();
         String playerNickname = context.getPlayerNickname();
         
         // Check if the tile is available in face-up pile

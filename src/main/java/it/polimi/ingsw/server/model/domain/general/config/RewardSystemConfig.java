@@ -1,5 +1,6 @@
 package it.polimi.ingsw.server.model.domain.general.config;
 
+import java.io.Serializable;
 import java.util.Map;
 
 public record RewardSystemConfig(
@@ -7,4 +8,4 @@ public record RewardSystemConfig(
         Map<String, Integer> resourceBonus, // Keys like "RED", "BLUE"
         int bestLookingShipBonus,
         int exposedConnectorsPenalty
-) {}
+) implements Serializable {}

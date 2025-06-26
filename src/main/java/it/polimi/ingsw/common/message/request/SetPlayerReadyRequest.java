@@ -49,7 +49,7 @@ public class SetPlayerReadyRequest extends AbstractRequest {
             return createErrorResponse(validation.getErrorMessage(), "VALIDATION_ERROR");
         }
 
-        String playerId = context.getPlayerId();
+        PlayerId playerId = context.getPlayerId();
         if (playerId == null) {
             LOGGER.warning("❌ SET READY FAILED - Client " + context.getSenderId() + " is not authenticated");
             return createErrorResponse("Authentication required", "AUTHENTICATION_ERROR");
@@ -59,7 +59,7 @@ public class SetPlayerReadyRequest extends AbstractRequest {
         GameSessionManager sessionManager = context.getSessionManager();
         PlayerSessionRegistry registry = context.getPlayerRegistry();
         
-        String gameId = sessionManager.getPlayerGameId(playerId);
+        String gameId = sessionManager.getPlayerGameId(playerId.toString());
         if (gameId == null) {
             return createErrorResponse("Player is not in any game", "INVALID_STATE");
         }
@@ -97,15 +97,14 @@ public class SetPlayerReadyRequest extends AbstractRequest {
         return new SetPlayerReadyResponse(getCorrelationId(), ready);
     }
     
-    private void publishLobbyUpdateEvent(RequestContext context, GameSession gameSession, String gameId, String excludePlayerId) {
+    private void publishLobbyUpdateEvent(RequestContext context, GameSession gameSession, String gameId, PlayerId excludePlayerId) {
         PlayerSessionRegistry registry = context.getPlayerRegistry();
         List<Player> playerInfos = new ArrayList<>();
         
-        for (String pId : gameSession.getPlayerIds()) {
+        for (PlayerId pId : gameSession.getPlayerIds()) {
             String pNickname = registry.getPlayerNickname(pId);
             boolean isReady = gameSession.getPlayerState(pId) != null && gameSession.getPlayerState(pId).isReady();
-            PlayerId playerId = it.polimi.ingsw.server.model.domain.player.PlayerId.fromString(pNickname);
-            Player player = new Player(playerId);
+            Player player = new Player(pId);
             player.setReady(isReady);
             playerInfos.add(player);
         }

@@ -6,6 +6,7 @@ import it.polimi.ingsw.common.message.response.ErrorResponse;
 import it.polimi.ingsw.common.message.response.Response;
 import it.polimi.ingsw.server.core.GameSession;
 import it.polimi.ingsw.server.model.domain.player.Player;
+import it.polimi.ingsw.server.model.domain.player.PlayerId;
 import it.polimi.ingsw.server.model.domain.ship.Ship;
 import it.polimi.ingsw.server.model.domain.ship.components.Component;
 
@@ -24,7 +25,7 @@ public class ValidateShipRequest extends AbstractRequest {
         if (session == null) {
             return createErrorResponse("Not in a game", ErrorResponse.INVALID_STATE);
         }
-        String playerId = context.getPlayerId();
+        PlayerId playerId = context.getPlayerId();
         Player player = session.getPlayer(playerId);
         Ship ship = player.getShip();
 
@@ -56,7 +57,7 @@ public class ValidateShipRequest extends AbstractRequest {
         // Publish validation event
         ShipValidationEvent event = new ShipValidationEvent(
                 session.getGameId(),
-                playerId,
+                playerId.toString(),
                 context.getPlayerRegistry().getPlayerNickname(playerId),
                 errors.isEmpty(),
                 errors

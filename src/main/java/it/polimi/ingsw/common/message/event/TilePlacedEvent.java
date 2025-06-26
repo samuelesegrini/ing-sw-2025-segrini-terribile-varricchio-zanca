@@ -2,6 +2,7 @@ package it.polimi.ingsw.common.message.event;
 
 // REMOVED: LocalGameState no longer needed
 import it.polimi.ingsw.server.model.enums.ship.ComponentType;
+import it.polimi.ingsw.server.model.domain.player.PlayerId;
 import java.util.Map;
 
 /**
@@ -17,7 +18,7 @@ public class TilePlacedEvent extends AbstractEvent {
     public TilePlacedEvent(String gameId, String playerId, String playerNickname,
                            String tileId, int row, int col, int rotation,
                            ComponentType componentType) {
-        super(EventType.TILE_PLACED, gameId, playerId);
+        super(EventType.TILE_PLACED, gameId, PlayerId.fromString(playerId));
         this.playerId = playerId;
         this.playerNickname = playerNickname;
         this.tileId = tileId;
