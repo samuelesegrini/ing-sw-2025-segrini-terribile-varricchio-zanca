@@ -78,14 +78,23 @@ public class ViewNavigatorImpl implements ViewNavigator {
         // Define navigation rules based on current state and model data
         switch (currentViewState) {
             case CONNECTION:
-                // From connection, can only go to login if connected
+                // From connection, can go to login if connected, or directly to lobby if authenticated
                 if (viewState == ClientState.ViewState.LOGIN) {
                     if (!clientState.isConnected()) {
                         return "Not connected to server";
                     }
                     return null; // Navigation allowed
                 }
-                return "From CONNECTION view, can only navigate to LOGIN";
+                if (viewState == ClientState.ViewState.LOBBY) {
+                    if (!clientState.isConnected()) {
+                        return "Not connected to server";
+                    }
+                    if (clientState.getPlayerId() == null) {
+                        return "Not authenticated (no player ID)";
+                    }
+                    return null; // Navigation allowed
+                }
+                return "From CONNECTION view, can only navigate to LOGIN or LOBBY (if authenticated)";
                 
             case LOGIN:
                 // From login, can go to lobby if logged in

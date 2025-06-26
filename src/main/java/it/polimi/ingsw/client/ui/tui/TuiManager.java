@@ -31,6 +31,10 @@ public class TuiManager implements ViewNavigator.ViewStateChangeListener, UI {
         this.console = new TuiConsole();
         this.context = new TuiContext(controller, console);
         UIContextProvider.setCurrent(this.context);
+        
+        // Set the UI context on the controller so it can access ViewNavigator
+        controller.setUIContext(this.context);
+        
         this.views = new HashMap<>();
         
         initializeViews();

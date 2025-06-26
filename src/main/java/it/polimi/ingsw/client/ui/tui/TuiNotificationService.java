@@ -61,6 +61,11 @@ public class TuiNotificationService implements NotificationService {
     
     @Override
     public void showNotification(Notification notification) {
+        if (console == null) {
+            System.err.println("[TUI ERROR] Console is null - cannot show notification: " + notification.getTitle());
+            return;
+        }
+        
         String prefix = switch (notification.getType()) {
             case INFO -> "[INFO] ";
             case WARNING -> "[WARNING] ";

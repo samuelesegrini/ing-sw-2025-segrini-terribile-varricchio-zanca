@@ -6,10 +6,10 @@ import java.util.List;
 import java.util.HashMap;
 
 public enum GameLevel {
-    TEST_FLIGHT(0, 0, 8, CardLevel.TEST_FLIGHT,
+    TEST_FLIGHT(30_000, 0, 8, CardLevel.TEST_FLIGHT, // 30 seconds for testing
             Map.of(CardLevel.TEST_FLIGHT, 8) // All 8 cards are TEST_FLIGHT
     ),
-    LEVEL_II(0, // duration - placeholder
+    LEVEL_II(90_000, // duration - 90 seconds
             3, // predictablePileCount (3 bottom piles)
             3, // cardsPerPile (e.g., 2xL2, 1xL1 per predictable pile)
             CardLevel.LEVEL_II, // primaryCardLevel for the game

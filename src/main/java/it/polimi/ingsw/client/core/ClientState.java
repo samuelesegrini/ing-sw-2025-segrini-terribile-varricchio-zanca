@@ -213,7 +213,7 @@ public class ClientState {
 
         if (viewComponent != null) {
             registeredViews.add(viewComponent);
-            Platform.runLater(() -> viewComponent.refresh());
+            safeRefresh(() -> viewComponent.refresh());
         }
     }
 
@@ -387,13 +387,13 @@ public class ClientState {
         // Refresh all registered views - they'll decide if they're active
         for (UIRefreshable view : registeredViews) {
             if (view != null) {
-                Platform.runLater(() -> view.refresh());
+                safeRefresh(() -> view.refresh());
             }
         }
         
         // Also refresh the current view component if it exists and isn't already in the set
         if (currentViewComponent != null && !registeredViews.contains(currentViewComponent)) {
-            Platform.runLater(() -> currentViewComponent.refresh());
+            safeRefresh(() -> currentViewComponent.refresh());
         }
     }
 
@@ -478,5 +478,14 @@ public class ClientState {
      */
     public void updatePlayerReadyStatus(String playerId, boolean ready) {
         setPlayerReadyStatus(playerId, ready);
+    }
+    
+    private void safeRefresh(Runnable refreshTask) {
+        try {
+            Platform.runLater(refreshTask);
+        } catch (IllegalStateException e) {
+            // JavaFX not initialized - run directly for TUI
+            refreshTask.run();
+        }
     }
 }
