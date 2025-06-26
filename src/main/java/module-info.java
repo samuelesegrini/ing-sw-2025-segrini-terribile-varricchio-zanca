@@ -45,9 +45,17 @@ module it.polimi.ingsw2025segriniterribilevarricchiozanca {
     opens it.polimi.ingsw.client.ui.gui.views to javafx.fxml;
 
     // --- Server packages for shared model classes ---
+    exports it.polimi.ingsw.server.model.domain.general;  // GameModel, ComponentDeck, etc.
+    exports it.polimi.ingsw.server.model.domain.player;   // Player, PlayerId
     exports it.polimi.ingsw.server.model.domain.ship;
+    exports it.polimi.ingsw.server.model.domain.ship.components;  // Component classes
+    exports it.polimi.ingsw.server.model.domain.adventure;  // Adventure classes
+    exports it.polimi.ingsw.server.model.domain.flight;   // FlightBoard, etc.
     exports it.polimi.ingsw.server.model.enums;
     exports it.polimi.ingsw.server.model.enums.ship;
+    exports it.polimi.ingsw.server.model.enums.player;
+    exports it.polimi.ingsw.server.model.enums.crew;
+    exports it.polimi.ingsw.server.model.enums.resource;
 
     // --- Common packages ---
     // NOTE: client.core.state package removed as part of Simple Direct Model Architecture

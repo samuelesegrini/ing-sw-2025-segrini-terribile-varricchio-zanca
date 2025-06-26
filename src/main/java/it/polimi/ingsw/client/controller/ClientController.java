@@ -611,9 +611,11 @@ public class ClientController {
         }
 
         private void handleResponse(Response response) {
+            LOGGER.info("📨 RESPONSE RECEIVED - Processing " + response.getClass().getSimpleName());
             // Create client context
             ClientContext context = new ClientContextImpl();
             response.handleOnClient(context);
+            LOGGER.info("✅ RESPONSE PROCESSED - " + response.getClass().getSimpleName() + " handled successfully");
         }
 
         private void handleEvent(Event event) {

@@ -371,6 +371,56 @@ public class PlayerMiniView extends VBox {
         setMaxSize(width, height);
     }
     
+    /**
+     * Update player information from Player object
+     * @param player The player to update from
+     */
+    public void updatePlayer(it.polimi.ingsw.server.model.domain.player.Player player) {
+        if (player != null) {
+            updatePlayerInfo(player.getNickname()); // Use getNickname() method
+            setPlayerStatus(player.isReady() ? "Ready" : "Not Ready");
+        }
+    }
+    
+    /**
+     * Update ship display from Ship object
+     * @param ship The ship to display
+     */
+    public void updateShip(it.polimi.ingsw.server.model.domain.ship.Ship ship) {
+        if (ship != null) {
+            // Convert ship board to position map
+            Map<Position, Component> shipGrid = convertBoardToPositionMap(ship);
+            
+            // Get reserved components as list (convert Set to List)
+            List<Component> reservedComponents = ship.getReservedComponents() != null ? 
+                new ArrayList<>(ship.getReservedComponents()) : new ArrayList<>();
+            
+            // Update the ship display
+            updateShipDisplay(shipGrid, reservedComponents);
+        }
+    }
+    
+    /**
+     * Convert ship board array to Position-Component map
+     */
+    private Map<Position, Component> convertBoardToPositionMap(it.polimi.ingsw.server.model.domain.ship.Ship ship) {
+        Map<Position, Component> shipGrid = new HashMap<>();
+        Component[][] board = ship.getBoard();
+        
+        if (board != null) {
+            for (int row = 0; row < ship.getRows(); row++) {
+                for (int col = 0; col < ship.getCols(); col++) {
+                    Component component = board[row][col];
+                    if (component != null) {
+                        shipGrid.put(new Position(row, col), component);
+                    }
+                }
+            }
+        }
+        
+        return shipGrid;
+    }
+    
     @Override
     public String toString() {
         return "PlayerMiniView{" +

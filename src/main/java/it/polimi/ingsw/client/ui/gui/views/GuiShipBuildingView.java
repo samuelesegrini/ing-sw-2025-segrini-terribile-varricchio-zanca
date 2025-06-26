@@ -128,6 +128,9 @@ public class GuiShipBuildingView extends BaseUIView implements UIRefreshable {
                         enhancedHandView.refresh();
                     }
                 }
+                
+                // Update other players display
+                updateOtherPlayers();
             });
         }
     }
@@ -364,6 +367,103 @@ public class GuiShipBuildingView extends BaseUIView implements UIRefreshable {
             alert.setContentText(message);
             alert.showAndWait();
         });
+    }
+
+    /**
+     * Updates the display of other players in the game.
+     * Creates or updates PlayerMiniView components for each other player.
+     */
+    private void updateOtherPlayers() {
+        if (otherPlayersColumn == null || uiContext == null || uiContext.getClientState() == null) {
+            return;
+        }
+        
+        List<Player> otherPlayers = getOtherPlayers();
+        System.out.println("[DEBUG] updateOtherPlayers() found " + otherPlayers.size() + " other players");
+        
+        // Remove old mini views that are no longer needed
+        List<String> currentPlayerIds = new ArrayList<>();
+        for (Player player : otherPlayers) {
+            currentPlayerIds.add(player.getId().toString());
+        }
+        
+        // Remove mini views for players who left
+        playerMiniViews.entrySet().removeIf(entry -> {
+            String playerId = entry.getKey();
+            if (!currentPlayerIds.contains(playerId)) {
+                PlayerMiniView miniView = entry.getValue();
+                otherPlayersColumn.getChildren().remove(miniView);
+                System.out.println("[DEBUG] Removed mini view for player: " + playerId);
+                return true;
+            }
+            return false;
+        });
+        
+        // Create or update mini views for current other players
+        for (Player player : otherPlayers) {
+            String playerId = player.getId().toString();
+            PlayerMiniView miniView = playerMiniViews.get(playerId);
+            
+            if (miniView == null) {
+                // Create new mini view
+                miniView = new PlayerMiniView(playerId, player.getNickname());
+                miniView.setContext(uiContext); // Set context for proper ship grid access
+                playerMiniViews.put(playerId, miniView);
+                otherPlayersColumn.getChildren().add(miniView);
+                System.out.println("[DEBUG] Created mini view for player: " + player.getNickname() + " (" + playerId + ")");
+            }
+            
+            // Update mini view with current player data
+            miniView.updatePlayer(player);
+            miniView.updateShip(player.getShip());
+        }
+        
+        // Limit to MAX_MINI_VIEWS
+        if (playerMiniViews.size() > MAX_MINI_VIEWS) {
+            System.out.println("[DEBUG] Too many mini views (" + playerMiniViews.size() + "), limiting to " + MAX_MINI_VIEWS);
+        }
+    }
+    
+    /**
+     * Gets the list of other players (excluding the local player).
+     * @return List of other players in the game
+     */
+    private List<Player> getOtherPlayers() {
+        if (uiContext == null || uiContext.getClientState() == null || 
+            uiContext.getClientState().getGameModel() == null) {
+            return new ArrayList<>();
+        }
+        
+        List<Player> allPlayers = uiContext.getClientState().getGameModel().getPlayers();
+        String localPlayerId = uiContext.getClientState().getPlayerId();
+        
+        if (allPlayers == null || localPlayerId == null) {
+            return new ArrayList<>();
+        }
+        
+        List<Player> otherPlayers = new ArrayList<>();
+        for (Player player : allPlayers) {
+            if (!player.getId().toString().equals(localPlayerId)) {
+                otherPlayers.add(player);
+            }
+        }
+        
+        System.out.println("[DEBUG] getOtherPlayers() - Total players: " + allPlayers.size() + 
+                          ", Local player: " + localPlayerId + ", Other players: " + otherPlayers.size());
+        
+        // Debug: Print all player information for verification
+        if (allPlayers.size() > 0) {
+            System.out.println("[DEBUG] All players in game model:");
+            for (int i = 0; i < allPlayers.size(); i++) {
+                Player p = allPlayers.get(i);
+                System.out.println("[DEBUG]   Player " + i + ": " + p.getId() + " (" + p.getNickname() + ") - " + 
+                                  (p.getId().toString().equals(localPlayerId) ? "LOCAL" : "OTHER"));
+            }
+        } else {
+            System.out.println("[DEBUG] WARNING: No players found in game model - client state may not be synchronized");
+        }
+        
+        return otherPlayers;
     }
 
 }

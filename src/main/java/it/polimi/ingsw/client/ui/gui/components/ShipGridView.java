@@ -372,7 +372,8 @@ public class ShipGridView extends StackPane implements UIRefreshable {
     
     @Override
     public void refresh() {
-        if (uiContext.getClientState().isInGame()) {
+        // Mini-views (uiContext == null) don't auto-refresh from client state
+        if (uiContext != null && uiContext.getClientState().isInGame()) {
             Ship ship = uiContext.getClientState().getLocalPlayerShip();
             if (ship != null) {
                 updateFromShip(ship);
@@ -413,13 +414,15 @@ public class ShipGridView extends StackPane implements UIRefreshable {
 
     
     private void updateGridDimensions() {
-        if (uiContext.getClientState().isInGame()) {
+        // Mini-views (uiContext == null) use default dimensions
+        if (uiContext != null && uiContext.getClientState().isInGame()) {
             Ship ship = uiContext.getClientState().getLocalPlayerShip();
             if (ship != null) {
                 gridRows = ship.getRows();
                 gridCols = ship.getCols();
             }
         }
+        // If uiContext is null (mini-view), keep default dimensions (5x7)
     }
     
     /**

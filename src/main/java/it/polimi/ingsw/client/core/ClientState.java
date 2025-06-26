@@ -153,6 +153,14 @@ public class ClientState {
 
     // === Game State Management ===
     public void setGameModel(GameModel newGameModel) {
+        java.util.logging.Logger logger = java.util.logging.Logger.getLogger(ClientState.class.getName());
+        if (newGameModel != null) {
+            logger.info("🔄 CLIENT STATE - Setting GameModel with " + newGameModel.getPlayers().size() + 
+                       " players in " + newGameModel.getCurrentPhase() + " phase (Hash: " + 
+                       System.identityHashCode(newGameModel) + ")");
+        } else {
+            logger.info("🔄 CLIENT STATE - Setting GameModel to NULL");
+        }
         this.gameModel = newGameModel;
         refreshCurrentView(); // Refresh game views
     }

@@ -6,6 +6,7 @@ import it.polimi.ingsw.server.model.domain.player.PlayerId;
 import it.polimi.ingsw.common.message.event.GameStartedEvent;
 import it.polimi.ingsw.common.message.event.GamesListUpdateEvent;
 import it.polimi.ingsw.common.message.response.GenericSuccessResponse;
+import it.polimi.ingsw.common.message.response.StartGameResponse;
 import it.polimi.ingsw.common.message.response.Response;
 import it.polimi.ingsw.common.message.validation.ValidationResult;
 import it.polimi.ingsw.server.core.GameSession;
@@ -107,11 +108,24 @@ public class StartGameRequest extends AbstractRequest {
 
         // Use server GameModel directly - Simple Direct Model Architecture
         GameModel gameModel = gameSession.getGameModel();
+        
+        // Debug: Check what players are in the GameModel
+        LOGGER.info("🔍 SERVER GAMEMODEL DEBUG - GameModel retrieved with " + gameModel.getPlayers().size() + " players in " + gameModel.getCurrentPhase() + " phase:");
+        for (int i = 0; i < gameModel.getPlayers().size(); i++) {
+            Player p = gameModel.getPlayers().get(i);
+            LOGGER.info("🔍   Player " + i + ": " + p.getId() + " (" + p.getNickname() + ")");
+        }
+        LOGGER.info("🔍 GAMEMODEL REFERENCE - Object hash: " + System.identityHashCode(gameModel));
+
+        // Create response first to ensure we capture the GameModel state immediately
+        StartGameResponse response = new StartGameResponse(getCorrelationId(), gameId, gameModel);
+        LOGGER.info("🎯 RESPONSE CREATED - StartGameResponse created with GameModel containing " + 
+                   gameModel.getPlayers().size() + " players in " + gameModel.getCurrentPhase() + " phase");
 
         // Simple Direct Model Architecture - no complex DTO conversion needed
         LOGGER.info("📢 EVENT PUBLISH - Publishing GameStartedEvent for game: " + gameId + 
                    " with " + gameModel.getPlayers().size() + " players entering building phase");
-        GameStartedEvent event = new GameStartedEvent(gameId, gameModel);
+        GameStartedEvent event = new GameStartedEvent(gameId, gameModel, playerId);
         context.publishEvent(event);
         LOGGER.fine("✅ EVENT PUBLISHED - GameStartedEvent sent to event system");
 
@@ -120,8 +134,10 @@ public class StartGameRequest extends AbstractRequest {
         LOGGER.fine("✅ GAMES LIST UPDATED - Games list update published after game phase change");
 
         LOGGER.info("🎉 START GAME SUCCESS - Game " + gameId + " successfully started with " + 
-                   gameModel.getPlayers().size() + " players entering building phase");
-        return new GenericSuccessResponse(getCorrelationId());
+                   gameModel.getPlayers().size() + " players entering building phase - returning GameModel to host");
+        
+        // Return the created response
+        return response;
     }
 
     private void publishGamesListUpdateEvent(RequestContext context, GameSessionManager sessionManager) {

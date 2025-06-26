@@ -48,7 +48,8 @@ public class BuildingTimer implements Serializable {
         this.gameLevel = gameLevel;
         this.executor = Executors.newSingleThreadScheduledExecutor();
         this.currentState = TimerState.IDLE;
-        this.timerDuration = TIMER_DURATION_MS;
+        // Use the GameLevel's configured duration instead of hardcoded value
+        this.timerDuration = gameLevel.getDuration() > 0 ? gameLevel.getDuration() : TIMER_DURATION_MS;
     }
     
     public void setEventListener(TimerEventListener listener) {
@@ -57,19 +58,13 @@ public class BuildingTimer implements Serializable {
     
     /**
      * Starts the building phase timer system.
-     * For TEST_FLIGHT: No timer restrictions
+     * For TEST_FLIGHT: Uses shorter timer for testing
      * For LEVEL_II: Initializes the three-stage hourglass system
      */
     public void startBuildingPhase() {
-        if (gameLevel == GameLevel.TEST_FLIGHT) {
-            // Test flight has no timer restrictions
-            currentState = TimerState.IDLE;
-            return;
-        }
-        
-        // Level II starts in idle state, waiting for first player to flip
+        // All game levels now use the timer system with their configured duration
         currentState = TimerState.IDLE;
-        notifyEvent(TimerEvent.TIMER_FLIPPED, null, TIMER_DURATION_MS);
+        notifyEvent(TimerEvent.TIMER_FLIPPED, null, timerDuration);
     }
     
     /**
@@ -79,11 +74,7 @@ public class BuildingTimer implements Serializable {
      * @return true if timer was successfully flipped, false otherwise
      */
     public boolean flipTimer(String playerId, boolean playerHasCompletedShip) {
-        if (gameLevel == GameLevel.TEST_FLIGHT) {
-            // Test flight has no timer restrictions
-            return false;
-        }
-        
+        // All game levels now use the timer system
         switch (currentState) {
             case IDLE -> {
                 // Any player can flip from idle to first stage
@@ -143,7 +134,7 @@ public class BuildingTimer implements Serializable {
      * Checks if the timer system is active for this game level
      */
     public boolean isTimerActive() {
-        return gameLevel == GameLevel.LEVEL_II && currentState != TimerState.IDLE;
+        return currentState != TimerState.IDLE;
     }
     
     /**
