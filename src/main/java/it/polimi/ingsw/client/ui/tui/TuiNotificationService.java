@@ -71,6 +71,7 @@ public class TuiNotificationService implements NotificationService {
             case WARNING -> "[WARNING] ";
             case ERROR -> "[ERROR] ";
             case SUCCESS -> "[SUCCESS] ";
+            case CRITICAL -> "[CRITICAL] ";
         };
         
         console.println(prefix + notification.getTitle());

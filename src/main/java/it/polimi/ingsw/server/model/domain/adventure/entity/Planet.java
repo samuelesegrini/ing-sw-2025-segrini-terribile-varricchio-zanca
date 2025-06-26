@@ -1,6 +1,7 @@
 package it.polimi.ingsw.server.model.domain.adventure.entity;
 
 import it.polimi.ingsw.server.model.enums.resource.GoodType;
+import it.polimi.ingsw.server.model.domain.player.PlayerId;
 
 import java.io.Serializable;
 import java.util.Map;
@@ -15,6 +16,7 @@ public class Planet implements Serializable {
     private int number;
     private Map<GoodType, Integer> goodQuantities;
     private boolean visited;
+    private PlayerId claimedBy;
 
     /**
      * Constructs a new Planet with the specified quantities of goods.
@@ -25,6 +27,7 @@ public class Planet implements Serializable {
         this.number = number;
         this.goodQuantities = goodQuantities;
         visited = false;
+        claimedBy = null;
     }
     /**
      * Gets the unique number of the planet.
@@ -79,5 +82,53 @@ public class Planet implements Serializable {
 
     public void setVisited(){
         visited = true;
+    }
+    
+    /**
+     * Claims this planet for a specific player.
+     * @param playerId The player who claims this planet
+     */
+    public void claimPlanet(PlayerId playerId) {
+        this.claimedBy = playerId;
+        this.visited = true;
+    }
+    
+    /**
+     * Gets the player who claimed this planet.
+     * @return The PlayerId of the player who claimed this planet, or null if unclaimed
+     */
+    public PlayerId getClaimedBy() {
+        return claimedBy;
+    }
+    
+    /**
+     * Checks if this planet has been claimed by a specific player.
+     * @param playerId The player to check
+     * @return true if this player claimed the planet
+     */
+    public boolean isClaimedBy(PlayerId playerId) {
+        return claimedBy != null && claimedBy.equals(playerId);
+    }
+    
+    /**
+     * Calculates the total value of goods on this planet for goods shortage priority.
+     * RED=4, YELLOW=3, GREEN=2, BLUE=1 credits per good.
+     * @return The total credit value of all goods on this planet
+     */
+    public int calculateTotalValue() {
+        int totalValue = 0;
+        totalValue += goodQuantities.getOrDefault(GoodType.RED, 0) * 4;
+        totalValue += goodQuantities.getOrDefault(GoodType.YELLOW, 0) * 3;
+        totalValue += goodQuantities.getOrDefault(GoodType.GREEN, 0) * 2;
+        totalValue += goodQuantities.getOrDefault(GoodType.BLUE, 0) * 1;
+        return totalValue;
+    }
+    
+    /**
+     * Checks if this planet requires special cargo holds (contains RED goods).
+     * @return true if this planet has RED goods requiring special cargo
+     */
+    public boolean requiresSpecialCargo() {
+        return goodQuantities.getOrDefault(GoodType.RED, 0) > 0;
     }
 }

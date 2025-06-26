@@ -9,12 +9,9 @@ import it.polimi.ingsw.server.model.enums.ship.Direction;
 import java.util.Map;
 
 public class Cannon extends Component {
-    private boolean charged;
-
 
     public Cannon(ComponentType type, Map<Direction, ConnectorType> connectors, String id) {
         super(type, connectors, id);
-        this.charged = false;
     }
 
 
@@ -25,18 +22,15 @@ public class Cannon extends Component {
 
     @Override
     public void count(Ship ship) {
-        int power;
+        // Galaxy Trucker: Cannons provide base power without batteries
+        // Double cannons need batteries during combat calculation to function at full power
+        int basePower = switch (super.getType()) {
+            case CANNON_SINGLE -> 1;
+            case CANNON_DOUBLE -> 1; // Base power, can be boosted with batteries during combat
+            default -> 0;
+        };
 
-        if (super.getType() == ComponentType.CANNON_DOUBLE && charged) {
-            power = 2;
-        } else if (super.getType() == ComponentType.CANNON_SINGLE) {
-            power = 1;
-        }
-        else {
-            power = 0;
-        }
-
-        ship.setCannons(ship.getCannons() + power);
+        ship.setCannons(ship.getCannons() + basePower);
     }
 
     @Override
@@ -68,11 +62,4 @@ public class Cannon extends Component {
     }
 
 
-    public boolean isCharged() {
-        return charged;
-    }
-
-    public void setCharged(boolean charged) {
-        this.charged = charged;
-    }
 }

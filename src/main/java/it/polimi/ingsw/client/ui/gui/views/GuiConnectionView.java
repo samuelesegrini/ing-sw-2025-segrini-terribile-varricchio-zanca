@@ -190,24 +190,30 @@ public class GuiConnectionView extends BaseUIView {
     }
 
     private void showError(String message) {
-        errorLabel.setText(message);
-        errorLabel.setVisible(true);
+        javafx.application.Platform.runLater(() -> {
+            errorLabel.setText(message);
+            errorLabel.setVisible(true);
+        });
     }
 
     private void showLoading(boolean isLoading) {
-        loadingIndicator.setVisible(isLoading);
-        if (isLoading) {
-            errorLabel.setVisible(false);
-        }
+        javafx.application.Platform.runLater(() -> {
+            loadingIndicator.setVisible(isLoading);
+            if (isLoading) {
+                errorLabel.setVisible(false);
+            }
+        });
     }
 
     private void updateConnectionStatus() {
-        if (context.getClientState().isConnected()) {
-            statusLabel.setText("Connected to server");
-            statusLabel.setTextFill(Color.GREEN);
-        } else {
-            statusLabel.setText("Not connected");
-            statusLabel.setTextFill(Color.RED);
-        }
+        javafx.application.Platform.runLater(() -> {
+            if (context.getClientState().isConnected()) {
+                statusLabel.setText("Connected to server");
+                statusLabel.setTextFill(Color.GREEN);
+            } else {
+                statusLabel.setText("Not connected");
+                statusLabel.setTextFill(Color.RED);
+            }
+        });
     }
 }

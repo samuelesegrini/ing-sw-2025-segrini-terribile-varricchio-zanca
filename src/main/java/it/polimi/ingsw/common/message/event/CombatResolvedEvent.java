@@ -4,11 +4,14 @@ import it.polimi.ingsw.client.ui.Notification;
 import it.polimi.ingsw.client.ui.NotificationType;
 import it.polimi.ingsw.server.model.domain.player.PlayerId;
 
+import java.util.logging.Logger;
+
 /**
  * Event broadcast when a combat encounter is resolved.
  * Shows the combat results and applies consequences to players.
  */
 public class CombatResolvedEvent extends AbstractEvent {
+    private static final Logger LOGGER = Logger.getLogger(CombatResolvedEvent.class.getName());
     private final String enemyName;
     private final String playerId;
     private final String playerNickname;
@@ -30,6 +33,7 @@ public class CombatResolvedEvent extends AbstractEvent {
         this.outcome = outcome;
         this.reward = reward;
         this.penalty = penalty;
+        LOGGER.fine("CombatResolvedEvent instantiated for game: " + gameId + ", player: " + playerNickname + ", enemy: " + enemyName + ", outcome: " + outcome);
     }
 
     public String getEnemyName() {
@@ -88,11 +92,13 @@ public class CombatResolvedEvent extends AbstractEvent {
                         message += " - " + penalty.getDescription();
                     }
                     notificationType = outcome == CombatOutcome.VICTORY ? NotificationType.INFO : NotificationType.WARNING;
+                    LOGGER.fine("Displaying combat result notification for local player: " + message);
                 } else {
                     // Notification for other players
                     message = String.format("%s fought %s: %s", 
                             playerNickname, enemyName, outcome.getDescription());
                     notificationType = NotificationType.INFO;
+                    LOGGER.fine("Displaying combat result notification for other player: " + message);
                 }
                 context.getNotificationService().showNotification(new Notification(
                         "Combat Result",
@@ -134,6 +140,7 @@ public class CombatResolvedEvent extends AbstractEvent {
      * Represents rewards gained from successful combat.
      */
     public static class CombatReward {
+        private static final Logger LOGGER = Logger.getLogger(CombatReward.class.getName());
         private final int credits;
         private final int goods;
         private final String description;
@@ -142,6 +149,7 @@ public class CombatResolvedEvent extends AbstractEvent {
             this.credits = credits;
             this.goods = goods;
             this.description = description;
+            LOGGER.fine("CombatReward instantiated: credits=" + credits + ", goods=" + goods + ", description='" + description + "'");
         }
 
         public int getCredits() {
@@ -161,6 +169,7 @@ public class CombatResolvedEvent extends AbstractEvent {
      * Represents penalties from failed combat.
      */
     public static class CombatPenalty {
+        private static final Logger LOGGER = Logger.getLogger(CombatPenalty.class.getName());
         private final int creditsLost;
         private final int goodsLost;
         private final int crewLost;
@@ -174,6 +183,7 @@ public class CombatResolvedEvent extends AbstractEvent {
             this.crewLost = crewLost;
             this.componentsDamaged = componentsDamaged;
             this.description = description;
+            LOGGER.fine("CombatPenalty instantiated: creditsLost=" + creditsLost + ", goodsLost=" + goodsLost + ", crewLost=" + crewLost + ", componentsDamaged=" + componentsDamaged + ", description='" + description + "'");
         }
 
         public int getCreditsLost() {

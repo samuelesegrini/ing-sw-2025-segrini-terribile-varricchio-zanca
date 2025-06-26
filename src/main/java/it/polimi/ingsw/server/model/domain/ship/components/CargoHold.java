@@ -79,26 +79,69 @@ public class CargoHold extends Component {
         }
     }
 
-    public void storeGoodsOfType(GoodType type, int quantity) {
+    public boolean storeGoodsOfType(GoodType type, int quantity) {
+        if (quantity <= 0) {
+            return true; // No goods to store
+        }
+        
         if (occupiedCapacity + quantity <= capacity) {
             Integer currentAmount = storedGoods.getOrDefault(type, 0);
-            //System.out.println(currentAmount);
             storedGoods.put(type, currentAmount + quantity);
             occupiedCapacity += quantity;
+            return true;
         }
-        else {
-            System.out.println("Not enough free capacity");
-        }
+        return false;
     }
 
-    public void removeGoodsOfType(GoodType type, int quantity) {
-        if (storedGoods.get(type) - quantity >= 0) {
-            Integer currentAmount = storedGoods.getOrDefault(type, 0);
+    public boolean removeGoodsOfType(GoodType type, int quantity) {
+        if (quantity <= 0) {
+            return true; // No goods to remove
+        }
+        
+        Integer currentAmount = storedGoods.getOrDefault(type, 0);
+        if (currentAmount >= quantity) {
             storedGoods.put(type, currentAmount - quantity);
             occupiedCapacity -= quantity;
+            return true;
         }
-        else {
-            System.out.println("Not enough goods of this type");
+        return false;
+    }
+    
+    /**
+     * Attempts to remove as many goods as possible of the specified type.
+     * @param type The type of goods to remove
+     * @param quantity The maximum quantity to remove
+     * @return The actual quantity removed
+     */
+    public int removeAvailableGoods(GoodType type, int quantity) {
+        if (quantity <= 0) {
+            return 0;
         }
+        
+        Integer currentAmount = storedGoods.getOrDefault(type, 0);
+        int amountToRemove = Math.min(currentAmount, quantity);
+        
+        if (amountToRemove > 0) {
+            storedGoods.put(type, currentAmount - amountToRemove);
+            occupiedCapacity -= amountToRemove;
+        }
+        
+        return amountToRemove;
+    }
+    
+    /**
+     * Checks if this cargo hold can store RED goods (special cargo only).
+     * @return true if this is a special cargo hold that can store RED goods
+     */
+    public boolean canStoreRedGoods() {
+        return this.getType() == ComponentType.CARGO_HOLD_SPECIAL;
+    }
+    
+    /**
+     * Gets the available free capacity in this cargo hold.
+     * @return The number of goods that can still be stored
+     */
+    public int getFreeCapacity() {
+        return capacity - occupiedCapacity;
     }
 }

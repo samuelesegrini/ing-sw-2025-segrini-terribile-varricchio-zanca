@@ -9,12 +9,9 @@ import it.polimi.ingsw.server.model.enums.ship.Direction;
 import java.util.Map;
 
 public class Engine extends Component {
-    private boolean charged;
-
 
     public Engine(ComponentType type, Map<Direction, ConnectorType> connectors, String id) {
         super(type, connectors, id);
-        this.charged = false;
     }
 
 
@@ -25,18 +22,15 @@ public class Engine extends Component {
 
     @Override
     public void count(Ship ship) {
-        int power;
+        // Galaxy Trucker: Engines provide base power without batteries
+        // Double engines need batteries during movement calculation to function at full power
+        int basePower = switch (super.getType()) {
+            case ENGINE_SINGLE -> 1;
+            case ENGINE_DOUBLE -> 1; // Base power, can be boosted with batteries during movement
+            default -> 0;
+        };
 
-        if (super.getType() == ComponentType.ENGINE_DOUBLE && charged) {
-            power = 2;
-        } else if (super.getType() == ComponentType.ENGINE_SINGLE) {
-            power = 1;
-        }
-        else {
-            power = 0;
-        }
-
-        ship.setEngines(ship.getEngines() + power);
+        ship.setEngines(ship.getEngines() + basePower);
     }
 
     @Override
@@ -66,11 +60,4 @@ public class Engine extends Component {
     }
 
 
-    public boolean isCharged() {
-        return charged;
-    }
-
-    public void setCharged(boolean charged) {
-        this.charged = charged;
-    }
 }

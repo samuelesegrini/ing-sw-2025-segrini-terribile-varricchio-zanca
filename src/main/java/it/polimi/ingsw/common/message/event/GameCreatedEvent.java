@@ -36,6 +36,7 @@ public class GameCreatedEvent extends AbstractEvent {
         this.maxPlayers = maxPlayers;
         this.gameLevel = gameLevel;
         this.gameName = gameName;
+        LOGGER.fine("GameCreatedEvent instantiated for game: " + gameId + " by " + creatorNickname);
     }
     
 

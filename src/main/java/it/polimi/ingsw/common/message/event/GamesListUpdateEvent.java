@@ -6,12 +6,14 @@ import it.polimi.ingsw.server.model.domain.general.GameModel;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.logging.Logger;
 
 /**
  * Event broadcast to all clients when the available games list changes.
  * This includes when games are created, players join/leave, or games are deleted.
  */
 public class GamesListUpdateEvent extends AbstractEvent {
+    private static final Logger LOGGER = Logger.getLogger(GamesListUpdateEvent.class.getName());
     private final List<GameInfo> availableGames;
 
     public GamesListUpdateEvent(List<GameModel> gameModels) {
@@ -19,6 +21,7 @@ public class GamesListUpdateEvent extends AbstractEvent {
         this.availableGames = gameModels.stream()
                 .map(GameInfo::fromGameModel)
                 .collect(Collectors.toList());
+        LOGGER.fine("GamesListUpdateEvent instantiated with " + availableGames.size() + " games.");
     }
 
     public List<GameInfo> getAvailableGames() {
@@ -28,12 +31,12 @@ public class GamesListUpdateEvent extends AbstractEvent {
     @Override
     public void handleOnClient(ClientEventContext context) {
         // Update the available games list in the client model
-        System.out.println("🎮 CLIENT UPDATE - Receiving GamesListUpdateEvent with " + availableGames.size() + " games:");
+        LOGGER.fine("CLIENT UPDATE - Receiving GamesListUpdateEvent with " + availableGames.size() + " games:");
         for (GameInfo game : availableGames) {
-            System.out.println("  - Game ID: " + game.getGameId() + ", Name: " + game.getGameName());
+            LOGGER.finer("  - Game ID: " + game.getGameId() + ", Name: " + game.getGameName());
         }
         context.getController().getClientState().setAvailableGames(availableGames);
-        System.out.println("✅ CLIENT STATE UPDATED - Available games set in ClientState");
+        LOGGER.fine("CLIENT STATE UPDATED - Available games set in ClientState");
     }
 
     @Override

@@ -3,10 +3,14 @@ package it.polimi.ingsw.common.message.event;
 import it.polimi.ingsw.common.message.AbstractMessage;
 import it.polimi.ingsw.server.model.domain.player.PlayerId;
 
+import java.util.logging.Logger;
+
 /**
  * Abstract base class for events.
  */
 public abstract class AbstractEvent extends AbstractMessage implements Event {
+    private static final Logger LOGGER = Logger.getLogger(AbstractEvent.class.getName());
+
     private final EventType eventType;
     protected final String gameId;
     protected final PlayerId sourcePlayerId;
@@ -16,6 +20,7 @@ public abstract class AbstractEvent extends AbstractMessage implements Event {
         this.eventType = eventType;
         this.gameId = gameId;
         this.sourcePlayerId = sourcePlayerId;
+        LOGGER.fine("Created event: " + eventType + " for game: " + gameId + " from player: " + sourcePlayerId);
     }
     
     

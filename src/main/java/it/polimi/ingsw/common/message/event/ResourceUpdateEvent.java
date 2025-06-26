@@ -2,11 +2,13 @@ package it.polimi.ingsw.common.message.event;
 
 import it.polimi.ingsw.server.model.domain.player.PlayerId;
 import java.util.Map;
+import java.util.logging.Logger;
 
 /**
  * Broadcast to update a player's resources (credits, crew, goods, batteries).
  */
 public class ResourceUpdateEvent extends AbstractEvent {
+    private static final Logger LOGGER = Logger.getLogger(ResourceUpdateEvent.class.getName());
     private final String playerId;
     private final Map<String, Integer> updatedResources;
 
@@ -14,6 +16,7 @@ public class ResourceUpdateEvent extends AbstractEvent {
         super(EventType.RESOURCE_UPDATE, gameId, PlayerId.fromString(playerId));
         this.playerId = playerId;
         this.updatedResources = Map.copyOf(updatedResources);
+        LOGGER.fine("ResourceUpdateEvent instantiated for game: " + gameId + ", player: " + playerId + ", resources: " + updatedResources);
     }
 
     public String getPlayerId() {
@@ -26,6 +29,7 @@ public class ResourceUpdateEvent extends AbstractEvent {
 
     @Override
     public void handleOnClient(ClientEventContext context) {
+        LOGGER.fine("Handling ResourceUpdateEvent for game: " + gameId + ", player: " + playerId + ", resources: " + updatedResources);
         // Client updates the local model and UI for the specified player's resources.
         // e.g., context.getClientState().updatePlayerResources(playerId, updatedResources);
         //      context.getGameUI().refreshPlayerPanel(playerId);

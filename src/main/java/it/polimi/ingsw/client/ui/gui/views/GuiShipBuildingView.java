@@ -2,16 +2,20 @@ package it.polimi.ingsw.client.ui.gui.views;
 
 import it.polimi.ingsw.client.core.ClientState;
 import it.polimi.ingsw.client.controller.ClientController;
-import it.polimi.ingsw.client.core.UIRefreshable;
+import it.polimi.ingsw.client.ui.core.UIView;
 import it.polimi.ingsw.client.ui.core.UIContext;
 import it.polimi.ingsw.client.ui.core.BaseUIView;
 import it.polimi.ingsw.client.ui.gui.components.*;
+import it.polimi.ingsw.client.ui.gui.NotificationManager;
 import it.polimi.ingsw.server.model.domain.player.Player;
 import it.polimi.ingsw.server.model.domain.ship.Position;
 import it.polimi.ingsw.server.model.domain.ship.Ship;
 import it.polimi.ingsw.server.model.domain.ship.components.Component;
+import it.polimi.ingsw.server.model.domain.ship.ShipValidationService;
 import it.polimi.ingsw.server.model.domain.general.ComponentDeck;
 
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -19,6 +23,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.stage.Stage;
+import javafx.util.Duration;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,10 +33,11 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * GUI view for ship building phase using Simple Direct Model Architecture.
  */
-public class GuiShipBuildingView extends BaseUIView implements UIRefreshable {
+public class GuiShipBuildingView extends BaseUIView implements UIView {
     private Stage stage;
     private ClientController controller;
     private UIContext uiContext;
+    private NotificationManager notificationManager;
     
     // UI Components
     private ShipGridView shipGridView;
@@ -42,18 +48,27 @@ public class GuiShipBuildingView extends BaseUIView implements UIRefreshable {
     private Label shipStatsLabel;
     private Button validateShipButton;
     private Button flipTimerButton;
+    private Button autoPlaceButton;
+    private Button clearShipButton;
     private TextArea validationErrorsArea;
+    private ProgressBar buildingProgressBar;
+    private Label componentCountLabel;
     
     // Other players management
     private final Map<String, PlayerMiniView> playerMiniViews = new ConcurrentHashMap<>();
     private static final int MAX_MINI_VIEWS = 3;
     
     private Component selectedComponent = null;
+    
+    // Processing state management for optimistic UI feedback
+    private final Map<String, ProcessingRequest> processingRequests = new ConcurrentHashMap<>();
+    private final Map<Position, Component> optimisticPlacements = new ConcurrentHashMap<>();
 
     public GuiShipBuildingView(Stage stage, ClientController controller, UIContext uiContext) {
         this.stage = stage;
         this.controller = controller;
         this.uiContext = uiContext;
+        this.notificationManager = new NotificationManager();
     }
 
     @Override
@@ -70,7 +85,39 @@ public class GuiShipBuildingView extends BaseUIView implements UIRefreshable {
     protected void onShow() {
         System.out.println("[DEBUG] GuiShipBuildingView.onShow() called");
         BorderPane root = createLayout();
-        Scene scene = new Scene(root, 1600, 900);
+        
+        // Add notification overlay to the root
+        StackPane rootWithNotifications = new StackPane();
+        rootWithNotifications.getChildren().addAll(root, notificationManager.getNotificationContainer());
+        StackPane.setAlignment(notificationManager.getNotificationContainer(), Pos.TOP_RIGHT);
+        
+        Scene scene = new Scene(rootWithNotifications, 1600, 900);
+        
+        // Add keyboard shortcuts
+        scene.setOnKeyPressed(event -> {
+            switch (event.getCode()) {
+                case R -> {
+                    if (selectedComponent != null) {
+                        selectedComponent.rotate();
+                        enhancedHandView.refresh();
+                    }
+                }
+                case ESCAPE -> {
+                    selectedComponent = null;
+                    if (enhancedHandView != null) {
+                        enhancedHandView.clearSelection();
+                    }
+                }
+                case SPACE -> {
+                    if (selectedComponent != null) {
+                        autoPlaceSelectedComponent();
+                    }
+                }
+                case V -> controller.validateShip();
+                case T -> controller.takeTile();
+                case F -> controller.flipBuildingTimer();
+            }
+        });
         
         // Load CSS
         try {
@@ -156,18 +203,35 @@ public class GuiShipBuildingView extends BaseUIView implements UIRefreshable {
         timerLabel = new Label("Time Remaining: --:--");
         timerLabel.setStyle("-fx-font-size: 18px;");
         
+        buildingProgressBar = new ProgressBar(0.0);
+        buildingProgressBar.setPrefWidth(300);
+        buildingProgressBar.setVisible(false);
+        
+        componentCountLabel = new Label("Components: 0/∞");
+        componentCountLabel.setStyle("-fx-font-size: 14px;");
+        
         HBox buttonBox = new HBox(10);
         buttonBox.setAlignment(Pos.CENTER);
         
         flipTimerButton = new Button("Flip Timer");
         flipTimerButton.setOnAction(e -> controller.flipBuildingTimer());
+        flipTimerButton.setTooltip(new Tooltip("Flip the building timer to advance to next stage"));
         
         validateShipButton = new Button("Validate Ship");
         validateShipButton.setOnAction(e -> controller.validateShip());
+        validateShipButton.setTooltip(new Tooltip("Check if your ship design is valid"));
         
-        buttonBox.getChildren().addAll(flipTimerButton, validateShipButton);
+        autoPlaceButton = new Button("Auto Place");
+        autoPlaceButton.setOnAction(e -> autoPlaceSelectedComponent());
+        autoPlaceButton.setTooltip(new Tooltip("Automatically find valid position for selected component"));
         
-        topPanel.getChildren().addAll(titleLabel, timerLabel, buttonBox);
+        clearShipButton = new Button("Clear Ship");
+        clearShipButton.setOnAction(e -> clearShipGrid());
+        clearShipButton.setTooltip(new Tooltip("Remove all components from ship"));
+        
+        buttonBox.getChildren().addAll(flipTimerButton, validateShipButton, autoPlaceButton, clearShipButton);
+        
+        topPanel.getChildren().addAll(titleLabel, timerLabel, buildingProgressBar, componentCountLabel, buttonBox);
         return topPanel;
     }
 
@@ -314,6 +378,47 @@ public class GuiShipBuildingView extends BaseUIView implements UIRefreshable {
             return;
         }
         
+        // ENHANCED: Perform client-side validation before sending to server
+        Ship ship = uiContext.getClientState().getLocalPlayerShip();
+        if (ship != null) {
+            Position position = new Position(row, col);
+            
+            // Use comprehensive validation system
+            ShipValidationService.ValidationResult validationResult = 
+                ShipValidationService.validateComponentPlacement(ship, selectedComponent, position);
+            
+            if (!validationResult.isValid()) {
+                // Show detailed validation errors
+                notificationManager.showValidationErrors(
+                    "Invalid Placement", 
+                    validationResult.getErrors(), 
+                    validationResult.getWarnings()
+                );
+                return;
+            }
+            
+            // Show warnings as placement hints if valid but with suggestions
+            if (!validationResult.getWarnings().isEmpty()) {
+                notificationManager.showPlacementHints(validationResult.getWarnings());
+            }
+        }
+        
+        // ENHANCED: Optimistic UI feedback - temporarily place component for immediate visual feedback
+        Position position = new Position(row, col);
+        String requestId = selectedComponent.getId() + "_" + System.currentTimeMillis();
+        
+        // Store optimistic placement
+        optimisticPlacements.put(position, selectedComponent);
+        processingRequests.put(requestId, new ProcessingRequest("PLACE_TILE", position));
+        
+        // Show loading indicator
+        notificationManager.showLoading("Placing component...");
+        
+        // Update UI immediately with optimistic state
+        if (shipGridView != null) {
+            shipGridView.setOptimisticPlacement(row, col, selectedComponent);
+        }
+        
         // Send placement request to server
         controller.placeTile(selectedComponent.getId(), row, col, selectedComponent.getCurrentDirection().ordinal());
         
@@ -322,6 +427,20 @@ public class GuiShipBuildingView extends BaseUIView implements UIRefreshable {
         if (enhancedHandView != null) {
             enhancedHandView.clearSelection();
         }
+        
+        // Schedule cleanup of processing state in case server doesn't respond
+        Timeline timeoutCleanup = new Timeline(new KeyFrame(
+            Duration.seconds(5),
+            e -> {
+                processingRequests.remove(requestId);
+                optimisticPlacements.remove(position);
+                notificationManager.hideLoading();
+                if (shipGridView != null) {
+                    shipGridView.clearOptimisticPlacement(row, col);
+                }
+            }
+        ));
+        timeoutCleanup.play();
     }
 
     private void handleCellRightClick(int row, int col) {
@@ -348,11 +467,19 @@ public class GuiShipBuildingView extends BaseUIView implements UIRefreshable {
                 double cannons = ship.getCannons();
                 int crew = ship.getCrew();
                 int batteries = ship.getBatteries();
+                int shields = ship.getShields();
+                int lifeSupport = ship.getLifeSupport();
                 
                 shipStatsLabel.setText(String.format(
-                    "Ship Stats: Engines: %.1f, Cannons: %.1f, Crew: %d, Batteries: %d",
-                    engines, cannons, crew, batteries
+                    "Ship Stats: Engines: %.1f, Cannons: %.1f, Crew: %d, Batteries: %d, Shields: %d, Life Support: %d",
+                    engines, cannons, crew, batteries, shields, lifeSupport
                 ));
+                
+                // Update component count
+                if (componentCountLabel != null) {
+                    int placedComponents = ship.getPlacedComponentsCount();
+                    componentCountLabel.setText(String.format("Components Placed: %d", placedComponents));
+                }
             } catch (Exception e) {
                 shipStatsLabel.setText("Ship Stats: Calculating...");
             }
@@ -464,6 +591,151 @@ public class GuiShipBuildingView extends BaseUIView implements UIRefreshable {
         }
         
         return otherPlayers;
+    }
+    
+    /**
+     * Automatically places the selected component in the first valid position.
+     */
+    private void autoPlaceSelectedComponent() {
+        if (selectedComponent == null) {
+            showAlert("No Component", "Please select a component first.");
+            return;
+        }
+        
+        Ship ship = uiContext.getClientState().getLocalPlayerShip();
+        if (ship == null) {
+            showAlert("No Ship", "Ship data not available.");
+            return;
+        }
+        
+        Component[][] board = ship.getBoard();
+        
+        // Try all positions to find first valid placement
+        for (int row = 0; row < board.length; row++) {
+            for (int col = 0; col < board[0].length; col++) {
+                if (board[row][col] == null) {
+                    // Try placing component here
+                    controller.placeTile(selectedComponent.getId(), row, col, selectedComponent.getCurrentDirection().ordinal());
+                    selectedComponent = null;
+                    if (enhancedHandView != null) {
+                        enhancedHandView.clearSelection();
+                    }
+                    return;
+                }
+            }
+        }
+        
+        showAlert("No Space", "No valid position found for this component.");
+    }
+    
+    /**
+     * Clears all components from the ship grid.
+     */
+    private void clearShipGrid() {
+        Alert confirmation = new Alert(Alert.AlertType.CONFIRMATION);
+        confirmation.setTitle("Clear Ship");
+        confirmation.setHeaderText("Remove all components?");
+        confirmation.setContentText("This will return all placed components to your hand. Are you sure?");
+        
+        confirmation.showAndWait().ifPresent(response -> {
+            if (response == ButtonType.OK) {
+                Ship ship = uiContext.getClientState().getLocalPlayerShip();
+                if (ship != null) {
+                    Component[][] board = ship.getBoard();
+                    for (int row = 0; row < board.length; row++) {
+                        for (int col = 0; col < board[0].length; col++) {
+                            if (board[row][col] != null) {
+                                controller.returnTile(board[row][col].getId());
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+    
+    /**
+     * Updates building progress and timer display.
+     */
+    public void updateBuildingProgress(long timeRemaining, double progress) {
+        Platform.runLater(() -> {
+            if (timeRemaining > 0) {
+                long minutes = timeRemaining / 60000;
+                long seconds = (timeRemaining % 60000) / 1000;
+                timerLabel.setText(String.format("Time Remaining: %02d:%02d", minutes, seconds));
+                
+                buildingProgressBar.setProgress(1.0 - progress);
+                buildingProgressBar.setVisible(true);
+                
+                // Change color based on time remaining
+                if (progress > 0.8) {
+                    timerLabel.setStyle("-fx-font-size: 18px; -fx-text-fill: red;");
+                } else if (progress > 0.6) {
+                    timerLabel.setStyle("-fx-font-size: 18px; -fx-text-fill: orange;");
+                } else {
+                    timerLabel.setStyle("-fx-font-size: 18px; -fx-text-fill: green;");
+                }
+            } else {
+                timerLabel.setText("Building Phase Active");
+                buildingProgressBar.setVisible(false);
+                timerLabel.setStyle("-fx-font-size: 18px; -fx-text-fill: black;");
+            }
+        });
+    }
+    
+    /**
+     * Updates validation errors display.
+     */
+    public void updateValidationErrors(List<String> errors, List<String> warnings) {
+        Platform.runLater(() -> {
+            if (validationErrorsArea != null) {
+                StringBuilder sb = new StringBuilder();
+                
+                if (errors != null && !errors.isEmpty()) {
+                    sb.append("❌ ERRORS:\n");
+                    for (String error : errors) {
+                        sb.append("  • ").append(error).append("\n");
+                    }
+                }
+                
+                if (warnings != null && !warnings.isEmpty()) {
+                    if (sb.length() > 0) sb.append("\n");
+                    sb.append("⚠️ WARNINGS:\n");
+                    for (String warning : warnings) {
+                        sb.append("  • ").append(warning).append("\n");
+                    }
+                }
+                
+                if (sb.length() == 0) {
+                    sb.append("✅ Ship design is valid!");
+                }
+                
+                validationErrorsArea.setText(sb.toString());
+            }
+        });
+    }
+    
+    /**
+     * Represents a processing request for optimistic UI feedback
+     */
+    private static class ProcessingRequest {
+        private final String type;
+        private final long timestamp;
+        private final Object data;
+        
+        public ProcessingRequest(String type, Object data) {
+            this.type = type;
+            this.timestamp = System.currentTimeMillis();
+            this.data = data;
+        }
+        
+        public String getType() { return type; }
+        public long getTimestamp() { return timestamp; }
+        public Object getData() { return data; }
+        
+        public boolean isExpired(long timeoutMs) {
+            return System.currentTimeMillis() - timestamp > timeoutMs;
+        }
     }
 
 }

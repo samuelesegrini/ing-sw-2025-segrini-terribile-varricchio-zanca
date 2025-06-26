@@ -3,6 +3,7 @@ package it.polimi.ingsw.client.ui.tui;
 import it.polimi.ingsw.client.core.ClientState;
 import it.polimi.ingsw.client.controller.ClientController;
 import it.polimi.ingsw.client.ui.UI;
+import it.polimi.ingsw.client.ui.core.UIContext;
 import it.polimi.ingsw.client.ui.core.UIView;
 import it.polimi.ingsw.client.ui.core.ViewNavigator;
 import it.polimi.ingsw.client.ui.tui.views.*;
@@ -35,6 +36,9 @@ public class TuiManager implements ViewNavigator.ViewStateChangeListener, UI {
         // Set the UI context on the controller so it can access ViewNavigator
         controller.setUIContext(this.context);
         
+        // Set this TuiManager in the context for access by views
+        this.context.setTuiManager(this);
+        
         this.views = new HashMap<>();
         
         initializeViews();
@@ -43,25 +47,23 @@ public class TuiManager implements ViewNavigator.ViewStateChangeListener, UI {
         context.getViewNavigator().addViewStateChangeListener(this);
     }
     
+    protected UIView createView(ClientState.ViewState viewState, UIContext context) {
+        return switch (viewState) {
+            case CONNECTION -> new TuiConnectionView( (TuiContext) context);
+            case LOGIN -> new TuiLoginView((TuiContext) context);
+            case LOBBY -> new TuiLobbyView((TuiContext) context);
+            case GAME_LOBBY -> new TuiGameLobbyView((TuiContext) context);
+            case GAME -> new TuiGameView(context.getController(), (TuiContext) context);
+            default -> throw new IllegalArgumentException("Unknown view state: " + viewState);
+        };
+    }
+
     private void initializeViews() {
-        TuiConnectionView connectionView = new TuiConnectionView();
-        connectionView.initialize(context);
-        views.put(ClientState.ViewState.CONNECTION, connectionView);
-        
-        TuiLoginView loginView = new TuiLoginView(context);
-        views.put(ClientState.ViewState.LOGIN, loginView);
-
-        TuiLobbyView lobbyView = new TuiLobbyView(context);
-        views.put(ClientState.ViewState.LOBBY, lobbyView);
-
-        TuiGameLobbyView gameLobbyView = new TuiGameLobbyView(context);
-        views.put(ClientState.ViewState.GAME_LOBBY, gameLobbyView);
-        
-//        TuiShipBuildingView shipBuildingView = new TuiShipBuildingView(context);
-//        views.put(ClientState.ViewState.GAME, shipBuildingView);
-        
-        TuiFlightView flightView = new TuiFlightView(context);
-        views.put(ClientState.ViewState.GAME, flightView);
+        views.put(ClientState.ViewState.CONNECTION, createView(ClientState.ViewState.CONNECTION, context));
+        views.put(ClientState.ViewState.LOGIN, createView(ClientState.ViewState.LOGIN, context));
+        views.put(ClientState.ViewState.LOBBY, createView(ClientState.ViewState.LOBBY, context));
+        views.put(ClientState.ViewState.GAME_LOBBY, createView(ClientState.ViewState.GAME_LOBBY, context));
+        views.put(ClientState.ViewState.GAME, createView(ClientState.ViewState.GAME, context));
         
         LOGGER.info("Initialized " + views.size() + " TUI views");
     }
@@ -156,5 +158,33 @@ public class TuiManager implements ViewNavigator.ViewStateChangeListener, UI {
     @Override
     public void showInfo(String title, String message) {
         console.println("[INFO] " + title + ": " + message);
+    }
+    
+    /**
+     * Prints a line to the console.
+     */
+    public void println(String message) {
+        console.println(message);
+    }
+    
+    /**
+     * Prints text to the console without a newline.
+     */
+    public void print(String message) {
+        console.print(message);
+    }
+    
+    /**
+     * Clears the specified number of lines from the console.
+     */
+    public void clearLines(int lines) {
+        console.clearLines(lines);
+    }
+    
+    /**
+     * Clears the console screen.
+     */
+    public void clear() {
+        console.clearScreen();
     }
 }

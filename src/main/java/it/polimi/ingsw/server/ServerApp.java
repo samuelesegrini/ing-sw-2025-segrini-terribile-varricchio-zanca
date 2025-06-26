@@ -2,6 +2,7 @@ package it.polimi.ingsw.server;
 
 import it.polimi.ingsw.server.model.domain.general.GameModel;
 import it.polimi.ingsw.common.message.EventPublisher;
+import it.polimi.ingsw.common.message.EventPublisherImpl;
 import it.polimi.ingsw.common.message.event.Event;
 import it.polimi.ingsw.common.message.event.PlayerLeftGameEvent;
 import it.polimi.ingsw.common.message.event.PlayerDisconnectedEvent;
@@ -16,6 +17,7 @@ import it.polimi.ingsw.server.network.SocketServerAdapter;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.rmi.RemoteException;
 import java.util.List;
@@ -45,7 +47,21 @@ public class ServerApp {
     public static void main(String[] args) {
         ServerApp server = new ServerApp();
         server.parseArguments(args);
-        server.setupLogging();
+
+        // --- IMPORTANT: Load logging configuration FIRST ---
+        try (InputStream is = ServerApp.class.getResourceAsStream("/server_logging.properties")) {
+            if (is != null) {
+                LogManager.getLogManager().readConfiguration(is);
+            } else {
+                System.err.println("WARNING: server_logging.properties not found. Default JUL logging will be used.");
+            }
+        } catch (Exception e) {
+            System.err.println("ERROR loading server logging configuration: " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        LOGGER.info("ServerApp started. Logging configured.");
+
         try {
             server.initialize();
             server.start();
@@ -74,21 +90,7 @@ public class ServerApp {
             }
         }
     }
-    /**
-     Sets up logging configuration.
-     */
-    private void setupLogging() {
-        LogManager.getLogManager().reset();
-        ConsoleHandler consoleHandler = new ConsoleHandler();
-        consoleHandler.setLevel(Level.INFO);
-        consoleHandler.setFormatter(new SimpleFormatter());
-        Logger rootLogger = Logger.getLogger("");
-        rootLogger.setLevel(Level.INFO);
-        rootLogger.addHandler(consoleHandler);
-
-        Logger.getLogger(ConnectionMonitorService.class.getName()).setLevel(Level.INFO);
-        Logger.getLogger(CommandDispatcher.class.getName()).setLevel(Level.INFO);
-    }
+    
     /**
      Initializes all server components.
      */
@@ -98,17 +100,24 @@ public class ServerApp {
         int threadPoolSize = Runtime.getRuntime().availableProcessors() * 2 + 2;
         networkManager = new ServerNetworkManager();
         playerRegistry = new PlayerSessionRegistry();
-        sessionManager = new GameSessionManager(networkManager, playerRegistry);
 
         initializeNetworkAdapters();
 
         Map<String, String> networkClientToGamePlayerMap = new ConcurrentHashMap<>();
+        
+        // Create session manager without event publisher initially
+        sessionManager = new GameSessionManager(networkManager, playerRegistry, null);
+        
+        // Create command dispatcher which creates the event publisher
         commandDispatcher = new CommandDispatcher(
                 sessionManager,
                 playerRegistry,
                 networkManager,
                 networkClientToGamePlayerMap
         );
+        
+        // Now update session manager with the real event publisher
+        sessionManager.setEventPublisher(commandDispatcher.getEventPublisher());
         networkManager.setCommandDispatcher(commandDispatcher);
 
         connectionMonitor = new ConnectionMonitorService(

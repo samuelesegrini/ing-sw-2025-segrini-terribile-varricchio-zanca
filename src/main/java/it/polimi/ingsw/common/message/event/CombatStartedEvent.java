@@ -3,11 +3,14 @@ package it.polimi.ingsw.common.message.event;
 import it.polimi.ingsw.client.ui.Notification;
 import it.polimi.ingsw.client.ui.NotificationType;
 
+import java.util.logging.Logger;
+
 /**
  * Event broadcast when a combat encounter begins.
  * Initiates combat UI and prompts players for their combat decisions.
  */
 public class CombatStartedEvent extends AbstractEvent {
+    private static final Logger LOGGER = Logger.getLogger(CombatStartedEvent.class.getName());
     private final String enemyName;
     private final int enemyStrength;
     private final String enemyDescription;
@@ -22,6 +25,7 @@ public class CombatStartedEvent extends AbstractEvent {
         this.enemyDescription = enemyDescription;
         this.combatType = combatType;
         this.decisionTimeLimit = decisionTimeLimit;
+        LOGGER.fine("CombatStartedEvent instantiated for game: " + gameId + ", enemy: " + enemyName + ", type: " + combatType);
     }
 
     public String getEnemyName() {
@@ -59,6 +63,7 @@ public class CombatStartedEvent extends AbstractEvent {
                 if (decisionTimeLimit > 0) {
                     message += " - " + decisionTimeLimit + "s to decide";
                 }
+                LOGGER.fine("Displaying combat started notification: " + message);
                 context.getNotificationService().showNotification(new Notification(
                         "Combat Encounter",
                         message,
@@ -83,6 +88,6 @@ public class CombatStartedEvent extends AbstractEvent {
         SLAVERS,        // Slavers - special rules for crew
         SMUGGLERS,      // Smugglers - different rewards/penalties
         ALIEN_WARSHIP,  // Powerful alien combat encounter
-        ABANDONED_FIGHTER // Weaker but may have salvage
+        ABANDONED_FIGHTER; // Weaker but may have salvage
     }
 }

@@ -2,11 +2,14 @@ package it.polimi.ingsw.common.message.event;
 
 import it.polimi.ingsw.server.model.domain.player.PlayerId;
 
+import java.util.logging.Logger;
+
 /**
  * Event broadcast when a player reconnects to a game session.
  * Only notifies other players in the same game, showing that the player is back online.
  */
 public class PlayerReconnectedEvent extends AbstractEvent {
+    private static final Logger LOGGER = Logger.getLogger(PlayerReconnectedEvent.class.getName());
     private final PlayerId playerId;
     private final String playerNickname;
     private final boolean wasInActiveGame; // Whether reconnection happened during active gameplay
@@ -16,6 +19,7 @@ public class PlayerReconnectedEvent extends AbstractEvent {
         this.playerId = playerId;
         this.playerNickname = playerNickname;
         this.wasInActiveGame = wasInActiveGame;
+        LOGGER.fine("PlayerReconnectedEvent instantiated for game: " + gameId + ", player: " + playerNickname + ", was in active game: " + wasInActiveGame);
     }
 
     public PlayerId getPlayerId() {
@@ -35,6 +39,7 @@ public class PlayerReconnectedEvent extends AbstractEvent {
         // Don't send to the reconnected player (they get the reconnection response)
         PlayerId playerIdForClient = context.getPlayerIdForClient(clientId);
         if (this.playerId.equals(playerIdForClient)) {
+            LOGGER.finer("EVENT FILTERING - PlayerReconnectedEvent NOT sent to reconnected player: " + clientId);
             return false;
         }
         
@@ -45,6 +50,7 @@ public class PlayerReconnectedEvent extends AbstractEvent {
     @Override
     public void handleOnClient(ClientEventContext context) {
         context.runOnUIThread(() -> {
+            LOGGER.fine("Handling PlayerReconnectedEvent for game: " + gameId + ", player: " + playerNickname);
             // Only show notification to other players in the game
             if (!context.isLocalPlayer(playerId) && context.getNotificationService() != null) {
                 String message = wasInActiveGame 

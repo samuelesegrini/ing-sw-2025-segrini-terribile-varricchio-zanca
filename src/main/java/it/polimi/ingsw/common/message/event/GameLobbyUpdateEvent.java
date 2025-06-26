@@ -5,10 +5,13 @@ import it.polimi.ingsw.server.model.domain.player.PlayerId;
 import java.util.List;
 import it.polimi.ingsw.client.core.ClientState;
 
+import java.util.logging.Logger;
+
 /**
  * Broadcast to all clients in a game lobby when its state changes (e.g., player joins/leaves).
  */
 public class GameLobbyUpdateEvent extends AbstractEvent {
+    private static final Logger LOGGER = Logger.getLogger(GameLobbyUpdateEvent.class.getName());
     private final List<Player> players;
     private final int requiredPlayers;
 
@@ -20,6 +23,7 @@ public class GameLobbyUpdateEvent extends AbstractEvent {
         super(EventType.GAME_LOBBY_UPDATE, gameId, excludePlayerId);
         this.players = List.copyOf(players);
         this.requiredPlayers = requiredPlayers;
+        LOGGER.fine("GameLobbyUpdateEvent instantiated for game: " + gameId + ", players: " + players.size() + ", required: " + requiredPlayers);
     }
 
     public List<Player> getPlayers() {
@@ -36,6 +40,7 @@ public class GameLobbyUpdateEvent extends AbstractEvent {
         if (sourcePlayerId != null) {
             PlayerId playerId = context.getPlayerIdForClient(clientId);
             if (sourcePlayerId.equals(playerId)) {
+                LOGGER.finer("EVENT FILTERING - GameLobbyUpdateEvent NOT sent to excluded player: " + clientId);
                 return false;
             }
         }
@@ -50,6 +55,7 @@ public class GameLobbyUpdateEvent extends AbstractEvent {
             ClientState clientState = context.getClientState();
             if (clientState != null && gameId.equals(clientState.getCurrentGameId())) {
                 clientState.setPlayersInLobby(players);
+                LOGGER.fine("Client state updated with new lobby players for game: " + gameId + ", count: " + players.size());
                 
                 // Note: GameModel players list is managed through addPlayer/removePlayer
                 // so we don't directly set the players list here

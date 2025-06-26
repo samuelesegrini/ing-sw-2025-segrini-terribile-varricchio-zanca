@@ -6,6 +6,8 @@ import it.polimi.ingsw.client.ui.NotificationType;
 import it.polimi.ingsw.server.model.domain.general.GameModel;
 import it.polimi.ingsw.server.model.domain.player.PlayerId;
 
+import java.util.logging.Logger;
+
 /**
  * Broadcast to all players in a game when the lobby is full and the game starts.
  * Signals the transition to the Ship Building phase.
@@ -13,6 +15,7 @@ import it.polimi.ingsw.server.model.domain.player.PlayerId;
  * SIMPLIFIED VERSION: Carries full GameModel instead of complex individual state.
  */
 public class GameStartedEvent extends AbstractEvent {
+    private static final Logger LOGGER = Logger.getLogger(GameStartedEvent.class.getName());
     private final GameModel gameModel; // Full server game model
 
     public GameStartedEvent(String gameId, GameModel gameModel, PlayerId requesterId) {
@@ -20,10 +23,9 @@ public class GameStartedEvent extends AbstractEvent {
         this.gameModel = gameModel;
         
         // Debug: Log what GameModel is being stored in the event
-        java.util.logging.Logger logger = java.util.logging.Logger.getLogger(GameStartedEvent.class.getName());
         if (gameModel != null) {
-            logger.info("📦 EVENT CONSTRUCTOR - GameStartedEvent created with GameModel: " + 
-                       gameModel.getPlayers().size() + " players in " + gameModel.getCurrentPhase() + 
+            LOGGER.fine("EVENT CONSTRUCTOR - GameStartedEvent created with GameModel: " +
+                       gameModel.getPlayers().size() + " players in " + gameModel.getCurrentPhase() +
                        " phase (Hash: " + System.identityHashCode(gameModel) + ")");
         }
     }
@@ -33,15 +35,13 @@ public class GameStartedEvent extends AbstractEvent {
         // Don't send to the requesting client (they get StartGameResponse instead)
         PlayerId playerId = context.getPlayerIdForClient(clientId);
         if (this.sourcePlayerId != null && this.sourcePlayerId.equals(playerId)) {
-            java.util.logging.Logger logger = java.util.logging.Logger.getLogger(GameStartedEvent.class.getName());
-            logger.info("🎯 EVENT FILTERING - GameStartedEvent NOT sent to requester: " + clientId);
+            LOGGER.finer("EVENT FILTERING - GameStartedEvent NOT sent to requester: " + clientId);
             return false;
         }
         
         // Use default game filtering for other clients
         boolean shouldSend = super.shouldSendTo(clientId, context);
-        java.util.logging.Logger logger = java.util.logging.Logger.getLogger(GameStartedEvent.class.getName());
-        logger.info("🎯 EVENT FILTERING - GameStartedEvent shouldSendTo clientId: " + clientId + " = " + shouldSend);
+        LOGGER.finer("EVENT FILTERING - GameStartedEvent shouldSendTo clientId: " + clientId + " = " + shouldSend);
         return shouldSend;
     }
 
@@ -52,14 +52,13 @@ public class GameStartedEvent extends AbstractEvent {
     @Override
     public void handleOnClient(ClientEventContext context) {
         context.runOnUIThread(() -> {
-            java.util.logging.Logger logger = java.util.logging.Logger.getLogger(GameStartedEvent.class.getName());
-            logger.info("🎮 GAME STARTED EVENT - Processing for client, GameModel has " + 
+            LOGGER.fine("GAME STARTED EVENT - Processing for client, GameModel has " +
                        (gameModel != null ? gameModel.getPlayers().size() + " players" : "null GameModel"));
             
             // Simple Direct Model Architecture: Update ClientState directly
             ClientState clientState = context.getClientState();
             if (clientState != null) {
-                logger.info("📝 SETTING GAMEMODEL - Via GameStartedEvent with " + 
+                LOGGER.fine("SETTING GAMEMODEL - Via GameStartedEvent with " +
                            gameModel.getPlayers().size() + " players in " + gameModel.getCurrentPhase() + " phase");
                 clientState.setGameModel(gameModel);
                 
@@ -71,14 +70,10 @@ public class GameStartedEvent extends AbstractEvent {
                         .navigateTo(ClientState.ViewState.GAME, "Game started - entering building phase");
                     
                     if (!success) {
-                        String reason = context.getController().getUIContext().getViewNavigator()
-                            .getNavigationFailureReason(ClientState.ViewState.GAME);
-                        java.util.logging.Logger.getLogger(GameStartedEvent.class.getName())
-                            .severe("Failed to navigate to GAME after game started - Reason: " + reason);
+                        LOGGER.severe("Failed to navigate to GAME after game started - Reason: " + context.getController().getUIContext().getViewNavigator().getNavigationFailureReason(ClientState.ViewState.GAME));
                     }
                 } else {
-                    java.util.logging.Logger.getLogger(GameStartedEvent.class.getName())
-                        .severe("ViewNavigator not available - cannot navigate to GAME after game started");
+                    LOGGER.severe("ViewNavigator not available - cannot navigate to BUILDING after game started");
                 }
             }
 

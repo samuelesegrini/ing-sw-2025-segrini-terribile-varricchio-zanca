@@ -16,6 +16,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import it.polimi.ingsw.client.ui.core.UIView;
+
 /**
  * Simple Direct Model Architecture client state.
  * Stores server models directly and refreshes only the current visible view.
@@ -51,8 +53,8 @@ public class ClientState {
 
     // UI State
     private ViewState currentView = ViewState.CONNECTION;
-    private UIRefreshable currentViewComponent;
-    private final Set<UIRefreshable> registeredViews = ConcurrentHashMap.newKeySet();
+    private UIView currentViewComponent;
+    private final Set<UIView> registeredViews = ConcurrentHashMap.newKeySet();
 
     
     // JavaFX properties for UI binding
@@ -155,13 +157,17 @@ public class ClientState {
     public void setGameModel(GameModel newGameModel) {
         java.util.logging.Logger logger = java.util.logging.Logger.getLogger(ClientState.class.getName());
         if (newGameModel != null) {
-            logger.info("🔄 CLIENT STATE - Setting GameModel with " + newGameModel.getPlayers().size() + 
-                       " players in " + newGameModel.getCurrentPhase() + " phase (Hash: " + 
+            logger.info("🔄 CLIENT STATE - Setting GameModel with " + newGameModel.getPlayers().size() +
+                       " players in " + newGameModel.getCurrentPhase() + " phase (Hash: " +
                        System.identityHashCode(newGameModel) + ")");
+            logger.info("CLIENT STATE: GameModel received. Phase: " + newGameModel.getCurrentPhase());
         } else {
             logger.info("🔄 CLIENT STATE - Setting GameModel to NULL");
         }
         this.gameModel = newGameModel;
+        if (this.gameModel != null) {
+            logger.info("CLIENT STATE: GameModel set. Phase: " + this.gameModel.getCurrentPhase());
+        }
         refreshCurrentView(); // Refresh game views
     }
 
@@ -206,14 +212,14 @@ public class ClientState {
     }
 
     // === UI View Management ===
-    public void setCurrentView(ViewState viewState, UIRefreshable viewComponent) {
+    public void setCurrentView(ViewState viewState, UIView viewComponent) {
         ViewState oldView = this.currentView;
         this.currentView = viewState;
         this.currentViewComponent = viewComponent;
 
         if (viewComponent != null) {
             registeredViews.add(viewComponent);
-            safeRefresh(() -> viewComponent.refresh());
+            viewComponent.refresh();
         }
     }
 
@@ -385,25 +391,23 @@ public class ClientState {
     // UI Updates - Refresh registered views
     private void refreshCurrentViewOnly() {
         // Refresh all registered views - they'll decide if they're active
-        for (UIRefreshable view : registeredViews) {
+        for (UIView view : registeredViews) {
             if (view != null) {
-                safeRefresh(() -> view.refresh());
+                view.refresh();
             }
         }
         
-        // Also refresh the current view component if it exists and isn't already in the set
-        if (currentViewComponent != null && !registeredViews.contains(currentViewComponent)) {
-            safeRefresh(() -> currentViewComponent.refresh());
-        }
+        // The currentViewComponent is already in registeredViews if it's active,
+        // so no separate refresh is needed here.
     }
 
-    public void registerRefreshableView(UIRefreshable view) {
+    public void registerRefreshableView(UIView view) {
         if (view != null) {
             registeredViews.add(view);
         }
     }
 
-    public void unregisterRefreshableView(UIRefreshable view) {
+    public void unregisterRefreshableView(UIView view) {
         registeredViews.remove(view);
         if (currentViewComponent == view) {
             currentViewComponent = null;
@@ -480,12 +484,5 @@ public class ClientState {
         setPlayerReadyStatus(playerId, ready);
     }
     
-    private void safeRefresh(Runnable refreshTask) {
-        try {
-            Platform.runLater(refreshTask);
-        } catch (IllegalStateException e) {
-            // JavaFX not initialized - run directly for TUI
-            refreshTask.run();
-        }
-    }
+    
 }

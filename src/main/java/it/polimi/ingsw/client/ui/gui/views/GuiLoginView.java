@@ -177,23 +177,29 @@ public class GuiLoginView extends BaseUIView {
     }
 
     private void showError(String message) {
-        errorLabel.setText(message);
-        errorLabel.setVisible(true);
+        javafx.application.Platform.runLater(() -> {
+            errorLabel.setText(message);
+            errorLabel.setVisible(true);
+        });
     }
 
     private void showLoading(boolean isLoading) {
-        loadingIndicator.setVisible(isLoading);
-        if (isLoading) {
-            errorLabel.setVisible(false);
-        }
+        javafx.application.Platform.runLater(() -> {
+            loadingIndicator.setVisible(isLoading);
+            if (isLoading) {
+                errorLabel.setVisible(false);
+            }
+        });
     }
 
     private void updateLoginStatus() {
-        if (context.getClientState().isLoggedIn()) {
-            statusLabel.setText("Logged in as: " + context.getClientState().getCurrentNickname());
-            statusLabel.setTextFill(Color.GREEN);
-        } else {
-            statusLabel.setText("");
-        }
+        javafx.application.Platform.runLater(() -> {
+            if (context.getClientState().isLoggedIn()) {
+                statusLabel.setText("Logged in as: " + context.getClientState().getCurrentNickname());
+                statusLabel.setTextFill(Color.GREEN);
+            } else {
+                statusLabel.setText("");
+            }
+        });
     }
 }

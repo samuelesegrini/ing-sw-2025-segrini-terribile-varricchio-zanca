@@ -98,4 +98,14 @@ public interface ClientMessageContext extends ClientContext, ClientEventContext 
      */
     @Override
     void runOnUIThread(Runnable action);
+    
+    /**
+     * Gets the timer view for displaying timer updates.
+     * Resolves conflict between ClientContext and ClientEventContext.
+     * @return The timer view or null if not available
+     */
+    @Override
+    default Object getTimerView() {
+        return null; // Default implementation returns null
+    }
 }

@@ -22,4 +22,12 @@ public interface ClientContext {
         PlayerId playerId = getPlayerId();
         return playerId != null ? playerId.toString() : null;
     }
+    
+    /**
+     * Gets the timer view for displaying timer updates.
+     * Returns null if no timer view is available.
+     */
+    default Object getTimerView() {
+        return null; // Default implementation returns null
+    }
 }

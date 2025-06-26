@@ -1,7 +1,6 @@
 package it.polimi.ingsw.client.ui.gui.components;
 
 import it.polimi.ingsw.server.model.domain.ship.Position;
-import it.polimi.ingsw.client.core.UIRefreshable;
 import it.polimi.ingsw.client.ui.core.UIContext;
 import it.polimi.ingsw.server.model.domain.ship.Ship;
 import it.polimi.ingsw.server.model.domain.ship.components.Component;
@@ -20,11 +19,13 @@ import javafx.scene.text.FontWeight;
 import javafx.scene.paint.Color;
 
 import java.util.Set;
+import it.polimi.ingsw.client.ui.core.UIView;
+import it.polimi.ingsw.client.core.ClientState;
 
 /**
  * Ship building grid using Simple Direct Model Architecture.
  */
-public class ShipGridView extends StackPane implements UIRefreshable {
+public class ShipGridView extends StackPane implements UIView {
     
     public static final double DEFAULT_CELL_SIZE = 60;
     
@@ -32,10 +33,11 @@ public class ShipGridView extends StackPane implements UIRefreshable {
     private double cellSize;
     private StackPane[][] cellPanes;
     private ShipGridClickHandler clickHandler;
-    private final UIContext uiContext;
+    private UIContext uiContext;
     
     private int gridRows = 5; // Will be updated from server
     private int gridCols = 7; // Will be updated from server
+    private boolean active = false; // Added for UIView
     
     public interface ShipGridClickHandler {
         void onCellClicked(int row, int col);
@@ -487,5 +489,82 @@ public class ShipGridView extends StackPane implements UIRefreshable {
     
     public int getGridCols() {
         return gridCols;
+    }
+
+    @Override
+    public ClientState.ViewState getViewState() {
+        return ClientState.ViewState.GAME;
+    }
+
+    @Override
+    public String getTitle() {
+        return "Ship Grid View";
+    }
+
+    @Override
+    public void initialize(UIContext context) {
+        this.uiContext = context;
+        // Register with ClientState for automatic refresh if this is a top-level view
+        // context.getClientState().registerRefreshableView(this);
+    }
+
+    @Override
+    public void show() {
+        this.setVisible(true);
+        this.active = true;
+        refresh();
+    }
+
+    @Override
+    public void hide() {
+        this.setVisible(false);
+        this.active = false;
+    }
+
+    @Override
+    public boolean isActive() {
+        return this.active;
+    }
+
+    @Override
+    public void dispose() {
+        // Unregister from ClientState if registered
+        // if (uiContext != null) {
+        //     uiContext.getClientState().unregisterRefreshableView(this);
+        // }
+    }
+    
+    /**
+     * Sets an optimistic placement for immediate UI feedback while waiting for server response
+     * @param row The grid row
+     * @param col The grid column  
+     * @param component The component to show optimistically
+     */
+    public void setOptimisticPlacement(int row, int col, Component component) {
+        if (cellPanes != null && row >= 0 && row < gridRows && col >= 0 && col < gridCols) {
+            StackPane cellPane = cellPanes[row][col];
+            
+            // Create a visual indicator for optimistic placement
+            ComponentTileView optimisticView = new ComponentTileView(component, false);
+            optimisticView.setStyle("-fx-opacity: 0.7; -fx-effect: dropshadow(gaussian, #2196F3, 8, 0.8, 0, 0);");
+            
+            cellPane.getChildren().clear();
+            cellPane.getChildren().add(optimisticView);
+        }
+    }
+    
+    /**
+     * Clears an optimistic placement
+     * @param row The grid row
+     * @param col The grid column
+     */
+    public void clearOptimisticPlacement(int row, int col) {
+        if (cellPanes != null && row >= 0 && row < gridRows && col >= 0 && col < gridCols) {
+            StackPane cellPane = cellPanes[row][col];
+            cellPane.getChildren().clear();
+            
+            // Refresh the cell with actual server state
+            refresh();
+        }
     }
 }

@@ -1,6 +1,7 @@
 package it.polimi.ingsw.server.model.domain.ship;
 
 import it.polimi.ingsw.server.model.domain.player.Player;
+import it.polimi.ingsw.server.model.domain.ship.Position;
 import it.polimi.ingsw.server.model.domain.ship.components.CargoHold;
 import it.polimi.ingsw.server.model.domain.ship.components.Component;
 import it.polimi.ingsw.server.model.enums.GameLevel;
@@ -30,6 +31,8 @@ public class Ship implements Serializable {
     private double engines;
     private int batteries;
     private int crew;
+    private int shields;
+    private int lifeSupport;
     private Map<GoodType, Integer> resources;
     private int specialGoods;
     private int normalGoods;
@@ -37,8 +40,6 @@ public class Ship implements Serializable {
     private int specialGoodsCapacity;
     private int normalGoodsCapacity;
 
-    // Batteries set to be used by the player to charge cannons/engines/shields
-    private int chargingBatteries;
 
 
 
@@ -107,8 +108,66 @@ public class Ship implements Serializable {
         } else if (board[row][col] == null) {
             throw new IllegalArgumentException("Empty position");
         } else {
-            board[row][col].setPosition(null);
+            Component componentToRemove = board[row][col];
+            
+            // Galaxy Trucker Rule: "Any playing pieces (crew, battery tokens, goods) on lost components are returned to the bank"
+            handleComponentDestruction(componentToRemove);
+            
+            componentToRemove.setPosition(null);
             board[row][col] = null;
+        }
+    }
+    
+    /**
+     * Handles the destruction of a component according to Galaxy Trucker rules.
+     * When components are destroyed, any resources (goods, batteries, crew) on them are lost.
+     * 
+     * @param component The component being destroyed
+     */
+    private void handleComponentDestruction(Component component) {
+        if (component == null) return;
+        
+        switch (component.getType()) {
+            case CARGO_HOLD:
+            case CARGO_HOLD_SPECIAL:
+                // Cargo holds lose all stored goods when destroyed
+                CargoHold cargoHold = (CargoHold) component;
+                Map<GoodType, Integer> lostGoods = cargoHold.getStoredGoods();
+                
+                int totalLost = 0;
+                for (Map.Entry<GoodType, Integer> entry : lostGoods.entrySet()) {
+                    totalLost += entry.getValue();
+                }
+                
+                if (totalLost > 0) {
+                    System.out.println("CARGO DESTROYED: Lost " + totalLost + " goods when cargo hold was destroyed!");
+                    
+                    // Clear all goods from the cargo hold (they're returned to the bank per rules)
+                    cargoHold.setStoredGoods(new HashMap<>());
+                    
+                    // Update ship's total resource counts
+                    updateStats();
+                }
+                break;
+                
+            case BATTERY:
+                // Batteries lose stored energy when destroyed - return to bank
+                Battery battery = (Battery) component;
+                int lostBatteries = battery.getAvailableBatteries();
+                if (lostBatteries > 0) {
+                    System.out.println("BATTERY DESTROYED: Lost " + lostBatteries + " battery tokens!");
+                    battery.consumeBatteries(lostBatteries); // Permanently remove all batteries
+                }
+                break;
+                
+            case CABIN:
+                // Cabins lose crew when destroyed (handled elsewhere in crew management)
+                System.out.println("CABIN DESTROYED: Any crew in this cabin are lost!");
+                break;
+                
+            default:
+                // Other components don't store resources
+                break;
         }
     }
 
@@ -208,7 +267,7 @@ public class Ship implements Serializable {
     }
 
     public double getCannons() {
-        return cannons;
+        return cannons + getPurpleAlienCombatBonus();
     }
 
     public void setCannons(double cannons) {
@@ -216,7 +275,7 @@ public class Ship implements Serializable {
     }
 
     public double getEngines() {
-        return engines;
+        return engines + getBrownAlienEngineBonus();
     }
 
     public void setEngines(double engines) {
@@ -263,13 +322,31 @@ public class Ship implements Serializable {
         this.normalGoods = normalGoods;
     }
 
-    public int getChargingBatteries() {
-        return chargingBatteries;
+    /**
+     * Consumes batteries from battery components according to Galaxy Trucker rules.
+     * Batteries are permanently consumed (returned to bank) when used.
+     * @param amount The number of batteries to consume
+     * @return The actual number of batteries consumed
+     */
+    public int consumeBatteries(int amount) {
+        int remainingToConsume = amount;
+        int totalConsumed = 0;
+
+        for (Component[] components : board) {
+            for (Component component : components) {
+                if (component instanceof Battery battery && remainingToConsume > 0) {
+                    int consumed = battery.consumeBatteries(remainingToConsume);
+                    totalConsumed += consumed;
+                    remainingToConsume -= consumed;
+                }
+            }
+        }
+
+        // Update ship's total battery count
+        updateStats();
+        return totalConsumed;
     }
 
-    public void setChargingBatteries(int chargingBatteries) {
-        this.chargingBatteries = chargingBatteries;
-    }
 
 
     public int calculateSpecialGoodsCapacity() {
@@ -398,8 +475,9 @@ public class Ship implements Serializable {
                     if (freeSpace > 0) {
                         int amountToAdd = Math.min(freeSpace, remainingAmount);
 
-                        cargoHold.storeGoodsOfType(type, amountToAdd);
-                        remainingAmount -= amountToAdd;
+                        if (cargoHold.storeGoodsOfType(type, amountToAdd)) {
+                            remainingAmount -= amountToAdd;
+                        }
                     }
                 }
             }
@@ -450,8 +528,8 @@ public class Ship implements Serializable {
                 for (int y = 0; y < board[x].length && remainingToDelete > 0; y++) {
                     if (board[x][y] != null && board[x][y].getType() == ComponentType.BATTERY) {
                         Battery battery = (Battery) board[x][y];
-                        int amount = Math.min(battery.getCurrentBatteries(), remainingToDelete);
-                        battery.setCurrentBatteries(battery.getCurrentBatteries() - amount);
+                        int amount = Math.min(battery.getAvailableBatteries(), remainingToDelete);
+                        battery.consumeBatteries(amount);
                         remainingToDelete -= amount;
                     }
                 }
@@ -483,8 +561,8 @@ public class Ship implements Serializable {
                         int toRemove = Math.min(remaining, available);
 
                         if (toRemove > 0) {
-                            cargoHold.removeGoodsOfType(goodType, toRemove);
-                            remaining -= toRemove;
+                            int actuallyRemoved = cargoHold.removeAvailableGoods(goodType, toRemove);
+                            remaining -= actuallyRemoved;
                         }
                     }
                 }
@@ -1029,6 +1107,347 @@ public class Ship implements Serializable {
 
         // Il componente rimosso non fa parte di nessuna delle nuove navi
         return ships;
+    }
+
+    /**
+     * Calculates the combat bonus provided by purple alien passengers.
+     * According to Galaxy Trucker rules, purple aliens provide +2 combat strength.
+     * Bonus only applies if the ship has basic cannon strength > 0.
+     * 
+     * @return The total combat bonus from purple aliens
+     */
+    public int getPurpleAlienCombatBonus() {
+        // Galaxy Trucker rule: "If cannon strength without alien is 0, don't get this bonus. 
+        // Not going to fight space battle with bare tentacles."
+        if (cannons <= 0) {
+            return 0;
+        }
+        
+        try {
+            // Count purple aliens on the ship
+            return countAlienPassengers(it.polimi.ingsw.server.model.enums.crew.AlienColor.ALIEN_PURPLE) * 2;
+        } catch (Exception e) {
+            // Fallback - return 0 if alien counting fails
+            return 0;
+        }
+    }
+
+    /**
+     * Calculates the engine bonus provided by brown alien passengers.
+     * According to Galaxy Trucker rules, brown aliens provide +2 engine strength.
+     * Bonus only applies if the ship has basic engine strength > 0.
+     * 
+     * @return The total engine bonus from brown aliens
+     */
+    public int getBrownAlienEngineBonus() {
+        // Galaxy Trucker rule: "If engine strength without alien is 0, don't get this bonus. 
+        // Not going to get out and push."
+        if (engines <= 0) {
+            return 0;
+        }
+        
+        try {
+            // Count brown aliens on the ship
+            return countAlienPassengers(it.polimi.ingsw.server.model.enums.crew.AlienColor.ALIEN_BROWN) * 2;
+        } catch (Exception e) {
+            // Fallback - return 0 if alien counting fails
+            return 0;
+        }
+    }
+
+    /**
+     * Counts the number of alien passengers of a specific color on the ship.
+     * This method searches for cabins with life support systems and counts aliens.
+     * 
+     * @param alienColor The color of aliens to count (PURPLE or BROWN)
+     * @return The number of aliens of the specified color
+     */
+    private int countAlienPassengers(it.polimi.ingsw.server.model.enums.crew.AlienColor alienColor) {
+        int alienCount = 0;
+        
+        // Search the ship board for life support systems matching the alien color
+        for (int row = 0; row < board.length; row++) {
+            for (int col = 0; col < board[row].length; col++) {
+                Component component = board[row][col];
+                if (component == null) continue;
+                
+                // Check for life support systems that correspond to the alien color
+                boolean hasMatchingLifeSupport = false;
+                switch (alienColor) {
+                    case ALIEN_PURPLE:
+                        hasMatchingLifeSupport = (component.getType() == ComponentType.LIFE_SUPPORT_PURPLE);
+                        break;
+                    case ALIEN_BROWN:
+                        hasMatchingLifeSupport = (component.getType() == ComponentType.LIFE_SUPPORT_BROWN);
+                        break;
+                }
+                
+                if (hasMatchingLifeSupport) {
+                    // Check if this life support is connected to a cabin with aliens
+                    // For now, assume each life support system supports 1 alien
+                    // This is a simplified implementation until full crew management is integrated
+                    if (isConnectedToCabin(new Position(row, col))) {
+                        alienCount++;
+                    }
+                }
+            }
+        }
+        
+        return alienCount;
+    }
+
+    /**
+     * Checks if a life support system is properly connected to a cabin.
+     * According to Galaxy Trucker rules, life support must be joined to a cabin to have effect.
+     * 
+     * @param lifeSupportPosition The position of the life support system
+     * @return true if connected to a cabin, false otherwise
+     */
+    private boolean isConnectedToCabin(Position lifeSupportPosition) {
+        Component lifeSupport = board[lifeSupportPosition.getRow()][lifeSupportPosition.getCol()];
+        if (lifeSupport == null) return false;
+        
+        // Check all four directions for connected cabins
+        for (Direction direction : Direction.values()) {
+            Position neighborPos = lifeSupportPosition.offsetBy(direction);
+            
+            // Check bounds
+            if (neighborPos.getRow() < 0 || neighborPos.getRow() >= board.length ||
+                neighborPos.getCol() < 0 || neighborPos.getCol() >= board[0].length) {
+                continue;
+            }
+            
+            Component neighbor = board[neighborPos.getRow()][neighborPos.getCol()];
+            if (neighbor == null) continue;
+            
+            // Check if neighbor is a cabin and if they're properly connected
+            if (neighbor.getType() == ComponentType.CABIN || neighbor.getType() == ComponentType.CABIN_START) {
+                // Verify the connectors are compatible
+                ConnectorType lifeSupportConnector = lifeSupport.getConnectorAt(direction);
+                ConnectorType cabinConnector = neighbor.getConnectorAt(direction.getOpposite());
+                
+                if (areConnectorsCompatible(lifeSupportConnector, cabinConnector)) {
+                    return true;
+                }
+            }
+        }
+        
+        return false;
+    }
+
+    /**
+     * Checks if two connectors are compatible for joining components.
+     * 
+     * @param connector1 The first connector type
+     * @param connector2 The second connector type
+     * @return true if the connectors can be joined, false otherwise
+     */
+    private boolean areConnectorsCompatible(ConnectorType connector1, ConnectorType connector2) {
+        // Plain connectors can't connect to anything
+        if (connector1 == ConnectorType.PLAIN || connector2 == ConnectorType.PLAIN) {
+            return false;
+        }
+        
+        // Universal connectors can connect to anything except plain
+        if (connector1 == ConnectorType.UNIVERSAL || connector2 == ConnectorType.UNIVERSAL) {
+            return true;
+        }
+        
+        // Same types can connect to each other
+        return connector1 == connector2;
+    }
+
+    /**
+     * Gets the base cannon strength without alien bonuses.
+     * Useful for combat calculations where you need to know the raw ship power.
+     * 
+     * @return The base cannon strength from ship components only
+     */
+    public double getBaseCannons() {
+        return cannons;
+    }
+
+    /**
+     * Gets the base engine strength without alien bonuses.
+     * Useful for engine calculations where you need to know the raw ship power.
+     * 
+     * @return The base engine strength from ship components only
+     */
+    public double getBaseEngines() {
+        return engines;
+    }
+    
+    /**
+     * Checks if the ship is structurally valid.
+     * A ship is considered structurally valid if all components are connected
+     * to at least one other component through proper connectors.
+     * 
+     * @return true if the ship is structurally valid, false otherwise
+     */
+    public boolean isStructurallyValid() {
+        if (board == null) {
+            return false;
+        }
+        
+        // Find all components on the board
+        Component[][] components = getBoard();
+        boolean hasComponents = false;
+        
+        for (int row = 0; row < components.length; row++) {
+            for (int col = 0; col < components[row].length; col++) {
+                Component component = components[row][col];
+                if (component != null) {
+                    hasComponents = true;
+                    // Check if this component is properly connected
+                    if (!component.check(this)) {
+                        return false;
+                    }
+                }
+            }
+        }
+        
+        return hasComponents; // Must have at least one component to be valid
+    }
+    
+    /**
+     * Gets the number of shield components on the ship.
+     * 
+     * @return The number of shields
+     */
+    public int getShields() {
+        return shields;
+    }
+    
+    /**
+     * Gets the life support capacity of the ship.
+     * 
+     * @return The life support capacity
+     */
+    public int getLifeSupport() {
+        return lifeSupport;
+    }
+    
+    /**
+     * Gets the number of components placed on the ship.
+     * 
+     * @return The count of placed components
+     */
+    public int getPlacedComponentsCount() {
+        int count = 0;
+        for (int row = 0; row < board.length; row++) {
+            for (int col = 0; col < board[row].length; col++) {
+                if (board[row][col] != null) {
+                    count++;
+                }
+            }
+        }
+        return count;
+    }
+    
+    /**
+     * Gets the component at the specified position.
+     * 
+     * @param position The position to check
+     * @return The component at that position, or null if none
+     */
+    public Component getComponent(Position position) {
+        if (position == null || board == null) {
+            return null;
+        }
+        int row = position.getRow();
+        int col = position.getCol();
+        if (row >= 0 && row < board.length && col >= 0 && col < board[0].length) {
+            return board[row][col];
+        }
+        return null;
+    }
+    
+    /**
+     * Checks if a position is forbidden for component placement.
+     * 
+     * @param position The position to check
+     * @return true if the position is forbidden
+     */
+    public boolean isForbiddenPosition(Position position) {
+        // For now, no positions are forbidden
+        // This could be extended to include specific forbidden areas
+        return false;
+    }
+    
+    /**
+     * Gets the count of engine components on the ship.
+     * 
+     * @return The number of engine components
+     */
+    public int getEngineCount() {
+        return countComponentsByType(ComponentType.ENGINE_SINGLE) + 
+               countComponentsByType(ComponentType.ENGINE_DOUBLE);
+    }
+    
+    /**
+     * Gets the count of cannon components on the ship.
+     * 
+     * @return The number of cannon components
+     */
+    public int getCannonCount() {
+        return countComponentsByType(ComponentType.CANNON_SINGLE) + 
+               countComponentsByType(ComponentType.CANNON_DOUBLE);
+    }
+    
+    /**
+     * Gets the count of battery components on the ship.
+     * 
+     * @return The number of battery components
+     */
+    public int getBatteryCount() {
+        return countComponentsByType(ComponentType.BATTERY);
+    }
+    
+    /**
+     * Gets the count of shield components on the ship.
+     * 
+     * @return The number of shield components
+     */
+    public int getShieldCount() {
+        return countComponentsByType(ComponentType.SHIELD);
+    }
+    
+    /**
+     * Gets the crew capacity of the ship (number of cabins).
+     * 
+     * @return The crew capacity
+     */
+    public int getCrewCapacity() {
+        return countComponentsByType(ComponentType.CABIN) + 
+               countComponentsByType(ComponentType.CABIN_START);
+    }
+    
+    /**
+     * Gets the total cargo capacity of the ship.
+     * 
+     * @return The total cargo capacity
+     */
+    public int getCargoCapacity() {
+        return normalGoodsCapacity + specialGoodsCapacity;
+    }
+    
+    /**
+     * Helper method to count components of a specific type.
+     * 
+     * @param type The component type to count
+     * @return The number of components of that type
+     */
+    private int countComponentsByType(ComponentType type) {
+        int count = 0;
+        for (int row = 0; row < board.length; row++) {
+            for (int col = 0; col < board[row].length; col++) {
+                Component component = board[row][col];
+                if (component != null && component.getType() == type) {
+                    count++;
+                }
+            }
+        }
+        return count;
     }
 
 }

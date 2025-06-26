@@ -6,12 +6,14 @@ import it.polimi.ingsw.client.ui.NotificationType;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Logger;
 
 /**
  * Event broadcast when a game ends.
  * Updates client state and displays final results or end reason to players.
  */
 public class GameEndedEvent extends AbstractEvent {
+    private static final Logger LOGGER = Logger.getLogger(GameEndedEvent.class.getName());
     private final String reason;
     private final Map<String, Integer> finalScores;
 
@@ -19,6 +21,7 @@ public class GameEndedEvent extends AbstractEvent {
         super(EventType.GAME_ENDED, gameId, null);
         this.reason = reason;
         this.finalScores = finalScores != null ? new HashMap<>(finalScores) : null;
+        LOGGER.fine("GameEndedEvent instantiated for game: " + gameId + " with reason: " + reason);
     }
 
     public String getReason() {
@@ -48,11 +51,11 @@ public class GameEndedEvent extends AbstractEvent {
                     if (!success) {
                         String reason = context.getController().getUIContext().getViewNavigator()
                             .getNavigationFailureReason(ClientState.ViewState.LOBBY);
-                        System.err.println("GameEndedEvent: ViewNavigator failed, using fallback - Reason: " + reason);
+                        LOGGER.severe("GameEndedEvent: ViewNavigator failed, using fallback - Reason: " + reason);
                         clientState.setCurrentView(ClientState.ViewState.LOBBY);
                     }
                 } else {
-                    System.err.println("GameEndedEvent: ViewNavigator not available, using direct navigation fallback");
+                    LOGGER.severe("GameEndedEvent: ViewNavigator not available, using direct navigation fallback");
                     clientState.setCurrentView(ClientState.ViewState.LOBBY);
                 }
             }

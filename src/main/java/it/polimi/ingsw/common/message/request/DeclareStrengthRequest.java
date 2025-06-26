@@ -3,8 +3,13 @@ package it.polimi.ingsw.common.message.request;
 import it.polimi.ingsw.common.message.response.ErrorResponse;
 import it.polimi.ingsw.common.message.response.Response;
 import it.polimi.ingsw.common.message.validation.ValidationResult;
+import it.polimi.ingsw.common.message.response.DeclareStrengthResponse;
 import it.polimi.ingsw.server.core.GameSession;
 import it.polimi.ingsw.server.model.domain.player.Player;
+import it.polimi.ingsw.server.model.domain.ship.components.Component;
+import it.polimi.ingsw.server.model.domain.ship.components.Battery;
+import it.polimi.ingsw.server.model.domain.ship.components.UseComponentVisitor;
+import it.polimi.ingsw.server.model.enums.ship.ComponentType;
 
 /**
  * Request from a player to declare strength for an action,
@@ -50,18 +55,24 @@ public class DeclareStrengthRequest extends AbstractRequest {
             return createErrorResponse("Player not found", ErrorResponse.INTERNAL_ERROR);
         }
 
-        // Server logic:
-        // 1. Check if the player has enough batteries.
-        // 2. Apply the batteries to the corresponding ship systems (engines/cannons).
-        // 3. This logic would be complex and depend on the current adventure card.
-        // For now, we just acknowledge.
-
+        // Check if the player has enough batteries
         if (player.getShip().getBatteries() < batteriesToUse) {
             return createErrorResponse("Not enough batteries", ErrorResponse.INVALID_STATE);
         }
 
-        // Example: player.getShip().commitBatteriesToEngines(batteriesToUse);
-
-        return createSuccessResponse();
+        try {
+            // Galaxy Trucker: Consume batteries directly (no charging state)
+            int actualBatteriesUsed = player.getShip().consumeBatteries(batteriesToUse);
+            
+            if (actualBatteriesUsed < batteriesToUse) {
+                return createErrorResponse("Only " + actualBatteriesUsed + " batteries available", 
+                                         ErrorResponse.INVALID_STATE);
+            }
+            
+            return new DeclareStrengthResponse(getCorrelationId(), actualBatteriesUsed, decisionType);
+        } catch (Exception e) {
+            return createErrorResponse("Failed to consume batteries: " + e.getMessage(), 
+                                     ErrorResponse.INTERNAL_ERROR);
+        }
     }
 }

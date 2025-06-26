@@ -3,11 +3,14 @@ package it.polimi.ingsw.common.message.event;
 import it.polimi.ingsw.client.ui.Notification;
 import it.polimi.ingsw.client.ui.NotificationType;
 
+import java.util.logging.Logger;
+
 /**
  * Event broadcast when a new adventure card is revealed during the flight phase.
  * Triggers the adventure card UI and initiates the card's effects.
  */
 public class AdventureCardDrawnEvent extends AbstractEvent {
+    private static final Logger LOGGER = Logger.getLogger(AdventureCardDrawnEvent.class.getName());
     private final AdventureCard card;
     private final int cardNumber;
     private final int totalCards;
@@ -17,6 +20,7 @@ public class AdventureCardDrawnEvent extends AbstractEvent {
         this.card = card;
         this.cardNumber = cardNumber;
         this.totalCards = totalCards;
+        LOGGER.fine("AdventureCardDrawnEvent instantiated for game: " + gameId + ", card: " + card.getName() + " (" + cardNumber + "/" + totalCards + ")");
     }
 
     public AdventureCard getCard() {
@@ -42,6 +46,7 @@ public class AdventureCardDrawnEvent extends AbstractEvent {
 
             // Show adventure card notification
             if (context.getNotificationService() != null) {
+                LOGGER.fine("Displaying notification for drawn adventure card: " + card.getName());
                 context.getNotificationService().showNotification(new Notification(
                         "Adventure Card " + cardNumber + "/" + totalCards,
                         card.getName() + " - " + card.getDescription(),
@@ -73,6 +78,7 @@ public class AdventureCardDrawnEvent extends AbstractEvent {
      * Represents an adventure card in the game.
      */
     public static class AdventureCard {
+        private static final Logger LOGGER = Logger.getLogger(AdventureCard.class.getName());
         private final String cardId;
         private final String name;
         private final String description;
@@ -86,6 +92,7 @@ public class AdventureCardDrawnEvent extends AbstractEvent {
             this.description = description;
             this.type = type;
             this.imageUrl = imageUrl;
+            LOGGER.fine("AdventureCard instantiated: " + name + " (ID: " + cardId + ", Type: " + type + ")");
         }
 
         public String getCardId() {

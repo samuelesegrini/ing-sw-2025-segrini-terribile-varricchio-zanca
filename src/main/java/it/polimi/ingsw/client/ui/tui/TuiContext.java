@@ -14,14 +14,23 @@ import it.polimi.ingsw.client.ui.core.UIThreadService;
 public class TuiContext extends AbstractUIContext {
     
     private final TuiConsole console;
+    private TuiManager tuiManager;
     
     public TuiContext(ClientController controller, TuiConsole console) {
         super(controller);
         this.console = console;
     }
     
+    public void setTuiManager(TuiManager tuiManager) {
+        this.tuiManager = tuiManager;
+    }
+    
     public TuiConsole getConsole() {
         return console;
+    }
+    
+    public TuiManager getTuiManager() {
+        return tuiManager;
     }
     
     @Override

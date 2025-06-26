@@ -213,6 +213,18 @@ public class GameModel implements Serializable {
                 if (buildingTimer != null) {
                     buildingTimer.forceEndBuildingPhase();
                 }
+                
+                // Flight board should already be initialized
+                if (flightBoard == null) {
+                    throw new IllegalStateException("Flight board not initialized");
+                }
+                
+                // Adventure deck should be ready
+                if (adventureDeck != null) {
+                    adventureDeck.startFlightPhase();
+                }
+                
+                System.out.println("Flight phase initialized");
                 break;
             case END:
                 calculateFinalScores();
@@ -475,7 +487,8 @@ public class GameModel implements Serializable {
      */
     public boolean flipBuildingTimer(PlayerId playerId, boolean playerHasCompletedShip) {
         if (buildingTimer != null && currentPhase == GamePhase.BUILDING) {
-            return buildingTimer.flipTimer(playerId.toString(), playerHasCompletedShip);
+            BuildingTimer.FlipResult result = buildingTimer.flipTimer(playerId.toString(), playerHasCompletedShip);
+            return result == BuildingTimer.FlipResult.SUCCESS;
         }
         return false;
     }

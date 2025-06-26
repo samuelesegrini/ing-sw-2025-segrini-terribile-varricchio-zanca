@@ -459,4 +459,233 @@ public class ShipValidationService {
             }
         }
     }
+    
+    /**
+     * Enhanced Galaxy Trucker specific validation with detailed feedback.
+     */
+    public static ValidationResult validateGalaxyTruckerRules(Ship ship, GamePhase currentPhase) {
+        List<String> errors = new ArrayList<>();
+        List<String> warnings = new ArrayList<>();
+        List<String> tips = new ArrayList<>();
+        
+        // Run comprehensive validation
+        ValidationResult basicResult = validateCompleteShip(ship, currentPhase);
+        errors.addAll(basicResult.getErrors());
+        warnings.addAll(basicResult.getWarnings());
+        
+        // Galaxy Trucker specific rules
+        validatePowerSystem(ship, errors, warnings, tips);
+        validateDefenseSystems(ship, errors, warnings, tips);
+        validateCargoSystems(ship, errors, warnings, tips);
+        validateCrewSystems(ship, errors, warnings, tips);
+        validateStructuralIntegrity(ship, errors, warnings, tips);
+        
+        // Add tips as warnings for user feedback
+        warnings.addAll(tips);
+        
+        return new ValidationResult(errors.isEmpty(), errors, warnings);
+    }
+    
+    private static void validatePowerSystem(Ship ship, List<String> errors, List<String> warnings, List<String> tips) {
+        int batteries = ship.getBatteries();
+        int cannons = (int)ship.getCannons();
+        double engines = ship.getEngines();
+        
+        // Power requirements calculation
+        int cannonPowerNeeds = cannons; // Each cannon needs 1 battery to fire
+        int enginePowerNeeds = Math.max(0, (int)engines - 1); // First engine is free
+        int totalPowerNeeds = cannonPowerNeeds + enginePowerNeeds;
+        
+        if (batteries < totalPowerNeeds) {
+            errors.add(String.format("Insufficient batteries: Need %d but only have %d (Cannons=%d, Extra Engines=%d)", 
+                      totalPowerNeeds, batteries, cannonPowerNeeds, enginePowerNeeds));
+        } else if (batteries == totalPowerNeeds) {
+            warnings.add("Power system at capacity - no room for boosting strength during encounters");
+        } else {
+            tips.add(String.format("Power system healthy: %d batteries for %d needs (%d spare for boosting)", 
+                    batteries, totalPowerNeeds, batteries - totalPowerNeeds));
+        }
+        
+        // Battery placement tips
+        if (batteries > 0 && cannons > 0) {
+            tips.add("💡 Place batteries near cannons for efficient power distribution");
+        }
+    }
+    
+    private static void validateDefenseSystems(Ship ship, List<String> errors, List<String> warnings, List<String> tips) {
+        int cannons = (int)ship.getCannons();
+        int exposedConnectors = ship.getExposedConnectors();
+        
+        // Combat readiness
+        if (cannons == 0) {
+            warnings.add("🚨 No cannons - you'll be defenseless against pirates and meteors");
+        } else if (cannons < 2) {
+            warnings.add("⚠️ Only 1 cannon - consider adding more for stronger combat");
+        } else {
+            tips.add(String.format("✅ Combat ready with %d cannons", cannons));
+        }
+        
+        // Vulnerability assessment
+        if (exposedConnectors > 8) {
+            errors.add(String.format("🚨 CRITICAL: %d exposed connectors (high risk of catastrophic damage)", exposedConnectors));
+        } else if (exposedConnectors > 5) {
+            warnings.add(String.format("⚠️ %d exposed connectors - vulnerable to stardust penalties", exposedConnectors));
+        } else if (exposedConnectors > 2) {
+            tips.add(String.format("⚠️ %d exposed connectors - acceptable but could be better", exposedConnectors));
+        } else {
+            tips.add(String.format("✅ Excellent protection: only %d exposed connectors", exposedConnectors));
+        }
+        
+        // Shield analysis
+        int shields = countShields(ship);
+        if (shields == 0) {
+            warnings.add("No shields - meteors will cause direct damage");
+        } else {
+            tips.add(String.format("✅ %d shields for meteor protection", shields));
+        }
+    }
+    
+    private static void validateCargoSystems(Ship ship, List<String> errors, List<String> warnings, List<String> tips) {
+        int normalCargo = ship.calculateNormalGoodsCapacity();
+        int specialCargo = ship.calculateSpecialGoodsCapacity();
+        int totalCargo = normalCargo + specialCargo;
+        
+        if (totalCargo == 0) {
+            warnings.add("🚨 No cargo capacity - you can't collect any goods for profit");
+        } else if (totalCargo < 4) {
+            warnings.add("⚠️ Limited cargo capacity - you'll miss profit opportunities");
+        } else if (totalCargo < 8) {
+            tips.add(String.format("📦 Moderate cargo: %d total capacity (%d normal, %d special)", 
+                    totalCargo, normalCargo, specialCargo));
+        } else {
+            tips.add(String.format("✅ Excellent cargo: %d total capacity (%d normal, %d special)", 
+                    totalCargo, normalCargo, specialCargo));
+        }
+        
+        // Interior protection tip
+        tips.add("💡 Place cargo holds in ship interior for better protection");
+    }
+    
+    private static void validateCrewSystems(Ship ship, List<String> errors, List<String> warnings, List<String> tips) {
+        int connectedCabins = ship.countAllAdjacentCabins();
+        int totalCrew = ship.getCrew(); // Current crew count
+        
+        if (connectedCabins == 0) {
+            errors.add("🚨 No crew cabins - ship cannot operate");
+        } else if (connectedCabins < 3) {
+            warnings.add("⚠️ Limited crew capacity - you'll miss exploration opportunities");
+        } else {
+            tips.add(String.format("✅ Good crew capacity: %d connected cabins", connectedCabins));
+        }
+        
+        // Life support check
+        if (totalCrew > connectedCabins) {
+            errors.add(String.format("🚨 Life support failure: %d crew but only %d cabin capacity", 
+                      totalCrew, connectedCabins));
+        }
+        
+        tips.add("💡 Connected cabins provide life support - keep them linked!");
+    }
+    
+    private static void validateStructuralIntegrity(Ship ship, List<String> errors, List<String> warnings, List<String> tips) {
+        // Check for structural weak points
+        Component[][] board = ship.getBoard();
+        List<String> structuralIssues = new ArrayList<>();
+        
+        // Check for isolated components that might break off
+        for (int row = 0; row < board.length; row++) {
+            for (int col = 0; col < board[0].length; col++) {
+                Component component = board[row][col];
+                if (component != null) {
+                    int connections = countValidConnections(board, row, col);
+                    if (connections <= 1 && !isStartingCabin(component)) {
+                        structuralIssues.add(String.format("Component at (%d,%d) has only %d connection(s)", 
+                                           row, col, connections));
+                    }
+                }
+            }
+        }
+        
+        if (!structuralIssues.isEmpty()) {
+            warnings.add("⚠️ Structural weak points detected:");
+            warnings.addAll(structuralIssues);
+            tips.add("💡 Components with single connections may break off during flight");
+        } else {
+            tips.add("✅ Strong structural integrity - all components well-connected");
+        }
+        
+        // Balance assessment
+        double engines = ship.getEngines();
+        int cannons = (int)ship.getCannons();
+        double ratio = cannons > 0 ? engines / cannons : engines;
+        
+        if (ratio > 4) {
+            tips.add("⚖️ Engine-heavy design - great for racing, weak in combat");
+        } else if (ratio < 0.5) {
+            tips.add("⚖️ Combat-heavy design - strong fighter, may lag behind");
+        } else {
+            tips.add("⚖️ Balanced design - good mix of speed and firepower");
+        }
+    }
+    
+    private static int countShields(Ship ship) {
+        Component[][] board = ship.getBoard();
+        int shieldCount = 0;
+        
+        for (Component[] row : board) {
+            for (Component component : row) {
+                if (component != null && component.getType() == ComponentType.SHIELD) {
+                    shieldCount++;
+                }
+            }
+        }
+        
+        return shieldCount;
+    }
+    
+    private static int countValidConnections(Component[][] board, int row, int col) {
+        Component component = board[row][col];
+        if (component == null) return 0;
+        
+        int connections = 0;
+        int[] dRow = {-1, 1, 0, 0};
+        int[] dCol = {0, 0, -1, 1};
+        Direction[] directions = {Direction.UP, Direction.DOWN, Direction.LEFT, Direction.RIGHT};
+        
+        for (int i = 0; i < 4; i++) {
+            int newRow = row + dRow[i];
+            int newCol = col + dCol[i];
+            
+            if (newRow >= 0 && newRow < board.length && newCol >= 0 && newCol < board[0].length) {
+                Component neighbor = board[newRow][newCol];
+                if (neighbor != null) {
+                    ConnectorType myConnector = component.getConnectorAt(directions[i]);
+                    ConnectorType neighborConnector = neighbor.getConnectorAt(directions[i].getOpposite());
+                    
+                    if (myConnector != null && neighborConnector != null && 
+                        myConnector.canConnectTo(neighborConnector)) {
+                        connections++;
+                    }
+                }
+            }
+        }
+        
+        return connections;
+    }
+    
+    private static boolean isStartingCabin(Component component) {
+        return component.getType() == ComponentType.CABIN_START;
+    }
+    
+    /**
+     * Gets the Direction opposite to the given direction.
+     */
+    private static Direction getOppositeDirection(Direction dir) {
+        return switch (dir) {
+            case UP -> Direction.DOWN;
+            case DOWN -> Direction.UP;
+            case LEFT -> Direction.RIGHT;
+            case RIGHT -> Direction.LEFT;
+        };
+    }
 }

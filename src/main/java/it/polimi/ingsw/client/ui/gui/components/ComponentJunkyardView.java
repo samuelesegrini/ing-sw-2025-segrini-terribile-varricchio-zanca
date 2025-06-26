@@ -1,7 +1,6 @@
 package it.polimi.ingsw.client.ui.gui.components;
 
 import it.polimi.ingsw.server.model.domain.ship.components.Component;
-import it.polimi.ingsw.client.core.UIRefreshable;
 import it.polimi.ingsw.client.ui.core.UIContext;
 import it.polimi.ingsw.server.model.domain.general.ComponentDeck;
 import javafx.application.Platform;
@@ -16,11 +15,13 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
+import it.polimi.ingsw.client.ui.core.UIView;
+import it.polimi.ingsw.client.core.ClientState;
 
 /**
  * Junkyard pile view using Simple Direct Model Architecture.
  */
-public class ComponentJunkyardView extends VBox implements UIRefreshable {
+public class ComponentJunkyardView extends VBox implements UIView {
     
     public interface JunkyardClickHandler {
         void onFaceDownTileClicked();
@@ -29,7 +30,8 @@ public class ComponentJunkyardView extends VBox implements UIRefreshable {
     
     private final JunkyardClickHandler clickHandler;
     private final Random random = new Random();
-    private final UIContext uiContext;
+    private UIContext uiContext;
+    private boolean active = false; // Added for UIView
     
     // Main pile area
     private Label titleLabel;
@@ -375,5 +377,48 @@ public class ComponentJunkyardView extends VBox implements UIRefreshable {
                 ", faceUpComponents=" + faceUpComponents.size() +
                 ", faceDownCount=" + faceDownCount +
                 '}';
+    }
+
+    @Override
+    public ClientState.ViewState getViewState() {
+        return ClientState.ViewState.GAME;
+    }
+
+    @Override
+    public String getTitle() {
+        return "Component Junkyard View";
+    }
+
+    @Override
+    public void initialize(UIContext context) {
+        this.uiContext = context;
+        // Register with ClientState for automatic refresh if this is a top-level view
+        // context.getClientState().registerRefreshableView(this);
+    }
+
+    @Override
+    public void show() {
+        this.setVisible(true);
+        this.active = true;
+        refresh();
+    }
+
+    @Override
+    public void hide() {
+        this.setVisible(false);
+        this.active = false;
+    }
+
+    @Override
+    public boolean isActive() {
+        return this.active;
+    }
+
+    @Override
+    public void dispose() {
+        // Unregister from ClientState if registered
+        // if (uiContext != null) {
+        //     uiContext.getClientState().unregisterRefreshableView(this);
+        // }
     }
 }

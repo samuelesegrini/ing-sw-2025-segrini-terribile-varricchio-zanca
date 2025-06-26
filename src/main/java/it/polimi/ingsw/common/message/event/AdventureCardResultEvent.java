@@ -6,11 +6,13 @@ import it.polimi.ingsw.server.model.domain.player.PlayerId;
 import it.polimi.ingsw.server.model.enums.resource.GoodType;
 
 import java.util.Map;
+import java.util.logging.Logger;
 
 /**
  * Event broadcast when an adventure card is resolved for a player during the flight phase.
  */
 public class AdventureCardResultEvent extends AbstractEvent {
+    private static final Logger LOGGER = Logger.getLogger(AdventureCardResultEvent.class.getName());
     private final PlayerId playerAffected;
     private final AdventureCard card;
     private final int cardNumber;
@@ -34,6 +36,7 @@ public class AdventureCardResultEvent extends AbstractEvent {
         this.lostCredits = lostCredits;
         this.collectedGoods = collectedGoods;
         this.collectedCredits = collectedCredits;
+        LOGGER.fine("AdventureCardResultEvent instantiated for game: " + gameId + ", player: " + playerAffected + ", card: " + card.getName());
     }
 
     public AdventureCard getCard() {
@@ -53,6 +56,7 @@ public class AdventureCardResultEvent extends AbstractEvent {
      * Represents an adventure card in the game.
      */
     public static class AdventureCard {
+        private static final Logger LOGGER = Logger.getLogger(AdventureCard.class.getName());
         private final String cardId;
         private final String name;
         private final String description;
@@ -66,6 +70,7 @@ public class AdventureCardResultEvent extends AbstractEvent {
             this.description = description;
             this.type = type;
             this.imageUrl = imageUrl;
+            LOGGER.fine("AdventureCard instantiated: " + name + " (ID: " + cardId + ", Type: " + type + ")");
         }
 
         public String getCardId() {

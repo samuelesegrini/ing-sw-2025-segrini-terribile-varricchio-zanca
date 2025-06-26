@@ -2,10 +2,13 @@ package it.polimi.ingsw.common.message.event;
 
 import it.polimi.ingsw.server.model.enums.GamePhase;
 
+import java.util.logging.Logger;
+
 /**
  * Broadcast when the game transitions from one major phase to another (e.g., BUILDING -> FLIGHT).
  */
 public class PhaseChangedEvent extends AbstractEvent {
+    private static final Logger LOGGER = Logger.getLogger(PhaseChangedEvent.class.getName());
     private final GamePhase newPhase;
     private final long durationInSeconds;
 
@@ -13,6 +16,7 @@ public class PhaseChangedEvent extends AbstractEvent {
         super(EventType.PHASE_CHANGED, gameId, null);
         this.newPhase = newPhase;
         this.durationInSeconds = durationInSeconds;
+        LOGGER.fine("PhaseChangedEvent instantiated for game: " + gameId + ", new phase: " + newPhase + ", duration: " + durationInSeconds + "s");
     }
 
     public GamePhase getNewPhase() {
@@ -34,13 +38,13 @@ public class PhaseChangedEvent extends AbstractEvent {
                 // Trigger UI refresh after phase change
                 context.getClientState().setGameModel(context.getClientState().getGameModel());
                 
-                java.util.logging.Logger.getLogger(PhaseChangedEvent.class.getName())
-                    .info("Phase changed to " + newPhase + " (duration: " + durationInSeconds + "s)");
+                LOGGER.fine("Phase changed to " + newPhase + " (duration: " + durationInSeconds + "s)");
             }
 
             // Show phase transition notification
             if (context.getNotificationService() != null) {
                 String phaseMessage = getPhaseTransitionMessage(newPhase);
+                LOGGER.fine("Displaying phase changed notification: " + phaseMessage);
                 context.getNotificationService().showInfo(
                         "Phase Changed",
                         phaseMessage + (durationInSeconds > 0 ? " (" + durationInSeconds + "s)" : "")
@@ -48,7 +52,7 @@ public class PhaseChangedEvent extends AbstractEvent {
             }
 
             // For END phase, might want to navigate to a results view in the future
-            // For now, just ensure we're in the GAME view to see the phase change
+            // For now, just ensure we're in GAME view to see the phase change
             if (newPhase == GamePhase.BUILDING || newPhase == GamePhase.FLIGHT) {
                 // Ensure we're in GAME view to see the phase UI
                 if (context.getController().getUIContext() != null && 
@@ -62,8 +66,7 @@ public class PhaseChangedEvent extends AbstractEvent {
                     if (!success) {
                         String reason = context.getController().getUIContext().getViewNavigator()
                             .getNavigationFailureReason(it.polimi.ingsw.client.core.ClientState.ViewState.GAME);
-                        java.util.logging.Logger.getLogger(PhaseChangedEvent.class.getName())
-                            .severe("Failed to navigate to GAME after phase change - Reason: " + reason);
+                        LOGGER.warning("Failed to navigate to GAME after phase change - Reason: " + reason);
                     }
                 }
             }

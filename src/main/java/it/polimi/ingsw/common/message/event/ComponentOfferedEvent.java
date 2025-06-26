@@ -2,11 +2,14 @@ package it.polimi.ingsw.common.message.event;
 
 import it.polimi.ingsw.server.model.domain.player.PlayerId;
 
+import java.util.logging.Logger;
+
 /**
  * Event broadcast when a component tile is offered to a specific player.
  * This can happen in advanced building rules or special game scenarios.
  */
 public class ComponentOfferedEvent extends AbstractEvent {
+    private static final Logger LOGGER = Logger.getLogger(ComponentOfferedEvent.class.getName());
     private final String tileId;
     private final String tileType;
     private final String offeredToPlayerId;
@@ -24,6 +27,7 @@ public class ComponentOfferedEvent extends AbstractEvent {
         this.offeredToPlayerNickname = offeredToPlayerNickname;
         this.reason = reason;
         this.offerExpiresAt = offerExpiresAt;
+        LOGGER.fine("ComponentOfferedEvent instantiated for game: " + gameId + ", tile: " + tileType + ", offered to: " + offeredToPlayerNickname);
     }
 
     public String getTileId() {
@@ -68,9 +72,11 @@ public class ComponentOfferedEvent extends AbstractEvent {
                     if (reason != null && !reason.isEmpty()) {
                         message += " (" + reason + ")";
                     }
+                    LOGGER.fine("Displaying 'Component Offered' notification for local player: " + message);
                 } else {
                     // Notification for other players
                     message = String.format("A %s tile was offered to %s", tileType, offeredToPlayerNickname);
+                    LOGGER.fine("Displaying 'Component Offered' notification for other player: " + message);
                 }
                 
                 context.getNotificationService().showInfo(

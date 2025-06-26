@@ -6,7 +6,7 @@ import it.polimi.ingsw.server.model.enums.ship.ComponentType;
 
 import java.util.Map;
 
-// Removes batteries to charge cannons/engines/shields
+// Galaxy Trucker component usage - batteries are consumed (trashed) when used
 public class UseComponentVisitor implements ComponentVisitor {
     private int quantity;
     private Map<GoodType, Integer> goods;
@@ -14,16 +14,15 @@ public class UseComponentVisitor implements ComponentVisitor {
 
     @Override
     public void useBattery(Ship ship, Battery battery, int quantity) {
-        int result = battery.getCurrentBatteries() - quantity;
-
-        if (result < 0) {
-            System.out.println("Not enough batteries to use");
-            return;
+        // Galaxy Trucker rules: batteries are consumed directly, no intermediate state
+        int consumed = battery.consumeBatteries(quantity);
+        
+        if (consumed < quantity) {
+            System.out.println("Warning: Only " + consumed + " batteries available, needed " + quantity);
         }
-
-        battery.setCurrentBatteries(battery.getCurrentBatteries() - quantity);
-        ship.setBatteries(ship.getBatteries() - quantity);
-        ship.setChargingBatteries(ship.getChargingBatteries() + quantity);
+        
+        // Update ship's total battery count
+        ship.updateStats();
     }
 
     @Override
@@ -98,50 +97,23 @@ public class UseComponentVisitor implements ComponentVisitor {
 
     @Override
     public void useCannon(Ship ship, Cannon cannon) {
-        if (cannon.getType() == ComponentType.CANNON_SINGLE) {
-            System.out.println("This cannon is single, it cannot be charged");
-            return;
-        }
-
-        if (ship.getChargingBatteries() > 0) {
-            ship.setChargingBatteries(ship.getChargingBatteries() - 1);
-            cannon.setCharged(true);
-            cannon.count(ship);
-            // Spengo qui il cannone?
-        }
-        else {
-            System.out.println("There is no charging battery to use");
-        }
+        // Galaxy Trucker: No pre-charging of cannons
+        // Batteries are consumed during combat strength calculation
+        System.out.println("Cannon usage: Batteries consumed during combat calculation");
     }
 
     @Override
     public void useEngine(Ship ship, Engine engine) {
-        if (engine.getType() == ComponentType.ENGINE_SINGLE) {
-            System.out.println("This engine is single, it cannot be charged");
-            return;
-        }
-
-        if (ship.getChargingBatteries() > 0) {
-            ship.setChargingBatteries(ship.getChargingBatteries() - 1);
-            engine.setCharged(true);
-            engine.count(ship);
-            // Spengo qui il motore?
-        }
-        else {
-            System.out.println("There is no charging battery to use");
-        }
+        // Galaxy Trucker: No pre-charging of engines
+        // Batteries are consumed during movement strength calculation
+        System.out.println("Engine usage: Batteries consumed during movement calculation");
     }
 
     @Override
     public void useShield(Ship ship, Shield shield) {
-        if (ship.getChargingBatteries() > 0) {
-            ship.setChargingBatteries(ship.getChargingBatteries() - 1);
-            shield.setCharged(true);
-            // Spengo qui lo scudo?
-        }
-        else {
-            System.out.println("There is no charging battery to use");
-        }
+        // Galaxy Trucker: No pre-charging of shields
+        // Batteries are consumed when shields are used to block meteors
+        System.out.println("Shield usage: Batteries consumed when blocking meteors");
     }
 
 

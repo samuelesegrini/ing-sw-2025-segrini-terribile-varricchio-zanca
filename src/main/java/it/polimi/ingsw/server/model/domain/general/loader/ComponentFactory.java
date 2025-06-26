@@ -27,16 +27,38 @@ public class ComponentFactory {
     public Component createComponent(ComponentConfig config) {
         ComponentCreator creator = creators.get(config.type().toUpperCase());
         if (creator == null) {
-            System.err.println("Warning: No creator registered for component type: " + config.type() + " (ID: " + config.id() + "). Skipping component.");
+            System.err.println("Warning: No creator registered for component type: " + config.type() + 
+                             " (ID: " + (config.id() != null ? config.id() : "auto-generated") + "). Skipping component.");
             return null; // Or throw an exception
         }
         try {
-            return creator.create(config);
+            // Generate ID if missing
+            String componentId = config.id() != null ? config.id() : generateComponentId(config);
+            ComponentConfig configWithId = new ComponentConfig(componentId, config.type(), config.connectors(), config.properties());
+            return creator.create(configWithId);
         } catch (Exception e) {
-            System.err.println("Error creating component ID " + config.id() + " of type " + config.type() + ": " + e.getMessage());
+            System.err.println("Error creating component ID " + (config.id() != null ? config.id() : "auto-generated") + 
+                             " of type " + config.type() + ": " + e.getMessage());
             e.printStackTrace();
             return null;
         }
+    }
+    
+    private String generateComponentId(ComponentConfig config) {
+        // Generate unique ID based on type and properties
+        String baseId = config.type().toLowerCase();
+        if (config.properties() != null) {
+            Object image = config.properties().get("image");
+            if (image instanceof String imageStr) {
+                // Extract filename without extension as unique identifier
+                String filename = imageStr.substring(imageStr.lastIndexOf('/') + 1);
+                if (filename.contains(".")) {
+                    filename = filename.substring(0, filename.lastIndexOf('.'));
+                }
+                return baseId + "_" + filename;
+            }
+        }
+        return baseId + "_" + System.currentTimeMillis();
     }
 
     private Map<Direction, ConnectorType> parseConnectors(List<String> connectorStrings) {
@@ -86,16 +108,13 @@ public class ComponentFactory {
     private Cabin createCabin(ComponentConfig config) {
         Map<Direction, ConnectorType> connectors = parseConnectors(config.connectors());
         ComponentType type = ComponentType.CABIN; // Default
-        // Check if it's a starting cabin by playerColor property
+        
+        // Check if it's a starting cabin by playerColor property (this property exists in JSON)
         if (config.properties().containsKey("playerColor")) {
-            // This is a starting cabin. Your Cabin class needs to handle this,
-            // or you need a StartingCabin subclass. For now, assuming Cabin handles it.
-            // PlayerColor color = PlayerColor.valueOf(((String) config.properties().get("playerColor")).toUpperCase());
-            // Cabin cabin = new Cabin(type, connectors);
-            // cabin.setPlayerColor(color); // Example if Cabin has this setter
-            type = ComponentType.CABIN_START; // Or set a flag
+            type = ComponentType.CABIN_START;
         }
-        return new Cabin(type, connectors, config.id()); // Pass PlayerColor if Cabin constructor supports it
+        
+        return new Cabin(type, connectors, config.id());
     }
 
     private Cannon createCannonSingle(ComponentConfig config) {
@@ -124,14 +143,12 @@ public class ComponentFactory {
 
     private Engine createEngineSingle(ComponentConfig config) {
         Map<Direction, ConnectorType> connectors = parseConnectors(config.connectors());
-        String id = config.id();
-        return new Engine(ComponentType.ENGINE_SINGLE, connectors, id);
+        return new Engine(ComponentType.ENGINE_SINGLE, connectors, config.id());
     }
 
     private Engine createEngineDouble(ComponentConfig config) {
         Map<Direction, ConnectorType> connectors = parseConnectors(config.connectors());
-        String id = config.id();
-        return new Engine(ComponentType.ENGINE_DOUBLE, connectors, id);
+        return new Engine(ComponentType.ENGINE_DOUBLE, connectors, config.id());
     }
 
     private LifeSupportSystem createLifeSupportBrown(ComponentConfig config) {

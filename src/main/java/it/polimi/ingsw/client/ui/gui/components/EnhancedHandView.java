@@ -1,6 +1,5 @@
 package it.polimi.ingsw.client.ui.gui.components;
 
-import it.polimi.ingsw.client.core.UIRefreshable;
 import it.polimi.ingsw.server.model.domain.ship.components.Component;
 import it.polimi.ingsw.client.ui.core.UIContext;
 import it.polimi.ingsw.server.model.domain.general.ComponentDeck;
@@ -20,11 +19,13 @@ import javafx.scene.shape.Rectangle;
 import javafx.util.Duration;
 
 import java.util.List;
+import it.polimi.ingsw.client.ui.core.UIView;
+import it.polimi.ingsw.client.core.ClientState;
 
 /**
  * Hand UI component using Simple Direct Model Architecture.
  */
-public class EnhancedHandView extends VBox implements UIRefreshable {
+public class EnhancedHandView extends VBox implements UIView {
     
     public interface HandActionHandler {
         void onComponentSelected(Component component);
@@ -35,7 +36,7 @@ public class EnhancedHandView extends VBox implements UIRefreshable {
     }
     
     private final HandActionHandler actionHandler;
-    private final UIContext uiContext;
+    private UIContext uiContext; // Changed to non-final for initialize method
     
     // UI Components
     private Label handTitleLabel;
@@ -54,6 +55,7 @@ public class EnhancedHandView extends VBox implements UIRefreshable {
     // State
     private Component currentComponent;
     private boolean isEmpty = true;
+    private boolean active = false; // Added for UIView
     
     // Animations
     private Timeline pulseAnimation;
@@ -457,5 +459,56 @@ public class EnhancedHandView extends VBox implements UIRefreshable {
             }
         }
     }
-    
+
+    @Override
+    public ClientState.ViewState getViewState() {
+        // This view is part of the GAME view, so it returns GAME
+        return ClientState.ViewState.GAME;
+    }
+
+    @Override
+    public String getTitle() {
+        return "Enhanced Hand View";
+    }
+
+    @Override
+    public void initialize(UIContext context) {
+        // This view is initialized via its constructor, but we can register it here
+        // if it needs to be part of the refreshable views in ClientState.
+        // If it's a sub-component managed by a parent UIView, it might not need to register itself.
+        // For now, assuming it's managed by a parent view that calls its refresh().
+        // If it needs to be directly refreshed by ClientState, uncomment the line below:
+        // context.getClientState().registerRefreshableView(this);
+        this.uiContext = context; // Ensure context is set if initialize is called later
+    }
+
+    @Override
+    public void show() {
+        this.setVisible(true);
+        this.active = true;
+        refresh(); // Refresh when shown
+    }
+
+    @Override
+    public void hide() {
+        this.setVisible(false);
+        this.active = false;
+    }
+
+    @Override
+    public boolean isActive() {
+        return this.active;
+    }
+
+    @Override
+    public void dispose() {
+        // Clean up resources if any, stop animations
+        if (pulseAnimation != null) {
+            pulseAnimation.stop();
+        }
+        // If registered with ClientState, unregister it here:
+        // if (uiContext != null) {
+        //     uiContext.getClientState().unregisterRefreshableView(this);
+        // }
+    }
 }

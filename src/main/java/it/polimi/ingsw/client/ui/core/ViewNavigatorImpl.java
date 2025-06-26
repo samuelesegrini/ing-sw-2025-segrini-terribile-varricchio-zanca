@@ -45,10 +45,11 @@ public class ViewNavigatorImpl implements ViewNavigator {
         ClientState.ViewState oldState = currentViewState;
         
         try {
-            // Update the client state and notify listeners directly
+            // Update ViewNavigator state first to maintain consistency
+            currentViewState = viewState;
+            // Update the client state and notify listeners
             clientState.setCurrentView(viewState);
             onViewStateChanged(oldState, viewState);
-            currentViewState = viewState;
             
             String contextMsg = context != null ? " (Context: " + context + ")" : "";
             LOGGER.info("Successfully navigated from " + oldState + " to " + viewState + contextMsg);
@@ -126,7 +127,7 @@ public class ViewNavigatorImpl implements ViewNavigator {
                 return "From LOBBY view, can only navigate to GAME_LOBBY or LOGIN";
                        
             case GAME_LOBBY:
-                // From game lobby, can go to game when it starts or back to lobby
+                // From game lobby, can go to game view when game starts or back to lobby
                 if (viewState == ClientState.ViewState.GAME) {
                     if (clientState.getCurrentGameId() == null) {
                         return "Not in a game (no game ID)";
@@ -137,12 +138,7 @@ public class ViewNavigatorImpl implements ViewNavigator {
                 }
                 return "From GAME_LOBBY view, can only navigate to GAME or LOBBY";
                        
-            case GAME:
-                // From game, can go back to lobby or to login
-                if (viewState == ClientState.ViewState.LOBBY || viewState == ClientState.ViewState.LOGIN) {
-                    return null; // Navigation allowed
-                }
-                return "From GAME view, can only navigate to LOBBY or LOGIN";
+            
                        
             default:
                 // For unknown states, allow navigation

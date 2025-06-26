@@ -380,6 +380,14 @@ public class AdventureCardVisitor {
                     flightBoard.movePlayer(combatLoser, check.getPenaltyValue(), false);
                     System.out.println(combatLoser.getId().getNickname() + " has lost " + check.getPenaltyValue() + " flight days");
                     break;
+                case GOODS_LOSS:
+                    boolean success = combatLoser.getShip().removeValuableResources(check.getPenaltyValue());
+                    if (success) {
+                        System.out.println(combatLoser.getId().getNickname() + " has lost " + check.getPenaltyValue() + " valuable goods in combat");
+                    } else {
+                        System.out.println(combatLoser.getId().getNickname() + " had insufficient goods to lose, penalty applied to remaining resources");
+                    }
+                    break;
                 case CANNON_FIRE:
                     for(CannonFire cannonFire : check.getCannonFires()){
                         Random dice1 = new Random();

@@ -1,13 +1,12 @@
 package it.polimi.ingsw.client.ui.core;
 
 import java.util.logging.Logger;
-import it.polimi.ingsw.client.core.UIRefreshable;
 import it.polimi.ingsw.client.ui.core.UIContext;
 
 /**
  * Abstract base implementation for UI views with Simple Direct Model Architecture.
  */
-public abstract class BaseUIView implements UIView, UIRefreshable {
+public abstract class BaseUIView implements UIView {
     protected static final Logger LOGGER = Logger.getLogger(BaseUIView.class.getName());
     protected UIContext context;
     protected boolean active = false;

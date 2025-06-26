@@ -5,6 +5,7 @@ import it.polimi.ingsw.server.model.domain.general.config.GameConfigurationManag
 import it.polimi.ingsw.server.model.domain.player.PlayerId;
 import it.polimi.ingsw.server.model.enums.GameLevel;
 import it.polimi.ingsw.server.network.ServerNetworkManager;
+import it.polimi.ingsw.common.message.EventPublisher;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,14 +29,17 @@ public class GameSessionManager {
     private final GameConfigurationManager configManager;
     private final ServerNetworkManager networkManager;
     private final PlayerSessionRegistry playerRegistry;
+    private EventPublisher eventPublisher;
     private final ExecutorService gameExecutor;
 
     public GameSessionManager(ServerNetworkManager networkManager,
-                              PlayerSessionRegistry playerRegistry) {
+                              PlayerSessionRegistry playerRegistry,
+                              EventPublisher eventPublisher) {
         this.gameSessions = new ConcurrentHashMap<>();
         this.playerToGameMap = new ConcurrentHashMap<>();
         this.networkManager = networkManager;
         this.playerRegistry = playerRegistry;
+        this.eventPublisher = eventPublisher;
         this.configManager = new GameConfigurationManager();
         this.gameExecutor = Executors.newCachedThreadPool(r -> {
             Thread t = new Thread(r);
@@ -74,7 +78,7 @@ public class GameSessionManager {
         LOGGER.info("🆔 GAME ID GENERATED - New gameId: " + gameId);
         
         GameSession session = new GameSession(gameId, gameName, creatorId,
-                maxPlayers, gameLevel, configManager, playerRegistry);
+                maxPlayers, gameLevel, configManager, playerRegistry, eventPublisher);
         LOGGER.info("🏗️ GAME SESSION CREATED - GameSession object created for gameId: " + gameId);
 
         gameSessions.put(gameId, session);
@@ -238,6 +242,19 @@ public class GameSessionManager {
         return allGames;
     }
 
+    /**
+     * Sets the event publisher for this session manager.
+     * Used for deferred initialization when event publisher depends on session manager.
+     */
+    public void setEventPublisher(EventPublisher eventPublisher) {
+        this.eventPublisher = eventPublisher;
+        
+        // Update all existing game sessions
+        for (GameSession session : gameSessions.values()) {
+            session.updateEventPublisher(eventPublisher);
+        }
+    }
+    
     /**
      * Shuts down the game session manager.
      */

@@ -66,6 +66,24 @@ public class ComponentTileView extends StackPane {
     }
     
     /**
+     * Constructor for both component and face-down state
+     */
+    public ComponentTileView(Component component, boolean isFaceDown) {
+        this.component = component;
+        this.isFaceDown = isFaceDown;
+        this.isFaceUp = !isFaceDown;
+        
+        initializeView();
+        if (!isFaceDown && component != null) {
+            setupImage();
+            setupConnectorOverlay();
+            setupRotationIndicator();
+            setupTooltip();
+        }
+        updateAppearance();
+    }
+    
+    /**
      * Constructor for face-down tiles (when no specific component is known)
      */
     public ComponentTileView(boolean isFaceDown) {

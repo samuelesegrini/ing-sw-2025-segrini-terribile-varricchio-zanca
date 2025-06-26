@@ -2,12 +2,15 @@ package it.polimi.ingsw.common.message.event;
 
 import it.polimi.ingsw.server.model.domain.player.PlayerId;
 
+import java.util.logging.Logger;
+
 /**
  * Event broadcast when a player disconnects from a game session (network disconnection).
  * This is different from PlayerLeftGameEvent which is for intentional leaving.
  * Only notifies other players in the same game, showing that the player is temporarily unavailable.
  */
 public class PlayerDisconnectedEvent extends AbstractEvent {
+    private static final Logger LOGGER = Logger.getLogger(PlayerDisconnectedEvent.class.getName());
     private final PlayerId playerId;
     private final String playerNickname;
     private final boolean isInActiveGame; // Whether disconnection happened during active gameplay
@@ -17,6 +20,7 @@ public class PlayerDisconnectedEvent extends AbstractEvent {
         this.playerId = playerId;
         this.playerNickname = playerNickname;
         this.isInActiveGame = isInActiveGame;
+        LOGGER.fine("PlayerDisconnectedEvent instantiated for game: " + gameId + ", player: " + playerNickname + ", in active game: " + isInActiveGame);
     }
 
     public PlayerId getPlayerId() {
@@ -36,6 +40,7 @@ public class PlayerDisconnectedEvent extends AbstractEvent {
         // Don't send to the disconnected player (they're not connected anyway)
         PlayerId playerIdForClient = context.getPlayerIdForClient(clientId);
         if (this.playerId.equals(playerIdForClient)) {
+            LOGGER.finer("EVENT FILTERING - PlayerDisconnectedEvent NOT sent to disconnected player: " + clientId);
             return false;
         }
         
@@ -46,6 +51,7 @@ public class PlayerDisconnectedEvent extends AbstractEvent {
     @Override
     public void handleOnClient(ClientEventContext context) {
         context.runOnUIThread(() -> {
+            LOGGER.fine("Handling PlayerDisconnectedEvent for game: " + gameId + ", player: " + playerNickname);
             // Only show notification to other players in the game
             if (!context.isLocalPlayer(playerId) && context.getNotificationService() != null) {
                 String message = isInActiveGame 

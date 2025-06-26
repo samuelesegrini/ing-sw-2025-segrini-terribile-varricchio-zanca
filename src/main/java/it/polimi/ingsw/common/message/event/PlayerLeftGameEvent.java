@@ -3,11 +3,14 @@ package it.polimi.ingsw.common.message.event;
 import it.polimi.ingsw.client.core.ClientState;
 import it.polimi.ingsw.server.model.domain.player.PlayerId;
 
+import java.util.logging.Logger;
+
 /**
  * Event broadcast when a player leaves a game lobby or active game.
  * Updates the player list and notifies remaining players.
  */
 public class PlayerLeftGameEvent extends AbstractEvent {
+    private static final Logger LOGGER = Logger.getLogger(PlayerLeftGameEvent.class.getName());
     private final PlayerId playerId;
     private final String playerNickname;
 
@@ -15,6 +18,7 @@ public class PlayerLeftGameEvent extends AbstractEvent {
         super(EventType.PLAYER_LEFT_GAME, gameId, playerId);
         this.playerId = playerId;
         this.playerNickname = playerNickname;
+        LOGGER.fine("PlayerLeftGameEvent instantiated for game: " + gameId + ", player: " + playerNickname);
     }
     
 
@@ -32,6 +36,7 @@ public class PlayerLeftGameEvent extends AbstractEvent {
         // Don't send to the leaving player (they already have the response)
         PlayerId playerId = context.getPlayerIdForClient(clientId);
         if (this.playerId.equals(playerId)) {
+            LOGGER.finer("EVENT FILTERING - PlayerLeftGameEvent NOT sent to leaving player: " + clientId);
             return false;
         }
         
@@ -56,12 +61,10 @@ public class PlayerLeftGameEvent extends AbstractEvent {
                     if (removed) {
                         // Trigger UI refresh after player removal
                         clientState.setCurrentGameLobby(currentGame);
-                        java.util.logging.Logger.getLogger(PlayerLeftGameEvent.class.getName())
-                            .info("Removed player " + playerNickname + " from lobby");
+                        LOGGER.fine("Removed player " + playerNickname + " from lobby");
                     }
                 } catch (Exception e) {
-                    java.util.logging.Logger.getLogger(PlayerLeftGameEvent.class.getName())
-                        .warning("Failed to remove player from lobby: " + e.getMessage());
+                    LOGGER.warning("Failed to remove player from lobby: " + e.getMessage());
                 }
             }
             
@@ -77,12 +80,10 @@ public class PlayerLeftGameEvent extends AbstractEvent {
                     if (!success) {
                         String reason = context.getController().getUIContext().getViewNavigator()
                             .getNavigationFailureReason(ClientState.ViewState.LOBBY);
-                        java.util.logging.Logger.getLogger(PlayerLeftGameEvent.class.getName())
-                            .severe("Failed to navigate to LOBBY after leaving game - Reason: " + reason);
+                        LOGGER.severe("Failed to navigate to LOBBY after leaving game - Reason: " + reason);
                     }
                 } else {
-                    java.util.logging.Logger.getLogger(PlayerLeftGameEvent.class.getName())
-                        .severe("ViewNavigator not available - cannot navigate to LOBBY after leaving game");
+                    LOGGER.severe("ViewNavigator not available - cannot navigate to LOBBY after leaving game");
                 }
                 
                 // Clear current game lobby for local player

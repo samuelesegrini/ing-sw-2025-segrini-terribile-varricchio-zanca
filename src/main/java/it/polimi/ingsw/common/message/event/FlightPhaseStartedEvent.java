@@ -1,65 +1,65 @@
 package it.polimi.ingsw.common.message.event;
 
-import it.polimi.ingsw.server.model.domain.general.GameModel;
+import it.polimi.ingsw.client.ui.Notification;
 import it.polimi.ingsw.client.ui.NotificationType;
+import it.polimi.ingsw.server.model.domain.player.PlayerId;
+
+import java.util.logging.Logger;
 
 /**
- * Event broadcast when the flight phase starts.
- * Contains the complete game state for the flight phase.
+ * Event broadcast when the flight phase begins.
+ * This triggers navigation to flight views and notifies players.
  */
 public class FlightPhaseStartedEvent extends AbstractEvent {
-    private final GameModel gameModel;
+    private static final Logger LOGGER = Logger.getLogger(FlightPhaseStartedEvent.class.getName());
+    private final int playerCount;
+    private final int routeLength;
 
-    public FlightPhaseStartedEvent(String gameId, GameModel gameModel) {
+    public FlightPhaseStartedEvent(String gameId, int playerCount, int routeLength) {
         super(EventType.FLIGHT_PHASE_STARTED, gameId, null);
-        this.gameModel = gameModel;
+        this.playerCount = playerCount;
+        this.routeLength = routeLength;
+        LOGGER.fine("FlightPhaseStartedEvent instantiated for game: " + gameId + ", players: " + playerCount + ", route length: " + routeLength);
     }
 
-    public GameModel getGameModel() {
-        return gameModel;
+    public int getPlayerCount() {
+        return playerCount;
+    }
+
+    public int getRouteLength() {
+        return routeLength;
     }
 
     @Override
     public void handleOnClient(ClientEventContext context) {
         context.runOnUIThread(() -> {
-            // Update game model with flight phase state
+            // Update client state to flight phase
             if (context.getClientState() != null) {
-                context.getClientState().setGameModel(gameModel);
-                
-                // Ensure we're in GAME view to see the flight phase UI
-                if (context.getController().getUIContext() != null && 
-                    context.getController().getUIContext().getViewNavigator() != null &&
-                    context.getClientState().getCurrentView() != it.polimi.ingsw.client.core.ClientState.ViewState.GAME) {
-                    
-                    boolean success = context.getController().getUIContext().getViewNavigator()
-                        .navigateTo(it.polimi.ingsw.client.core.ClientState.ViewState.GAME, 
-                                   "Flight phase started - entering space exploration");
-                    
-                    if (!success) {
-                        String reason = context.getController().getUIContext().getViewNavigator()
-                            .getNavigationFailureReason(it.polimi.ingsw.client.core.ClientState.ViewState.GAME);
-                        java.util.logging.Logger.getLogger(FlightPhaseStartedEvent.class.getName())
-                            .severe("Failed to navigate to GAME for flight phase - Reason: " + reason);
-                    }
-                } else if (context.getClientState().getCurrentView() != it.polimi.ingsw.client.core.ClientState.ViewState.GAME) {
-                    java.util.logging.Logger.getLogger(FlightPhaseStartedEvent.class.getName())
-                        .severe("ViewNavigator not available - cannot navigate to GAME for flight phase");
-                }
-                
-                java.util.logging.Logger.getLogger(FlightPhaseStartedEvent.class.getName())
-                    .info("Flight phase started - game model updated");
+                // The phase change will be handled by PhaseChangedEvent
+                // This event is primarily for UI-specific flight phase setup
             }
 
-            // Show notification about phase transition
+            // Show flight phase notification
             if (context.getNotificationService() != null) {
+                LOGGER.fine("Displaying flight phase started notification.");
                 context.getNotificationService().showNotification(
-                    new it.polimi.ingsw.client.ui.Notification(
-                        "Flight Phase Started",
-                        "The flight phase has begun! Navigate through space and complete adventures.",
-                        NotificationType.INFO
-                    )
+                    new Notification("Flight Phase Started", 
+                        "Ready for adventure with " + playerCount + " players! Route length: " + routeLength,
+                        NotificationType.INFO)
                 );
             }
+
+            // Navigation to flight view is handled by PhaseChangedEvent
+            // This event focuses on flight-specific UI setup
         });
+    }
+
+    @Override
+    public String toString() {
+        return "FlightPhaseStartedEvent{" +
+                "gameId='" + gameId + '\'' +
+                ", playerCount=" + playerCount +
+                ", routeLength=" + routeLength +
+                '}';
     }
 }

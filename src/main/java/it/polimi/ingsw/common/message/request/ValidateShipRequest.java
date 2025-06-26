@@ -1,22 +1,21 @@
 package it.polimi.ingsw.common.message.request;
 
-import it.polimi.ingsw.common.message.event.ShipValidationEvent;
-import it.polimi.ingsw.common.message.response.ValidateShipResponse;
-import it.polimi.ingsw.common.message.response.ErrorResponse;
 import it.polimi.ingsw.common.message.response.Response;
+import it.polimi.ingsw.common.message.response.ErrorResponse;
+import it.polimi.ingsw.common.message.response.ValidateShipResponse;
+import it.polimi.ingsw.common.message.event.ShipValidationEvent;
 import it.polimi.ingsw.server.core.GameSession;
 import it.polimi.ingsw.server.model.domain.player.Player;
 import it.polimi.ingsw.server.model.domain.player.PlayerId;
 import it.polimi.ingsw.server.model.domain.ship.Ship;
-import it.polimi.ingsw.server.model.domain.ship.components.Component;
+import it.polimi.ingsw.server.model.domain.ship.ShipValidationService;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
 /**
-
- Request to validate the ship construction.
+ * Request to validate the ship construction.
  */
 public class ValidateShipRequest extends AbstractRequest {
     @Override
@@ -29,30 +28,19 @@ public class ValidateShipRequest extends AbstractRequest {
         Player player = session.getPlayer(playerId);
         Ship ship = player.getShip();
 
-        // Validate ship
+        // ENHANCED: Use comprehensive validation from ShipValidationService
         List<String> errors = new ArrayList<>();
-
-        // Check connection errors
-        List<Component> badConnections = ship.checkConnectingErrors();
-        if (!badConnections.isEmpty()) {
-            errors.add("Found " + badConnections.size() + " connection errors");
-        }
-
-        // Check if ship is connected
-        List<Ship> splitShips = ship.splitBoard(ship.getBoard()[2][3]); // Check from starting position
-        if (splitShips.size() > 1) {
-            errors.add("Ship is not fully connected");
-        }
-
-        // Check minimum requirements
-        ship.updateStats();
-        if (ship.getEngines() < 1) {
-            errors.add("Ship must have at least one engine");
-        }
-
-        if (ship.getCrew() < 2) {
-            errors.add("Ship must have at least 2 crew members");
-        }
+        List<String> warnings = new ArrayList<>();
+        
+        // Get current game phase for validation context
+        var currentPhase = session.getCurrentPhase();
+        
+        // Use the comprehensive Galaxy Trucker validation system
+        ShipValidationService.ValidationResult validationResult = 
+            ShipValidationService.validateGalaxyTruckerRules(ship, currentPhase);
+        
+        errors.addAll(validationResult.getErrors());
+        warnings.addAll(validationResult.getWarnings());
 
         // Publish validation event
         ShipValidationEvent event = new ShipValidationEvent(
@@ -67,11 +55,27 @@ public class ValidateShipRequest extends AbstractRequest {
         if (errors.isEmpty()) {
             // Mark player as ready
             session.setPlayerReady(playerId, true);
-            // Return a proper, concrete response object
-            return new ValidateShipResponse(getCorrelationId(), true, Collections.emptyList());
+            
+            // ENHANCED: Include warnings in success response for player feedback
+            List<String> feedbackMessages = new ArrayList<>();
+            if (!warnings.isEmpty()) {
+                feedbackMessages.add("Ship validated successfully with " + warnings.size() + " optimization suggestions:");
+                feedbackMessages.addAll(warnings);
+            } else {
+                feedbackMessages.add("Ship validated successfully - excellent construction!");
+            }
+            
+            return new ValidateShipResponse(getCorrelationId(), true, feedbackMessages);
         } else {
-            // Return a proper, concrete response object with the list of errors
-            return new ValidateShipResponse(getCorrelationId(), false, errors);
+            // ENHANCED: Combine errors and warnings for comprehensive feedback
+            List<String> allFeedback = new ArrayList<>();
+            allFeedback.addAll(errors);
+            if (!warnings.isEmpty()) {
+                allFeedback.add("--- Additional Warnings ---");
+                allFeedback.addAll(warnings);
+            }
+            
+            return new ValidateShipResponse(getCorrelationId(), false, allFeedback);
         }
     }
 }

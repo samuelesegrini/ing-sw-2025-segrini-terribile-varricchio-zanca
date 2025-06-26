@@ -65,12 +65,33 @@ public class ReserveTileRequest extends AbstractRequest {
         }
 
         try {
-            // Reserve component logic - move to deck's reserved area
+            // ENHANCED: Check level-specific feature support and provide detailed error messages
             ComponentDeck deck = session.getGameModel().getComponentDeck();
+            
+            // Check if reservations are supported in this game level
+            if (!deck.supportsComponentReservation()) {
+                return createErrorResponse(
+                    String.format("Component reservations are not available in %s mode. This feature is only available in Level II and higher.", 
+                                deck.getGameLevel()), 
+                    ErrorResponse.INVALID_STATE);
+            }
+            
+            // Check current reservation count and provide detailed feedback
+            long currentReservations = deck.getReservedComponents(playerId.toString()).size();
+            int maxReservations = deck.getMaxReservationsPerPlayer();
+            
+            if (currentReservations >= maxReservations) {
+                return createErrorResponse(
+                    String.format("Cannot reserve component - you already have %d/%d reservations. Remove a reservation first.", 
+                                currentReservations, maxReservations), 
+                    ErrorResponse.INVALID_STATE);
+            }
+            
+            // Attempt to reserve the component
             boolean reserved = deck.reserveComponent(playerId.toString(), component);
             
             if (!reserved) {
-                return createErrorResponse("Cannot reserve component - maximum reservations reached", ErrorResponse.INVALID_STATE);
+                return createErrorResponse("Failed to reserve component - please try again", ErrorResponse.INTERNAL_ERROR);
             }
             
             // Remove component from player's hand since it's now reserved
@@ -85,11 +106,14 @@ public class ReserveTileRequest extends AbstractRequest {
             );
             context.getEventPublisher().publishEvent(event);
 
-            // ENHANCED: Return response with full server models
+            // ENHANCED: Return response with full server models and detailed success message
+            String successMessage = String.format("Component reserved successfully (%d/%d reservations used)", 
+                                                 currentReservations + 1, maxReservations);
+            
             return new ReserveTileResponse(
                 getCorrelationId(),
                 true,
-                "Component reserved successfully",
+                successMessage,
                 player,                // Full Player model
                 component,             // Full Component model
                 session.getGameModel().getComponentDeck() // Updated ComponentDeck model

@@ -60,7 +60,7 @@ public class StartGameResponse extends AbstractResponse {
                     logger.severe("Failed to navigate to GAME after game started - Reason: " + reason);
                 }
             } else {
-                logger.severe("ViewNavigator not available - cannot navigate to GAME after game started");
+                logger.severe("ViewNavigator not available - cannot navigate to BUILDING after game started");
             }
         }
         

@@ -16,6 +16,7 @@ public class ComponentDeck implements Serializable {
     private final List<Component> discardPile; // Permanently discarded
     private final List<Component> faceUpPile; // Face-up returned components
     private final Map<String, Component> reservedComponents; // Components reserved by players
+    private final GameLevel gameLevel; // Track level for feature gating
 
     /**
      * Creates a new component deck with the given list of components
@@ -26,6 +27,21 @@ public class ComponentDeck implements Serializable {
         this.discardPile = new ArrayList<>();
         this.faceUpPile = new ArrayList<>();
         this.reservedComponents = new HashMap<>();
+        this.gameLevel = GameLevel.TEST_FLIGHT; // Default level
+        shuffle();
+    }
+    
+    /**
+     * Creates a new component deck with the given list of components and game level
+     * @param components The initial list of components
+     * @param gameLevel The game level for feature gating
+     */
+    public ComponentDeck(List<Component> components, GameLevel gameLevel) {
+        this.drawPile = new ArrayList<>(components);
+        this.discardPile = new ArrayList<>();
+        this.faceUpPile = new ArrayList<>();
+        this.reservedComponents = new HashMap<>();
+        this.gameLevel = gameLevel;
         shuffle();
     }
 
@@ -38,6 +54,7 @@ public class ComponentDeck implements Serializable {
         this.discardPile = new ArrayList<>();
         this.faceUpPile = new ArrayList<>();
         this.reservedComponents = new HashMap<>();
+        this.gameLevel = level;
         initializeDeckForLevel(level);
     }
 
@@ -180,10 +197,16 @@ public class ComponentDeck implements Serializable {
      * Reserves a component for a specific player
      * @param playerId The player reserving the component
      * @param component The component to reserve
-     * @return true if successfully reserved, false if player already has max reservations
+     * @return true if successfully reserved, false if player already has max reservations or feature not supported
      */
     public boolean reserveComponent(String playerId, Component component) {
         if (component == null || playerId == null) {
+            return false;
+        }
+        
+        // ENHANCED: Level-specific feature gating
+        if (!supportsComponentReservation()) {
+            System.out.println("[ComponentDeck] Component reservation not supported in " + gameLevel);
             return false;
         }
         
@@ -192,12 +215,14 @@ public class ComponentDeck implements Serializable {
             .mapToLong(c -> c.getReservedBy() != null && c.getReservedBy().equals(playerId) ? 1 : 0)
             .sum();
             
-        if (playerReservations >= 2) {
+        if (playerReservations >= getMaxReservationsPerPlayer()) {
+            System.out.println("[ComponentDeck] Player " + playerId + " already has " + playerReservations + " reservations (max: " + getMaxReservationsPerPlayer() + ")");
             return false;
         }
         
         reservedComponents.put(component.getId(), component);
         component.setReservedBy(playerId);
+        System.out.println("[ComponentDeck] Component " + component.getId() + " reserved by player " + playerId);
         return true;
     }
     
@@ -285,5 +310,47 @@ public class ComponentDeck implements Serializable {
         }
         
         return discarded;
+    }
+    
+    // ENHANCED: Level-specific feature methods
+    
+    /**
+     * Checks if component reservation is supported in the current game level
+     * @return true if reservations are supported, false otherwise
+     */
+    public boolean supportsComponentReservation() {
+        return gameLevel != GameLevel.TEST_FLIGHT;
+    }
+    
+    /**
+     * Gets the maximum number of components a player can reserve
+     * @return Maximum reservations per player
+     */
+    public int getMaxReservationsPerPlayer() {
+        return supportsComponentReservation() ? 2 : 0;
+    }
+    
+    /**
+     * Checks if predictable pile preview is supported in the current game level
+     * @return true if predictable piles are supported, false otherwise
+     */
+    public boolean supportsPredictablePiles() {
+        return gameLevel.getPredictablePileCount() > 0;
+    }
+    
+    /**
+     * Gets the current game level
+     * @return The game level
+     */
+    public GameLevel getGameLevel() {
+        return gameLevel;
+    }
+    
+    /**
+     * Gets the maximum number of predictable piles for this level
+     * @return Number of predictable piles
+     */
+    public int getMaxPredictablePiles() {
+        return gameLevel.getPredictablePileCount();
     }
 } 

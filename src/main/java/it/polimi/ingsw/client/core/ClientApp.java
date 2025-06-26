@@ -4,6 +4,8 @@ import it.polimi.ingsw.client.network.NetworkClient;
 import it.polimi.ingsw.client.ui.UIManager;
 import it.polimi.ingsw.client.ui.UIType;
 import it.polimi.ingsw.client.controller.ClientController;
+
+import java.io.InputStream;
 import java.util.Scanner;
 import java.util.logging.*;
 import java.util.Arrays;
@@ -21,7 +23,22 @@ public class ClientApp {
     private UIManager uiManager;
 
     public static void main(String[] args) {
-        setupLogging();
+        // --- IMPORTANT: Load logging configuration FIRST ---
+        try (InputStream is = ClientApp.class.getResourceAsStream("/client_logging.properties")) {
+            if (is != null) {
+                LogManager.getLogManager().readConfiguration(is);
+            } else {
+                // This warning will go to System.err, not the configured logger,
+                // as logging might not be fully set up yet.
+                System.err.println("WARNING: client_logging.properties not found. Default JUL logging will be used.");
+            }
+        } catch (Exception e) {
+            System.err.println("ERROR loading client logging configuration: " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        // Now, any Logger.getLogger() calls will use the configuration from client_logging.properties
+        LOGGER.info("ClientApp started. Logging configured.");
 
         UIType uiType = parseUIType(args);
         if (uiType == null) {
@@ -33,17 +50,7 @@ public class ClientApp {
         app.start(uiType);
     }
 
-    private static void setupLogging() {
-        LogManager.getLogManager().reset();
-        Logger rootLogger = Logger.getLogger("");
-
-        ConsoleHandler consoleHandler = new ConsoleHandler();
-        consoleHandler.setLevel(Level.INFO);
-        consoleHandler.setFormatter(new SimpleFormatter());
-
-        rootLogger.addHandler(consoleHandler);
-        rootLogger.setLevel(Level.INFO);
-    }
+    
 
     public void start(UIType uiType) {
         LOGGER.info("Starting Galaxy Trucker Client with " + uiType + " interface");

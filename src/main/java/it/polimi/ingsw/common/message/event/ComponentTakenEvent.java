@@ -5,6 +5,8 @@ import it.polimi.ingsw.server.model.domain.player.Player;
 import it.polimi.ingsw.server.model.domain.player.PlayerId;
 import it.polimi.ingsw.server.model.domain.general.ComponentDeck;
 
+import java.util.logging.Logger;
+
 /**
  * Event broadcast when a component tile is taken from the face-down pile by a player.
  * This moves the component directly to the player's hand, not to a reservation state.
@@ -12,6 +14,7 @@ import it.polimi.ingsw.server.model.domain.general.ComponentDeck;
  * ENHANCED VERSION: Carries full server models instead of just basic data.
  */
 public class ComponentTakenEvent extends AbstractEvent {
+    private static final Logger LOGGER = Logger.getLogger(ComponentTakenEvent.class.getName());
     private final Component component;      // Full Component model
     private final Player player;           // Full Player model  
     private final ComponentDeck updatedDeck; // Full deck state
@@ -22,6 +25,7 @@ public class ComponentTakenEvent extends AbstractEvent {
         this.component = component;
         this.player = player;
         this.updatedDeck = updatedDeck;
+        LOGGER.fine("ComponentTakenEvent instantiated for game: " + gameId + ", player: " + player.getNickname() + ", component: " + component.getType());
     }
 
     public Component getComponent() {
@@ -53,6 +57,7 @@ public class ComponentTakenEvent extends AbstractEvent {
         // Don't send to the requesting client (they get the response instead)
         PlayerId clientPlayerId = context.getPlayerIdForClient(clientId);
         if (player.getId().equals(clientPlayerId)) {
+            LOGGER.finer("EVENT FILTERING - ComponentTakenEvent NOT sent to requesting client: " + clientId);
             return false; // Exclude the requesting client
         }
         
@@ -73,8 +78,10 @@ public class ComponentTakenEvent extends AbstractEvent {
                 String message;
                 if (context.isLocalPlayer(getPlayerId())) {
                     message = String.format("You took a %s tile from the pile", component.getType().name());
+                    LOGGER.fine("Displaying 'Component Taken' notification for local player: " + message);
                 } else {
                     message = String.format("%s took a tile from the pile", getPlayerNickname());
+                    LOGGER.fine("Displaying 'Component Taken' notification for other player: " + message);
                 }
                 context.getNotificationService().showNotification(
                     new it.polimi.ingsw.client.ui.Notification(

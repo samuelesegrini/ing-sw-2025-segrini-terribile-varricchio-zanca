@@ -19,6 +19,9 @@ import it.polimi.ingsw.common.message.response.Response;
 import it.polimi.ingsw.server.model.enums.GameLevel;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.Map;
 import java.util.logging.*;
 
 /**
@@ -33,6 +36,11 @@ public class ClientController {
     
     private UIContext uiContext;
     private final ClientState clientState;
+    
+    // ENHANCED: Conflict resolution system
+    private final Map<String, AtomicInteger> requestRetryCounters = new ConcurrentHashMap<>();
+    private static final int MAX_RETRY_ATTEMPTS = 3;
+    private static final int RETRY_DELAY_MS = 200;
 
     public ClientController(NetworkClient networkClient, UIContext uiContext) {
         this.networkClient = networkClient;
@@ -441,18 +449,64 @@ public class ClientController {
         }
 
         LOGGER.info("Taking random tile");
-
+        return takeTileWithRetry(0);
+    }
+    
+    /**
+     * ENHANCED: Take tile with automatic retry for conflict resolution
+     */
+    private CompletableFuture<Boolean> takeTileWithRetry(int attempt) {
+        String requestKey = "take_tile_" + clientState.getPlayerId();
+        
         TakeTileRequest request = new TakeTileRequest();
         return sendRequest(request)
-                .thenApply(response -> {
+                .thenCompose(response -> {
                     if (response.isSuccess()) {
                         LOGGER.info("Tile taken successfully");
-                        return true;
+                        requestRetryCounters.remove(requestKey);
+                        return CompletableFuture.completedFuture(true);
+                    } else if (isConflictError(response) && attempt < MAX_RETRY_ATTEMPTS) {
+                        // Component was taken by another player - retry with delay
+                        LOGGER.info("Component conflict detected, retrying... (attempt " + (attempt + 1) + "/" + MAX_RETRY_ATTEMPTS + ")");
+                        
+                        if (uiContext != null && uiContext.getNotificationService() != null) {
+                            uiContext.getNotificationService().showWarning("Component Conflict", 
+                                "Another player took that component. Retrying...");
+                        }
+                        
+                        return CompletableFuture.runAsync(() -> {
+                            try {
+                                Thread.sleep(RETRY_DELAY_MS + (attempt * 100)); // Increasing delay
+                            } catch (InterruptedException e) {
+                                Thread.currentThread().interrupt();
+                            }
+                        }).thenCompose(v -> takeTileWithRetry(attempt + 1));
                     } else {
                         LOGGER.warning("Failed to take tile: " + response.getErrorMessage());
-                        return false;
+                        requestRetryCounters.remove(requestKey);
+                        
+                        if (uiContext != null && uiContext.getNotificationService() != null) {
+                            uiContext.getNotificationService().showError("Take Component Failed", 
+                                response.getErrorMessage());
+                        }
+                        
+                        return CompletableFuture.completedFuture(false);
                     }
                 });
+    }
+    
+    /**
+     * ENHANCED: Determines if a response represents a conflict that should be retried
+     */
+    private boolean isConflictError(Response response) {
+        if (!response.isSuccess() && response instanceof ErrorResponse errorResponse) {
+            String errorMessage = errorResponse.getErrorMessage().toLowerCase();
+            return errorMessage.contains("not available") || 
+                   errorMessage.contains("already taken") ||
+                   errorMessage.contains("conflict") ||
+                   errorMessage.contains("concurrent access");
+        }
+        return false;
     }
 
     public CompletableFuture<Boolean> requestFaceUpTile(String componentType) {
@@ -467,16 +521,48 @@ public class ClientController {
         }
 
         LOGGER.info("Requesting face up tile: " + componentType);
-
-        RequestFaceUpTileRequest request = new RequestFaceUpTileRequest(componentType.trim());
+        return requestFaceUpTileWithRetry(componentType.trim(), 0);
+    }
+    
+    /**
+     * ENHANCED: Request face-up tile with automatic retry for conflict resolution
+     */
+    private CompletableFuture<Boolean> requestFaceUpTileWithRetry(String componentType, int attempt) {
+        String requestKey = "face_up_" + componentType + "_" + clientState.getPlayerId();
+        
+        RequestFaceUpTileRequest request = new RequestFaceUpTileRequest(componentType);
         return sendRequest(request)
-                .thenApply(response -> {
+                .thenCompose(response -> {
                     if (response.isSuccess()) {
                         LOGGER.info("Face up tile requested successfully");
-                        return true;
+                        requestRetryCounters.remove(requestKey);
+                        return CompletableFuture.completedFuture(true);
+                    } else if (isConflictError(response) && attempt < MAX_RETRY_ATTEMPTS) {
+                        // Face-up component was taken by another player - retry with delay
+                        LOGGER.info("Face-up component conflict detected, retrying... (attempt " + (attempt + 1) + "/" + MAX_RETRY_ATTEMPTS + ")");
+                        
+                        if (uiContext != null && uiContext.getNotificationService() != null) {
+                            uiContext.getNotificationService().showWarning("Component Conflict", 
+                                "Another player took that face-up component. Retrying...");
+                        }
+                        
+                        return CompletableFuture.runAsync(() -> {
+                            try {
+                                Thread.sleep(RETRY_DELAY_MS + (attempt * 100)); // Increasing delay
+                            } catch (InterruptedException e) {
+                                Thread.currentThread().interrupt();
+                            }
+                        }).thenCompose(v -> requestFaceUpTileWithRetry(componentType, attempt + 1));
                     } else {
                         LOGGER.warning("Failed to request face up tile: " + response.getErrorMessage());
-                        return false;
+                        requestRetryCounters.remove(requestKey);
+                        
+                        if (uiContext != null && uiContext.getNotificationService() != null) {
+                            uiContext.getNotificationService().showError("Face-up Component Failed", 
+                                response.getErrorMessage());
+                        }
+                        
+                        return CompletableFuture.completedFuture(false);
                     }
                 });
     }
@@ -638,9 +724,12 @@ public class ClientController {
         private class ClientEventContextImpl implements ClientEventContext {
             @Override
             public void runOnUIThread(Runnable task) {
-                // For console/TUI applications, just run on current thread
-                // For JavaFX applications, this would use Platform.runLater()
-                task.run();
+                if (uiContext != null && uiContext.getThreadService() != null) {
+                    uiContext.getThreadService().runOnUIThread(task);
+                } else {
+                    // Fallback for early stages or if UI context is not fully initialized
+                    task.run();
+                }
             }
             
             @Override
@@ -666,7 +755,9 @@ public class ClientController {
             
             @Override
             public NotificationService getNotificationService() {
-                // Return null for now - events can handle their own notifications
+                if (uiContext != null) {
+                    return uiContext.getNotificationService();
+                }
                 return null;
             }
         }
@@ -695,19 +786,23 @@ public class ClientController {
 
         @Override
         public void showNotification(String title, String message, NotificationType type) {
-            if (uiContext.getNotificationService() != null) {
+            if (uiContext != null && uiContext.getNotificationService() != null) {
                 it.polimi.ingsw.client.ui.Notification notification = 
                     new it.polimi.ingsw.client.ui.Notification(title, message, type);
                 uiContext.getNotificationService().showNotification(notification);
+            } else {
+                LOGGER.warning("Notification service not available for: " + title + ": " + message);
             }
         }
 
         @Override
         public void showError(String title, String message) {
-            if (uiContext.getNotificationService() != null) {
+            if (uiContext != null && uiContext.getNotificationService() != null) {
                 it.polimi.ingsw.client.ui.Notification notification = 
                     new it.polimi.ingsw.client.ui.Notification(title, message, NotificationType.ERROR);
                 uiContext.getNotificationService().showNotification(notification);
+            } else {
+                LOGGER.severe("Error notification service not available for: " + title + ": " + message);
             }
         }
         
@@ -721,4 +816,15 @@ public class ClientController {
             return ClientController.this;
         }
     }
+    
+    /**
+     * Gets the current view being displayed.
+     * Returns null if no view is available.
+     */
+    public Object getCurrentView() {
+        // This would typically return the current UI view
+        // For now, return null as a placeholder
+        return null;
+    }
+    
 }

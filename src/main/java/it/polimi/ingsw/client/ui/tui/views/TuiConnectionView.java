@@ -12,12 +12,13 @@ import java.util.concurrent.ExecutionException;
  * TUI view for server connection.
  * Migrated to new unified architecture.
  */
-public class TuiConnectionView extends BaseUIView { //CONTROLLA
+public class TuiConnectionView extends BaseUIView {
 
     private final Scanner scanner;
 
-    public TuiConnectionView() {
+    public TuiConnectionView(TuiContext context) {
         this.scanner = new Scanner(System.in);
+        initialize(context);
     }
     
     @Override

@@ -305,6 +305,45 @@ public class TuiConsole {
             System.out.println(Ansi.ansi().render(String.valueOf(message)).toString());
         }
     }
+    
+    /**
+     * Prints text without a newline.
+     */
+    public void print(String message) {
+        if (supportsAnsi) {
+            System.out.print(message);
+        } else {
+            System.out.print(Ansi.ansi().render(message).toString());
+        }
+    }
+    
+    /**
+     * Clears the specified number of lines by moving cursor up and clearing.
+     */
+    public void clearLines(int lines) {
+        if (supportsAnsi) {
+            for (int i = 0; i < lines; i++) {
+                System.out.print(Ansi.ansi().cursorUp(1).eraseLine());
+            }
+            System.out.flush();
+        } else {
+            // Fallback for non-ANSI terminals
+            for (int i = 0; i < lines; i++) {
+                System.out.println();
+            }
+        }
+    }
+    
+    /**
+     * Prints highlighted text with bright color.
+     */
+    public void printHighlight(String message) {
+        if (supportsAnsi) {
+            System.out.println(Ansi.ansi().fg(Ansi.Color.YELLOW).bold().a(message).reset());
+        } else {
+            System.out.println("*** " + message + " ***");
+        }
+    }
 
     private boolean isWindows() {
         return System.getProperty("os.name").toLowerCase().contains("windows");

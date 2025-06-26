@@ -12,6 +12,7 @@ import it.polimi.ingsw.server.model.domain.player.PlayerId;
 import it.polimi.ingsw.server.model.domain.ship.Position;
 import it.polimi.ingsw.server.model.domain.ship.Ship;
 import it.polimi.ingsw.server.model.domain.ship.components.Component;
+import it.polimi.ingsw.server.model.domain.ship.ShipValidationService;
 import it.polimi.ingsw.server.model.enums.GamePhase;
 
 /**
@@ -100,17 +101,17 @@ public class PlaceTileRequest extends AbstractRequest {
         Position position = new Position(row, col);
 
         try {
-            // Check if position is valid
-            if (ship.forbiddenPositions.contains(position)) {
-                return createErrorResponse("Cannot place tile at forbidden position", ErrorResponse.INVALID_STATE);
+            // ENHANCED: Use comprehensive real-time validation from ShipValidationService
+            ShipValidationService.ValidationResult placementValidation = 
+                ShipValidationService.validateComponentPlacement(ship, component, position);
+            
+            if (!placementValidation.isValid()) {
+                // Return detailed error message from validation service
+                String detailedError = String.join("; ", placementValidation.getErrors());
+                return createErrorResponse(detailedError, ErrorResponse.INVALID_STATE);
             }
 
-            // Check if position is occupied
-            if (ship.getBoard()[row][col] != null) {
-                return createErrorResponse("Position already occupied", ErrorResponse.INVALID_STATE);
-            }
-
-            // Place the component
+            // Place the component (validation already confirmed this is safe)
             ship.addComponent(component, position);
 
             // Mark component as used
@@ -129,11 +130,16 @@ public class PlaceTileRequest extends AbstractRequest {
             );
             context.publishEvent(event);
 
-            // ENHANCED: Return response with full server models
+            // ENHANCED: Return response with full server models and validation warnings
+            String successMessage = "Component placed successfully";
+            if (!placementValidation.getWarnings().isEmpty()) {
+                successMessage += " (Warnings: " + String.join("; ", placementValidation.getWarnings()) + ")";
+            }
+            
             return new PlaceTileResponse(
                 getCorrelationId(),
                 true,
-                "Component placed successfully",
+                successMessage,
                 player.getShip(),           // Full Ship model
                 gameModel.getComponentDeck() // Full ComponentDeck model
             );

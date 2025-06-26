@@ -1,16 +1,22 @@
 package it.polimi.ingsw.common.message.event;
 
+import it.polimi.ingsw.client.core.ClientState;
+import it.polimi.ingsw.client.ui.Notification;
+import it.polimi.ingsw.client.ui.NotificationType;
 import it.polimi.ingsw.server.model.domain.player.Player;
 import it.polimi.ingsw.server.model.domain.player.PlayerId;
 import it.polimi.ingsw.server.model.domain.ship.components.Component;
 import it.polimi.ingsw.server.model.domain.ship.Ship;
 import it.polimi.ingsw.server.model.domain.general.ComponentDeck;
 
+import java.util.logging.Logger;
+
 /**
  * Event when a component is placed on a ship.
  * ENHANCED VERSION: Carries full server models instead of basic data.
  */
 public class ComponentPlacedEvent extends AbstractEvent {
+    private static final Logger LOGGER = Logger.getLogger(ComponentPlacedEvent.class.getName());
     private final Player player;           // Full Player model
     private final Component component;     // Full Component model
     private final Ship updatedShip;       // Updated Ship model
@@ -23,6 +29,7 @@ public class ComponentPlacedEvent extends AbstractEvent {
         this.component = component;
         this.updatedShip = updatedShip;
         this.updatedDeck = updatedDeck;
+        LOGGER.fine("ComponentPlacedEvent instantiated for game: " + gameId + ", player: " + player.getNickname() + ", component: " + component.getType());
     }
 
     public Player getPlayer() {
@@ -55,6 +62,7 @@ public class ComponentPlacedEvent extends AbstractEvent {
         // Don't send to the requesting client (they get the response instead)
         PlayerId clientPlayerId = context.getPlayerIdForClient(clientId);
         if (player.getId().equals(clientPlayerId)) {
+            LOGGER.finer("EVENT FILTERING - ComponentPlacedEvent NOT sent to requesting client: " + clientId);
             return false; // Exclude the requesting client
         }
         
@@ -78,6 +86,7 @@ public class ComponentPlacedEvent extends AbstractEvent {
             // Show appropriate notification
             if (context.getNotificationService() != null) {
                 if (context.isLocalPlayer(getPlayerId())) {
+                    LOGGER.fine("Displaying 'Component Placed' notification for local player.");
                     context.getNotificationService().showNotification(
                         new it.polimi.ingsw.client.ui.Notification(
                             "Component Placed",
@@ -86,6 +95,7 @@ public class ComponentPlacedEvent extends AbstractEvent {
                         )
                     );
                 } else {
+                    LOGGER.fine("Displaying 'Opponent Move' notification for component placed by " + getPlayerNickname());
                     context.getNotificationService().showNotification(
                         new it.polimi.ingsw.client.ui.Notification(
                             "Opponent Move",
