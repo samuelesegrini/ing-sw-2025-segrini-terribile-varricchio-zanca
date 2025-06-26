@@ -44,6 +44,11 @@ public class RMIServerAdapter extends UnicastRemoteObject implements ServerNetwo
             LOGGER.warning("RMI Server Adapter is already running.");
             return;
         }
+        
+        // Set RMI system properties for proper callback communication
+        System.setProperty("java.rmi.server.hostname", "localhost");
+        System.setProperty("java.net.useSystemProxies", "false");
+        
         this.rmiPort = port;
         try {
             try {
@@ -124,22 +129,33 @@ public class RMIServerAdapter extends UnicastRemoteObject implements ServerNetwo
 
     @Override
     public boolean sendMessageToClient(String clientId, Message message) {
-        if (!running.get()) return false;
+        if (!running.get()) {
+            LOGGER.warning("RMI Server Adapter not running, cannot send message " + message.getClass().getSimpleName() + " to " + clientId);
+            return false;
+        }
+        
         IClientRemoteListener listener = rmiClientListeners.get(clientId);
         if (listener != null) {
             try {
+                LOGGER.info("🚀 RMI SERVER: Sending " + message.getClass().getSimpleName() + " to client " + clientId);
                 listener.onMessageFromServer(message);
+                LOGGER.info("✅ RMI SERVER: Successfully sent " + message.getClass().getSimpleName() + " to client " + clientId);
                 return true;
             } catch (RemoteException e) {
-                LOGGER.log(Level.WARNING, "RemoteException during RMI callback to " + clientId, e);
+                LOGGER.log(Level.SEVERE, "❌ RMI SERVER: RemoteException during callback to " + clientId + " for " + message.getClass().getSimpleName(), e);
                 rmiClientListeners.remove(clientId);
                 if (onClientDisconnectedCallback != null) {
                     onClientDisconnectedCallback.accept(clientId);
                 }
                 return false;
+            } catch (Exception e) {
+                LOGGER.log(Level.SEVERE, "❌ RMI SERVER: Unexpected exception during callback to " + clientId + " for " + message.getClass().getSimpleName(), e);
+                return false;
             }
+        } else {
+            LOGGER.warning("⚠️ RMI SERVER: No listener found for client " + clientId + " when sending " + message.getClass().getSimpleName());
+            return false;
         }
-        return false;
     }
 
     @Override

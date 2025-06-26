@@ -11,7 +11,7 @@ public class PingMessage extends AbstractMessage {
     @Override
     public void handleOnClient(ClientMessageContext context) {
         LOGGER.finer("Received ping from server: " + getTimestamp());
-        // Respond with pong
+        // Unified ping-pong handling for both Socket and RMI
         context.getNetworkClient().sendMessage(new PongMessage());
     }
 

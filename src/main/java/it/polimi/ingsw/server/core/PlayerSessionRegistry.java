@@ -10,6 +10,7 @@ import java.util.logging.Logger;
  */
 public class PlayerSessionRegistry {
     private static final Logger LOGGER = Logger.getLogger(PlayerSessionRegistry.class.getName());
+    private final String instanceId = "PSR-" + Integer.toHexString(this.hashCode());
 
     private final Map<String, PlayerSession> clientToPlayerMap; // clientId -> PlayerSession
     private final Map<PlayerId, String> playerToClientMap; // playerId -> clientId
@@ -28,7 +29,7 @@ public class PlayerSessionRegistry {
     /**
      * Registers a new player.
      */
-    public boolean registerPlayer(String clientId, PlayerId playerId, String nickname) {
+    public synchronized boolean registerPlayer(String clientId, PlayerId playerId, String nickname) {
         if (clientId == null || clientId.isEmpty() || playerId == null || nickname == null || nickname.isEmpty()) {
             LOGGER.warning("registerPlayer called with null or empty parameters");
             return false;
@@ -40,6 +41,7 @@ public class PlayerSessionRegistry {
         }
 
         PlayerSession session = new PlayerSession(playerId, clientId, nickname);
+        
         clientToPlayerMap.put(clientId, session);
         playerToClientMap.put(playerId, clientId);
         playerSessions.put(playerId, session);
@@ -49,6 +51,7 @@ public class PlayerSessionRegistry {
         reconnectTokens.put(playerId, token);
 
         LOGGER.info("Registered player " + nickname + " (ID: " + playerId + ")");
+        
         return true;
     }
     
@@ -87,21 +90,12 @@ public class PlayerSessionRegistry {
     /**
      * Gets player ID for a client.
      */
-    public PlayerId getPlayerIdForClient(String clientId) {
+    public synchronized PlayerId getPlayerIdForClient(String clientId) {
         if( clientId == null || clientId.isEmpty()) {
             LOGGER.warning("getPlayerIdForClient called with null or empty clientId");
             return null;
         }
         PlayerSession session = clientToPlayerMap.get(clientId);
-        System.out.println("[DEBUG] PlayerSessionRegistry.getPlayerIdForClient - Client ID: " + clientId);
-        System.out.println("[DEBUG] PlayerSessionRegistry.getPlayerIdForClient - Session found: " + (session != null));
-        if (session != null) {
-            System.out.println("[DEBUG] PlayerSessionRegistry.getPlayerIdForClient - Player ID: " + session.playerId);
-        } else {
-            System.out.println("[DEBUG] PlayerSessionRegistry.getPlayerIdForClient - Available client mappings:");
-            clientToPlayerMap.forEach((key, value) -> 
-                System.out.println("[DEBUG]   - Client: " + key + " -> Player: " + value.playerId));
-        }
         return session != null ? session.playerId : null;
     }
     

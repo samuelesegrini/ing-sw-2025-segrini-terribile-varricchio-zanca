@@ -31,19 +31,31 @@ public class RMINetworkAdapter implements NetworkAdapter {
     @Override
     public boolean connect(String host, int port) {
         try {
+            // Set RMI system properties for proper callback communication
+            System.setProperty("java.rmi.server.hostname", "localhost");
+            System.setProperty("java.net.useSystemProxies", "false");
+            
             // Get RMI registry
             Registry registry = LocateRegistry.getRegistry(host, port);
 
             // Look up server
             server = (IServerRemote) registry.lookup(IServerRemote.SERVICE_NAME);
 
-            // Create and export client listener
+            // Create and export client listener using default port (0 = system assigned)
             clientListener = new ClientRemoteListenerImpl();
-            IClientRemoteListener stub = (IClientRemoteListener)
-                    UnicastRemoteObject.exportObject(clientListener, 0);
-
+            IClientRemoteListener stub = (IClientRemoteListener) UnicastRemoteObject.exportObject(clientListener, 0);
+            LOGGER.info("🔗 RMI client listener exported");
+            
+            LOGGER.info("🔗 RMI client listener exported, registering with server...");
             // Register with server
             sessionToken = server.registerClient(stub);
+            LOGGER.info("🎯 RMI client registered with session token: " + sessionToken);
+
+            // Set the message handler on the client listener if we have one
+            if (messageHandler != null) {
+                clientListener.setMessageHandler(messageHandler);
+                LOGGER.info("✅ RMI CLIENT: Set message handler on client listener after connection");
+            }
 
             connected.set(true);
             LOGGER.info("RMI connected to " + host + ":" + port);
@@ -107,9 +119,13 @@ public class RMINetworkAdapter implements NetworkAdapter {
 
     @Override
     public void setOnMessageReceived(Consumer<Message> handler) {
+        LOGGER.info("📩 RMI CLIENT: Setting message handler");
         this.messageHandler = handler;
         if (clientListener != null) {
             clientListener.setMessageHandler(handler);
+            LOGGER.info("✅ RMI CLIENT: Message handler set on client listener");
+        } else {
+            LOGGER.info("📅 RMI CLIENT: Client listener not yet created, handler will be set on connection");
         }
     }
 
@@ -133,30 +149,31 @@ public class RMINetworkAdapter implements NetworkAdapter {
         private Consumer<Message> handler;
 
         public void setMessageHandler(Consumer<Message> handler) {
+            LOGGER.info("🎯 RMI CLIENT LISTENER: Setting message handler: " + (handler != null ? "NOT NULL" : "NULL"));
             this.handler = handler;
         }
 
         @Override
         public void onMessageFromServer(Message message) throws RemoteException {
-            LOGGER.fine("Received RMI message: " + message.getClass().getSimpleName());
-
-            // Handle ping-pong automatically
-            if (message instanceof PingMessage) {
-                LOGGER.fine("Received PING via RMI, sending PONG");
+            LOGGER.info("🔄 RMI CLIENT: Received message: " + message.getClass().getSimpleName());
+            
+            // Process all messages synchronously through the unified message handler
+            if (handler != null) {
                 try {
-                    server.dispatchClientCommand(sessionToken, new PongMessage());
-                } catch (RemoteException e) {
-                    LOGGER.log(Level.WARNING, "Failed to send PONG response", e);
+                    handler.accept(message);
+                    LOGGER.info("✅ RMI CLIENT: Successfully processed message: " + message.getClass().getSimpleName());
+                } catch (Exception e) {
+                    LOGGER.log(Level.SEVERE, "❌ RMI CLIENT: Failed to process message: " + message.getClass().getSimpleName(), e);
+                    throw new RemoteException("Message processing failed", e);
                 }
-            } else if (handler != null) {
-                // Handle non-ping messages in separate thread to avoid blocking RMI thread
-                CompletableFuture.runAsync(() -> handler.accept(message));
+            } else {
+                LOGGER.warning("⚠️ RMI CLIENT: No handler set for message: " + message.getClass().getSimpleName());
             }
         }
 
         @Override
         public void pingClient() throws RemoteException {
-            LOGGER.fine("Received ping via RMI callback method");
+            LOGGER.info("🏓 RMI CLIENT: Received direct ping callback");
             // This method can be used by server to ping using direct RMI callback
             // The response is implicit (no exception means client is alive)
         }

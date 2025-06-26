@@ -8,6 +8,7 @@ import it.polimi.ingsw.client.core.ClientState;
 import it.polimi.ingsw.client.ui.core.UIContext;
 import it.polimi.ingsw.server.model.domain.player.PlayerId;
 import it.polimi.ingsw.common.message.*;
+import it.polimi.ingsw.common.message.PongMessage;
 import it.polimi.ingsw.common.message.event.ClientEventContext;
 import it.polimi.ingsw.common.message.event.Event;
 import it.polimi.ingsw.common.message.request.*;
@@ -686,8 +687,10 @@ public class ClientController {
                     handleResponse(response);
                 } else if (message instanceof Event event) {
                     handleEvent(event);
-                } else if (message instanceof PingMessage) {
-                    handlePing((PingMessage) message);
+                } else if (message instanceof PingMessage pingMessage) {
+                    // Unified ping handling for both Socket and RMI
+                    LOGGER.finer("Ping message received, sending pong");
+                    networkClient.sendMessage(new PongMessage());
                 } else {
                     LOGGER.warning("Unhandled message type: " + message.getClass().getSimpleName());
                 }
@@ -762,10 +765,6 @@ public class ClientController {
             }
         }
 
-        private void handlePing(PingMessage pingMessage) {
-            // No need to log, just respond silently.
-            networkClient.sendMessage(new PongMessage());
-        }
     }
 
     /**

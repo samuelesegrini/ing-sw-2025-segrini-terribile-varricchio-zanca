@@ -65,11 +65,17 @@ public class LoginRequest extends AbstractRequest {
         LOGGER.fine("✅ LOGIN VALIDATION - Nickname '" + nickname + "' passed validation checks");
 
         // Check if already authenticated
-        if (context.getPlayerId() != null) {
-            LOGGER.warning("❌ LOGIN FAILED - Client " + context.getSenderId() + " already authenticated as player: " + context.getPlayerId());
-            return createErrorResponse("Already logged in", ErrorResponse.INVALID_STATE);
+        try {
+            PlayerId existingPlayerId = context.getPlayerId();
+            if (existingPlayerId != null) {
+                LOGGER.warning("❌ LOGIN FAILED - Client " + context.getSenderId() + " already authenticated as player: " + existingPlayerId);
+                return createErrorResponse("Already logged in", ErrorResponse.INVALID_STATE);
+            }
+            LOGGER.fine("✅ AUTH STATE - Client " + context.getSenderId() + " is not yet authenticated");
+        } catch (Exception e) {
+            LOGGER.warning("⚠️ AUTH CHECK - Exception during authentication check for client " + context.getSenderId() + ": " + e.getMessage());
+            // Continue with login - this just means the client wasn't found in registry yet, which is expected
         }
-        LOGGER.fine("✅ AUTH STATE - Client " + context.getSenderId() + " is not yet authenticated");
 
         PlayerSessionRegistry registry = context.getPlayerRegistry();
         String trimmedNickname = nickname.trim();
