@@ -2,6 +2,7 @@ package it.polimi.ingsw.common.message.request;
 
 import it.polimi.ingsw.common.message.response.Response;
 import it.polimi.ingsw.common.message.validation.ValidationResult;
+import it.polimi.ingsw.server.model.domain.player.PlayerId;
 
 /**
  * Request sent by a player to flip the building timer during the ship building phase.
@@ -40,7 +41,7 @@ public class FlipBuildingTimerRequest extends AbstractRequest {
                 it.polimi.ingsw.common.message.response.ErrorResponse.INVALID_STATE);
         }
         
-        String playerId = context.getPlayerId();
+        PlayerId playerId = context.getPlayerId();
         String playerNickname = context.getPlayerNickname();
         String gameId = context.getGameId();
         
@@ -52,7 +53,7 @@ public class FlipBuildingTimerRequest extends AbstractRequest {
             // Publish event to notify all players
             context.getEventPublisher().publishEvent(
                 new it.polimi.ingsw.common.message.event.BuildingTimerFlippedEvent(
-                    gameId, playerId, playerNickname, newTimeRemaining, 1
+                    gameId, playerId.toString(), playerNickname, newTimeRemaining, 1
                 )
             );
             

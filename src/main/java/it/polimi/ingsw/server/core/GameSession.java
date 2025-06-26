@@ -83,12 +83,15 @@ public class GameSession {
         if (creatorState != null) {
             boolean wasAlreadyReady = creatorState.isReady();
             creatorState.setReady(true);
+            syncPlayerReadyStatus(creatorId, true); // Sync to GameModel
             LOGGER.info("🎯 CREATOR READY STATUS - Creator " + creatorId + " was ready: " + wasAlreadyReady + ", now ready: " + creatorState.isReady());
             
-            // Debug: Print all player states
+            // Debug: Print all player states and GameModel player ready status
             LOGGER.info("🎯 ALL PLAYERS STATUS in game " + gameId + ":");
             for (Map.Entry<PlayerId, PlayerState> entry : playerStates.entrySet()) {
-                LOGGER.info("  - Player " + entry.getKey() + ": ready=" + entry.getValue().isReady());
+                Player gameModelPlayer = gameModel.getPlayerById(entry.getKey());
+                boolean gameModelReady = gameModelPlayer != null ? gameModelPlayer.isReady() : false;
+                LOGGER.info("  - Player " + entry.getKey() + ": PlayerState ready=" + entry.getValue().isReady() + ", GameModel ready=" + gameModelReady);
             }
         } else {
             LOGGER.severe("🎯 CREATOR ERROR - Failed to set creator " + creatorId + " as ready - PlayerState not found");
@@ -197,8 +200,25 @@ public class GameSession {
             if (state != null) {
                 boolean isCreator = playerId.equals(creatorId);
                 state.setReady(ready);
-                LOGGER.info("Ready: " + playerId + "=" + ready + (isCreator ? " (creator)" : ""));
+                
+                // Synchronize with GameModel Player object
+                syncPlayerReadyStatus(playerId, ready);
+                
+                LOGGER.info("Ready: " + playerId + "=" + ready + (isCreator ? " (creator)" : "") + " - synced to GameModel");
             }
+        }
+    }
+    
+    /**
+     * Synchronizes the ready status between PlayerState and GameModel Player object.
+     */
+    private void syncPlayerReadyStatus(PlayerId playerId, boolean ready) {
+        Player player = gameModel.getPlayerById(playerId);
+        if (player != null) {
+            player.setReady(ready);
+            LOGGER.info("🔄 SYNC - Player " + playerId + " ready status set to " + ready + " in GameModel");
+        } else {
+            LOGGER.warning("🔄 SYNC FAILED - Player " + playerId + " not found in GameModel for ready sync");
         }
     }
     
