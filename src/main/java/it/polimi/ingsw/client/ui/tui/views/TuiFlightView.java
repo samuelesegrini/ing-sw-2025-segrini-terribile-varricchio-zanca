@@ -66,7 +66,7 @@ public class TuiFlightView extends BaseUIView {
     public TuiFlightView(ClientController controller, TuiContext context) {
         this.controller = controller;
         this.console = context.getConsole();
-        this.scanner = new Scanner(System.in);
+        this.scanner = context.getScanner();
         initialize(context);
     }
 

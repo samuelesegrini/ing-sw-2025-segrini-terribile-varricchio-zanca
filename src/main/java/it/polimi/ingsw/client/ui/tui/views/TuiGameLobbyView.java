@@ -16,10 +16,11 @@ import java.util.Scanner;
 public class TuiGameLobbyView extends BaseUIView { //CONTROLLA
     private final TuiConsole console;
     private final Scanner scanner;
+    private Thread inputThread;
 
     public TuiGameLobbyView(TuiContext context) {
         this.console = context.getConsole();
-        this.scanner = new Scanner(System.in);
+        this.scanner = context.getScanner();
         initialize(context);
     }
 
@@ -40,7 +41,13 @@ public class TuiGameLobbyView extends BaseUIView { //CONTROLLA
     }
 
     @Override
-    protected void onHide() {}
+    protected void onHide() {
+        // Stop input thread when view is hidden
+        if (inputThread != null && inputThread.isAlive()) {
+            inputThread.interrupt();
+            inputThread = null;
+        }
+    }
 
     @Override
     protected void onRefresh() {
@@ -148,13 +155,21 @@ public class TuiGameLobbyView extends BaseUIView { //CONTROLLA
     }
 
     private void startInputLoop() {
-        Thread inputThread = new Thread(() -> {
-            while (active) {
+        // Stop any existing input thread
+        if (inputThread != null && inputThread.isAlive()) {
+            inputThread.interrupt();
+        }
+        
+        inputThread = new Thread(() -> {
+            while (active && !Thread.currentThread().isInterrupted()) {
                 try {
                     console.println("Enter command: ");
                     String input = scanner.nextLine();
-                    handleInput(input);
+                    if (active) { // Double-check we're still active before processing
+                        handleInput(input);
+                    }
                 } catch (Exception e) {
+                    // Thread was interrupted or scanner closed, exit gracefully
                     break;
                 }
             }

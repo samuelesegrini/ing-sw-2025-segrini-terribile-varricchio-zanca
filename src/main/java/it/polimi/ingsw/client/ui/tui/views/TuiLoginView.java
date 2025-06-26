@@ -18,7 +18,7 @@ public class TuiLoginView extends BaseUIView {
     
     public TuiLoginView(TuiContext context) {
         this.console = context.getConsole();
-        this.scanner = new Scanner(System.in);
+        this.scanner = context.getScanner();
         initialize(context);
     }
     

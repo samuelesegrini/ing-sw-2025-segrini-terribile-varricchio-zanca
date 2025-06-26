@@ -17,7 +17,7 @@ public class TuiConnectionView extends BaseUIView {
     private final Scanner scanner;
 
     public TuiConnectionView(TuiContext context) {
-        this.scanner = new Scanner(System.in);
+        this.scanner = context.getScanner();
         initialize(context);
     }
     
@@ -68,24 +68,39 @@ public class TuiConnectionView extends BaseUIView {
                     hostname = "localhost";
                 }
                 
+                // Get protocol selection
+                System.out.print("Select protocol - (1) Socket, (2) RMI (default: 1): ");
+                String protocolInput = scanner.nextLine().trim();
+                boolean useSocket = true;
+                int defaultPort = 12345;
+                
+                if (protocolInput.equals("2") || protocolInput.toLowerCase().equals("rmi")) {
+                    useSocket = false;
+                    defaultPort = 1099;
+                    console.printInfo("Selected protocol: RMI");
+                } else {
+                    console.printInfo("Selected protocol: Socket");
+                }
+                
                 // Get port
-                System.out.print("Enter port (default: 12345): ");
+                System.out.print("Enter port (default: " + defaultPort + "): ");
                 String portInput = scanner.nextLine().trim();
-                int port = 12345;
+                int port = defaultPort;
                 if (!portInput.isEmpty()) {
                     try {
                         port = Integer.parseInt(portInput);
                     } catch (NumberFormatException e) {
-                        console.printError("Invalid port number. Using default port 12345.");
-                        port = 12345;
+                        console.printError("Invalid port number. Using default port " + defaultPort + ".");
+                        port = defaultPort;
                     }
                 }
                 
                 // Attempt connection by directly calling the controller
-                console.printLoading("Connecting to " + hostname + ":" + port);
+                String protocolName = useSocket ? "Socket" : "RMI";
+                console.printLoading("Connecting to " + hostname + ":" + port + " via " + protocolName);
                 
                 // We use .get() here to block the TUI input loop until the connection attempt is complete.
-                boolean success = context.getController().connect(hostname, port, true).get();
+                boolean success = context.getController().connect(hostname, port, useSocket).get();
                 
                 if (success) {
                     // On success, the controller changes the model's view state, which will

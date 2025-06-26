@@ -37,7 +37,7 @@ public class TuiShipBuildingView extends BaseUIView {
         this.controller = controller;
         this.context = context;
         this.tuiManager = context.getTuiManager();
-        this.scanner = new Scanner(System.in);
+        this.scanner = context.getScanner();
         initialize(context);
     }
 
