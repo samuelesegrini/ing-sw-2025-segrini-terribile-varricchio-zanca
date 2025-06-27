@@ -23,7 +23,7 @@ public class UIManager {
     private void createUI() {
         switch (type) {
             case GUI -> ui = new GuiManager(controller);
-            case TUI -> ui = new TUI(controller);
+            case TUI -> ui = new TuiManager(controller);
         }
     }
 
