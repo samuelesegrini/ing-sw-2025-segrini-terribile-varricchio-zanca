@@ -50,7 +50,8 @@ public class Printer {
         String paddedTitle = center(title, width - 2);
         StringBuilder sb = new StringBuilder();
         sb.append(Ansi.ansi().fgBrightBlue().append("┌").append("─".repeat(width - 2)).append("┐").reset());
-        sb.append(Ansi.ansi().fgBrightBlue().append("│").append(Ansi.ansi().bold().a(paddedTitle).fgBrightBlue()).append("│").reset());        sb.append(Ansi.ansi().fgBrightBlue().append("└").append("─".repeat(width - 2)).append("┘").reset());
+        sb.append(Ansi.ansi().fgBrightBlue().a("│").bold().a(paddedTitle).reset().fgBrightBlue().a("│").reset());
+        sb.append(Ansi.ansi().fgBrightBlue().append("└").append("─".repeat(width - 2)).append("┘").reset());
         System.out.println();
     }
 
@@ -95,7 +96,6 @@ public class Printer {
         clearScreen();
         printSectionHeader("LOBBY - Welcome " + clientState.getCurrentNickname());
 
-        Fede, [6/27/25 2:21 AM]
         printInfo("Joinable Games:");
         List<GameInfo> joinableGames = clientState.getJoinableGames();
         if (joinableGames.isEmpty()) {
@@ -152,7 +152,6 @@ public class Printer {
         }
         System.out.println();
 
-        Fede, [6/27/25 2:21 AM]
         for (int row = 0; row < ship.getRows(); row++) {
             System.out.print(String.format("%d │ ", row));
             for (int col = 0; col < ship.getCols(); col++) {
@@ -245,8 +244,7 @@ public class Printer {
     public void printTable(String[] headers, String[][] data) {
         if (headers.length == 0) return;
 
-        Fede, [6/27/25 2:21 AM]
-// Calculate column widths
+        // Calculate column widths
         int[] widths = new int[headers.length];
         for (int i = 0; i < headers.length; i++) {
             widths[i] = headers[i].length();

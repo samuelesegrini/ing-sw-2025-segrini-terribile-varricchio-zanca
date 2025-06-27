@@ -15,6 +15,7 @@ public class TUI implements UI {
     private final ClientState clientState;
 
     private final Object lock = new Object();
+    private volatile boolean running = false;
 
     public TUI(ClientController controller) {
         this.controller = controller;
@@ -25,14 +26,35 @@ public class TUI implements UI {
 
     @Override
     public void start() {
+        running = true;
         printer.printHeader();
+        
+        // Start input listener in a separate thread
+        Thread inputThread = new Thread(this::inputListener, "TUI-InputListener");
+        inputThread.setDaemon(false); // Keep JVM alive
+        inputThread.start();
+        
+        // Show initial connection prompt
+        printer.printConnectionPrompt();
+        
+        // Wake up the input listener
+        synchronized (lock) {
+            lock.notify();
+        }
+    }
+
+    @Override
+    public void shutdown() {
+        running = false;
+        synchronized (lock) {
+            lock.notify();
+        }
     };
 
     @Override
-    public void shutdown() {};
-
-    @Override
-    public boolean isRunning() {return false;}
+    public boolean isRunning() {
+        return running;
+    }
 
     @Override
     public void showError(String title, String message) {};
@@ -43,14 +65,18 @@ public class TUI implements UI {
 
     public void inputListener(){
         String input;
-        while (true) {
+        while (running) {
             synchronized (lock) {
                 try {
                     lock.wait();
                 } catch (InterruptedException e) {
+                    if (!running) break;
                     System.err.println("Interrupted while waiting for server: " + e.getMessage());
                 }
             }
+            if (!running) break;
+            
+            System.out.print("> ");
             input = scanner.nextLine();
             elaborateInput(input);
         }
@@ -76,5 +102,30 @@ public class TUI implements UI {
             default:
                 System.err.println("Stato client non supportato ");
         }
+    }
+
+    private void elaborateConnectionCommand(String input) {
+        // TODO: Implement connection command handling
+        System.out.println("Connection command: " + input);
+    }
+
+    private void elaborateLoginCommand(String input) {
+        // TODO: Implement login command handling
+        System.out.println("Login command: " + input);
+    }
+
+    private void elaborateLobbyCommand(String input) {
+        // TODO: Implement lobby command handling
+        System.out.println("Lobby command: " + input);
+    }
+
+    private void elaborateGameLobbyCommand(String input) {
+        // TODO: Implement game lobby command handling
+        System.out.println("Game lobby command: " + input);
+    }
+
+    private void elaborateGameCommand(String input) {
+        // TODO: Implement game command handling
+        System.out.println("Game command: " + input);
     }
 }

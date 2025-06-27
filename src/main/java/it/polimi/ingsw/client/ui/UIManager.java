@@ -4,6 +4,7 @@ package it.polimi.ingsw.client.ui;
 import it.polimi.ingsw.client.controller.ClientController;
 import it.polimi.ingsw.client.ui.gui.GuiManager;
 import it.polimi.ingsw.client.ui.tui.TuiManager;
+import it.polimi.ingsw.client.ui.tui.newTUI.TUI;
 
 /**
  * UI Manager that creates and manages the appropriate UI based on type.
@@ -22,7 +23,7 @@ public class UIManager {
     private void createUI() {
         switch (type) {
             case GUI -> ui = new GuiManager(controller);
-            case TUI -> ui = new TuiManager(controller);
+            case TUI -> ui = new TUI(controller);
         }
     }
 
