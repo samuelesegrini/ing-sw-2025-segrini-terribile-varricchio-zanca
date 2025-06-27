@@ -37,13 +37,31 @@ public class PlaceTileResponse extends AbstractResponse {
 
     @Override
     public void handleOnClient(ClientContext context) {
-        if (isSuccess() && updatedShip != null && updatedDeck != null) {
-            // NEW: Simple model replacement via ClientState
+        if (isSuccess()) {
+            System.out.println("[PLACETILE DEBUG] PlaceTileResponse.handleOnClient() - success: true");
+            
+            // Clear the held component since it was placed
             if (context.getClientState() != null) {
-                context.getClientState().updateLocalPlayerShip(updatedShip);
-                context.getClientState().updateComponentDeck(updatedDeck);
-                // UI refreshes automatically
+                var localPlayer = context.getClientState().getLocalPlayer();
+                if (localPlayer != null) {
+                    System.out.println("[PLACETILE DEBUG] Clearing held component from local player");
+                    localPlayer.clearHeldComponent();
+                }
+                
+                // Update ship and deck if provided
+                if (updatedShip != null) {
+                    context.getClientState().updateLocalPlayerShip(updatedShip);
+                }
+                if (updatedDeck != null) {
+                    context.getClientState().updateComponentDeck(updatedDeck);
+                }
+                
+                // Trigger UI refresh
+                context.getClientState().refreshCurrentViewOnly();
+                System.out.println("[PLACETILE DEBUG] UI refresh triggered");
             }
+        } else {
+            System.out.println("[PLACETILE DEBUG] PlaceTileResponse failed: " + getErrorMessage());
         }
     }
 }

@@ -111,7 +111,18 @@ public class ComponentTileView extends StackPane {
         if (component == null) return;
         
         try {
-            String imagePath = "/images/components/" + component.getType().name().toLowerCase() + ".png";
+            // Component ID already contains the correct resource path
+            String imagePath = component.getId();
+            System.out.println("[IMAGE DEBUG] Component ID: " + imagePath);
+            
+            if (imagePath == null || imagePath.isEmpty()) {
+                // Fallback to type-based path
+                imagePath = "/assets/tiles/" + component.getType().name().toLowerCase() + ".jpg";
+                System.out.println("[IMAGE DEBUG] Using fallback path: " + imagePath);
+            } else {
+                System.out.println("[IMAGE DEBUG] Using component ID as path: " + imagePath);
+            }
+            
             if (imagePath.isEmpty()) {
                 setupTextDisplay();
                 return;
@@ -120,6 +131,7 @@ public class ComponentTileView extends StackPane {
             // Check cache first
             Image cachedImage = imageCache.get(imagePath);
             if (cachedImage != null) {
+                System.out.println("[IMAGE DEBUG] Using cached image for: " + imagePath);
                 createImageView(cachedImage);
                 return;
             }
@@ -132,15 +144,29 @@ public class ComponentTileView extends StackPane {
             
             // Try to load the image
             try {
-                Image image = new Image(getClass().getResourceAsStream(imagePath));
+                System.out.println("[IMAGE DEBUG] Attempting to load image from: " + imagePath);
+                var resourceStream = getClass().getResourceAsStream(imagePath);
+                System.out.println("[IMAGE DEBUG] Resource stream: " + (resourceStream != null ? "found" : "null"));
+                
+                if (resourceStream == null) {
+                    System.out.println("[IMAGE DEBUG] Resource not found, trying text display");
+                    loadAttempted.put(imagePath, true);
+                    setupTextDisplay();
+                    return;
+                }
+                
+                Image image = new Image(resourceStream);
                 if (image.isError()) {
+                    System.out.println("[IMAGE DEBUG] Image loading error: " + image.getException());
                     loadAttempted.put(imagePath, true);
                     setupTextDisplay();
                 } else {
+                    System.out.println("[IMAGE DEBUG] Image loaded successfully: " + image.getWidth() + "x" + image.getHeight());
                     imageCache.put(imagePath, image);
                     createImageView(image);
                 }
             } catch (Exception e) {
+                System.out.println("[IMAGE DEBUG] Exception loading image: " + e.getMessage());
                 loadAttempted.put(imagePath, true);
                 setupTextDisplay();
             }

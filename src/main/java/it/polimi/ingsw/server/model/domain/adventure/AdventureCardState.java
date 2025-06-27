@@ -3,6 +3,7 @@ package it.polimi.ingsw.server.model.domain.adventure;
 import it.polimi.ingsw.server.model.domain.adventure.card.AdventureCard;
 import it.polimi.ingsw.server.model.domain.player.PlayerId;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -11,7 +12,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * Manages the state of an adventure card during player choice resolution.
  * Implements the state machine for turn-based adventure card processing.
  */
-public class AdventureCardState {
+public class AdventureCardState implements Serializable {
+    private static final long serialVersionUID = 1L;
     
     public enum CardProcessingState {
         REVEALED,           // Card drawn, awaiting choices

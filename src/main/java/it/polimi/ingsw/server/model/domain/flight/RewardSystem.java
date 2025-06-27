@@ -7,12 +7,14 @@ import it.polimi.ingsw.server.model.enums.GamePhase;
 import it.polimi.ingsw.server.model.enums.player.PlayerOrder;
 import it.polimi.ingsw.server.model.enums.resource.GoodType;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-public class RewardSystem {
+public class RewardSystem implements Serializable {
+    private static final long serialVersionUID = 1L;
     private final GameLevel level;
     private final Map<PlayerOrder,Integer> positionBonus;
     private final Map<GoodType, Integer> resourceBonus;

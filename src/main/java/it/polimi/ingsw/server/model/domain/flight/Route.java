@@ -2,9 +2,11 @@ package it.polimi.ingsw.server.model.domain.flight;
 
 import it.polimi.ingsw.server.model.enums.GameLevel;
 
+import java.io.Serializable;
 import java.util.List;
 
-public class Route {
+public class Route implements Serializable {
+    private static final long serialVersionUID = 1L;
     private final int length;
     private final List<Integer> startingPositions;
     private List<Integer> availableStartingPositions;

@@ -59,15 +59,11 @@ public class ComponentPlacedEvent extends AbstractEvent {
 
     @Override
     public boolean shouldSendTo(String clientId, EventFilterContext context) {
-        // Don't send to the requesting client (they get the response instead)
-        PlayerId clientPlayerId = context.getPlayerIdForClient(clientId);
-        if (player.getId().equals(clientPlayerId)) {
-            LOGGER.finer("EVENT FILTERING - ComponentPlacedEvent NOT sent to requesting client: " + clientId);
-            return false; // Exclude the requesting client
-        }
-        
-        // Use default game filtering for other clients
-        return super.shouldSendTo(clientId, context);
+        // MODIFIED: Send to ALL players in the game, including the requester
+        // This ensures consistent state updates across all clients
+        boolean shouldSend = super.shouldSendTo(clientId, context);
+        LOGGER.finer("EVENT FILTERING - ComponentPlacedEvent shouldSendTo clientId: " + clientId + " = " + shouldSend + " (including requester)");
+        return shouldSend;
     }
 
     @Override

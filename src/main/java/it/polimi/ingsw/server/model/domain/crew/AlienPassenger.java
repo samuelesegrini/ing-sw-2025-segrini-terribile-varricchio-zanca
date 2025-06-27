@@ -2,11 +2,14 @@ package it.polimi.ingsw.server.model.domain.crew;
 
 import it.polimi.ingsw.server.model.enums.crew.AlienColor;
 
+import java.io.Serializable;
+
 /**
  * Represents an alien passenger with special abilities in Galaxy Trucker.
  * According to the rules, aliens provide specific bonuses based on their color.
  */
-public class AlienPassenger {
+public class AlienPassenger implements Serializable {
+    private static final long serialVersionUID = 1L;
     private final AlienColor color;
     private final String name;
     private boolean active;
