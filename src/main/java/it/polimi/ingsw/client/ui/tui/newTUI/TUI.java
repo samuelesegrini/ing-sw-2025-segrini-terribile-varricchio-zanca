@@ -3,6 +3,7 @@ package it.polimi.ingsw.client.ui.tui.newTUI;
 import it.polimi.ingsw.client.controller.ClientController;
 import it.polimi.ingsw.client.core.ClientState;
 import it.polimi.ingsw.client.ui.UI;
+import it.polimi.ingsw.client.ui.tui.Printer;
 import it.polimi.ingsw.server.model.domain.ship.components.Component;
 import it.polimi.ingsw.server.model.domain.ship.Position;
 import it.polimi.ingsw.server.model.domain.ship.Ship;
@@ -10,7 +11,6 @@ import it.polimi.ingsw.server.model.domain.ship.ShipValidationService;
 import it.polimi.ingsw.server.model.enums.GameLevel;
 
 import java.util.Scanner;
-import java.util.concurrent.CompletableFuture;
 import java.util.regex.Pattern;
 
 public class TUI implements UI {

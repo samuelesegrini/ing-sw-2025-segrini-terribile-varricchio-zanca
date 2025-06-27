@@ -1,4 +1,4 @@
-package it.polimi.ingsw.client.ui.tui.newTUI;
+package it.polimi.ingsw.client.ui.tui;
 
 import it.polimi.ingsw.client.core.ClientState;
 import it.polimi.ingsw.common.model.GameInfo;
@@ -6,7 +6,6 @@ import it.polimi.ingsw.server.model.domain.general.ComponentDeck;
 import it.polimi.ingsw.server.model.domain.ship.components.Component;
 import it.polimi.ingsw.server.model.domain.ship.Position;
 import it.polimi.ingsw.server.model.domain.ship.Ship;
-import it.polimi.ingsw.server.model.enums.GamePhase;
 import org.fusesource.jansi.Ansi;
 import org.fusesource.jansi.AnsiConsole;
 
