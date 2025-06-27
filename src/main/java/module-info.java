@@ -56,6 +56,7 @@ module it.polimi.ingsw2025segriniterribilevarricchiozanca {
     exports it.polimi.ingsw.server.model.enums.player;
     exports it.polimi.ingsw.server.model.enums.crew;
     exports it.polimi.ingsw.server.model.enums.resource;
+    exports it.polimi.ingsw.client.ui.tui.newTUI;
 
     // --- Common packages ---
     // NOTE: client.core.state package removed as part of Simple Direct Model Architecture

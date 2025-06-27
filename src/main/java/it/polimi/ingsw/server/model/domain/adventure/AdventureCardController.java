@@ -40,9 +40,9 @@ public class AdventureCardController {
         this.currentState = new AdventureCardState(card, playerId.toString());
         activeCards.put(playerId.toString(), currentState);
         
-        // Start timeout timer if applicable
+        // Start the timeout timer if applicable
         if (requiresTimeout(card)) {
-            scheduleTimeout(playerId, 30000); // 30 second timeout
+            scheduleTimeout(playerId, 30000); // 30-second timeout
         }
     }
     
