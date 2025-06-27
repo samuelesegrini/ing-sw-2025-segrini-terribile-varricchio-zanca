@@ -6,10 +6,14 @@ import it.polimi.ingsw.server.model.domain.general.ComponentDeck;
 import it.polimi.ingsw.server.model.domain.ship.components.Component;
 import it.polimi.ingsw.server.model.domain.ship.Position;
 import it.polimi.ingsw.server.model.domain.ship.Ship;
+import it.polimi.ingsw.server.model.enums.ship.Direction;
 import org.fusesource.jansi.Ansi;
 import org.fusesource.jansi.AnsiConsole;
 
 import java.util.List;
+import java.util.Set;
+
+import static org.fusesource.jansi.Ansi.ansi;
 
 /**
  * The Printer class provides functionality for printing all messages and game displays for the TUI.
@@ -25,11 +29,11 @@ public class Printer {
     }
 
     public void printHeader() {
-        System.out.println(Ansi.ansi()
+        System.out.println(ansi()
                 .fgBrightCyan()
                 .a("╔═══════════════════════════════════════════════════════════════╗")
                 .reset());
-        System.out.println(Ansi.ansi()
+        System.out.println(ansi()
                 .fgBrightCyan()
                 .a("║                     ")
                 .fgBrightYellow().bold()
@@ -37,7 +41,7 @@ public class Printer {
                 .reset().fgBrightCyan()
                 .a("                     ║")
                 .reset());
-        System.out.println(Ansi.ansi()
+        System.out.println(ansi()
                 .fgBrightCyan()
                 .a("╚═══════════════════════════════════════════════════════════════╝")
                 .reset());
@@ -45,38 +49,39 @@ public class Printer {
     }
 
     public void printSectionHeader(String title) {
-        int width = 60;
+        int width = 50;
         String paddedTitle = center(title, width - 2);
         StringBuilder sb = new StringBuilder();
-        sb.append(Ansi.ansi().fgBrightBlue().append("┌").append("─".repeat(width - 2)).append("┐").reset());
-        sb.append(Ansi.ansi().fgBrightBlue().a("│").bold().a(paddedTitle).reset().fgBrightBlue().a("│").reset());
-        sb.append(Ansi.ansi().fgBrightBlue().append("└").append("─".repeat(width - 2)).append("┘").reset());
+        sb.append(ansi().fgBrightBlue().append("┌").append("─".repeat(width - 2)).append("┐").reset());
+        sb.append(ansi().fgBrightBlue().a("│").bold().a(paddedTitle).reset().fgBrightBlue().a("│").reset());
+        sb.append(ansi().fgBrightBlue().append("└").append("─".repeat(width - 2)).append("┘").reset());
         System.out.println();
     }
 
-    // --- Message Printing ---
-    public void printError(String message) {
-        System.out.println(Ansi.ansi().fgBrightRed().a("[ERROR] ").reset().a(message));
-    }
+    // Message Printing
 
     public void printSuccess(String message) {
-        System.out.println(Ansi.ansi().fgBrightGreen().a("[SUCCESS] ").reset().a(message));
+        System.out.println(ansi().fgBrightGreen().reset().a(message));
+    }
+
+    public void printError(String message) {
+        System.out.println(ansi().fgBrightRed().reset().a(message));
     }
 
     public void printInfo(String message) {
-        System.out.println(Ansi.ansi().fgBrightCyan().a("[INFO] ").reset().a(message));
+        System.out.println(ansi().fgBrightCyan().reset().a(message));
     }
 
     public void printWarning(String message) {
-        System.out.println(Ansi.ansi().fgBrightYellow().a("[WARNING] ").reset().a(message));
+        System.out.println(ansi().fgBrightYellow().reset().a(message));
     }
 
     public void printLoading(String message) {
-        System.out.println(Ansi.ansi().fgCyan().a(message + "...").reset());
+        System.out.println(ansi().fgCyan().a(message + "...").reset());
     }
 
 
-    // --- View Specific Prompts & Displays ---
+    // View Printing
 
     public void printConnectionPrompt() {
         printSectionHeader("CONNECTION");
@@ -130,7 +135,7 @@ public class Printer {
             return;
         }
 
-        printShipGrid(ship);
+        printShipBoard(ship);
         System.out.println();
         printHeldComponent(heldComponent);
         System.out.println();
@@ -142,32 +147,107 @@ public class Printer {
         System.out.print("Shipyard > ");
     }
 
-    private void printShipGrid(Ship ship) {
-        System.out.println("🚀 YOUR SHIP GRID:");
-        // Column headers
-        System.out.print("    ");
-        for (int col = 0; col < ship.getCols(); col++) {
-            System.out.print(String.format(" %d  ", col));
-        }
-        System.out.println();
+    private void printShipBoard(Ship ship) {
+        Component[][] shipBoard = ship.getBoard();
+        Set<Position> forbiddenPositions = ship.getForbiddenPositions();
 
-        for (int row = 0; row < ship.getRows(); row++) {
-            System.out.print(String.format("%d │ ", row));
-            for (int col = 0; col < ship.getCols(); col++) {
-                Component component = ship.getComponent(new Position(row, col));
-                if (component != null) {
-                    System.out.print(getComponentAscii(component));
-                } else if (ship.isForbiddenPosition(new Position(row, col))) {
-                    System.out.print("███"); // Forbidden
+        printInfo("YOUR SHIP BOARD:");
+
+        StringBuilder sb = new StringBuilder();
+
+        sb.append("\t  4  \t  5  \t  6  \t  7  \t  8  \t  9  \t  10\n");
+
+        for (int row = 0; row < shipBoard.length; row++) {
+            sb.append("   ");
+            for (int col = 0; col < shipBoard[0].length; col++) {
+                Component component = shipBoard[row][col];
+                if (component == null) {
+                    sb.append("     ");
                 } else {
-                    System.out.print(" . "); // Empty
+                    sb.append("  ");
+                    switch (component.getConnectorAt(Direction.UP)) {
+                        case UNIVERSAL -> sb.append("U");
+                        case DOUBLE -> sb.append("D");
+                        case SINGLE -> sb.append("S");
+                        case PLAIN -> sb.append(" ");
+                    }
+                    sb.append("  ");
                 }
-                System.out.print("│");
+                sb.append("\t");
             }
-            System.out.println();
+            sb.append("\n");
+
+            sb.append(" ").append(row + 5).append(" ").append("\t");
+            for (int col = 0; col < shipBoard[0].length; col++) {
+                Component component = shipBoard[row][col];
+                if (component == null) {
+                    if (forbiddenPositions.contains(new Position(row, col)))
+                        sb.append("  🚫️  ");
+                    else
+                        sb.append("  ⬛️  ");
+                } else {
+                    sb.append(" ");
+
+                    switch (component.getConnectorAt(Direction.LEFT)) {
+                        case UNIVERSAL -> sb.append("U");
+                        case DOUBLE -> sb.append("D");
+                        case SINGLE -> sb.append("S");
+                        case PLAIN -> sb.append(" ");
+                    }
+
+                    switch (component.getType()) {
+                        case BATTERY -> sb.append("🔋");
+                        case CABIN -> sb.append("⛺️");
+                        case CABIN_START -> sb.append(ansi().bgBrightYellow().a("⛺️").reset());
+                        case CANNON_SINGLE -> sb.append("🔫");
+                        case CANNON_DOUBLE -> sb.append(ansi().bgBrightGreen().append("🔫").reset());
+                        case CARGO_HOLD -> sb.append("📦️");
+                        case CARGO_HOLD_SPECIAL -> sb.append(ansi().bgBrightRed().append("📦️").reset());
+                        case ENGINE_SINGLE -> sb.append("🚀");
+                        case ENGINE_DOUBLE -> sb.append(ansi().bgBrightGreen().append("🚀").reset());
+                        case LIFE_SUPPORT_BROWN -> sb.append(ansi().bgYellow().append("🫁️").reset());
+                        case LIFE_SUPPORT_PURPLE -> sb.append(ansi().bgBrightMagenta().append("🫁️").reset());
+                        case SHIELD -> sb.append("🛡️");
+                        case STRUCTURAL -> sb.append("🔗️");
+                    }
+
+                    switch (component.getConnectorAt(Direction.RIGHT)) {
+                        case UNIVERSAL -> sb.append("U");
+                        case DOUBLE -> sb.append("D");
+                        case SINGLE -> sb.append("S");
+                        case PLAIN -> sb.append(" ");
+                    }
+
+                    sb.append(" ");
+                }
+                sb.append("\t");
+            }
+            sb.append("\n");
+
+            sb.append("   ");
+            for (int col = 0; col < shipBoard[0].length; col++) {
+                Component component = shipBoard[row][col];
+                if (component == null) {
+                    sb.append("     ");
+                } else {
+                    sb.append("  ");
+                    switch (component.getConnectorAt(Direction.DOWN)) {
+                        case UNIVERSAL -> sb.append("U");
+                        case DOUBLE -> sb.append("D");
+                        case SINGLE -> sb.append("S");
+                        case PLAIN -> sb.append(" ");
+                    }
+                    sb.append("  ");
+                }
+                sb.append("\t");
+            }
+            sb.append("\n");
         }
+        System.out.println(sb);
+        System.out.println();
     }
 
+    // TODO
     private String getComponentAscii(Component component) {
         if (component == null) return "   ";
         return switch (component.getType()) {
@@ -226,7 +306,7 @@ public class Printer {
     // --- UTILITY METHODS ---
 
     private void clearScreen() {
-        System.out.print(Ansi.ansi().eraseScreen().cursor(1, 1));
+        System.out.print(ansi().eraseScreen().cursor(1, 1));
         System.out.flush();
     }
 
@@ -258,12 +338,8 @@ public class Printer {
         printTableRow(headers, widths, true);
         printTableSeparator(widths, '├', '┼', '┤');
 
-        if (data.length == 0) {
-            // Print a message for empty table
-        } else {
-            for (String[] row : data) {
-                printTableRow(row, widths, false);
-            }
+        for (String[] row : data) {
+            printTableRow(row, widths, false);
         }
         printTableSeparator(widths, '└', '┴', '┘');
     }
@@ -276,7 +352,7 @@ public class Printer {
             String centered = center(cell, widths[i]);
             String formattedCell = String.format(" %s ", centered);
             if (isHeader) {
-                rowLine.append(Ansi.ansi().bold().a(formattedCell).reset());
+                rowLine.append(ansi().bold().a(formattedCell).reset());
             } else {
                 rowLine.append(formattedCell);
             }
