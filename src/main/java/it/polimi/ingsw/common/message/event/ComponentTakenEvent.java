@@ -54,29 +54,32 @@ public class ComponentTakenEvent extends AbstractEvent {
 
     @Override
     public boolean shouldSendTo(String clientId, EventFilterContext context) {
-        // Don't send to the requesting client (they get the response instead)
-        PlayerId clientPlayerId = context.getPlayerIdForClient(clientId);
-        if (player.getId().equals(clientPlayerId)) {
-            LOGGER.finer("EVENT FILTERING - ComponentTakenEvent NOT sent to requesting client: " + clientId);
-            return false; // Exclude the requesting client
-        }
-        
-        // Use default game filtering for other clients
-        return super.shouldSendTo(clientId, context);
+        // MODIFIED: Send to ALL players in the game, including the requester
+        // This ensures consistent state updates across all clients
+        boolean shouldSend = super.shouldSendTo(clientId, context);
+        LOGGER.finer("EVENT FILTERING - ComponentTakenEvent shouldSendTo clientId: " + clientId + " = " + shouldSend + " (including requester)");
+        return shouldSend;
     }
 
     @Override
     public void handleOnClient(ClientEventContext context) {
         context.runOnUIThread(() -> {
-            // SIMPLIFIED: Direct model updates via ClientState
-            context.getClientState().updatePlayer(player);
-            context.getClientState().updateComponentDeck(updatedDeck);
-            // UI refreshes automatically via ClientState.refreshCurrentView()
+            // Check if this is for the local player (who also got the response)
+            boolean isLocalPlayer = context.isLocalPlayer(getPlayerId());
+            
+            if (!isLocalPlayer) {
+                // Only update state for other players - local player gets updated via response
+                LOGGER.fine("ComponentTakenEvent: Updating state for other player: " + getPlayerNickname());
+                context.getClientState().updatePlayer(player);
+                context.getClientState().updateComponentDeck(updatedDeck);
+            } else {
+                LOGGER.fine("ComponentTakenEvent: Skipping state update for local player (handled by response)");
+            }
 
-            // Show notification - different message than reservation
+            // Show notification for all players
             if (context.getNotificationService() != null) {
                 String message;
-                if (context.isLocalPlayer(getPlayerId())) {
+                if (isLocalPlayer) {
                     message = String.format("You took a %s tile from the pile", component.getType().name());
                     LOGGER.fine("Displaying 'Component Taken' notification for local player: " + message);
                 } else {

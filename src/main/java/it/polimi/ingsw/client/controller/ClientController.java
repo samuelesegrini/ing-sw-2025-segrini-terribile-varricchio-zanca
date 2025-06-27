@@ -449,7 +449,7 @@ public class ClientController {
             return CompletableFuture.completedFuture(false);
         }
 
-        LOGGER.info("Taking random tile");
+        LOGGER.info("[TAKETILE DEBUG] Taking random tile - Player: " + clientState.getPlayerId());
         return takeTileWithRetry(0);
     }
     
@@ -459,11 +459,12 @@ public class ClientController {
     private CompletableFuture<Boolean> takeTileWithRetry(int attempt) {
         String requestKey = "take_tile_" + clientState.getPlayerId();
         
+        LOGGER.info("[TAKETILE DEBUG] Sending TakeTileRequest to server - attempt " + (attempt + 1));
         TakeTileRequest request = new TakeTileRequest();
         return sendRequest(request)
                 .thenCompose(response -> {
                     if (response.isSuccess()) {
-                        LOGGER.info("Tile taken successfully");
+                        LOGGER.info("[TAKETILE DEBUG] Tile taken successfully - response: " + response.getClass().getSimpleName());
                         requestRetryCounters.remove(requestKey);
                         return CompletableFuture.completedFuture(true);
                     } else if (isConflictError(response) && attempt < MAX_RETRY_ATTEMPTS) {

@@ -184,15 +184,21 @@ public class ClientState {
     }
 
     public void updatePlayer(Player updatedPlayer) {
+        System.out.println("[TAKETILE DEBUG] ClientState.updatePlayer() called for player: " + updatedPlayer.getId() + 
+            " with " + updatedPlayer.getHeldComponents().size() + " held components");
         if (gameModel != null) {
             for (int i = 0; i < gameModel.getPlayers().size(); i++) {
                 Player localPlayer = gameModel.getPlayers().get(i);
                 if (localPlayer.getId().equals(updatedPlayer.getId())) {
+                    System.out.println("[TAKETILE DEBUG] Found matching player, updating in game model");
                     gameModel.getPlayers().set(i, updatedPlayer);
                     break;
                 }
             }
+            System.out.println("[TAKETILE DEBUG] Calling refreshCurrentViewOnly()");
             refreshCurrentViewOnly();
+        } else {
+            System.out.println("[TAKETILE DEBUG] WARNING: No game model available, cannot update player");
         }
     }
 
@@ -250,8 +256,15 @@ public class ClientState {
     public Player getLocalPlayer() {
         if (gameModel != null && playerId != null) {
             // Assuming PlayerId can be constructed from a String
-            return gameModel.getPlayerById(playerId);
+            Player localPlayer = gameModel.getPlayerById(playerId);
+            if (localPlayer != null) {
+                System.out.println("[TAKETILE DEBUG] getLocalPlayer() - Found player " + localPlayer.getId() + " with " + localPlayer.getHeldComponents().size() + " held components");
+            } else {
+                System.out.println("[TAKETILE DEBUG] getLocalPlayer() - No player found for ID: " + playerId);
+            }
+            return localPlayer;
         }
+        System.out.println("[TAKETILE DEBUG] getLocalPlayer() - gameModel or playerId is null");
         return null;
     }
 
@@ -392,10 +405,12 @@ public class ClientState {
     }
 
     // UI Updates - Refresh registered views
-    private void refreshCurrentViewOnly() {
+    public void refreshCurrentViewOnly() {
+        System.out.println("[TAKETILE DEBUG] ClientState.refreshCurrentViewOnly() - refreshing " + registeredViews.size() + " registered views");
         // Refresh all registered views - they'll decide if they're active
         for (UIView view : registeredViews) {
             if (view != null) {
+                System.out.println("[TAKETILE DEBUG] Refreshing view: " + view.getClass().getSimpleName());
                 view.refresh();
             }
         }

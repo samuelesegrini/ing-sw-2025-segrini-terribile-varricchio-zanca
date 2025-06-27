@@ -155,9 +155,10 @@ public class GuiShipBuildingView extends BaseUIView implements UIView {
     
     @Override
     public void refresh() {
+        System.out.println("[TAKETILE DEBUG] GuiShipBuildingView.refresh() called from thread: " + Thread.currentThread().getName());
         if (uiContext != null && uiContext.getClientState() != null && uiContext.getClientState().isInGame()) {
             Platform.runLater(() -> {
-                System.out.println("[DEBUG] GuiShipBuildingView.refresh() using direct server models");
+                System.out.println("[TAKETILE DEBUG] GuiShipBuildingView.refresh() running on JavaFX thread");
                 
                 Ship ship = uiContext.getClientState().getLocalPlayerShip();
                 ComponentDeck deck = uiContext.getClientState().getComponentDeck();
@@ -172,13 +173,20 @@ public class GuiShipBuildingView extends BaseUIView implements UIView {
                         componentJunkyard.refresh();
                     }
                     if (enhancedHandView != null) {
+                        System.out.println("[TAKETILE DEBUG] About to call enhancedHandView.refresh()");
                         enhancedHandView.refresh();
+                    } else {
+                        System.out.println("[TAKETILE DEBUG] ERROR: enhancedHandView is null!");
                     }
+                } else {
+                    System.out.println("[TAKETILE DEBUG] ERROR: ComponentDeck is null!");
                 }
                 
                 // Update other players display
                 updateOtherPlayers();
             });
+        } else {
+            System.out.println("[TAKETILE DEBUG] GuiShipBuildingView.refresh() - not in game or context missing");
         }
     }
 

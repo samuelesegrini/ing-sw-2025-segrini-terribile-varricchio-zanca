@@ -36,13 +36,23 @@ public class TakeTileRequest extends AbstractRequest {
         Component drawnComponent = drawnComponentOpt.get();
         
         // Get player and update their state
+        System.out.println("[SERVER DEBUG] TakeTileRequest - context.getPlayerId(): " + context.getPlayerId());
         Player player = session.getPlayer(context.getPlayerId());
+        System.out.println("[SERVER DEBUG] TakeTileRequest - Retrieved player: " + (player != null ? player.getId() : "null"));
         if (player == null) {
             return createErrorResponse("Player not found", ErrorResponse.INTERNAL_ERROR);
         }
         
         // Add component to player's hand/held tiles
+        System.out.println("[SERVER DEBUG] Before addComponent - Player " + player.getId() + " held components: " + player.getHeldComponents().size());
+        System.out.println("[SERVER DEBUG] Player object hash: " + System.identityHashCode(player));
         player.addComponent(drawnComponent);
+        System.out.println("[SERVER DEBUG] After addComponent - Player " + player.getId() + " held components: " + player.getHeldComponents().size());
+        System.out.println("[SERVER DEBUG] Component added: " + drawnComponent.getType().name() + " (ID: " + drawnComponent.getId() + ")");
+
+        // Check if player still has component right before sending
+        System.out.println("[SERVER DEBUG] Double-check before response - Player " + player.getId() + " held components: " + player.getHeldComponents().size());
+        System.out.println("[SERVER DEBUG] Player object hash before response: " + System.identityHashCode(player));
 
         // ENHANCED: Send response with full server models
         TakeTileResponse response = new TakeTileResponse(

@@ -32,16 +32,10 @@ public class GameStartedEvent extends AbstractEvent {
     
     @Override
     public boolean shouldSendTo(String clientId, EventFilterContext context) {
-        // Don't send to the requesting client (they get StartGameResponse instead)
-        PlayerId playerId = context.getPlayerIdForClient(clientId);
-        if (this.sourcePlayerId != null && this.sourcePlayerId.equals(playerId)) {
-            LOGGER.finer("EVENT FILTERING - GameStartedEvent NOT sent to requester: " + clientId);
-            return false;
-        }
-        
-        // Use default game filtering for other clients
+        // MODIFIED: Send to ALL players in the game, including the requester
+        // Both response AND event provide consistent state updates
         boolean shouldSend = super.shouldSendTo(clientId, context);
-        LOGGER.finer("EVENT FILTERING - GameStartedEvent shouldSendTo clientId: " + clientId + " = " + shouldSend);
+        LOGGER.finer("EVENT FILTERING - GameStartedEvent shouldSendTo clientId: " + clientId + " = " + shouldSend + " (including requester)");
         return shouldSend;
     }
 
