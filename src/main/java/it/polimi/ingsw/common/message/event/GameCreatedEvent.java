@@ -1,18 +1,12 @@
 package it.polimi.ingsw.common.message.event;
 
 import it.polimi.ingsw.client.core.ClientState;
-// REMOVED: LocalGameState no longer needed
 import it.polimi.ingsw.client.ui.Notification;
 import it.polimi.ingsw.server.model.domain.general.GameModel;
-import it.polimi.ingsw.server.model.domain.player.Player;
 import it.polimi.ingsw.server.model.domain.player.PlayerId;
 import it.polimi.ingsw.client.ui.NotificationType;
 import it.polimi.ingsw.server.model.enums.GameLevel;
-import it.polimi.ingsw.server.model.enums.GamePhase;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
