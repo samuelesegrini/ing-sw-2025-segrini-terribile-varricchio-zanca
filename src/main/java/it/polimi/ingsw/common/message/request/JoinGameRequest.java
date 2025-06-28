@@ -1,7 +1,5 @@
 package it.polimi.ingsw.common.message.request;
 
-import it.polimi.ingsw.server.model.domain.general.GameModel;
-import it.polimi.ingsw.common.message.event.PlayerJoinedGameEvent;
 import it.polimi.ingsw.common.message.response.ErrorResponse;
 import it.polimi.ingsw.common.message.response.JoinGameResponse;
 import it.polimi.ingsw.common.message.response.Response;
@@ -9,12 +7,8 @@ import it.polimi.ingsw.common.message.validation.ValidationResult;
 import it.polimi.ingsw.server.core.GameSession;
 import it.polimi.ingsw.server.core.GameSessionManager;
 import it.polimi.ingsw.server.core.PlayerSessionRegistry;
-import it.polimi.ingsw.server.model.domain.player.Player;
 import it.polimi.ingsw.server.model.domain.player.PlayerId;
-import it.polimi.ingsw.common.message.event.GameLobbyUpdateEvent;
-import it.polimi.ingsw.common.message.event.GamesListUpdateEvent;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -73,11 +67,7 @@ public class JoinGameRequest extends AbstractRequest {
         if (gameSession == null) {
             LOGGER.warning("❌ JOIN GAME FAILED - Game not found: " + gameId);
             
-            // Send updated games list to help client recover from stale data
-            LOGGER.info("📤 RECOVERY - Sending fresh games list to client to recover from stale data");
-            List<it.polimi.ingsw.server.model.domain.general.GameModel> currentGames = sessionManager.getAvailableGames();
-            it.polimi.ingsw.common.message.event.GamesListUpdateEvent recoveryEvent = new it.polimi.ingsw.common.message.event.GamesListUpdateEvent(currentGames);
-            context.publishEvent(recoveryEvent);
+            LOGGER.info("📤 RECOVERY - Game not found, but PropertyChange system will handle state synchronization");
             
             return createErrorResponse("Game not found - games list updated", ErrorResponse.NOT_FOUND);
         }
@@ -106,68 +96,13 @@ public class JoinGameRequest extends AbstractRequest {
         String playerNickname = registry.getPlayerNickname(playerId);
         LOGGER.fine("👤 PLAYER INFO - Retrieved nickname: '" + playerNickname + "' for player: " + playerId);
 
-        // Publish player joined event
-        PlayerJoinedGameEvent event = new PlayerJoinedGameEvent(
-                gameId, playerId, playerNickname, gameSession.getPlayerCount()
-        );
-        LOGGER.info("📢 EVENT PUBLISH - Publishing PlayerJoinedGameEvent for player: " + playerNickname + 
-                   " (" + playerId + ") in game: " + gameId + " (total players: " + gameSession.getPlayerCount() + ")");
-        context.publishEvent(event);
-        LOGGER.fine("✅ EVENT PUBLISHED - PlayerJoinedGameEvent sent to event system");
+        LOGGER.info("📢 PROPERTY CHANGE - Player join will trigger PlayerJoinedGameEvent via PropertyChange system for game: " + gameId);
 
-        // Publish lobby update event to other clients (exclude requester since they get the response)
-        LOGGER.info("📢 LOBBY UPDATE - Publishing GameLobbyUpdateEvent for game: " + gameId + " (excluding requester: " + playerId + ")");
-        publishLobbyUpdateEvent(context, gameSession, gameId, registry, playerId);
-
-        // Broadcast updated games list to all clients in main lobby
-        LOGGER.info("📢 GAMES LIST UPDATE - Broadcasting updated available games list to all lobby clients");
-        publishGamesListUpdateEvent(context, sessionManager, registry);
-
-        // Use server GameModel directly - Simple Direct Model Architecture
-        GameModel gameModel = gameSession.getGameModel();
-        LOGGER.fine("🎮 GAME MODEL - Retrieved GameModel directly from session for response");
-
-        LOGGER.info("🎉 JOIN GAME SUCCESS - Returning JoinGameResponse for player: " + playerNickname + 
-                   " (" + playerId + ") joined game: " + gameId);
-        return new JoinGameResponse(getCorrelationId(), gameModel);
+        // Return lightweight response - event contains the state update
+        JoinGameResponse response = new JoinGameResponse(getCorrelationId());
+        LOGGER.info("🎉 JOIN GAME SUCCESS - Player: " + playerNickname + 
+                   " (" + playerId + ") joined game: " + gameId + " - returning lightweight acknowledgment");
+        return response;
     }
 
-    /**
-     * Publishes a lobby update event to synchronize all clients with current lobby state.
-     */
-    private void publishLobbyUpdateEvent(RequestContext context, GameSession gameSession, 
-                                       String gameId, PlayerSessionRegistry registry, PlayerId excludePlayerId) {
-        LOGGER.fine("🔄 LOBBY UPDATE EVENT - Getting players from GameModel");
-        
-        // Use server model directly - Simple Direct Model Architecture
-        List<Player> players = gameSession.getGameModel().getPlayers();
-        
-        // Create and publish the lobby update event (excluding the requesting client)
-        LOGGER.fine("📤 LOBBY EVENT - Creating GameLobbyUpdateEvent for " + players.size() + 
-                   " players, excluding: " + excludePlayerId);
-        GameLobbyUpdateEvent lobbyEvent = new GameLobbyUpdateEvent(
-                gameId, players, gameSession.getMaxPlayers(), excludePlayerId
-        );
-        context.publishEvent(lobbyEvent);
-        LOGGER.fine("✅ LOBBY EVENT PUBLISHED - GameLobbyUpdateEvent sent to event system");
-    }
-
-    /**
-     * Publishes a games list update event to broadcast current available games to all lobby clients.
-     */
-    private void publishGamesListUpdateEvent(RequestContext context, GameSessionManager sessionManager, 
-                                           PlayerSessionRegistry registry) {
-        LOGGER.fine("🔄 GAMES LIST UPDATE - Getting current available games from session manager");
-        
-        // Get the current list of available games - use GameModel directly
-        List<GameModel> availableGames = sessionManager.getAvailableGames();
-        
-        LOGGER.fine("📤 GAMES LIST EVENT - Creating GamesListUpdateEvent for " + availableGames.size() + " available games");
-        
-        // Create and publish the games list update event
-        GamesListUpdateEvent gamesListEvent = new GamesListUpdateEvent(availableGames);
-        context.publishEvent(gamesListEvent);
-        
-        LOGGER.fine("✅ GAMES LIST EVENT PUBLISHED - GamesListUpdateEvent sent to event system");
-    }
 }

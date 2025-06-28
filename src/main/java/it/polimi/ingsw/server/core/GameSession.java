@@ -17,7 +17,13 @@ import it.polimi.ingsw.server.model.enums.GamePhase;
 import it.polimi.ingsw.server.core.PlayerSessionRegistry;
 import it.polimi.ingsw.common.message.EventPublisher;
 import it.polimi.ingsw.common.message.event.BuildingTimerFlippedEvent;
+import it.polimi.ingsw.common.message.event.PlayerJoinedGameEvent;
+import it.polimi.ingsw.common.message.event.PlayerLeftGameEvent;
+import it.polimi.ingsw.common.message.event.PlayerReadyChangedEvent;
+import it.polimi.ingsw.common.message.event.GameStartedEvent;
 
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeSupport;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.logging.Logger;
@@ -33,7 +39,6 @@ public class GameSession {
     private final Map<PlayerId, PlayerState> playerStates;
     private final GameConfigurationManager configManager;
     private final PlayerSessionRegistry playerRegistry;
-    private final EventPublisher eventPublisher;
     private final Object lock = new Object();
 
     // Building phase management
@@ -58,19 +63,21 @@ public class GameSession {
     
     // Building timer management
     private BuildingTimer buildingTimer;
+    
+    // Property change support
+    private final PropertyChangeSupport propertyChangeSupport;
 
     public GameSession(String gameId, String gameName, PlayerId creatorId,
                        int maxPlayers, GameLevel gameLevel,
                        GameConfigurationManager configManager,
-                       PlayerSessionRegistry playerRegistry,
-                       EventPublisher eventPublisher) {
+                       PlayerSessionRegistry playerRegistry) {
+
         this.gameId = gameId;
         this.gameName = gameName;
         this.creatorId = creatorId;
         this.maxPlayers = maxPlayers;
         this.configManager = configManager;
         this.playerRegistry = playerRegistry;
-        this.eventPublisher = eventPublisher;
         // Create decks from configuration manager
         ComponentDeck componentDeck = configManager.createComponentDeck(gameLevel);
         AdventureDeck adventureDeck = configManager.createAdventureDeck(gameLevel);
@@ -86,6 +93,7 @@ public class GameSession {
         this.currentPhase = GamePhase.SETUP;
         this.started = false;
         this.ended = false;
+        this.propertyChangeSupport = new PropertyChangeSupport(this);
 
         // Add creator as first player and mark them as ready
         LOGGER.info("🎯 CREATOR SETUP - Adding creator " + creatorId + " to game " + gameId);
@@ -111,13 +119,13 @@ public class GameSession {
             LOGGER.severe("🎯 CREATOR ERROR - Failed to set creator " + creatorId + " as ready - PlayerState not found");
         }
     }
-    
-    // Legacy constructor for backward compatibility
-    public GameSession(String gameId, String gameName, String creatorIdString,
-                       int maxPlayers, GameLevel gameLevel,
-                       GameConfigurationManager configManager,
-                       PlayerSessionRegistry playerRegistry) {
-        this(gameId, gameName, PlayerId.fromString(creatorIdString), maxPlayers, gameLevel, configManager, playerRegistry, null);
+
+    public void addPropertyChangeListener(PropertyChangeListener listener) {
+        propertyChangeSupport.addPropertyChangeListener(listener);
+    }
+
+    public void removePropertyChangeListener(PropertyChangeListener listener) {
+        propertyChangeSupport.removePropertyChangeListener(listener);
     }
 
     /**
@@ -155,6 +163,14 @@ public class GameSession {
             }
 
             LOGGER.info("🎯 JOIN SUCCESS - " + playerId + " -> " + gameId + (isCreator ? " (creator - ready: " + state.isReady() + ")" : ""));
+            
+            String playerNickname = playerRegistry.getPlayerNickname(playerId);
+            PlayerJoinedGameEvent event = new PlayerJoinedGameEvent(
+                    gameId, playerId, playerNickname, 
+                    playerStates.size(), this.getGameModel()
+            );
+            propertyChangeSupport.firePropertyChange("eventPublished", null, event);
+            
             return true;
         }
     }
@@ -184,6 +200,10 @@ public class GameSession {
             returnPlayerComponents(playerId);
 
             LOGGER.info("Left: " + playerId + " <- " + gameId);
+
+            String playerNickname = playerRegistry.getPlayerNickname(playerId);
+            PlayerLeftGameEvent event = new PlayerLeftGameEvent(gameId, playerId, playerNickname);
+            propertyChangeSupport.firePropertyChange("eventPublished", null, event);
 
             // Check if game should end
             if (playerStates.isEmpty()) {
@@ -219,6 +239,10 @@ public class GameSession {
                 syncPlayerReadyStatus(playerId, ready);
                 
                 LOGGER.info("Ready: " + playerId + "=" + ready + (isCreator ? " (creator)" : "") + " - synced to GameModel");
+                
+                String playerNickname = playerRegistry.getPlayerNickname(playerId);
+                PlayerReadyChangedEvent event = new PlayerReadyChangedEvent(gameId, playerId, playerNickname, ready);
+                propertyChangeSupport.firePropertyChange("eventPublished", null, event);
             }
         }
     }
@@ -278,6 +302,10 @@ public class GameSession {
             transitionToPhase(GamePhase.BUILDING);
 
             LOGGER.info("Started: " + gameId + " (" + playerStates.size() + " players)");
+            
+            GameStartedEvent event = new GameStartedEvent(gameId, this.getGameModel(), creatorId);
+            propertyChangeSupport.firePropertyChange("eventPublished", null, event);
+            
             return true;
         }
     }
@@ -422,14 +450,14 @@ public class GameSession {
         // Initialize flight board
         gameModel.getAdventureDeck().startFlightPhase();
 
-        // Initialize adventure card controller
-        if (adventureCardController == null) {
-            if (eventPublisher != null) {
-                adventureCardController = new AdventureCardController(gameModel, eventPublisher);
-            } else {
-                LOGGER.warning("EventPublisher not available - adventure card controller will be created later");
-            }
-        }
+//        // Initialize adventure card controller
+//        if (adventureCardController == null) {
+//            if (eventPublisher != null) {
+//                adventureCardController = new AdventureCardController(gameModel, eventPublisher);
+//            } else {
+//                LOGGER.warning("EventPublisher not available - adventure card controller will be created later");
+//            }
+//        }
 
         // Update player order based on ship stats
         updatePlayerOrder();

@@ -41,35 +41,48 @@ public class PlayerReadyChangedEvent extends AbstractEvent {
 
     @Override
     public boolean shouldSendTo(String clientId, EventFilterContext context) {
-        // Don't send to the requesting client (they already have the response)
-        PlayerId playerId = context.getPlayerIdForClient(clientId);
-        if (this.playerId.equals(playerId)) {
-            LOGGER.finer("EVENT FILTERING - PlayerReadyChangedEvent NOT sent to requesting client: " + clientId);
-            return false;
-        }
-        
-        // Use default game filtering for other clients
-        return super.shouldSendTo(clientId, context);
+        // Send to ALL players in the game, including the requester (single source of truth)
+        boolean shouldSend = super.shouldSendTo(clientId, context);
+        LOGGER.finer("EVENT FILTERING - PlayerReadyChangedEvent shouldSendTo clientId: " + clientId + " = " + shouldSend + " (including requester)");
+        return shouldSend;
     }
 
     @Override
     public void handleOnClient(ClientEventContext context) {
         context.runOnUIThread(() -> {
             LOGGER.fine("Handling PlayerReadyChangedEvent for game: " + gameId + ", player: " + playerNickname + ", ready: " + ready);
-            // Show notification for other players (not the one who changed status)
-            if (!context.isLocalPlayer(playerId) && context.getNotificationService() != null) {
-                String message = ready 
-                    ? playerNickname + " is ready to start"
-                    : playerNickname + " is no longer ready";
-                    
-                context.getNotificationService().showInfo(
-                        "Player Status",
-                        message
-                );
+            
+            // Update state for ALL players - this is the single source of truth
+            boolean isLocalPlayer = context.isLocalPlayer(playerId);
+            
+            // Update the player ready status in client state
+            if (context.getClientState() != null) {
+                context.getClientState().setPlayerReadyStatus(playerId.toString(), ready);
+                // Trigger UI refresh to show the updated state
+                context.getClientState().refreshCurrentViewOnly();
             }
             
-            // Note: Player ready status is handled server-side and will be reflected
-            // in game lobby updates through other events or responses
+            // Show notification for all players
+            if (context.getNotificationService() != null) {
+                String message;
+                if (isLocalPlayer) {
+                    message = ready ? "You are now ready to start the game" : "You are no longer ready";
+                    LOGGER.fine("Displaying ready status notification for local player: " + message);
+                } else {
+                    message = ready 
+                        ? playerNickname + " is ready to start"
+                        : playerNickname + " is no longer ready";
+                    LOGGER.fine("Displaying ready status notification for other player: " + message);
+                }
+                
+                context.getNotificationService().showNotification(
+                    new it.polimi.ingsw.client.ui.Notification(
+                        "Player Status",
+                        message,
+                        it.polimi.ingsw.client.ui.NotificationType.INFO
+                    )
+                );
+            }
         });
     }
 }

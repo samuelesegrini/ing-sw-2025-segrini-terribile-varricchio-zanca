@@ -17,6 +17,8 @@ import it.polimi.ingsw.server.model.enums.player.PlayerColor;
 import it.polimi.ingsw.server.model.enums.player.PlayerOrder;
 import it.polimi.ingsw.server.model.enums.resource.GoodType;
 
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeSupport;
 import java.io.Serializable;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -42,6 +44,7 @@ public class GameModel implements Serializable {
     private Player leadPlayer;
     private boolean isInitialized;
     private BuildingTimer buildingTimer;
+    private transient PropertyChangeSupport propertyChangeSupport;
 
     /**
      * Creates a new game model with the specified game ID, name, difficulty level, configuration, and number of players.
@@ -73,6 +76,20 @@ public class GameModel implements Serializable {
         this.maxPlayers = playerCount;
         this.isInitialized = false;
         this.buildingTimer = new BuildingTimer(level);
+        this.propertyChangeSupport = new PropertyChangeSupport(this);
+    }
+
+    public void addPropertyChangeListener(PropertyChangeListener listener) {
+        if (propertyChangeSupport == null) {
+            propertyChangeSupport = new PropertyChangeSupport(this);
+        }
+        propertyChangeSupport.addPropertyChangeListener(listener);
+    }
+
+    public void removePropertyChangeListener(PropertyChangeListener listener) {
+        if (propertyChangeSupport != null) {
+            propertyChangeSupport.removePropertyChangeListener(listener);
+        }
     }
 
     /**
@@ -171,6 +188,9 @@ public class GameModel implements Serializable {
         }
         
         changePhase(GamePhase.BUILDING);
+        
+        // Note: GameStartedEvent is fired by GameSession which has access to the requesterId
+        // GameModel doesn't need to fire this event as it would be redundant
     }
 
     /**

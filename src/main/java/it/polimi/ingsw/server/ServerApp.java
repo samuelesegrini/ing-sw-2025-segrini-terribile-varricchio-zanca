@@ -105,8 +105,7 @@ public class ServerApp {
 
         Map<String, String> networkClientToGamePlayerMap = new ConcurrentHashMap<>();
         
-        // Create session manager without event publisher initially
-        sessionManager = new GameSessionManager(networkManager, playerRegistry, null);
+        sessionManager = new GameSessionManager(networkManager, playerRegistry);
         
         // Create command dispatcher which creates the event publisher
         commandDispatcher = new CommandDispatcher(
@@ -117,7 +116,6 @@ public class ServerApp {
         );
         
         // Now update session manager with the real event publisher
-        sessionManager.setEventPublisher(commandDispatcher.getEventPublisher());
         networkManager.setCommandDispatcher(commandDispatcher);
 
         connectionMonitor = new ConnectionMonitorService(

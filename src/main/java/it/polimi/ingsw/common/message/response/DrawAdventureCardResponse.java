@@ -1,35 +1,41 @@
 package it.polimi.ingsw.common.message.response;
 
-import it.polimi.ingsw.server.model.domain.adventure.card.AdventureCard;
+import it.polimi.ingsw.client.ui.NotificationType;
 
 import java.util.UUID;
 
 /**
- * Response containing the drawn adventure card information.
+ * Lightweight response to a DrawAdventureCardRequest.
+ * Acknowledges that the request was processed successfully.
+ * The AdventureCardDrawnEvent is the single source of truth for state updates.
  */
 public class DrawAdventureCardResponse extends AbstractResponse {
-    private final AdventureCard card;
 
-    public DrawAdventureCardResponse(UUID correlationId, AdventureCard card) {
+    public DrawAdventureCardResponse(UUID correlationId) {
         super(correlationId);
-        this.card = card;
-    }
-
-    public AdventureCard getCard() {
-        return card;
     }
 
     @Override
     public void handleOnClient(ClientContext context) {
+        java.util.logging.Logger logger = java.util.logging.Logger.getLogger(DrawAdventureCardResponse.class.getName());
+        
         if (isSuccess()) {
-            String cardName = card != null ? card.getClass().getSimpleName() : "Unknown";
-            context.showNotification(
-                "Adventure Card",
-                "Drew adventure card: " + cardName,
-                it.polimi.ingsw.client.ui.NotificationType.INFO
-            );
+            logger.info("🎯 DRAW ADVENTURE CARD RESPONSE - Received confirmation that the draw adventure card request was successful.");
+            
+            // Show a simple acknowledgment notification
+            context.showNotification("Request Acknowledged", 
+                "Draw adventure card request processed successfully.", 
+                NotificationType.SUCCESS);
+                
+            // DO NOT update the adventure card state here.
+            // The AdventureCardDrawnEvent handler is responsible for all state updates.
         } else {
-            context.showError("Draw Card Error", getErrorMessage());
+            // Show error notification for failed adventure card draw
+            context.showNotification(
+                    "Draw Card Failed",
+                    getErrorMessage() != null ? getErrorMessage() : "Failed to draw adventure card",
+                    NotificationType.ERROR
+            );
         }
     }
 
@@ -38,7 +44,6 @@ public class DrawAdventureCardResponse extends AbstractResponse {
         return "DrawAdventureCardResponse{" +
                 "correlationId=" + getCorrelationId() +
                 ", success=" + isSuccess() +
-                ", card=" + (card != null ? card.getClass().getSimpleName() : "null") +
                 '}';
     }
 }

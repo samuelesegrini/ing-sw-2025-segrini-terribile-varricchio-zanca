@@ -1,6 +1,6 @@
 package it.polimi.ingsw.common.message.request;
 
-import it.polimi.ingsw.common.message.event.ComponentTakenEvent;
+import it.polimi.ingsw.common.message.event.ComponentReservedEvent;
 import it.polimi.ingsw.common.message.response.ErrorResponse;
 import it.polimi.ingsw.common.message.response.Response;
 import it.polimi.ingsw.common.message.response.ReserveTileResponse;
@@ -97,27 +97,17 @@ public class ReserveTileRequest extends AbstractRequest {
             // Remove component from player's hand since it's now reserved
             player.clearHeldComponent();
 
-            // Publish component taken event with full server models
-            ComponentTakenEvent event = new ComponentTakenEvent(
+            // Publish event FIRST - this is the single source of truth for state updates
+            ComponentReservedEvent event = new ComponentReservedEvent(
                 session.getGameId(),
                 component,
                 player,
                 deck
             );
-            context.getEventPublisher().publishEvent(event);
+            context.publishEvent(event);
 
-            // ENHANCED: Return response with full server models and detailed success message
-            String successMessage = String.format("Component reserved successfully (%d/%d reservations used)", 
-                                                 currentReservations + 1, maxReservations);
-            
-            return new ReserveTileResponse(
-                getCorrelationId(),
-                true,
-                successMessage,
-                player,                // Full Player model
-                component,             // Full Component model
-                session.getGameModel().getComponentDeck() // Updated ComponentDeck model
-            );
+            // Return lightweight response - event contains the state update
+            return new ReserveTileResponse(getCorrelationId());
 
         } catch (Exception e) {
             return createErrorResponse("Failed to reserve component: " + e.getMessage(), ErrorResponse.INTERNAL_ERROR);

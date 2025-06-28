@@ -8,24 +8,24 @@ import it.polimi.ingsw.server.model.domain.general.ComponentDeck;
 import java.util.logging.Logger;
 
 /**
- * Event broadcast when a component tile is taken from the face-down pile by a player.
- * This moves the component directly to the player's hand, not to a reservation state.
+ * Event broadcast when a component tile is reserved by a player.
+ * This moves the component to the player's reservation area.
  * 
  * ENHANCED VERSION: Carries full server models instead of just basic data.
  */
-public class ComponentTakenEvent extends AbstractEvent {
-    private static final Logger LOGGER = Logger.getLogger(ComponentTakenEvent.class.getName());
+public class ComponentReservedEvent extends AbstractEvent {
+    private static final Logger LOGGER = Logger.getLogger(ComponentReservedEvent.class.getName());
     private final Component component;      // Full Component model
     private final Player player;           // Full Player model  
     private final ComponentDeck updatedDeck; // Full deck state
 
-    public ComponentTakenEvent(String gameId, Component component, 
-                              Player player, ComponentDeck updatedDeck) {
-        super(EventType.COMPONENT_TAKEN, gameId, player.getId());
+    public ComponentReservedEvent(String gameId, Component component, 
+                                 Player player, ComponentDeck updatedDeck) {
+        super(EventType.COMPONENT_RESERVED, gameId, player.getId());
         this.component = component;
         this.player = player;
         this.updatedDeck = updatedDeck;
-        LOGGER.fine("ComponentTakenEvent instantiated for game: " + gameId + ", player: " + player.getNickname() + ", component: " + component.getType());
+        LOGGER.fine("ComponentReservedEvent instantiated for game: " + gameId + ", player: " + player.getNickname() + ", component: " + component.getType());
     }
 
     public Component getComponent() {
@@ -56,7 +56,7 @@ public class ComponentTakenEvent extends AbstractEvent {
     public boolean shouldSendTo(String clientId, EventFilterContext context) {
         // Send to ALL players in the game, including the requester (single source of truth)
         boolean shouldSend = super.shouldSendTo(clientId, context);
-        LOGGER.finer("EVENT FILTERING - ComponentTakenEvent shouldSendTo clientId: " + clientId + " = " + shouldSend + " (including requester)");
+        LOGGER.finer("EVENT FILTERING - ComponentReservedEvent shouldSendTo clientId: " + clientId + " = " + shouldSend + " (including requester)");
         return shouldSend;
     }
 
@@ -66,7 +66,7 @@ public class ComponentTakenEvent extends AbstractEvent {
             // Update state for ALL players - this is the single source of truth
             boolean isLocalPlayer = context.isLocalPlayer(getPlayerId());
             
-            LOGGER.fine("ComponentTakenEvent: Updating state for player: " + getPlayerNickname() + 
+            LOGGER.fine("ComponentReservedEvent: Updating state for player: " + getPlayerNickname() + 
                        " (local: " + isLocalPlayer + ")");
             context.getClientState().updatePlayer(player);
             context.getClientState().updateComponentDeck(updatedDeck);
@@ -78,15 +78,15 @@ public class ComponentTakenEvent extends AbstractEvent {
             if (context.getNotificationService() != null) {
                 String message;
                 if (isLocalPlayer) {
-                    message = String.format("You took a %s tile from the pile", component.getType().name());
-                    LOGGER.fine("Displaying 'Component Taken' notification for local player: " + message);
+                    message = String.format("You reserved a %s component", component.getType().name());
+                    LOGGER.fine("Displaying 'Component Reserved' notification for local player: " + message);
                 } else {
-                    message = String.format("%s took a tile from the pile", getPlayerNickname());
-                    LOGGER.fine("Displaying 'Component Taken' notification for other player: " + message);
+                    message = String.format("%s reserved a component", getPlayerNickname());
+                    LOGGER.fine("Displaying 'Component Reserved' notification for other player: " + message);
                 }
                 context.getNotificationService().showNotification(
                     new it.polimi.ingsw.client.ui.Notification(
-                        "Component Taken",
+                        "Component Reserved",
                         message,
                         it.polimi.ingsw.client.ui.NotificationType.INFO
                     )

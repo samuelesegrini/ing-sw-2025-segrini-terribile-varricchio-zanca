@@ -67,7 +67,13 @@ public class DrawAdventureCardRequest extends AbstractRequest {
                 "" // imageUrl - could be derived from card type
             );
 
-            // Publish card drawn event
+            // Start turn-based card resolution using the new controller
+            AdventureCardController cardController = session.getAdventureCardController();
+            if (cardController != null) {
+                cardController.startCardResolution(card);
+            }
+            
+            // Publish event FIRST - this is the single source of truth for state updates
             context.publishEvent(new AdventureCardDrawnEvent(
                 context.getGameId(), 
                 eventCard,
@@ -75,13 +81,8 @@ public class DrawAdventureCardRequest extends AbstractRequest {
                 gameModel.getAdventureDeck().getMainFlightDeckView().size()
             ));
 
-            // Start turn-based card resolution using the new controller
-            AdventureCardController cardController = session.getAdventureCardController();
-            if (cardController != null) {
-                cardController.startCardResolution(card);
-            }
-
-            return new DrawAdventureCardResponse(getCorrelationId(), card);
+            // Return lightweight response - event contains the state update
+            return new DrawAdventureCardResponse(getCorrelationId());
         } catch (Exception e) {
             return createErrorResponse("Failed to draw adventure card: " + e.getMessage(), 
                                      ErrorResponse.INTERNAL_ERROR);
