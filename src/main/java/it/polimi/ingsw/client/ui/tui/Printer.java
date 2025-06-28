@@ -7,8 +7,13 @@ import it.polimi.ingsw.server.model.domain.ship.components.Component;
 import it.polimi.ingsw.server.model.domain.ship.Position;
 import it.polimi.ingsw.server.model.domain.ship.Ship;
 import it.polimi.ingsw.server.model.enums.ship.Direction;
+
+import java.io.PrintWriter;
+
 import org.fusesource.jansi.Ansi;
 import org.fusesource.jansi.AnsiConsole;
+import org.jline.reader.LineReader;
+import org.jline.terminal.Terminal;
 
 import java.util.List;
 import java.util.Set;
@@ -16,11 +21,17 @@ import java.util.Set;
 import static org.fusesource.jansi.Ansi.ansi;
 
 /**
- * The Printer class provides functionality for printing all messages and game displays for the TUI.
+ * The Printer class provides functionality for printing messages and game displays for the TUI.
  */
 public class Printer {
+    private static Terminal terminal;
+    private static LineReader reader;
+    //private static PrintWriter writer;
 
-    public Printer() {
+    public Printer(Terminal _terminal, LineReader _reader) {
+        //writer = new PrintWriter(System.out, true);
+        terminal = _terminal;
+        reader = _reader;
         AnsiConsole.systemInstall();
     }
 
@@ -28,75 +39,85 @@ public class Printer {
         AnsiConsole.systemUninstall();
     }
 
+    public void print(String message) {
+        //writer.println(message);
+        reader.printAbove(message);
+    }
+
     public void printHeader() {
-        System.out.println(ansi()
+        StringBuilder sb = new StringBuilder();
+        sb.append(ansi()
                 .fgBrightCyan()
                 .a("╔═══════════════════════════════════════════════════════════════╗")
-                .reset());
-        System.out.println(ansi()
+                .reset()).append("\n");
+        sb.append(ansi()
                 .fgBrightCyan()
                 .a("║                     ")
                 .fgBrightYellow().bold()
                 .a("GALAXY TRUCKER CLIENT")
                 .reset().fgBrightCyan()
                 .a("                     ║")
-                .reset());
-        System.out.println(ansi()
+                .reset()).append("\n");
+        sb.append(ansi()
                 .fgBrightCyan()
                 .a("╚═══════════════════════════════════════════════════════════════╝")
-                .reset());
-        System.out.println();
+                .reset()).append("\n");
+        print(sb.toString());
     }
 
     public void printSectionHeader(String title) {
         int width = 50;
         String paddedTitle = center(title, width - 2);
+
         StringBuilder sb = new StringBuilder();
-        sb.append(ansi().fgBrightBlue().append("┌").append("─".repeat(width - 2)).append("┐").reset());
-        sb.append(ansi().fgBrightBlue().a("│").bold().a(paddedTitle).reset().fgBrightBlue().a("│").reset());
-        sb.append(ansi().fgBrightBlue().append("└").append("─".repeat(width - 2)).append("┘").reset());
-        System.out.println();
+        sb.append(ansi().fgBrightBlue().a("┌").a("─".repeat(width - 2)).a("┐").reset()).append("\n");
+        sb.append(ansi().fgBrightBlue().a("│").bold().a(paddedTitle).reset().fgBrightBlue().a("│").reset()).append("\n");
+        sb.append(ansi().fgBrightBlue().a("└").a("─".repeat(width - 2)).a("┘").reset()).append("\n");
+        print(sb.toString());
     }
 
-    // Message Printing
+    // MESSAGE PRINTING
 
     public void printSuccess(String message) {
-        System.out.println(ansi().fgBrightGreen().reset().a(message));
+        print(ansi().fgBrightGreen().a(message).reset().toString());
     }
 
     public void printError(String message) {
-        System.out.println(ansi().fgBrightRed().reset().a(message));
+        print(ansi().fgBrightRed().a(message).reset().toString());
     }
 
     public void printInfo(String message) {
-        System.out.println(ansi().fgBrightCyan().reset().a(message));
+        print(ansi().fgBrightCyan().a(message).reset().toString());
     }
 
     public void printWarning(String message) {
-        System.out.println(ansi().fgBrightYellow().reset().a(message));
+        print(ansi().fgBrightYellow().a(message).reset().toString());
     }
 
     public void printLoading(String message) {
-        System.out.println(ansi().fgCyan().a(message + "...").reset());
+        print(ansi().fgCyan().a(message + "...").reset().toString());
     }
 
 
-    // View Printing
+    // VIEW PRINTING
 
-    public void printConnectionPrompt() {
+    // Connection Phase
+
+    public void printConnectionPhase() {
         printSectionHeader("CONNECTION");
-        printInfo("Please enter the server address to connect.");
-        System.out.print("Server IP:Port > ");
     }
 
-    public void printLoginPrompt() {
+    // Login Phase
+
+    public void printLoginPhase() {
         printSectionHeader("LOGIN");
         printSuccess("Connected to server successfully!");
         printInfo("Please choose a nickname (3-20 characters, letters, numbers, _, -).");
-        System.out.print("Enter nickname: ");
     }
 
-    public void printLobby(ClientState clientState) {
+    // Lobby Phase
+
+    public void printLobbyPhase(ClientState clientState) {
         clearScreen();
         printSectionHeader("LOBBY - Welcome " + clientState.getCurrentNickname());
 
@@ -113,7 +134,6 @@ public class Printer {
         }
         System.out.println();
         printLobbyCommands();
-        System.out.print("Lobby > ");
     }
 
     public void printLobbyCommands() {
@@ -125,7 +145,9 @@ public class Printer {
         System.out.println();
     }
 
-    public void printShipBuildingInterface(ClientState clientState, Component heldComponent) {
+    // Building Phase
+
+    public void printBuildingPhase(ClientState clientState, Component heldComponent) {
         clearScreen();
         printSectionHeader("SHIP BUILDING");
 
@@ -303,12 +325,14 @@ public class Printer {
     }
 
 
-    // --- UTILITY METHODS ---
+    // UTILITIES
 
     private void clearScreen() {
         System.out.print(ansi().eraseScreen().cursor(1, 1));
         System.out.flush();
     }
+
+    // Table Printing
 
     private String center(String text, int width) {
         if (text.length() >= width) {

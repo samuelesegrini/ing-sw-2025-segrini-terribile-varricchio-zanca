@@ -4,6 +4,8 @@ import it.polimi.ingsw.client.network.NetworkClient;
 import it.polimi.ingsw.client.ui.UIManager;
 import it.polimi.ingsw.client.ui.UIType;
 import it.polimi.ingsw.client.controller.ClientController;
+import it.polimi.ingsw.client.ui.newTUI;
+import it.polimi.ingsw.client.ui.newUI;
 
 import java.io.InputStream;
 import java.util.Scanner;
@@ -61,13 +63,19 @@ public class ClientApp {
             
             // Create controller without UIContext first
             controller = new ClientController(networkClient, clientState);
-            uiManager = new UIManager(uiType, controller);
+            //uiManager = new UIManager(uiType, controller);
+            if (uiType == UIType.GUI) {
+                // TODO
+            } else {
+                newUI UI = new newTUI(controller);
+                UI.start();
+            }
 
             // Set up callbacks
             networkClient.setMessageHandler(controller::handleMessage);
 
             // Start UI
-            uiManager.start();
+            //uiManager.start();
 
             // Register shutdown hook
             Runtime.getRuntime().addShutdownHook(new Thread(this::shutdown));
