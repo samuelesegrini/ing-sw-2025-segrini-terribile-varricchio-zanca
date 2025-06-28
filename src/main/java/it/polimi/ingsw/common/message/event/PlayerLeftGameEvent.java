@@ -33,15 +33,10 @@ public class PlayerLeftGameEvent extends AbstractEvent {
 
     @Override
     public boolean shouldSendTo(String clientId, EventFilterContext context) {
-        // Don't send to the leaving player (they already have the response)
-        PlayerId playerId = context.getPlayerIdForClient(clientId);
-        if (this.playerId.equals(playerId)) {
-            LOGGER.finer("EVENT FILTERING - PlayerLeftGameEvent NOT sent to leaving player: " + clientId);
-            return false;
-        }
-        
-        // Use default game filtering for other clients
-        return super.shouldSendTo(clientId, context);
+        // Send to ALL players, including the leaving player (single source of truth)
+        boolean shouldSend = super.shouldSendTo(clientId, context);
+        LOGGER.finer("EVENT FILTERING - PlayerLeftGameEvent shouldSendTo clientId: " + clientId + " = " + shouldSend + " (including leaving player)");
+        return shouldSend;
     }
 
     @Override
@@ -68,34 +63,60 @@ public class PlayerLeftGameEvent extends AbstractEvent {
                 }
             }
             
-            // If this is the local player leaving, should navigate back to lobby
-            if (context.isLocalPlayer(playerId)) {
-                // Local player left the game - navigate back to LOBBY
-                if (context.getController().getUIContext() != null && 
+            // Handle state updates for ALL players - this is the single source of truth
+            boolean isLocalPlayer = context.isLocalPlayer(playerId);
+            
+            if (isLocalPlayer) {
+                // Local player left the game - clear state and navigate back to lobby
+                if (clientState != null) {
+                    clientState.setGameModel(null);
+                    clientState.setPlayersInLobby(new java.util.ArrayList<>());
+                    clientState.setCurrentGameLobby(null);
+                }
+                
+                // Navigate back to LOBBY
+                if (context.getController() != null && 
+                    context.getController().getUIContext() != null && 
                     context.getController().getUIContext().getViewNavigator() != null) {
                     
                     boolean success = context.getController().getUIContext().getViewNavigator()
-                        .navigateTo(ClientState.ViewState.LOBBY, "Left game: " + getGameId());
+                        .navigateTo(ClientState.ViewState.LOBBY, "Left game successfully");
                     
                     if (!success) {
                         String reason = context.getController().getUIContext().getViewNavigator()
                             .getNavigationFailureReason(ClientState.ViewState.LOBBY);
                         LOGGER.severe("Failed to navigate to LOBBY after leaving game - Reason: " + reason);
+                        // Fallback navigation
+                        if (clientState != null) {
+                            clientState.setCurrentView(ClientState.ViewState.LOBBY);
+                        }
                     }
                 } else {
-                    LOGGER.severe("ViewNavigator not available - cannot navigate to LOBBY after leaving game");
+                    LOGGER.severe("ViewNavigator not available - using direct navigation fallback");
+                    if (clientState != null) {
+                        clientState.setCurrentView(ClientState.ViewState.LOBBY);
+                    }
+                }
+            }
+            
+            // Show notification for all players
+            if (context.getNotificationService() != null) {
+                String message;
+                if (isLocalPlayer) {
+                    message = "You have left the game";
+                    LOGGER.fine("Displaying 'Left Game' notification for local player");
+                } else {
+                    message = playerNickname + " left the game";
+                    LOGGER.fine("Displaying 'Player Left' notification for other player: " + message);
                 }
                 
-                // Clear current game lobby for local player
-                clientState.setCurrentGameLobby(null);
-            } else {
-                // Only show notification for remaining players (not the leaving player)
-                if (context.getNotificationService() != null) {
-                    context.getNotificationService().showWarning(
-                            "Player Left",
-                            playerNickname + " left the game"
-                    );
-                }
+                context.getNotificationService().showNotification(
+                    new it.polimi.ingsw.client.ui.Notification(
+                        isLocalPlayer ? "Left Game" : "Player Left",
+                        message,
+                        isLocalPlayer ? it.polimi.ingsw.client.ui.NotificationType.INFO : it.polimi.ingsw.client.ui.NotificationType.WARNING
+                    )
+                );
             }
         });
     }
