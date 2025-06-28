@@ -120,7 +120,7 @@ public class PlaceTileRequest extends AbstractRequest {
             // Update ship stats
             ship.updateStats();
 
-            // ENHANCED: Publish event with full server models
+            // Publish event FIRST - this is the single source of truth for state updates
             ComponentPlacedEvent event = new ComponentPlacedEvent(
                     session.getGameId(),
                     player,                    // Full Player model
@@ -130,19 +130,8 @@ public class PlaceTileRequest extends AbstractRequest {
             );
             context.publishEvent(event);
 
-            // ENHANCED: Return response with full server models and validation warnings
-            String successMessage = "Component placed successfully";
-            if (!placementValidation.getWarnings().isEmpty()) {
-                successMessage += " (Warnings: " + String.join("; ", placementValidation.getWarnings()) + ")";
-            }
-            
-            return new PlaceTileResponse(
-                getCorrelationId(),
-                true,
-                successMessage,
-                player.getShip(),           // Full Ship model
-                gameModel.getComponentDeck() // Full ComponentDeck model
-            );
+            // Return lightweight response - event contains the state update
+            return new PlaceTileResponse(getCorrelationId());
 
         } catch (IllegalArgumentException e) {
             // Revert rotation

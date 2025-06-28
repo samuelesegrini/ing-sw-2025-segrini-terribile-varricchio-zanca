@@ -1,8 +1,5 @@
 package it.polimi.ingsw.common.message.request;
 
-import it.polimi.ingsw.server.model.domain.player.Player;
-import it.polimi.ingsw.common.message.event.GameLobbyUpdateEvent;
-import it.polimi.ingsw.common.message.event.PlayerReadyChangedEvent;
 import it.polimi.ingsw.common.message.response.Response;
 import it.polimi.ingsw.common.message.response.SetPlayerReadyResponse;
 import it.polimi.ingsw.common.message.validation.ValidationResult;
@@ -11,8 +8,6 @@ import it.polimi.ingsw.server.core.GameSessionManager;
 import it.polimi.ingsw.server.core.PlayerSessionRegistry;
 import it.polimi.ingsw.server.model.domain.player.PlayerId;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.logging.Logger;
 
 /**
@@ -77,41 +72,10 @@ public class SetPlayerReadyRequest extends AbstractRequest {
         LOGGER.info("⚡ UPDATING READY - Setting ready=" + ready + " for player: " + playerId + " in game: " + gameId);
         gameSession.setPlayerReady(playerId, ready);
         
-        // Get player nickname for event
         String playerNickname = registry.getPlayerNickname(playerId);
-        LOGGER.fine("👤 PLAYER INFO - Retrieved nickname: '" + playerNickname + "' for player: " + playerId);
-        
-        // Publish player ready changed event
-        PlayerReadyChangedEvent event = new PlayerReadyChangedEvent(
-                gameId, playerId, playerNickname, ready
-        );
-        LOGGER.info("📢 EVENT PUBLISH - Publishing PlayerReadyChangedEvent for player: " + playerNickname + 
-                   " (" + playerId + ") ready=" + ready);
-        context.publishEvent(event);
-        
-        // Check for auto-start and publish lobby update (exclude requesting player)
-        LOGGER.info("📢 LOBBY UPDATE - Publishing GameLobbyUpdateEvent (excluding requester: " + playerId + ")");
-        publishLobbyUpdateEvent(context, gameSession, gameId, playerId);
+        LOGGER.info("📢 PROPERTY CHANGE - Player ready change will trigger PlayerReadyChangedEvent via PropertyChange system for player: " + playerNickname);
         
         LOGGER.info("🎉 SET READY SUCCESS - Player " + playerNickname + " (" + playerId + ") ready status set to: " + ready);
         return new SetPlayerReadyResponse(getCorrelationId(), ready);
-    }
-    
-    private void publishLobbyUpdateEvent(RequestContext context, GameSession gameSession, String gameId, PlayerId excludePlayerId) {
-        PlayerSessionRegistry registry = context.getPlayerRegistry();
-        List<Player> playerInfos = new ArrayList<>();
-        
-        for (PlayerId pId : gameSession.getPlayerIds()) {
-            String pNickname = registry.getPlayerNickname(pId);
-            boolean isReady = gameSession.getPlayerState(pId) != null && gameSession.getPlayerState(pId).isReady();
-            Player player = new Player(pId);
-            player.setReady(isReady);
-            playerInfos.add(player);
-        }
-        
-        GameLobbyUpdateEvent lobbyEvent = new GameLobbyUpdateEvent(
-                gameId, playerInfos, gameSession.getMaxPlayers(), excludePlayerId
-        );
-        context.publishEvent(lobbyEvent);
     }
 }

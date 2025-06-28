@@ -54,8 +54,7 @@ public class ComponentTakenEvent extends AbstractEvent {
 
     @Override
     public boolean shouldSendTo(String clientId, EventFilterContext context) {
-        // MODIFIED: Send to ALL players in the game, including the requester
-        // This ensures consistent state updates across all clients
+        // Send to ALL players in the game, including the requester (single source of truth)
         boolean shouldSend = super.shouldSendTo(clientId, context);
         LOGGER.finer("EVENT FILTERING - ComponentTakenEvent shouldSendTo clientId: " + clientId + " = " + shouldSend + " (including requester)");
         return shouldSend;
@@ -64,17 +63,16 @@ public class ComponentTakenEvent extends AbstractEvent {
     @Override
     public void handleOnClient(ClientEventContext context) {
         context.runOnUIThread(() -> {
-            // Check if this is for the local player (who also got the response)
+            // Update state for ALL players - this is the single source of truth
             boolean isLocalPlayer = context.isLocalPlayer(getPlayerId());
             
-            if (!isLocalPlayer) {
-                // Only update state for other players - local player gets updated via response
-                LOGGER.fine("ComponentTakenEvent: Updating state for other player: " + getPlayerNickname());
-                context.getClientState().updatePlayer(player);
-                context.getClientState().updateComponentDeck(updatedDeck);
-            } else {
-                LOGGER.fine("ComponentTakenEvent: Skipping state update for local player (handled by response)");
-            }
+            LOGGER.fine("ComponentTakenEvent: Updating state for player: " + getPlayerNickname() + 
+                       " (local: " + isLocalPlayer + ")");
+            context.getClientState().updatePlayer(player);
+            context.getClientState().updateComponentDeck(updatedDeck);
+            
+            // Trigger UI refresh to show the updated state
+            context.getClientState().refreshCurrentViewOnly();
 
             // Show notification for all players
             if (context.getNotificationService() != null) {

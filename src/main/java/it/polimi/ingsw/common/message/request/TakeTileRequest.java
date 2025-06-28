@@ -54,17 +54,7 @@ public class TakeTileRequest extends AbstractRequest {
         System.out.println("[SERVER DEBUG] Double-check before response - Player " + player.getId() + " held components: " + player.getHeldComponents().size());
         System.out.println("[SERVER DEBUG] Player object hash before response: " + System.identityHashCode(player));
 
-        // ENHANCED: Send response with full server models
-        TakeTileResponse response = new TakeTileResponse(
-            getCorrelationId(),
-            true,
-            "Component taken successfully", 
-            player,                    // Full Player model
-            drawnComponent,            // Full Component model
-            session.getGameModel().getComponentDeck() // Updated ComponentDeck model
-        );
-
-        // ENHANCED: Broadcast event with full server models
+        // Publish event FIRST - this is the single source of truth for state updates
         context.publishEvent(
             new it.polimi.ingsw.common.message.event.ComponentTakenEvent(
                 session.getGameId(),
@@ -73,6 +63,9 @@ public class TakeTileRequest extends AbstractRequest {
                 session.getGameModel().getComponentDeck() // Updated ComponentDeck model
             )
         );
+
+        // Return lightweight response - event contains the state update
+        TakeTileResponse response = new TakeTileResponse(getCorrelationId());
         
         return response;
     }

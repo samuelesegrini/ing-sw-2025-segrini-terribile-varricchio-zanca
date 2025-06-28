@@ -9,6 +9,7 @@ import it.polimi.ingsw.server.model.domain.player.Player;
 import it.polimi.ingsw.server.model.domain.player.PlayerId;
 import it.polimi.ingsw.server.model.domain.ship.Ship;
 import it.polimi.ingsw.server.model.domain.ship.ShipValidationService;
+import it.polimi.ingsw.server.model.domain.general.GameModel;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -42,40 +43,34 @@ public class ValidateShipRequest extends AbstractRequest {
         errors.addAll(validationResult.getErrors());
         warnings.addAll(validationResult.getWarnings());
 
-        // Publish validation event
+        // Mark player as ready if validation passes
+        if (errors.isEmpty()) {
+            session.setPlayerReady(playerId, true);
+        }
+        
+        // Combine errors and warnings for comprehensive feedback
+        List<String> allFeedback = new ArrayList<>();
+        allFeedback.addAll(errors);
+        if (!warnings.isEmpty()) {
+            if (!errors.isEmpty()) {
+                allFeedback.add("--- Additional Warnings ---");
+            }
+            allFeedback.addAll(warnings);
+        }
+        
+        // Publish event FIRST - this is the single source of truth for state updates
         ShipValidationEvent event = new ShipValidationEvent(
                 session.getGameId(),
                 playerId.toString(),
                 context.getPlayerRegistry().getPlayerNickname(playerId),
                 errors.isEmpty(),
-                errors
+                allFeedback,
+                player,                // Full Player model
+                session.getGameModel() // Full GameModel
         );
         context.publishEvent(event);
 
-        if (errors.isEmpty()) {
-            // Mark player as ready
-            session.setPlayerReady(playerId, true);
-            
-            // ENHANCED: Include warnings in success response for player feedback
-            List<String> feedbackMessages = new ArrayList<>();
-            if (!warnings.isEmpty()) {
-                feedbackMessages.add("Ship validated successfully with " + warnings.size() + " optimization suggestions:");
-                feedbackMessages.addAll(warnings);
-            } else {
-                feedbackMessages.add("Ship validated successfully - excellent construction!");
-            }
-            
-            return new ValidateShipResponse(getCorrelationId(), true, feedbackMessages);
-        } else {
-            // ENHANCED: Combine errors and warnings for comprehensive feedback
-            List<String> allFeedback = new ArrayList<>();
-            allFeedback.addAll(errors);
-            if (!warnings.isEmpty()) {
-                allFeedback.add("--- Additional Warnings ---");
-                allFeedback.addAll(warnings);
-            }
-            
-            return new ValidateShipResponse(getCorrelationId(), false, allFeedback);
-        }
+        // Return lightweight response - event contains the state update
+        return new ValidateShipResponse(getCorrelationId());
     }
 }

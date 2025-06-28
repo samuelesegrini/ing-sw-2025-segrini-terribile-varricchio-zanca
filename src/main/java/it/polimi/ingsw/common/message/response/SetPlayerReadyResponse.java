@@ -3,6 +3,7 @@ package it.polimi.ingsw.common.message.response;
 import it.polimi.ingsw.client.ui.NotificationType;
 import it.polimi.ingsw.server.model.domain.player.PlayerId;
 
+import java.beans.PropertyChangeEvent;
 import java.util.UUID;
 
 /**
@@ -24,21 +25,20 @@ public class SetPlayerReadyResponse extends AbstractResponse {
 
     @Override
     public void handleOnClient(ClientContext context) {
+        java.util.logging.Logger logger = java.util.logging.Logger.getLogger(SetPlayerReadyResponse.class.getName());
+
         if (isSuccess()) {
-            // Update the model with the new ready status
-            PlayerId playerId = context.getPlayerId();
-            if (playerId != null) {
-                context.getClientState().setPlayerReadyStatus(playerId.toString(), ready);
-            }
+            logger.info("🎯 SET PLAYER READY RESPONSE - Received confirmation that the ready status request was successful.");
             
-            // Show confirmation notification
-            context.showNotification(
-                    "Ready Status",
-                    ready ? "You are now ready to start the game" : "You are no longer ready",
-                    NotificationType.INFO
-            );
+            // Show a simple acknowledgment notification
+            context.showNotification("Request Acknowledged", 
+                "Ready status request processed successfully.", 
+                NotificationType.SUCCESS);
+                
+            // DO NOT update the player ready status here.
+            // The PlayerReadyChangedEvent and GameLobbyUpdateEvent handlers are responsible for state updates.
         } else {
-            // Show error notification
+            // Show error notification for failed ready status change
             context.showNotification(
                     "Ready Status Failed",
                     getErrorMessage() != null ? getErrorMessage() : "Failed to update ready status",
