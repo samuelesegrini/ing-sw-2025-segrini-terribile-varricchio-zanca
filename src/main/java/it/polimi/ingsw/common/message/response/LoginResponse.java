@@ -32,12 +32,14 @@ public class LoginResponse extends AbstractResponse {
 
     @Override
     public void handleOnClient(ClientContext context) {
+        System.out.println("Player " + nickname + " logged in.");
         if (isSuccess()) {
             // Update client state
             ClientState clientState = context.getClientState();
             if (clientState != null) {
                 clientState.setPlayerInfo(playerId, nickname);
-                
+
+
                 // Note: View navigation is now handled by ClientController.login() method
                 // to ensure proper ViewNavigator usage. This response handler should not
                 // directly change views to maintain architectural consistency.

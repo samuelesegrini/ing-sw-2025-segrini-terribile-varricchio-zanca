@@ -15,7 +15,7 @@ import java.util.regex.Pattern;
 
 public class TUI implements UI {
     private final Scanner scanner;
-    private final Printer printer = new Printer();
+    private final Printer printer = new Printer(null, null);
     private final ClientController controller;
     private final ClientState clientState;
 
@@ -57,16 +57,16 @@ public class TUI implements UI {
         // For this simplified model, we call it to show the user what to do next.
         switch (clientState.getCurrentView()) {
             case CONNECTION:
-                printer.printConnectionPrompt();
+                //printer.printConnectionPrompt();
                 break;
             case LOGIN:
-                printer.printLoginPrompt();
+                //printer.printLoginPrompt();
                 break;
             case LOBBY:
-                printer.printLobby(clientState);
+                //printer.printLobby(clientState);
                 break;
             case GAME:
-                printer.printShipBuildingInterface(clientState, heldComponent);
+                //printer.printShipBuildingInterface(clientState, heldComponent);
                 break;
             default:
                 System.out.print("> ");
