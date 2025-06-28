@@ -28,6 +28,8 @@ public class CombatStrengthResponse extends AbstractResponse {
         } else {
             context.showError("Combat Strength Error", getErrorMessage());
         }
+
+        context.getController().getUI().onCombatStrengthResponse(this);
     }
 
     @Override

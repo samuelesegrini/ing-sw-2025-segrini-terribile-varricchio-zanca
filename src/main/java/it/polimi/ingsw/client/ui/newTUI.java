@@ -2,10 +2,9 @@ package it.polimi.ingsw.client.ui;
 
 import it.polimi.ingsw.client.controller.ClientController;
 import it.polimi.ingsw.client.core.ClientState;
+import it.polimi.ingsw.client.network.NetworkClient;
 import it.polimi.ingsw.client.ui.tui.Printer;
-import it.polimi.ingsw.client.ui.tui.TuiConsole;
 import it.polimi.ingsw.common.message.response.*;
-import it.polimi.ingsw.common.model.GameInfo;
 
 import it.polimi.ingsw.server.model.domain.player.Player;
 import org.jline.reader.LineReader;
@@ -23,18 +22,20 @@ public class newTUI implements newUI {
     private static LineReader reader;
     private final Printer printer;
 
-    // Temporanei
     private final ClientController controller;
     private final ClientState clientState;
+    private final NetworkClient networkClient;
 
     public newTUI(ClientController controller) throws IOException {
         terminal = TerminalBuilder.builder().system(true).build();
         reader = LineReaderBuilder.builder().terminal(terminal).build();
         this.printer = new Printer(terminal, reader);
 
-        // Temporanei
         this.controller = controller;
+        controller.setUI(this);
+
         this.clientState = controller.getClientState();
+        this.networkClient = controller.getNetworkClient();
     }
 
     @Override
@@ -70,16 +71,22 @@ public class newTUI implements newUI {
     }
 
     private void elaborateConnectionPhase() {
-        // Get hostname
+        // Hostname
         printer.print("Enter hostname (default: localhost): ");
         String hostname = reader.readLine().trim();
         if (hostname.isEmpty()) {
             hostname = "localhost";
         }
 
-        // Get protocol selection
-        printer.print("Select protocol - (1) Socket, (2) RMI (default: 1): ");
+//        while (hostname.trim().isEmpty()) {
+//            printer.printError("Invalid host provided for connection");
+//            hostname = reader.readLine().trim();
+//        }
+
+        // Protocol
+        printer.print("Select protocol: (1) Socket, (2) RMI (default: 1): ");
         String protocol = reader.readLine().trim().toLowerCase();
+
         boolean useSocket = true;
         int defaultPort = 12345;
 
@@ -91,7 +98,7 @@ public class newTUI implements newUI {
             printer.printInfo("Selected protocol: Socket");
         }
 
-        // Get port
+        // Port
         printer.print("Enter port (default: " + defaultPort + "): ");
         String portInput = reader.readLine().trim();
         int port = defaultPort;
@@ -104,13 +111,21 @@ public class newTUI implements newUI {
             }
         }
 
-        // Attempt connection by directly calling the controller
+        while (port <= 0 || port > 65535) {
+            printer.printError("Invalid port provided for connection: " + port);
+            try {
+                port = Integer.parseInt(portInput);
+            } catch (NumberFormatException e) {
+                printer.printError("Invalid port number. Using default port " + defaultPort + ".");
+                port = defaultPort;
+            }
+        }
+
         String protocolName = useSocket ? "Socket" : "RMI";
         printer.printLoading("Connecting to " + hostname + ":" + port + " via " + protocolName);
 
-        // We use .get() here to block the TUI input loop until the connection attempt is complete.
         try {
-            boolean success = controller.connect(hostname, port, useSocket).get();  // TODO: Sistema
+            boolean success = networkClient.connect(hostname, port, useSocket).get();
         } catch (ExecutionException | InterruptedException e) {
             printer.printError("Connection error: " + e.getMessage());
         }
@@ -135,8 +150,6 @@ public class newTUI implements newUI {
                 printer.printError("Login failed. The nickname might already be taken or is invalid.");
                 elaborateLogin();
             }
-            // On success, the controller changes the view state, which will make isActive() false
-            // for the next iteration, breaking the loop.
 
         } catch (InterruptedException | java.util.concurrent.ExecutionException e) {
             printer.printError("Login error: " + e.getMessage());

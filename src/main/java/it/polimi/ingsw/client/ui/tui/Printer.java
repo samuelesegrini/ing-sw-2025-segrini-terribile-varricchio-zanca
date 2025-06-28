@@ -111,8 +111,6 @@ public class Printer {
 
     public void printLoginPhase() {
         printSectionHeader("LOGIN");
-        printSuccess("Connected to server successfully!");
-        printInfo("Please choose a nickname (3-20 characters, letters, numbers, _, -).");
     }
 
     // Lobby Phase

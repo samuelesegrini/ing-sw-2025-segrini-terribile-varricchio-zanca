@@ -1,5 +1,6 @@
 package it.polimi.ingsw.common.message.response;
 
+import it.polimi.ingsw.client.controller.ClientController;
 import it.polimi.ingsw.client.ui.NotificationType;
 import it.polimi.ingsw.client.core.ClientState;
 import it.polimi.ingsw.server.model.domain.player.PlayerId;
@@ -11,7 +12,7 @@ public interface ClientContext {
     PlayerId getPlayerId();
     String getGameId();
     ClientState getClientState();
-    it.polimi.ingsw.client.controller.ClientController getController();
+    ClientController getController();
     void showNotification(String title, String message, NotificationType type);
     void showError(String title, String message);
     

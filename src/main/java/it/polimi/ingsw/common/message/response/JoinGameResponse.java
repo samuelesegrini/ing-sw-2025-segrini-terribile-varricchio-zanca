@@ -37,6 +37,8 @@ public class JoinGameResponse extends AbstractResponse {
                     NotificationType.ERROR
             );
         }
+
+        context.getController().getUI().onJoinGameResponse(this);
     }
 
 }

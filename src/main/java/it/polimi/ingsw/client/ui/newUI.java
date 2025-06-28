@@ -15,7 +15,7 @@ public interface newUI {
 
     // Login
 
-    void onLoginResponse(LoginResponse response);
+    public void onLoginResponse(LoginResponse response);
 
     // Lobby
 
@@ -52,8 +52,6 @@ public interface newUI {
     // Flight
 
     void onCombatStrengthResponse(CombatStrengthResponse response);
-
-    // TODO onCombatStrengthResponse
 
     void onDeclareStrengthResponse(DeclareStrengthResponse response);
 

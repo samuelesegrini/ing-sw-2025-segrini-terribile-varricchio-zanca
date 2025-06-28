@@ -37,6 +37,8 @@ public class LeaveGameResponse extends AbstractResponse {
                     NotificationType.ERROR
             );
         }
+
+        context.getController().getUI().onLeaveGameResponse(this);
     }
 
 }

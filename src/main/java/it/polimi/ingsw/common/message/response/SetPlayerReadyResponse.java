@@ -31,5 +31,7 @@ public class SetPlayerReadyResponse extends AbstractResponse {
                 getErrorMessage() != null ? getErrorMessage() : "Failed to update ready status",
                 NotificationType.ERROR);
         }
+
+        context.getController().getUI().onSetPlayerReadyResponse(this);
     }
 }

@@ -43,6 +43,8 @@ public class RequestFaceUpTileResponse extends AbstractResponse {
                     NotificationType.WARNING
             );
         }
+
+        context.getController().getUI().onRequestFaceUpTileResponse(this);
     }
 
     /**

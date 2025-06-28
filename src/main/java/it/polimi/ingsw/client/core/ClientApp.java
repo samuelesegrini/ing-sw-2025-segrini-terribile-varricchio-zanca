@@ -26,11 +26,12 @@ public class ClientApp {
     public static void main(String[] args) {
         LOGGER.info("ClientApp started. Logging configured.");
 
-        UIType uiType = parseUIType(args);
-        if (uiType == null) {
-            printUsage();
-            System.exit(1);
-        }
+        UIType uiType = UIType.TUI;
+//        UIType uiType = parseUIType(args);
+//        if (uiType == null) {
+//            printUsage();
+//            System.exit(1);
+//        }
 
         ClientApp app = new ClientApp();
         app.start(uiType);
@@ -41,15 +42,14 @@ public class ClientApp {
         LOGGER.info("Starting Galaxy Trucker Client with " + uiType + " interface");
 
         try {
-            // Initialize components following Simple Direct Model Architecture
             clientState = new ClientState();
             networkClient = new NetworkClient();
-            
-            // Create controller without UIContext first
             controller = new ClientController(networkClient, clientState);
             //uiManager = new UIManager(uiType, controller);
+
             if (uiType == UIType.GUI) {
                 // TODO
+                System.out.println("GUI not connected.");
             } else {
                 newUI UI = new newTUI(controller);
                 UI.start();

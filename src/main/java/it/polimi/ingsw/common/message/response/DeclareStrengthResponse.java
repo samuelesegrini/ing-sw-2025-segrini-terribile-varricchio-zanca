@@ -36,6 +36,8 @@ public class DeclareStrengthResponse extends AbstractResponse {
         } else {
             context.showError("Declare Strength Error", getErrorMessage());
         }
+
+        context.getController().getUI().onDeclareStrengthResponse(this);
     }
 
     @Override

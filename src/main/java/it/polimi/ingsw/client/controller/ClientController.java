@@ -2,10 +2,12 @@ package it.polimi.ingsw.client.controller;
 
 import it.polimi.ingsw.client.network.NetworkClient;
 import it.polimi.ingsw.client.ui.NotificationType;
+import it.polimi.ingsw.client.ui.UI;
 import it.polimi.ingsw.client.ui.core.UIContext;
 import it.polimi.ingsw.client.ui.core.NotificationService;
 import it.polimi.ingsw.client.core.ClientState;
 import it.polimi.ingsw.client.ui.core.UIContext;
+import it.polimi.ingsw.client.ui.newUI;
 import it.polimi.ingsw.server.model.domain.player.PlayerId;
 import it.polimi.ingsw.common.message.*;
 import it.polimi.ingsw.common.message.PongMessage;
@@ -37,6 +39,8 @@ public class ClientController {
     
     private UIContext uiContext;
     private final ClientState clientState;
+
+    private newUI ui;
     
     // ENHANCED: Conflict resolution system
     private final Map<String, AtomicInteger> requestRetryCounters = new ConcurrentHashMap<>();
@@ -67,6 +71,18 @@ public class ClientController {
     
     public ClientState getClientState() {
         return clientState;
+    }
+
+    public NetworkClient getNetworkClient() {
+        return networkClient;
+    }
+
+    public newUI getUI() {
+        return ui;
+    }
+
+    public void setUI(newUI ui) {
+        this.ui = ui;
     }
 
     public String getPlayerId() {
