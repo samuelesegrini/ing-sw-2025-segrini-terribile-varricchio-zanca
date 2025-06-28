@@ -8,6 +8,8 @@ import it.polimi.ingsw.server.core.PlayerSessionRegistry;
 import it.polimi.ingsw.server.model.domain.player.PlayerId;
 import it.polimi.ingsw.server.network.ServerNetworkManager;
 
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
@@ -17,7 +19,7 @@ import java.util.logging.Logger;
 /**
  * Event publisher implementation.
  */
-public class EventPublisherImpl implements EventPublisher {
+public class EventPublisherImpl implements EventPublisher, PropertyChangeListener {
     private static final Logger LOGGER = Logger.getLogger(EventPublisherImpl.class.getName());
 
     private final ServerNetworkManager networkManager;
@@ -59,6 +61,25 @@ public class EventPublisherImpl implements EventPublisher {
     public void publishEventToGame(Event event, String gameId) {
 
     }
+
+    /**
+     * Handles property changes from various sources. If the new value of the
+     * property change is an Event, it will be published.
+     * @param evt The PropertyChangeEvent object.
+     */
+    @Override
+    public void propertyChange(PropertyChangeEvent evt) {
+        if (evt.getNewValue() instanceof Event) {
+            Event event = (Event) evt.getNewValue();
+            LOGGER.fine("Received event from PropertyChange: " + event.getEventType() +
+                    " from " + evt.getSource().getClass().getSimpleName());
+            publishEvent(event);
+        } else {
+            // Log events ignored, in case of misconfiguration.
+            LOGGER.finer("Ignoring property change '" + evt.getPropertyName() + "' as its new value is not an Event instance.");
+        }
+    }
+
 
     private void distributeEvent(Event event) {
         Set<String> potentialRecipients = getPotentialRecipients(event);

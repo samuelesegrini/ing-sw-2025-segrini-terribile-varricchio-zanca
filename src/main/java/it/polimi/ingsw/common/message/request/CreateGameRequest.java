@@ -1,9 +1,5 @@
 package it.polimi.ingsw.common.message.request;
 
-import it.polimi.ingsw.server.core.GameSession;
-import it.polimi.ingsw.server.model.domain.general.GameModel;
-import it.polimi.ingsw.common.message.event.GameCreatedEvent;
-import it.polimi.ingsw.common.message.event.GamesListUpdateEvent;
 import it.polimi.ingsw.common.message.response.CreateGameResponse;
 import it.polimi.ingsw.common.message.response.ErrorResponse;
 import it.polimi.ingsw.common.message.response.Response;
@@ -13,7 +9,6 @@ import it.polimi.ingsw.server.core.PlayerSessionRegistry;
 import it.polimi.ingsw.server.model.domain.player.PlayerId;
 import it.polimi.ingsw.server.model.enums.GameLevel;
 
-import java.util.List;
 import java.util.logging.Logger;
 
 /**
@@ -108,29 +103,13 @@ public class CreateGameRequest extends AbstractRequest {
         String creatorNickname = registry.getPlayerNickname(playerId);
         LOGGER.fine("👤 CREATOR INFO - Retrieved creator nickname: '" + creatorNickname + "' for player: " + playerId);
 
-        // Publish game created event
-        GameCreatedEvent event = new GameCreatedEvent(
-                gameId, playerId, creatorNickname, maxPlayers, gameLevel, gameName
-        );
-        LOGGER.info("📢 EVENT PUBLISH - Publishing GameCreatedEvent for game: " + gameId + 
-                   " created by: " + creatorNickname + " (" + playerId + ")");
-        context.publishEvent(event);
-        LOGGER.fine("✅ EVENT PUBLISHED - GameCreatedEvent sent to event system");
-
-        // Publish games list update event so all clients get updated game list
-        List<GameModel> availableGames = sessionManager.getAvailableGames();
-        GamesListUpdateEvent gamesListEvent = new GamesListUpdateEvent(availableGames);
-        LOGGER.info("📢 GAMES LIST UPDATE - Publishing GamesListUpdateEvent with " + availableGames.size() + " games");
-        context.publishEvent(gamesListEvent);
-        LOGGER.fine("✅ GAMES LIST PUBLISHED - GamesListUpdateEvent sent to event system");
-
-        // Get the GameModel for the creator (who is already added to the game)
-        GameSession gameSession = sessionManager.getGameSession(gameId);
-        GameModel gameModel = gameSession != null ? gameSession.getGameModel() : null;
+        LOGGER.info("📢 PROPERTY CHANGE - Game creation will trigger GameCreatedEvent via PropertyChange system for game: " + gameId);
         
-        LOGGER.info("🎉 CREATE GAME SUCCESS - Returning CreateGameResponse for game: " + gameId + 
-                   " to creator: " + creatorNickname + " (" + playerId + ") with GameModel");
-        return new CreateGameResponse(getCorrelationId(), gameId, gameName, maxPlayers, gameLevel, gameModel);
+        // Return lightweight response - event contains the state update
+        CreateGameResponse response = new CreateGameResponse(getCorrelationId(), gameId);
+        LOGGER.info("🎉 CREATE GAME SUCCESS - Game: " + gameId + 
+                   " created by: " + creatorNickname + " (" + playerId + ") - returning lightweight acknowledgment");
+        return response;
     }
 
 }

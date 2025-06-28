@@ -11,6 +11,7 @@ import it.polimi.ingsw.server.core.GameSessionManager;
 import it.polimi.ingsw.server.core.PlayerSessionRegistry;
 import it.polimi.ingsw.server.network.ServerNetworkManager;
 
+import java.beans.PropertyChangeListener;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -40,6 +41,12 @@ public class CommandDispatcher {
         this.networkManager = networkManager;
         this.networkClientToGamePlayerMap = networkClientToGamePlayerMap;
         this.eventPublisher = new EventPublisherImpl(networkManager, playerRegistry, sessionManager);
+        
+        // Register EventPublisher as PropertyChangeListener for game-related classes
+        sessionManager.addPropertyChangeListener((PropertyChangeListener) eventPublisher);
+        
+        // Set EventPublisher in SessionManager so it can register with new GameSessions
+        sessionManager.setEventPublisher(eventPublisher);
         this.executorService = Executors.newFixedThreadPool(
                 Runtime.getRuntime().availableProcessors() * 2,
                 r -> {

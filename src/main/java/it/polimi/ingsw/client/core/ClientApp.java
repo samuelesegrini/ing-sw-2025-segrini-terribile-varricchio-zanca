@@ -49,7 +49,6 @@ public class ClientApp {
         ClientApp app = new ClientApp();
         app.start(uiType);
     }
-
     
 
     public void start(UIType uiType) {

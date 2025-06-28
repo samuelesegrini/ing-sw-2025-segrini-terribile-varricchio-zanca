@@ -6,7 +6,10 @@ import it.polimi.ingsw.server.model.domain.player.PlayerId;
 import it.polimi.ingsw.server.model.enums.GameLevel;
 import it.polimi.ingsw.server.network.ServerNetworkManager;
 import it.polimi.ingsw.common.message.EventPublisher;
+import it.polimi.ingsw.common.message.event.GameCreatedEvent;
 
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeSupport;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -29,18 +32,18 @@ public class GameSessionManager {
     private final GameConfigurationManager configManager;
     private final ServerNetworkManager networkManager;
     private final PlayerSessionRegistry playerRegistry;
-    private EventPublisher eventPublisher;
     private final ExecutorService gameExecutor;
+    private final PropertyChangeSupport propertyChangeSupport;
+    private EventPublisher eventPublisher;
 
     public GameSessionManager(ServerNetworkManager networkManager,
-                              PlayerSessionRegistry playerRegistry,
-                              EventPublisher eventPublisher) {
+                              PlayerSessionRegistry playerRegistry) {
         this.gameSessions = new ConcurrentHashMap<>();
         this.playerToGameMap = new ConcurrentHashMap<>();
         this.networkManager = networkManager;
         this.playerRegistry = playerRegistry;
-        this.eventPublisher = eventPublisher;
         this.configManager = new GameConfigurationManager();
+        this.propertyChangeSupport = new PropertyChangeSupport(this);
         this.gameExecutor = Executors.newCachedThreadPool(r -> {
             Thread t = new Thread(r);
             t.setName("game-executor-" + t.threadId());
@@ -61,33 +64,52 @@ public class GameSessionManager {
         }
     }
 
+    public void addPropertyChangeListener(PropertyChangeListener listener) {
+        propertyChangeSupport.addPropertyChangeListener(listener);
+    }
+
+    public void removePropertyChangeListener(PropertyChangeListener listener) {
+        propertyChangeSupport.removePropertyChangeListener(listener);
+    }
+
+    public void setEventPublisher(EventPublisher eventPublisher) {
+        this.eventPublisher = eventPublisher;
+    }
+
     /**
      * Creates a new game session.
      */
     public synchronized String createGame(PlayerId creatorId, int maxPlayers, GameLevel gameLevel, String gameName) {
-        LOGGER.info("🎮 CREATE GAME REQUEST - Creator: " + creatorId + ", maxPlayers: " + maxPlayers + 
-                   ", level: " + gameLevel + ", name: '" + gameName + "'");
         
         // Check if player is already in a game
         if (playerToGameMap.containsKey(creatorId)) {
-            LOGGER.warning("❌ CREATE FAILED - Player " + creatorId + " already in a game");
+            LOGGER.warning("REATE FAILED - Player " + creatorId + " already in a game");
             return null;
         }
 
         String gameId = UUID.randomUUID().toString();
-        LOGGER.info("🆔 GAME ID GENERATED - New gameId: " + gameId);
-        
+
         GameSession session = new GameSession(gameId, gameName, creatorId,
-                maxPlayers, gameLevel, configManager, playerRegistry, eventPublisher);
-        LOGGER.info("🏗️ GAME SESSION CREATED - GameSession object created for gameId: " + gameId);
+                maxPlayers, gameLevel, configManager, playerRegistry);
+
+        // Register EventPublisher as listener for the new GameSession and its GameModel
+        if (eventPublisher != null) {
+            session.addPropertyChangeListener((PropertyChangeListener) eventPublisher);
+            session.getGameModel().addPropertyChangeListener((PropertyChangeListener) eventPublisher);
+        }
 
         gameSessions.put(gameId, session);
         playerToGameMap.put(creatorId, gameId);
-        
-        LOGGER.info("✅ GAME STORED - Game " + gameId + " stored in gameSessions map. Total games: " + gameSessions.size());
-        LOGGER.info("🗺️ PLAYER MAPPED - Player " + creatorId + " mapped to game " + gameId);
-        LOGGER.info("🎉 CREATE SUCCESS - Game " + gameId + " created by player " + creatorId);
-        
+
+        // Create the event here and pass it as the new value.
+        // The property name can be generic, as the listener only checks the type of the value.
+        String creatorNickname = playerRegistry.getPlayerNickname(creatorId);
+        GameCreatedEvent event = new GameCreatedEvent(
+                gameId, creatorId, creatorNickname, 
+                maxPlayers, gameLevel, gameName, session.getGameModel()
+        );
+        propertyChangeSupport.firePropertyChange("eventPublished", null, event);
+
         return gameId;
     }
     
@@ -240,19 +262,6 @@ public class GameSessionManager {
         }
 
         return allGames;
-    }
-
-    /**
-     * Sets the event publisher for this session manager.
-     * Used for deferred initialization when event publisher depends on session manager.
-     */
-    public void setEventPublisher(EventPublisher eventPublisher) {
-        this.eventPublisher = eventPublisher;
-        
-        // Update all existing game sessions
-        for (GameSession session : gameSessions.values()) {
-            session.updateEventPublisher(eventPublisher);
-        }
     }
     
     /**

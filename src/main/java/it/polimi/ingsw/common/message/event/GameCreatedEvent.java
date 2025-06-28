@@ -17,6 +17,7 @@ import java.util.logging.Logger;
 
 /**
  * Event broadcast when a game is created.
+ * Contains the full GameModel as the single source of truth for state updates.
  */
 public class GameCreatedEvent extends AbstractEvent {
     private static final Logger LOGGER = Logger.getLogger(GameCreatedEvent.class.getName());
@@ -26,9 +27,10 @@ public class GameCreatedEvent extends AbstractEvent {
     private final int maxPlayers;
     private final GameLevel gameLevel;
     private final String gameName;
+    private final GameModel gameModel;
 
     public GameCreatedEvent(String gameId, PlayerId creatorId, String creatorNickname,
-                            int maxPlayers, GameLevel gameLevel, String gameName) {
+                            int maxPlayers, GameLevel gameLevel, String gameName, GameModel gameModel) {
         super(EventType.GAME_CREATED, null, creatorId);
         this.gameId = gameId;
         this.creatorId = creatorId;
@@ -36,31 +38,58 @@ public class GameCreatedEvent extends AbstractEvent {
         this.maxPlayers = maxPlayers;
         this.gameLevel = gameLevel;
         this.gameName = gameName;
+        this.gameModel = gameModel;
         LOGGER.fine("GameCreatedEvent instantiated for game: " + gameId + " by " + creatorNickname);
     }
     
+    // Legacy constructor for backward compatibility
+    public GameCreatedEvent(String gameId, PlayerId creatorId, String creatorNickname,
+                            int maxPlayers, GameLevel gameLevel, String gameName) {
+        this(gameId, creatorId, creatorNickname, maxPlayers, gameLevel, gameName, null);
+    }
+    
+
+    public GameModel getGameModel() {
+        return gameModel;
+    }
 
     @Override
     public void handleOnClient(ClientEventContext context) {
         LOGGER.info("GameCreatedEvent received on client. Creator ID: " + creatorId + ". Is this the local player? " + context.isLocalPlayer(creatorId));
 
-        // Create game info for the new game  
-        Player creatorInfo = new Player(creatorId);
-        creatorInfo.setReady(true);
-        
-        // Note: GameModel constructor requires (GameLevel, GameConfigurationManager, int maxPlayers)
-        // We can't create a full GameModel here, so we'll update the ClientState differently
-
-        // Notify all players about the new game creation (but don't handle creator navigation)
-        // Creator navigation is handled by CreateGameResponse
         context.runOnUIThread(() -> {
+            // Update client state with the full GameModel if available (single source of truth)
+            if (context.getClientState() != null && gameModel != null && context.isLocalPlayer(creatorId)) {
+                // For the creator, set the full lobby state and navigate
+                context.getClientState().setCurrentGameLobby(gameModel);
+                context.getClientState().setPlayersInLobby(gameModel.getPlayers());
+                
+                // Navigate to GAME_LOBBY
+                if (context.getController().getUIContext() != null && 
+                    context.getController().getUIContext().getViewNavigator() != null) {
+                    
+                    boolean success = context.getController().getUIContext().getViewNavigator()
+                        .navigateTo(ClientState.ViewState.GAME_LOBBY, "Game created: " + gameName);
+                    
+                    if (!success) {
+                        String reason = context.getController().getUIContext().getViewNavigator()
+                            .getNavigationFailureReason(ClientState.ViewState.GAME_LOBBY);
+                        LOGGER.severe("Failed to navigate to GAME_LOBBY after creating game: " + reason);
+                    }
+                }
+            }
+            
+            // Show notifications
             if (context.getNotificationService() != null) {
                 if (context.isLocalPlayer(creatorId)) {
-                    // For creator: just a confirmation that the event was received
-                    // (CreateGameResponse already handled the navigation)
-                    LOGGER.info("GameCreatedEvent received for creator - CreateGameResponse should have handled navigation");
+                    // Success notification for creator
+                    context.getNotificationService().showNotification(new Notification(
+                            "Game Created",
+                            "Successfully created game: " + gameName,
+                            NotificationType.SUCCESS
+                    ));
                 } else {
-                    // For other players: show notification about the new game
+                    // Info notification for other players
                     String gameDesc = gameName != null ? "'" + gameName + "'" : "a new game";
                     context.getNotificationService().showNotification(new Notification(
                             "Game Created",
