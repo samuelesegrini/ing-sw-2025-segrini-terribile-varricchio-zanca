@@ -27,7 +27,7 @@ public interface newUI {
 
     // Game Lobby
 
-    void onStartGameResponse(StartGameResponse response);
+    void onStartGameResponse(GenericSuccessResponse response);
 
     void onLeaveGameResponse(LeaveGameResponse response);
 
@@ -35,11 +35,11 @@ public interface newUI {
 
     // Building
 
-    void onTakeTileResponse(TakeTileResponse response);
+    void onTakeTileResponse(GenericSuccessResponse response);
 
-    void onReserveTileResponse(ReserveTileResponse response);
+    void onReserveTileResponse(GenericSuccessResponse response);
 
-    void onPlaceTileResponse(PlaceTileResponse response);
+    void onPlaceTileResponse(GenericSuccessResponse response);
 
     void onReturnTileResponse(ReturnTileResponse response);
 
@@ -58,6 +58,5 @@ public interface newUI {
     void onDeclareStrengthResponse(DeclareStrengthResponse response);
 
     void onDockResponse(DockResponse response);
-
 
 }

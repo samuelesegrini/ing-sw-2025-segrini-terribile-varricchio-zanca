@@ -36,20 +36,15 @@ public class SetPlayerReadyRequest extends AbstractRequest {
 
     @Override
     public Response execute(RequestContext context) {
-        LOGGER.info("⚡ SET READY REQUEST - Player setting ready status to: " + ready + " from client: " + context.getSenderId());
-        
         ValidationResult validation = validate();
         if (!validation.isValid()) {
-            LOGGER.warning("❌ SET READY FAILED - Validation error: " + validation.getErrorMessage());
             return createErrorResponse(validation.getErrorMessage(), "VALIDATION_ERROR");
         }
 
         PlayerId playerId = context.getPlayerId();
         if (playerId == null) {
-            LOGGER.warning("❌ SET READY FAILED - Client " + context.getSenderId() + " is not authenticated");
             return createErrorResponse("Authentication required", "AUTHENTICATION_ERROR");
         }
-        LOGGER.fine("✅ AUTH CHECK - Player " + playerId + " is authenticated");
 
         GameSessionManager sessionManager = context.getSessionManager();
         PlayerSessionRegistry registry = context.getPlayerRegistry();
@@ -69,13 +64,12 @@ public class SetPlayerReadyRequest extends AbstractRequest {
         }
 
         // Update player ready status
-        LOGGER.info("⚡ UPDATING READY - Setting ready=" + ready + " for player: " + playerId + " in game: " + gameId);
         gameSession.setPlayerReady(playerId, ready);
         
         String playerNickname = registry.getPlayerNickname(playerId);
-        LOGGER.info("📢 PROPERTY CHANGE - Player ready change will trigger PlayerReadyChangedEvent via PropertyChange system for player: " + playerNickname);
-        
-        LOGGER.info("🎉 SET READY SUCCESS - Player " + playerNickname + " (" + playerId + ") ready status set to: " + ready);
+
+        // Model operation will fire the event automatically
+
         return new SetPlayerReadyResponse(getCorrelationId(), ready);
     }
 }

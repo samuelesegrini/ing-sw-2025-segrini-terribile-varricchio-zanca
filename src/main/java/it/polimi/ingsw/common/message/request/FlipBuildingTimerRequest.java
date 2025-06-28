@@ -1,5 +1,8 @@
 package it.polimi.ingsw.common.message.request;
 
+import it.polimi.ingsw.common.message.event.BuildingTimerFlippedEvent;
+import it.polimi.ingsw.common.message.response.ErrorResponse;
+import it.polimi.ingsw.common.message.response.FlipBuildingTimerResponse;
 import it.polimi.ingsw.common.message.response.Response;
 import it.polimi.ingsw.common.message.validation.ValidationResult;
 import it.polimi.ingsw.server.model.domain.player.PlayerId;
@@ -25,6 +28,7 @@ public class FlipBuildingTimerRequest extends AbstractRequest {
     @Override
     public ValidationResult validate() {
         // No validation needed for timer flip - always valid during building phase
+        //TODO: basta lasciare implementazione vuota (?)
         return ValidationResult.success();
     }
 
@@ -33,25 +37,25 @@ public class FlipBuildingTimerRequest extends AbstractRequest {
         ValidationResult validation = validate();
         if (!validation.isValid()) {
             return createErrorResponse(validation.getErrorMessage(), 
-                it.polimi.ingsw.common.message.response.ErrorResponse.VALIDATION_ERROR);
+                ErrorResponse.VALIDATION_ERROR);
         }
 
         var gameSession = context.getGameSession();
         if (gameSession == null) {
             return createErrorResponse("Not in a game", 
-                it.polimi.ingsw.common.message.response.ErrorResponse.INVALID_STATE);
+                ErrorResponse.INVALID_STATE);
         }
 
         if (gameSession.getGameModel().getCurrentPhase() != GamePhase.BUILDING) {
             return createErrorResponse("Not in building phase", 
-                it.polimi.ingsw.common.message.response.ErrorResponse.INVALID_STATE);
+                ErrorResponse.INVALID_STATE);
         }
 
         // Check if timer system is enabled for this level
         GameLevel level = gameSession.getGameModel().getGameLevel();
         if (!supportsTimerSystem(level)) {
             return createErrorResponse("Timer system not available for " + level, 
-                it.polimi.ingsw.common.message.response.ErrorResponse.INVALID_STATE);
+                ErrorResponse.INVALID_STATE);
         }
 
         PlayerId playerId = context.getPlayerId();
@@ -66,19 +70,9 @@ public class FlipBuildingTimerRequest extends AbstractRequest {
 
         switch (result) {
             case SUCCESS -> {
-                // Publish success event
-                context.getEventPublisher().publishEvent(
-                    new it.polimi.ingsw.common.message.event.BuildingTimerFlippedEvent(
-                        context.getGameId(),
-                        playerId.toString(),
-                        context.getPlayerNickname(),
-                        timer.getTimeRemaining(),
-                        timer.getTotalFlips(),
-                        timer.getCurrentStage()
-                    )
-                );
+                // Model operation will fire the event automatically
 
-                return new it.polimi.ingsw.common.message.response.FlipBuildingTimerResponse(
+                return new FlipBuildingTimerResponse(
                     getCorrelationId(),
                     true,
                     "Timer flipped successfully",
@@ -90,25 +84,25 @@ public class FlipBuildingTimerRequest extends AbstractRequest {
             case TIMER_NOT_EXPIRED -> {
                 return createErrorResponse(
                     "Cannot flip timer - current stage has " + (timer.getTimeRemaining() / 1000) + " seconds remaining",
-                    it.polimi.ingsw.common.message.response.ErrorResponse.INVALID_STATE
+                    ErrorResponse.INVALID_STATE
                 );
             }
 
             case PLAYER_NOT_FINISHED -> {
                 return createErrorResponse(
                     "Cannot end building phase - you must finish your ship first",
-                    it.polimi.ingsw.common.message.response.ErrorResponse.INVALID_STATE
+                    ErrorResponse.INVALID_STATE
                 );
             }
 
             case BUILDING_ALREADY_ENDED -> {
                 return createErrorResponse("Building phase has already ended", 
-                    it.polimi.ingsw.common.message.response.ErrorResponse.INVALID_STATE);
+                    ErrorResponse.INVALID_STATE);
             }
 
             default -> {
                 return createErrorResponse("Cannot flip timer in current stage", 
-                    it.polimi.ingsw.common.message.response.ErrorResponse.INVALID_STATE);
+                    ErrorResponse.INVALID_STATE);
             }
         }
     }

@@ -1,5 +1,7 @@
-package it.polimi.ingsw.common.message.request;
+package it.polimi.ingsw.common.message.request.flight;
 
+import it.polimi.ingsw.common.message.request.AbstractRequest;
+import it.polimi.ingsw.common.message.request.RequestContext;
 import it.polimi.ingsw.common.message.response.Response;
 
 /**

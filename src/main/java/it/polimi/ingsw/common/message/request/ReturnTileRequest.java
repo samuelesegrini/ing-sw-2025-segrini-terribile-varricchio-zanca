@@ -1,6 +1,5 @@
 package it.polimi.ingsw.common.message.request;
 
-import it.polimi.ingsw.common.message.event.ComponentOfferedEvent;
 import it.polimi.ingsw.common.message.response.ErrorResponse;
 import it.polimi.ingsw.common.message.response.Response;
 import it.polimi.ingsw.common.message.validation.ValidationResult;
@@ -43,26 +42,11 @@ public class ReturnTileRequest extends AbstractRequest {
         // 2. Remove tile from player's "held" state.
         // 3. Add tile to the face-up discard pile.
 
-        ComponentDeck deck = session.getGameModel().getComponentDeck();
-        Component componentToReturn = session.getComponentById(tileId); // Assumes a way to get a component by ID
-
-        if(componentToReturn == null) {
+        // Use GameSession method which handles both business logic and event firing
+        boolean success = session.returnComponent(context.getPlayerId(), tileId);
+        if (!success) {
             return createErrorResponse("Tile not found", ErrorResponse.NOT_FOUND);
         }
-
-        deck.discard(componentToReturn);
-
-        // Announce the component is available to all players
-        ComponentOfferedEvent event = new ComponentOfferedEvent(
-                session.getGameId(), 
-                componentToReturn.getId(),
-                componentToReturn.getType().name(),
-                null, // Not offered to specific player - available to all
-                null, // Not offered to specific player
-                "Returned to face-up pile",
-                System.currentTimeMillis() + 300000 // 5 minute expiry
-        );
-        context.getEventPublisher().publishEvent(event);
 
         return createSuccessResponse();
     }

@@ -59,6 +59,7 @@ public class ReconnectRequest extends AbstractRequest {
         String gameId = gameSession != null ? gameSession.getGameId() : null;
 
         // Publish reconnection event if player was in a game
+        //TODO: eventi con listener
         if (gameSession != null) {
             boolean wasInActiveGame = gameSession.isStarted();
             PlayerReconnectedEvent event = new PlayerReconnectedEvent(
@@ -67,7 +68,7 @@ public class ReconnectRequest extends AbstractRequest {
                     nickname,
                     wasInActiveGame
             );
-            context.getEventPublisher().publishEvent(event);
+            // Model operation will fire the event automatically
         }
 
         return new ReconnectResponse(

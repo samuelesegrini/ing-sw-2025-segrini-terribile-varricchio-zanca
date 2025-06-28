@@ -1,6 +1,6 @@
 package it.polimi.ingsw.common.message.response;
 
-import it.polimi.ingsw.common.message.request.DeclareStrengthRequest;
+import it.polimi.ingsw.common.message.request.flight.DeclareStrengthRequest;
 
 import java.util.UUID;
 

@@ -1,15 +1,13 @@
-package it.polimi.ingsw.common.message.request;
+package it.polimi.ingsw.common.message.request.flight;
 
+import it.polimi.ingsw.common.message.request.AbstractRequest;
+import it.polimi.ingsw.common.message.request.RequestContext;
 import it.polimi.ingsw.common.message.response.ErrorResponse;
 import it.polimi.ingsw.common.message.response.Response;
 import it.polimi.ingsw.common.message.validation.ValidationResult;
 import it.polimi.ingsw.common.message.response.DeclareStrengthResponse;
 import it.polimi.ingsw.server.core.GameSession;
 import it.polimi.ingsw.server.model.domain.player.Player;
-import it.polimi.ingsw.server.model.domain.ship.components.Component;
-import it.polimi.ingsw.server.model.domain.ship.components.Battery;
-import it.polimi.ingsw.server.model.domain.ship.components.UseComponentVisitor;
-import it.polimi.ingsw.server.model.enums.ship.ComponentType;
 
 /**
  * Request from a player to declare strength for an action,

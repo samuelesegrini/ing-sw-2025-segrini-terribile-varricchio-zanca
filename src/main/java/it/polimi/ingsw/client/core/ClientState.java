@@ -406,11 +406,9 @@ public class ClientState {
 
     // UI Updates - Refresh registered views
     public void refreshCurrentViewOnly() {
-        System.out.println("[TAKETILE DEBUG] ClientState.refreshCurrentViewOnly() - refreshing " + registeredViews.size() + " registered views");
         // Refresh all registered views - they'll decide if they're active
         for (UIView view : registeredViews) {
             if (view != null) {
-                System.out.println("[TAKETILE DEBUG] Refreshing view: " + view.getClass().getSimpleName());
                 view.refresh();
             }
         }

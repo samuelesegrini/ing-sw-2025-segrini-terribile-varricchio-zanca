@@ -12,7 +12,6 @@ import it.polimi.ingsw.server.model.domain.adventure.card.AbandonedShipCard;
 import it.polimi.ingsw.server.model.domain.adventure.card.AbandonedStationCard;
 import it.polimi.ingsw.server.model.domain.adventure.entity.Planet;
 import it.polimi.ingsw.server.model.domain.adventure.entity.Meteor;
-import it.polimi.ingsw.server.model.domain.flight.FlightBoard;
 import it.polimi.ingsw.server.model.domain.flight.PlayerFlightData;
 import it.polimi.ingsw.server.model.domain.player.Player;
 import it.polimi.ingsw.server.model.domain.ship.Position;
@@ -20,20 +19,18 @@ import it.polimi.ingsw.server.model.domain.ship.Ship;
 import it.polimi.ingsw.server.model.domain.ship.components.Component;
 
 import java.util.ArrayList;
-import it.polimi.ingsw.server.model.domain.ship.components.Shield;
+
 import it.polimi.ingsw.server.model.enums.adventure.AdventureType;
 import it.polimi.ingsw.server.model.enums.ship.ComponentType;
 import it.polimi.ingsw.server.model.enums.ship.ConnectorType;
 import it.polimi.ingsw.server.model.enums.adventure.ShotIntensity;
 import it.polimi.ingsw.server.model.enums.ship.Direction;
-import it.polimi.ingsw.server.model.enums.crew.CrewType;
-import it.polimi.ingsw.server.model.enums.crew.AlienColor;
-import it.polimi.ingsw.common.message.request.LandPlanetRequest;
-import it.polimi.ingsw.common.message.request.PlanetChoiceRequest;
-import it.polimi.ingsw.common.message.request.CombatStrengthRequest;
-import it.polimi.ingsw.common.message.request.EngineStrengthRequest;
-import it.polimi.ingsw.common.message.request.DockRequest;
-import it.polimi.ingsw.common.message.request.DeclareStrengthRequest;
+import it.polimi.ingsw.common.message.request.flight.LandPlanetRequest;
+import it.polimi.ingsw.common.message.request.flight.PlanetChoiceRequest;
+import it.polimi.ingsw.common.message.request.flight.CombatStrengthRequest;
+import it.polimi.ingsw.common.message.request.flight.EngineStrengthRequest;
+import it.polimi.ingsw.common.message.request.flight.DockRequest;
+import it.polimi.ingsw.common.message.request.flight.DeclareStrengthRequest;
 
 import java.util.HashMap;
 import java.util.List;

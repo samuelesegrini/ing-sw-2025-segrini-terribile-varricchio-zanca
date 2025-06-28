@@ -58,58 +58,42 @@ public class CreateGameRequest extends AbstractRequest {
 
     @Override
     public Response execute(RequestContext context) {
-        LOGGER.info("🎮 CREATE GAME REQUEST - Starting game creation for maxPlayers: " + maxPlayers + 
-                   ", level: " + gameLevel + ", name: '" + (gameName != null ? gameName : "unnamed") + 
-                   "' by client: " + context.getSenderId());
-        
         // Validate
         ValidationResult validation = validate();
         if (!validation.isValid()) {
-            LOGGER.warning("❌ CREATE GAME FAILED - Validation error: " + validation.getErrorMessage());
             return createErrorResponse(validation.getErrorMessage(), ErrorResponse.VALIDATION_ERROR);
         }
-        LOGGER.fine("✅ GAME VALIDATION - Game parameters passed validation");
 
         // Check authentication
         PlayerId playerId = context.getPlayerId();
         if (playerId == null) {
-            LOGGER.warning("❌ CREATE GAME FAILED - Client " + context.getSenderId() + " is not authenticated");
             return createErrorResponse("Authentication required", ErrorResponse.AUTHENTICATION_ERROR);
         }
-        LOGGER.fine("✅ AUTH CHECK - Player " + playerId + " is authenticated");
 
         // Check if already in a game
         if (context.getGameSession() != null) {
-            LOGGER.warning("❌ CREATE GAME FAILED - Player " + playerId + " is already in a game");
             return createErrorResponse("Already in a game", ErrorResponse.INVALID_STATE);
         }
-        LOGGER.fine("✅ GAME STATE - Player " + playerId + " is not in any game");
 
         GameSessionManager sessionManager = context.getSessionManager();
         PlayerSessionRegistry registry = context.getPlayerRegistry();
-        LOGGER.fine("🔧 SERVICES - Retrieved session manager and player registry");
 
         // Create the game
-        LOGGER.info("🏗️ GAME CREATION - Calling sessionManager.createGame() for player: " + playerId);
         String gameId = sessionManager.createGame(playerId, maxPlayers, gameLevel, gameName);
 
         if (gameId == null) {
-            LOGGER.severe("❌ CREATE GAME FAILED - SessionManager returned null gameId for player: " + playerId);
             return createErrorResponse("Failed to create game", ErrorResponse.INTERNAL_ERROR);
         }
-        LOGGER.info("✅ GAME CREATED - Successfully created game with ID: " + gameId + " for player: " + playerId);
+
+        //TODO: the fuckkkkk
 
         // Get player info
         String creatorNickname = registry.getPlayerNickname(playerId);
-        LOGGER.fine("👤 CREATOR INFO - Retrieved creator nickname: '" + creatorNickname + "' for player: " + playerId);
 
-        LOGGER.info("📢 PROPERTY CHANGE - Game creation will trigger GameCreatedEvent via PropertyChange system for game: " + gameId);
-        
-        // Return lightweight response - event contains the state update
+        // Model operation will fire the event automatically
+
+        // Return gameId
         CreateGameResponse response = new CreateGameResponse(getCorrelationId(), gameId);
-        LOGGER.info("🎉 CREATE GAME SUCCESS - Game: " + gameId + 
-                   " created by: " + creatorNickname + " (" + playerId + ") - returning lightweight acknowledgment");
         return response;
     }
-
 }

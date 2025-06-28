@@ -357,7 +357,7 @@ public class newTUI implements newUI {
     // Game Lobby
 
     @Override
-    public void onStartGameResponse(StartGameResponse r) {
+    public void onStartGameResponse(GenericSuccessResponse r) {
         if (r.isSuccess()) {
             printer.printSuccess("Game started successfully!");
         } else {
@@ -390,7 +390,7 @@ public class newTUI implements newUI {
     // Building
 
     @Override
-    public void onTakeTileResponse(TakeTileResponse response) {
+    public void onTakeTileResponse(GenericSuccessResponse response) {
         if (response.isSuccess()) {
             printer.printSuccess("Tile taken successfully!");
         } else {
@@ -399,7 +399,7 @@ public class newTUI implements newUI {
     }
 
     @Override
-    public void onReserveTileResponse(ReserveTileResponse response) {
+    public void onReserveTileResponse(GenericSuccessResponse response) {
         if (response.isSuccess()) {
             printer.printSuccess("Tile reserved successfully!");
         } else {
@@ -408,7 +408,7 @@ public class newTUI implements newUI {
     }
 
     @Override
-    public void onPlaceTileResponse(PlaceTileResponse response) {
+    public void onPlaceTileResponse(GenericSuccessResponse response) {
         if (response.isSuccess()) {
             printer.printSuccess("Tile placed successfully!");
         } else {

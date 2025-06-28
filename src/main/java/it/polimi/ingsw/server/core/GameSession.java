@@ -9,6 +9,7 @@ import it.polimi.ingsw.server.model.domain.general.config.GameConfigurationManag
 import it.polimi.ingsw.server.model.domain.general.BuildingTimer;
 import it.polimi.ingsw.server.model.domain.player.Player;
 import it.polimi.ingsw.server.model.domain.player.PlayerId;
+import it.polimi.ingsw.server.model.domain.ship.Position;
 import it.polimi.ingsw.server.model.domain.ship.components.Component;
 import it.polimi.ingsw.server.model.domain.ship.Ship;
 import it.polimi.ingsw.server.model.domain.adventure.AdventureCardController;
@@ -19,6 +20,11 @@ import it.polimi.ingsw.common.message.EventPublisher;
 import it.polimi.ingsw.common.message.event.BuildingTimerFlippedEvent;
 import it.polimi.ingsw.common.message.event.PlayerJoinedGameEvent;
 import it.polimi.ingsw.common.message.event.PlayerLeftGameEvent;
+import it.polimi.ingsw.common.message.event.ComponentTakenEvent;
+import it.polimi.ingsw.common.message.event.ComponentPlacedEvent;
+import it.polimi.ingsw.common.message.event.ComponentReservedEvent;
+import it.polimi.ingsw.common.message.event.ComponentOfferedEvent;
+import it.polimi.ingsw.common.message.event.ShipValidationEvent;
 import it.polimi.ingsw.common.message.event.PlayerReadyChangedEvent;
 import it.polimi.ingsw.common.message.event.GameStartedEvent;
 
@@ -126,6 +132,10 @@ public class GameSession {
 
     public void removePropertyChangeListener(PropertyChangeListener listener) {
         propertyChangeSupport.removePropertyChangeListener(listener);
+    }
+    
+    public void firePropertyChange(String propertyName, Object oldValue, Object newValue) {
+        propertyChangeSupport.firePropertyChange(propertyName, oldValue, newValue);
     }
 
     /**
@@ -1037,5 +1047,139 @@ public class GameSession {
         public PlayerId getPlayerId() {
             return playerId;
         }
+    }
+
+    // Component Management Methods (follow same pattern as player management)
+    
+    /**
+     * Handles a player taking a component from the deck
+     */
+    public boolean takeComponent(PlayerId playerId) {
+        Player player = getPlayer(playerId);
+        if (player == null) return false;
+        
+        Optional<Component> drawnComponentOpt = gameModel.getComponentDeck().draw();
+        if (drawnComponentOpt.isEmpty()) return false;
+        
+        Component drawnComponent = drawnComponentOpt.get();
+        player.addComponent(drawnComponent);
+        
+        // Fire event
+        ComponentTakenEvent event = new ComponentTakenEvent(
+                gameId,
+                drawnComponent,
+                player,
+                gameModel.getComponentDeck()
+        );
+        propertyChangeSupport.firePropertyChange("eventPublished", null, event);
+        
+        return true;
+    }
+    
+    /**
+     * Handles a player placing a component on their ship
+     */
+    public boolean placeComponent(PlayerId playerId, Component component, Position position) {
+        Player player = getPlayer(playerId);
+        if (player == null) return false;
+        
+        try {
+            player.getShip().addComponent(component, position);
+            player.getShip().updateStats();
+            
+            // Fire event
+            ComponentPlacedEvent event = new ComponentPlacedEvent(
+                    gameId,
+                    player,
+                    component,
+                    player.getShip(),
+                    gameModel.getComponentDeck()
+            );
+            propertyChangeSupport.firePropertyChange("eventPublished", null, event);
+            
+            return true;
+        } catch (IllegalArgumentException e) {
+            return false;
+        }
+    }
+    
+    /**
+     * Handles a player reserving a component
+     */
+    public boolean reserveComponent(PlayerId playerId, String componentId) {
+        Player player = getPlayer(playerId);
+        if (player == null) return false;
+        
+        Component component = getComponentById(componentId);
+        if (component == null) return false;
+        
+        try {
+            boolean reserved = gameModel.getComponentDeck().reserveComponent(playerId.toString(), getComponentById(componentId));
+            if (!reserved) return false;
+            
+            player.clearHeldComponent();
+            
+            // Fire event
+            ComponentReservedEvent event = new ComponentReservedEvent(
+                    gameId,
+                    component,
+                    player,
+                    gameModel.getComponentDeck()
+            );
+            propertyChangeSupport.firePropertyChange("eventPublished", null, event);
+            
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+    
+    /**
+     * Handles a player returning a component to the face-up pile
+     */
+    public boolean returnComponent(PlayerId playerId, String componentId) {
+        Player player = getPlayer(playerId);
+        if (player == null) return false;
+        
+        Component componentToReturn = getComponentById(componentId);
+        if (componentToReturn == null) return false;
+        
+        gameModel.getComponentDeck().discard(componentToReturn);
+        
+        // Fire event
+        ComponentOfferedEvent event = new ComponentOfferedEvent(
+                gameId,
+                componentToReturn,
+                player,
+                gameModel.getComponentDeck()
+        );
+        propertyChangeSupport.firePropertyChange("eventPublished", null, event);
+        
+        return true;
+    }
+    
+    /**
+     * Handles ship validation for a player
+     */
+    public boolean validateShip(PlayerId playerId, String playerNickname, List<String> feedback) {
+        Player player = getPlayer(playerId);
+        if (player == null) return false;
+        
+        // Mark player as ready if validation passes
+        setPlayerReady(playerId, feedback.isEmpty());
+        
+        // Fire event
+        ShipValidationEvent event = new ShipValidationEvent(
+                gameId,
+                playerId.toString(),
+                playerNickname,
+                feedback.isEmpty(),
+                feedback,
+                player,
+                gameModel
+        );
+        propertyChangeSupport.firePropertyChange("eventPublished", null, event);
+        
+        return true;
     }
 }

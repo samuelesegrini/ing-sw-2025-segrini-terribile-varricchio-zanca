@@ -70,6 +70,7 @@ public class Ship implements Serializable {
         for (var posConfig : shipGridConfig.forbiddenPositions()) {
             forbiddenPositions.add(new Position(posConfig.x(), posConfig.y()));
         }
+        
     }
 
     /**
@@ -1449,5 +1450,6 @@ public class Ship implements Serializable {
         }
         return count;
     }
+
 
 }

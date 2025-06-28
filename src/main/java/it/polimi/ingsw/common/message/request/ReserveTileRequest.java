@@ -3,7 +3,6 @@ package it.polimi.ingsw.common.message.request;
 import it.polimi.ingsw.common.message.event.ComponentReservedEvent;
 import it.polimi.ingsw.common.message.response.ErrorResponse;
 import it.polimi.ingsw.common.message.response.Response;
-import it.polimi.ingsw.common.message.response.ReserveTileResponse;
 import it.polimi.ingsw.common.message.validation.ValidationResult;
 import it.polimi.ingsw.server.core.GameSession;
 import it.polimi.ingsw.server.model.domain.player.Player;
@@ -58,14 +57,13 @@ public class ReserveTileRequest extends AbstractRequest {
         }
 
         // For now, implement basic validation - full server logic can be added later
-        // Get component by ID (simplified)
+        // Get component by ID
         Component component = session.getComponentById(tileId);
         if (component == null) {
             return createErrorResponse("Component not found", ErrorResponse.NOT_FOUND);
         }
 
         try {
-            // ENHANCED: Check level-specific feature support and provide detailed error messages
             ComponentDeck deck = session.getGameModel().getComponentDeck();
             
             // Check if reservations are supported in this game level
@@ -97,18 +95,9 @@ public class ReserveTileRequest extends AbstractRequest {
             // Remove component from player's hand since it's now reserved
             player.clearHeldComponent();
 
-            // Publish event FIRST - this is the single source of truth for state updates
-            ComponentReservedEvent event = new ComponentReservedEvent(
-                session.getGameId(),
-                component,
-                player,
-                deck
-            );
-            context.publishEvent(event);
+            // Model operation will fire the event automatically
 
-            // Return lightweight response - event contains the state update
-            return new ReserveTileResponse(getCorrelationId());
-
+            return createSuccessResponse();
         } catch (Exception e) {
             return createErrorResponse("Failed to reserve component: " + e.getMessage(), ErrorResponse.INTERNAL_ERROR);
         }
