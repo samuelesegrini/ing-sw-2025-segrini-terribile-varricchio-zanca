@@ -168,12 +168,12 @@ class GameSessionTest {
     @Test
     @DisplayName("Should add player using string ID (legacy)")
     void testAddPlayerLegacyString() {
-        String playerIdString = "player2";
-        assertTrue(gameSession.addPlayer(playerIdString));
+        PlayerId playerId = PlayerId.fromString("player2");
+        assertTrue(gameSession.addPlayer(playerId));
         assertEquals(2, gameSession.getPlayerCount());
 
         // Verify player was added correctly
-        Player addedPlayer = gameSession.getPlayer(playerIdString);
+        Player addedPlayer = gameSession.getPlayer(playerId);
         assertNotNull(addedPlayer);
     }
 
@@ -229,11 +229,11 @@ class GameSessionTest {
     @Test
     @DisplayName("Should remove player using string ID (legacy)")
     void testRemovePlayerLegacyString() {
-        String playerIdString = "player2";
-        gameSession.addPlayer(playerIdString);
+        PlayerId playerId = PlayerId.fromString("player2");
+        gameSession.addPlayer(playerId);
         assertEquals(2, gameSession.getPlayerCount());
 
-        assertTrue(gameSession.removePlayer(playerIdString));
+        assertTrue(gameSession.removePlayer(playerId));
         assertEquals(1, gameSession.getPlayerCount());
     }
 
@@ -280,11 +280,11 @@ class GameSessionTest {
     @Test
     @DisplayName("Should set player ready status using string ID (legacy)")
     void testSetPlayerReadyLegacyString() {
-        String playerIdString = "player2";
-        gameSession.addPlayer(playerIdString);
+        PlayerId playerId = PlayerId.fromString("player2");
+        gameSession.addPlayer(playerId);
 
-        gameSession.setPlayerReady(playerIdString, true);
-        assertTrue(gameSession.getPlayerState(playerIdString).isReady());
+        gameSession.setPlayerReady(playerId, true);
+        assertTrue(gameSession.getPlayerState(playerId).isReady());
     }
 
     @Test
@@ -586,18 +586,18 @@ class GameSessionTest {
     @Test
     @DisplayName("Should handle legacy string methods")
     void testLegacyStringMethods() {
-        String player2IdString = "player2";
+        PlayerId player2Id = PlayerId.fromString("player2");
 
         // Test string overloads
-        assertTrue(gameSession.addPlayer(player2IdString));
-        assertNotNull(gameSession.getPlayer(player2IdString));
-        assertNotNull(gameSession.getPlayerState(player2IdString));
+        assertTrue(gameSession.addPlayer(player2Id));
+        assertNotNull(gameSession.getPlayer(player2Id));
+        assertNotNull(gameSession.getPlayerState(player2Id));
 
-        gameSession.setPlayerReady(player2IdString, true);
-        assertTrue(gameSession.getPlayerState(player2IdString).isReady());
+        gameSession.setPlayerReady(player2Id, true);
+        assertTrue(gameSession.getPlayerState(player2Id).isReady());
 
-        assertFalse(gameSession.isCreator(player2IdString));
-        assertTrue(gameSession.removePlayer(player2IdString));
+        assertFalse(gameSession.isCreator(player2Id));
+        assertTrue(gameSession.removePlayer(player2Id));
     }
 
     @Test

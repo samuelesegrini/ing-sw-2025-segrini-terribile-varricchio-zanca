@@ -5,6 +5,7 @@ import it.polimi.ingsw.server.model.domain.ship.components.Component;
 
 import java.io.Serializable;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Represents a deck of ship components that players can draw from during the game.
@@ -16,6 +17,8 @@ public class ComponentDeck implements Serializable {
     private final List<Component> discardPile; // Permanently discarded
     private final List<Component> faceUpPile; // Face-up returned components
     private final Map<String, Component> reservedComponents; // Components reserved by players
+    private final Map<String, Component> allComponents; // Master registry of all components by ID
+    private final Map<String, String> componentOwnership; // componentId -> playerId mapping
     private final GameLevel gameLevel; // Track level for feature gating
 
     /**
@@ -27,7 +30,14 @@ public class ComponentDeck implements Serializable {
         this.discardPile = new ArrayList<>();
         this.faceUpPile = new ArrayList<>();
         this.reservedComponents = new HashMap<>();
+        this.allComponents = new HashMap<>();
+        this.componentOwnership = new HashMap<>();
         this.gameLevel = GameLevel.TEST_FLIGHT; // Default level
+        
+        // Build master registry of all components
+        for (Component component : components) {
+            allComponents.put(component.getId(), component);
+        }
         shuffle();
     }
     
@@ -41,7 +51,14 @@ public class ComponentDeck implements Serializable {
         this.discardPile = new ArrayList<>();
         this.faceUpPile = new ArrayList<>();
         this.reservedComponents = new HashMap<>();
+        this.allComponents = new HashMap<>();
+        this.componentOwnership = new HashMap<>();
         this.gameLevel = gameLevel;
+        
+        // Build master registry of all components
+        for (Component component : components) {
+            allComponents.put(component.getId(), component);
+        }
         shuffle();
     }
 
@@ -54,6 +71,8 @@ public class ComponentDeck implements Serializable {
         this.discardPile = new ArrayList<>();
         this.faceUpPile = new ArrayList<>();
         this.reservedComponents = new HashMap<>();
+        this.allComponents = new HashMap<>();
+        this.componentOwnership = new HashMap<>();
         this.gameLevel = level;
         initializeDeckForLevel(level);
     }
@@ -352,5 +371,83 @@ public class ComponentDeck implements Serializable {
      */
     public int getMaxPredictablePiles() {
         return gameLevel.getPredictablePileCount();
+    }
+
+    /**
+     * Gets a component by its ID from all components (regardless of location)
+     * @param componentId The component ID to search for
+     * @return The component if found, null otherwise
+     */
+    public Component getComponentById(String componentId) {
+        return allComponents.get(componentId);
+    }
+
+    /**
+     * Assigns ownership of a component to a player
+     * @param componentId The component ID
+     * @param playerId The player ID who owns the component
+     */
+    public void setComponentOwnership(String componentId, String playerId) {
+        componentOwnership.put(componentId, playerId);
+    }
+
+    /**
+     * Gets the owner of a component
+     * @param componentId The component ID
+     * @return The player ID who owns the component, null if unowned
+     */
+    public String getComponentOwner(String componentId) {
+        return componentOwnership.get(componentId);
+    }
+
+    /**
+     * Removes ownership of a component
+     * @param componentId The component ID
+     */
+    public void clearComponentOwnership(String componentId) {
+        componentOwnership.remove(componentId);
+    }
+
+    /**
+     * Gets all components currently owned by a player
+     * @param playerId The player ID
+     * @return List of components owned by the player
+     */
+    public List<Component> getPlayerOwnedComponents(String playerId) {
+        return componentOwnership.entrySet().stream()
+                .filter(entry -> playerId.equals(entry.getValue()))
+                .map(entry -> allComponents.get(entry.getKey()))
+                .filter(Objects::nonNull)
+                .collect(java.util.stream.Collectors.toList());
+    }
+
+    /**
+     * Gets a map of all components for UI synchronization
+     * @return Map of componentId to Component for all available components
+     */
+    public Map<String, Component> getAllComponentsMap() {
+        Map<String, Component> availableComponents = new HashMap<>();
+        
+        // Include draw pile components
+        for (Component component : drawPile) {
+            availableComponents.put(component.getId(), component);
+        }
+        
+        // Include face-up pile components
+        for (Component component : faceUpPile) {
+            availableComponents.put(component.getId(), component);
+        }
+        
+        return availableComponents;
+    }
+
+    /**
+     * Checks if a component is currently available (not owned by a player)
+     * @param componentId The component ID to check
+     * @return true if the component is available, false if owned or not found
+     */
+    public boolean isComponentAvailable(String componentId) {
+        return allComponents.containsKey(componentId) && 
+               !componentOwnership.containsKey(componentId);
     }
 } 

@@ -47,12 +47,7 @@ public class GameSession {
     private final PlayerSessionRegistry playerRegistry;
     private final Object lock = new Object();
 
-    // Building phase management
-    private final Map<String, Component> availableComponents;
-    private final Map<String, PlayerId> componentOwnership; // componentId -> playerId
-    private final Set<String> usedComponents;
-    private final Map<String, Component> faceUpComponents; // Face-up components pile
-    private final Map<PlayerId, List<String>> playerHeldComponents; // playerId -> list of componentIds
+    // Building phase management - now delegated to GameModel.ComponentDeck
 
     // Turn management
     private int currentPlayerIndex = 0;
@@ -91,11 +86,6 @@ public class GameSession {
         this.gameModel = new GameModel(gameId, gameName, gameLevel, configManager.getConfigForLevel(gameLevel), 
                                      componentDeck, adventureDeck, maxPlayers);
         this.playerStates = new ConcurrentHashMap<>();
-        this.availableComponents = new ConcurrentHashMap<>();
-        this.componentOwnership = new ConcurrentHashMap<>();
-        this.usedComponents = new HashSet<>();
-        this.faceUpComponents = new ConcurrentHashMap<>();
-        this.playerHeldComponents = new ConcurrentHashMap<>();
         this.currentPhase = GamePhase.SETUP;
         this.started = false;
         this.ended = false;
@@ -185,13 +175,6 @@ public class GameSession {
         }
     }
     
-    /**
-     * Adds a player to the game session (legacy String overload).
-     */
-    public boolean addPlayer(String playerIdString) {
-        PlayerId playerId = PlayerId.fromString(playerIdString);
-        return addPlayer(playerId);
-    }
 
     /**
      * Removes a player from the game session.
@@ -226,13 +209,6 @@ public class GameSession {
         }
     }
     
-    /**
-     * Removes a player from the game session (legacy String overload).
-     */
-    public boolean removePlayer(String playerIdString) {
-        PlayerId playerId = PlayerId.fromString(playerIdString);
-        return removePlayer(playerId);
-    }
 
     /**
      * Sets a player's ready status.
@@ -270,13 +246,6 @@ public class GameSession {
         }
     }
     
-    /**
-     * Sets a player's ready status (legacy String overload).
-     */
-    public void setPlayerReady(String playerIdString, boolean ready) {
-        PlayerId playerId = PlayerId.fromString(playerIdString);
-        setPlayerReady(playerId, ready);
-    }
 
     /**
      * Checks if the game can start.
@@ -306,8 +275,6 @@ public class GameSession {
             gameModel.startGame();
 
             // Initialize components
-            initializeComponents();
-
             // Start building phase
             transitionToPhase(GamePhase.BUILDING);
 
@@ -346,25 +313,6 @@ public class GameSession {
                     break;
             }
         }
-    }
-
-    /**
-     * Initializes components for the building phase.
-     */
-    private void initializeComponents() {
-        // Load components from deck
-        List<Component> components = configManager.getAllComponents();
-
-        // Shuffle and distribute
-        Collections.shuffle(components);
-
-        for (Component component : components) {
-            // Use the component's original ID (which contains the image path)
-            String componentId = component.getId();
-            availableComponents.put(componentId, component);
-        }
-
-        LOGGER.info("Components: " + availableComponents.size() + " initialized");
     }
 
     /**
@@ -478,10 +426,11 @@ public class GameSession {
      */
     public Component getAvailableComponent(String componentId) {
         synchronized (lock) {
-            if (usedComponents.contains(componentId)) {
+            ComponentDeck deck = gameModel.getComponentDeck();
+            if (!deck.isComponentAvailable(componentId)) {
                 return null;
             }
-            return availableComponents.get(componentId);
+            return deck.getComponentById(componentId);
         }
     }
 
@@ -490,13 +439,8 @@ public class GameSession {
      */
     public Map<String, Component> getAvailableComponents() {
         synchronized (lock) {
-            Map<String, Component> available = new HashMap<>();
-            for (Map.Entry<String, Component> entry : availableComponents.entrySet()) {
-                if (!usedComponents.contains(entry.getKey())) {
-                    available.put(entry.getKey(), entry.getValue());
-                }
-            }
-            return available;
+            ComponentDeck deck = gameModel.getComponentDeck();
+            return deck.getAllComponentsMap();
         }
     }
 
@@ -505,37 +449,23 @@ public class GameSession {
      */
     public void useComponent(String componentId, PlayerId playerId) {
         synchronized (lock) {
-            usedComponents.add(componentId);
-            componentOwnership.put(componentId, playerId);
+            ComponentDeck deck = gameModel.getComponentDeck();
+            deck.setComponentOwnership(componentId, playerId.toString());
         }
     }
     
-    /**
-     * Marks a component as used by a player (legacy String overload).
-     */
-    public void useComponent(String componentId, String playerIdString) {
-        PlayerId playerId = PlayerId.fromString(playerIdString);
-        useComponent(componentId, playerId);
-    }
 
     /**
      * Returns a component to the available pool.
      */
     public void returnComponent(Component component) {
         synchronized (lock) {
-            // Find the component ID
-            String componentId = null;
-            for (Map.Entry<String, Component> entry : availableComponents.entrySet()) {
-                if (entry.getValue() == component) {
-                    componentId = entry.getKey();
-                    break;
-                }
-            }
-
-            if (componentId != null) {
-                usedComponents.remove(componentId);
-                componentOwnership.remove(componentId);
-            }
+            ComponentDeck deck = gameModel.getComponentDeck();
+            String componentId = component.getId();
+            
+            // Clear ownership and return to face-up pile
+            deck.clearComponentOwnership(componentId);
+            deck.returnToFaceUp(component);
         }
     }
 
@@ -544,20 +474,14 @@ public class GameSession {
      */
     private void returnPlayerComponents(PlayerId playerId) {
         synchronized (lock) {
-            List<String> toReturn = new ArrayList<>();
-            for (Map.Entry<String, PlayerId> entry : componentOwnership.entrySet()) {
-                if (entry.getValue().equals(playerId)) {
-                    toReturn.add(entry.getKey());
-                }
-            }
-
-            for (String componentId : toReturn) {
-                usedComponents.remove(componentId);
-                componentOwnership.remove(componentId);
-            }
+            ComponentDeck deck = gameModel.getComponentDeck();
             
-            // Also clear held components for this player
-            playerHeldComponents.remove(playerId);
+            // Get all components owned by this player and return them to face-up pile
+            List<Component> playerComponents = deck.getPlayerOwnedComponents(playerId.toString());
+            for (Component component : playerComponents) {
+                deck.clearComponentOwnership(component.getId());
+                deck.returnToFaceUp(component);
+            }
         }
     }
 
@@ -566,7 +490,8 @@ public class GameSession {
      */
     public Component getFaceUpComponent(String componentId) {
         synchronized (lock) {
-            return faceUpComponents.get(componentId);
+            ComponentDeck deck = gameModel.getComponentDeck();
+            return deck.takeFaceUpComponentById(componentId);
         }
     }
 
@@ -575,53 +500,38 @@ public class GameSession {
      */
     public void reserveFaceUpComponent(String componentId, PlayerId playerId) {
         synchronized (lock) {
-            Component component = faceUpComponents.remove(componentId);
+            ComponentDeck deck = gameModel.getComponentDeck();
+            Component component = deck.takeFaceUpComponentById(componentId);
             if (component != null) {
-                // Add to player's held components
-                playerHeldComponents.computeIfAbsent(playerId, k -> new ArrayList<>()).add(componentId);
-                componentOwnership.put(componentId, playerId);
-                // Keep the component in available pool but mark as owned
-                availableComponents.put(componentId, component);
+                // Set ownership in deck
+                deck.setComponentOwnership(componentId, playerId.toString());
             }
         }
     }
     
-    /**
-     * Reserves a face-up component for a player (legacy String overload).
-     */
-    public void reserveFaceUpComponent(String componentId, String playerIdString) {
-        PlayerId playerId = PlayerId.fromString(playerIdString);
-        reserveFaceUpComponent(componentId, playerId);
-    }
 
     /**
      * Gets the list of components held by a player.
      */
     public List<String> getPlayerHeldComponents(PlayerId playerId) {
         synchronized (lock) {
-            return new ArrayList<>(playerHeldComponents.getOrDefault(playerId, new ArrayList<>()));
+            ComponentDeck deck = gameModel.getComponentDeck();
+            List<Component> playerComponents = deck.getPlayerOwnedComponents(playerId.toString());
+            return playerComponents.stream()
+                    .map(Component::getId)
+                    .collect(java.util.stream.Collectors.toList());
         }
     }
     
-    /**
-     * Gets the list of components held by a player (legacy String overload).
-     */
-    public List<String> getPlayerHeldComponents(String playerIdString) {
-        PlayerId playerId = PlayerId.fromString(playerIdString);
-        return getPlayerHeldComponents(playerId);
-    }
 
     /**
      * Adds a component to the face-up pile (returned by player).
      */
     public void addToFaceUpPile(String componentId, Component component) {
         synchronized (lock) {
-            faceUpComponents.put(componentId, component);
-            // Remove from any player's held components
-            for (List<String> heldList : playerHeldComponents.values()) {
-                heldList.remove(componentId);
-            }
-            componentOwnership.remove(componentId);
+            ComponentDeck deck = gameModel.getComponentDeck();
+            deck.returnToFaceUp(component);
+            deck.clearComponentOwnership(componentId);
         }
     }
 
@@ -836,13 +746,6 @@ public class GameSession {
         return result;
     }
     
-    /**
-     * Gets a player by string ID (legacy compatibility).
-     */
-    public Player getPlayer(String playerIdString) {
-        PlayerId playerId = PlayerId.fromString(playerIdString);
-        return getPlayer(playerId);
-    }
 
     public GamePhase getCurrentPhase() {
         return currentPhase;
@@ -885,7 +788,7 @@ public class GameSession {
     }
 
     public Component getComponentById(String componentId) {
-        return availableComponents.get(componentId);
+        return gameModel.getComponentDeck().getComponentById(componentId);
     }
     
     public AdventureCardController getAdventureCardController() {
@@ -909,13 +812,6 @@ public class GameSession {
         }
     }
     
-    /**
-     * Gets player state by string ID (legacy compatibility).
-     */
-    public PlayerState getPlayerState(String playerIdString) {
-        PlayerId playerId = PlayerId.fromString(playerIdString);
-        return getPlayerState(playerId);
-    }
     
     public boolean areAllPlayersReady() {
         synchronized (lock) {
@@ -932,13 +828,6 @@ public class GameSession {
         }
     }
     
-    /**
-     * Checks if a player is the creator (legacy String overload).
-     */
-    public boolean isCreator(String playerIdString) {
-        PlayerId playerId = PlayerId.fromString(playerIdString);
-        return isCreator(playerId);
-    }
     
     public it.polimi.ingsw.server.model.domain.general.config.ShipGridConfig getShipGridConfig() {
         return gameModel.getConfig().shipGridConfig();
@@ -968,23 +857,22 @@ public class GameSession {
                 syncState.forbiddenPositions.addAll(ship.forbiddenPositions);
             }
             
+            ComponentDeck deck = gameModel.getComponentDeck();
+            
             // Add available face-down tiles (all components from the deck)
-            for (Component component : availableComponents.values()) {
+            for (Component component : deck.getAllComponentsMap().values()) {
                 syncState.availableTiles.add(component.getType());
             }
             
             // Add face-up tiles (returned components)
-            for (Component component : faceUpComponents.values()) {
+            for (Component component : deck.getFaceUpPile()) {
                 syncState.availableTiles.add(component.getType());
             }
             
             // Add player's held tiles
-            List<String> heldComponentIds = playerHeldComponents.getOrDefault(playerId, new ArrayList<>());
-            for (String componentId : heldComponentIds) {
-                Component component = availableComponents.get(componentId);
-                if (component != null) {
-                    syncState.heldTiles.add(component.getType());
-                }
+            List<Component> heldComponents = deck.getPlayerOwnedComponents(playerId.toString());
+            for (Component component : heldComponents) {
+                syncState.heldTiles.add(component.getType());
             }
             
             // Calculate remaining building time
@@ -998,13 +886,6 @@ public class GameSession {
         }
     }
     
-    /**
-     * Gets ship building sync state by string ID (legacy compatibility).
-     */
-    public ShipBuildingSyncState getShipBuildingSyncState(String playerIdString) {
-        PlayerId playerId = PlayerId.fromString(playerIdString);
-        return getShipBuildingSyncState(playerId);
-    }
     
     public static class ShipBuildingSyncState {
         public final Map<it.polimi.ingsw.server.model.domain.ship.Position, it.polimi.ingsw.server.model.enums.ship.ComponentType> shipGrid = new HashMap<>();
