@@ -7,8 +7,10 @@ import it.polimi.ingsw.client.ui.tui.Printer;
 import it.polimi.ingsw.common.message.response.*;
 
 import it.polimi.ingsw.server.model.domain.player.Player;
+import org.jline.reader.EndOfFileException;
 import org.jline.reader.LineReader;
 import org.jline.reader.LineReaderBuilder;
+import org.jline.reader.UserInterruptException;
 import org.jline.terminal.Terminal;
 import org.jline.terminal.TerminalBuilder;
 
@@ -43,118 +45,113 @@ public class newTUI implements newUI {
         printer.printHeader();
 
         printer.printConnectionPhase();
-        elaborateConnectionPhase();
+        if (!elaborateConnection()) {
+            printer.printError("Connection failed. Exiting.");
+            shutdown();
+            return;
+        }
 
         printer.printLoginPhase();
         elaborateLogin();
 
         String input;
         while (true) {
-            input = reader.readLine();
-            elaborateInput(input);
+            try {
+                input = reader.readLine("> ");
+                elaborateInput(input);
+            } catch (UserInterruptException e) {
+                printer.printWarning("Operation cancelled. Exiting client.");
+                break;
+            } catch (EndOfFileException e) {
+                printer.printWarning("Exiting client (Ctrl+D detected).");
+                break;
+            } catch (Exception e) {
+                printer.printError("An unexpected error occurred: " + e.getMessage());
+            }
         }
+        shutdown();
     }
 
     private void elaborateInput(String input) {
-        if (input == null || input.trim().isEmpty()) {
+        if (input.isEmpty()) {
             return;
         }
 
-        String[] tokens = input.trim().split("\\s+");
+        String[] tokens = input.split("\\s+");
 
         switch (clientState.getCurrentView()) {
-            //case CONNECTION -> elaborateConnectionCommand(tokens);
-            //case LOGIN -> elaborateLoginCommand(tokens);
             case LOBBY -> elaborateLobbyCommand(tokens);
             case GAME_LOBBY -> elaborateGameLobbyCommand(tokens);
+            default -> printer.printError("Invalid command. Type 'help' for available commands.");
         }
     }
 
-    private void elaborateConnectionPhase() {
+    private boolean elaborateConnection() {
         // Hostname
-        printer.print("Enter hostname (default: localhost): ");
-        String hostname = reader.readLine().trim();
-        if (hostname.isEmpty()) {
-            hostname = "localhost";
+        String hostname;
+        try {
+            hostname = reader.readLine("Enter hostname (default: localhost): ").trim();
+            if (hostname.isEmpty()) {
+                hostname = "localhost";
+            }
+        } catch (UserInterruptException | EndOfFileException e) {
+            return false;
         }
 
-//        while (hostname.trim().isEmpty()) {
-//            printer.printError("Invalid host provided for connection");
-//            hostname = reader.readLine().trim();
-//        }
-
         // Protocol
-        printer.print("Select protocol: (1) Socket, (2) RMI (default: 1): ");
-        String protocol = reader.readLine().trim().toLowerCase();
-
         boolean useSocket = true;
-        int defaultPort = 12345;
-
-        if (protocol.equals("2") || protocol.equals("rmi")) {
-            useSocket = false;
-            defaultPort = 1099;
-            printer.printInfo("Selected protocol: RMI");
-        } else {
-            printer.printInfo("Selected protocol: Socket");
+        try {
+            String protocol = reader.readLine("Select protocol: (1) Socket, (2) RMI (default: 1): ").trim().toLowerCase();
+            if (protocol.equals("2") || protocol.equals("rmi")) {
+                useSocket = false;
+                printer.printInfo("Selected protocol: RMI");
+            } else {
+                printer.printInfo("Selected protocol: Socket");
+            }
+        } catch (UserInterruptException | EndOfFileException e) {
+            return false;
         }
 
         // Port
-        printer.print("Enter port (default: " + defaultPort + "): ");
-        String portInput = reader.readLine().trim();
-        int port = defaultPort;
-        if (!portInput.isEmpty()) {
-            try {
-                port = Integer.parseInt(portInput);
-            } catch (NumberFormatException e) {
-                printer.printError("Invalid port number. Using default port " + defaultPort + ".");
-                port = defaultPort;
+        int port = useSocket ? 12345 : 1099;
+        try {
+            String portInput = reader.readLine("Enter port (default: " + port + "): ").trim();
+            if (!portInput.isEmpty()) {
+                try {
+                    port = Integer.parseInt(portInput);
+                } catch (NumberFormatException e) {
+                    printer.printError("Invalid port number. Using default port " + port + ".");
+                }
             }
-        }
-
-        while (port <= 0 || port > 65535) {
-            printer.printError("Invalid port provided for connection: " + port);
-            try {
-                port = Integer.parseInt(portInput);
-            } catch (NumberFormatException e) {
-                printer.printError("Invalid port number. Using default port " + defaultPort + ".");
-                port = defaultPort;
-            }
+        } catch (NumberFormatException e) {
+            printer.printError("Invalid port number. Using default port " + port + ".");
         }
 
         String protocolName = useSocket ? "Socket" : "RMI";
         printer.printLoading("Connecting to " + hostname + ":" + port + " via " + protocolName);
 
         try {
-            boolean success = networkClient.connect(hostname, port, useSocket).get();
+            return controller.connect(hostname, port, useSocket).get();
         } catch (ExecutionException | InterruptedException e) {
             printer.printError("Connection error: " + e.getMessage());
+            if (e instanceof InterruptedException)
+                Thread.currentThread().interrupt();
+            return false;
         }
     }
 
     private void elaborateLogin() {
-        printer.print("Enter nickname: ");
-        String nickname = reader.readLine().trim();
+        String nickname = reader.readLine("Enter nickname: ").trim();
 
         Pattern NICKNAME_PATTERN = Pattern.compile("^[a-zA-Z0-9_-]{3,20}$");
         while (!NICKNAME_PATTERN.matcher(nickname).matches()) {
             printer.printError("Invalid nickname format. Please try again.");
-            nickname = reader.readLine().trim();
+            nickname = reader.readLine("Enter nickname: ").trim();
         }
 
         printer.printLoading("Logging in as " + nickname);
 
-        try {
-            boolean success = controller.login(nickname).get();
-
-            if (!success) {
-                printer.printError("Login failed. The nickname might already be taken or is invalid.");
-                elaborateLogin();
-            }
-
-        } catch (InterruptedException | java.util.concurrent.ExecutionException e) {
-            printer.printError("Login error: " + e.getMessage());
-            if (e instanceof InterruptedException) Thread.currentThread().interrupt();
-        }
+        controller.login(nickname);
     }
 
     private void elaborateLobbyCommand(String[] tokens) {
@@ -253,8 +250,7 @@ public class newTUI implements newUI {
     }
 
     private void handleReadyCommand() {
-        String playerId = controller.getPlayerId() != null ?
-                controller.getPlayerId() : null;
+        String playerId = controller.getPlayerId() != null ? controller.getPlayerId() : null;
         if (!controller.getClientState().isPlayerReady(playerId)) {
             controller.setPlayerReady(true);
             printer.printSuccess("Marked as ready!");
@@ -264,8 +260,7 @@ public class newTUI implements newUI {
     }
 
     private void handleUnreadyCommand() {
-        String playerId = controller.getPlayerId() != null ?
-                controller.getPlayerId() : null;
+        String playerId = controller.getPlayerId() != null ? controller.getPlayerId() : null;
         if (controller.getClientState().isPlayerReady(playerId)) {
             controller.setPlayerReady(false);
             printer.printSuccess("Marked as not ready!");
@@ -275,8 +270,7 @@ public class newTUI implements newUI {
     }
 
     private void handleStartCommand() {
-        String currentPlayerId = controller.getPlayerId() != null ?
-                controller.getPlayerId() : null;
+        String currentPlayerId = controller.getPlayerId() != null ? controller.getPlayerId() : null;
         if (!currentPlayerId.equals(getHostPlayerId())) {
             printer.printError("Only the host can start the game!");
             return;
@@ -335,6 +329,8 @@ public class newTUI implements newUI {
         if (r.isSuccess()) {
             printer.printSuccess("Login successful!");
             printer.print("Welcome " + r.getNickname() + "!");
+
+            printer.printLobbyPhase(clientState);
         } else {
             printer.printError("Login failed.");
         }
@@ -350,7 +346,6 @@ public class newTUI implements newUI {
         } else {
             printer.printError("Failed to create game.");
         }
-
     }
 
     @Override
@@ -465,4 +460,16 @@ public class newTUI implements newUI {
 
     @Override
     public void onDockResponse(DockResponse response) {}
+
+
+    public void shutdown() {
+        printer.shutdown();
+        try {
+            if (reader != null)
+                reader.getTerminal().close();
+        } catch (IOException e) {
+            System.err.println("Error closing reader terminal: " + e.getMessage());
+        }
+        System.exit(0);
+    }
 }
