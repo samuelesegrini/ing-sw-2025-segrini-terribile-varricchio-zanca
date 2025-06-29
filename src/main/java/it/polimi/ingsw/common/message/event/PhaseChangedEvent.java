@@ -86,6 +86,8 @@ public class PhaseChangedEvent extends AbstractEvent {
                 }
             }
             // TODO: Gestisci END phase
+
+            context.getController().getUI().onPhaseChangedEvent(this);
         });
     }
 

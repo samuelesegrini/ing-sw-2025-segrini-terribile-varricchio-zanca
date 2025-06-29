@@ -83,6 +83,8 @@ public class PlayerReadyChangedEvent extends AbstractEvent {
                     )
                 );
             }
+
+            context.getController().getUI().onPlayerReadyChangedEvent(this);
         });
     }
 }

@@ -37,6 +37,8 @@ public class GamesListUpdateEvent extends AbstractEvent {
         }
         context.getController().getClientState().setAvailableGames(availableGames);
         LOGGER.fine("CLIENT STATE UPDATED - Available games set in ClientState");
+
+        context.getController().getUI().onGamesListUpdateEvent(this);
     }
 
     @Override

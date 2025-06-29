@@ -92,6 +92,8 @@ public class GameCreatedEvent extends AbstractEvent {
                     ));
                 }
             }
+
+            context.getController().getUI().onGameCreatedEvent(this);
         });
     }
 

@@ -106,6 +106,8 @@ public class PlayerJoinedGameEvent extends AbstractEvent {
                         NotificationType.INFO
                 ));
             }
+
+            context.getController().getUI().onPlayerJoinedGameEvent(this);
         });
     }
 }

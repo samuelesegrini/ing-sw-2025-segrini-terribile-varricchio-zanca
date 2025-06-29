@@ -4,6 +4,7 @@ import it.polimi.ingsw.client.controller.ClientController;
 import it.polimi.ingsw.client.core.ClientState;
 import it.polimi.ingsw.client.network.NetworkClient;
 import it.polimi.ingsw.client.ui.tui.Printer;
+import it.polimi.ingsw.common.message.event.*;
 import it.polimi.ingsw.common.message.response.*;
 
 import it.polimi.ingsw.server.model.domain.player.Player;
@@ -174,6 +175,9 @@ public class newTUI implements newUI {
             case "join":
                 elaborateJoinCommand(tokens);
                 break;
+            case "refresh":
+                controller.refreshGameList();
+                break;
             case "h":
             case "help":
                 //displayCommands();
@@ -248,9 +252,12 @@ public class newTUI implements newUI {
             case "quit":
                 elaborateLeaveCommand();
                 break;
+            case "refresh":
+                // TODO: NON C'È METODO NEL CONTROLLER PER AGGIORNARE DATI GAME LOBBY?
+                break;
             case "h":
             case "help":
-                //displayCommands();
+                printer.printGameLobbyCommands(clientState);
                 break;
             default:
                 printer.printError("Unknown command: " + command + ". Type 'help' for available commands.");
@@ -313,6 +320,9 @@ public class newTUI implements newUI {
             case "h":
             case "help":
                 //showHelp();
+                break;
+            case "refresh":
+                printer.displayBuilding(clientState);
                 break;
             case "p":
             case "place":
@@ -454,8 +464,10 @@ public class newTUI implements newUI {
                 elaborateQuitCommand();
                 break;
             case "giveup":
-            case "surrender":
-                //elaborateSurrenderCommand();
+                //elaborateGiveUpCommand();  // TODO
+                break;
+            case "refresh":
+                printer.displayFlight(clientState);
                 break;
             default:
                 printer.printError("Unknown command: " + command + ". Type 'help' for available commands.");
@@ -485,11 +497,15 @@ public class newTUI implements newUI {
         }
     }
 
+    @Override
+    public void onPhaseChangedEvent(PhaseChangedEvent e) {
+        //TODO
+    }
+
     // Login
 
     @Override
     public void onLoginResponse(LoginResponse r) {
-        printer.printInfo("ENTRATO");
         if (r.isSuccess()) {
             printer.printSuccess("Login successful!");
             printer.print("Welcome " + r.getNickname() + "!");
@@ -538,9 +554,25 @@ public class newTUI implements newUI {
     @Override
     public void onListGamesResponse(ListGamesResponse r) {
         if (r.isSuccess()) {
+            printer.printSuccess("Games list fetched successfully!");
             printer.displayLobby(clientState);
         } else {
             printer.printError("Failed to fetch games list.");
+        }
+    }
+
+    @Override
+    public void onGamesListUpdateEvent(GamesListUpdateEvent event) {
+        if (clientState.getCurrentView() == ClientState.ViewState.LOBBY) {
+            printer.displayLobby(clientState);
+        }
+    }
+
+    @Override
+    public void onGameCreatedEvent(GameCreatedEvent event) {
+        // TODO: VERIFICA IN QUALE VIEWSTATE SEI QUANDO ARRIVA (GIÀ AGGIORNATO O NO)
+        if (clientState.getCurrentView() == ClientState.ViewState.LOBBY) {
+            printer.displayLobby(clientState);
         }
     }
 
@@ -552,7 +584,7 @@ public class newTUI implements newUI {
             printer.printSuccess("Game started successfully!");
 
             clientState.setCurrentView(ClientState.ViewState.BUILDING);
-            printer.displayBuilding(clientState, null);
+            printer.displayBuilding(clientState);
         } else {
             printer.printError("Failed to start game.");
         }
@@ -575,11 +607,45 @@ public class newTUI implements newUI {
         if (r.isSuccess()) {
             if (r.isReady()) {
                 printer.printSuccess("You are ready!");
+
             } else {
                 printer.printSuccess("You are not ready.");
             }
+            printer.displayGameLobby(clientState);
         } else {
             printer.printError("Failed to ready/unready.");
+        }
+    }
+
+    @Override
+    public void onGameLobbyUpdateEvent(GameLobbyUpdateEvent event) {
+        if (clientState.getCurrentView() == ClientState.ViewState.GAME_LOBBY) {
+            printer.displayGameLobby(clientState);
+        } else if (clientState.getCurrentView() == ClientState.ViewState.LOBBY) {
+            printer.displayLobby(clientState);
+        }
+    }
+
+    @Override
+    public void onPlayerJoinedGameEvent(PlayerJoinedGameEvent event) {
+        printer.displayGameLobby(clientState);
+    }
+
+    @Override
+    public void onPlayerLeftGameEvent(PlayerLeftGameEvent event) {
+        printer.displayGameLobby(clientState);
+    }
+
+    @Override
+    public void onPlayerReadyChangedEvent(PlayerReadyChangedEvent event) {
+        printer.displayGameLobby(clientState);
+    }
+
+    @Override
+    public void onGameStartedEvent(GameStartedEvent event) {
+        // TODO: Verifica che sia già stata aggiornata ViewState a BUILDING
+        if (clientState.getCurrentView() == ClientState.ViewState.BUILDING) {
+            printer.displayBuilding(clientState);
         }
     }
 
@@ -598,6 +664,7 @@ public class newTUI implements newUI {
     public void onReserveTileResponse(GenericSuccessResponse response) {
         if (response.isSuccess()) {
             printer.printSuccess("Tile reserved successfully!");
+            printer.displayBuilding(clientState); // TODO
         } else {
             printer.printError("Failed to reserve tile.");
         }
@@ -607,6 +674,7 @@ public class newTUI implements newUI {
     public void onPlaceTileResponse(GenericSuccessResponse response) {
         if (response.isSuccess()) {
             printer.printSuccess("Tile placed successfully!");
+            printer.displayBuilding(clientState); // TODO
         } else {
             printer.printError("Failed to place tile.");
         }
@@ -616,6 +684,7 @@ public class newTUI implements newUI {
     public void onReturnTileResponse(ReturnTileResponse response) {
         if (response.isSuccess()) {
             printer.printSuccess("Tile returned successfully!");
+            printer.displayBuilding(clientState); // TODO
         } else {
             printer.printError("Failed to return tile.");
         }
@@ -625,6 +694,7 @@ public class newTUI implements newUI {
     public void onFlipBuildingTimerResponse(FlipBuildingTimerResponse response) {
         if (response.isSuccess()) {
             printer.printSuccess("Building timer flipped successfully!");
+            printer.displayBuilding(clientState); // TODO
         } else {
             printer.printError("Failed to flip building timer.");
         }

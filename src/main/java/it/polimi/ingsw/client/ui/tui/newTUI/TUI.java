@@ -192,7 +192,7 @@ public class TUI implements UI {
             }
             case "validate" -> controller.validateShip();
             case "flip" -> controller.flipBuildingTimer();
-            case "help" -> printer.printShipBuildingCommands();
+            case "help" -> printer.printBuildingCommands();
             case "quit" -> printer.printInfo("Quit command not implemented."); // Or controller.quitGame()
             default -> printer.printError("Unknown command. Type 'help' for a list of commands.");
         }

@@ -1,5 +1,6 @@
 package it.polimi.ingsw.client.ui;
 
+import it.polimi.ingsw.common.message.event.*;
 import it.polimi.ingsw.common.message.response.*;
 
 public interface newUI {
@@ -13,6 +14,8 @@ public interface newUI {
 
     void onReconnectResponse(ReconnectResponse response);
 
+    void onPhaseChangedEvent(PhaseChangedEvent event);
+
     // Login
 
     public void onLoginResponse(LoginResponse response);
@@ -25,6 +28,10 @@ public interface newUI {
 
     void onListGamesResponse(ListGamesResponse response);
 
+    void onGamesListUpdateEvent(GamesListUpdateEvent event);
+
+    void onGameCreatedEvent(GameCreatedEvent event);
+
     // Game Lobby
 
     void onStartGameResponse(GenericSuccessResponse response);
@@ -32,6 +39,16 @@ public interface newUI {
     void onLeaveGameResponse(LeaveGameResponse response);
 
     void onSetPlayerReadyResponse(SetPlayerReadyResponse response);
+
+    void onGameLobbyUpdateEvent(GameLobbyUpdateEvent event);
+
+    void onPlayerJoinedGameEvent(PlayerJoinedGameEvent event);
+
+    void onPlayerLeftGameEvent(PlayerLeftGameEvent event);
+
+    void onPlayerReadyChangedEvent(PlayerReadyChangedEvent event);
+
+    void onGameStartedEvent(GameStartedEvent event);
 
     // Building
 

@@ -8,6 +8,8 @@ import it.polimi.ingsw.server.model.domain.player.Player;
 import it.polimi.ingsw.server.model.domain.ship.components.Component;
 import it.polimi.ingsw.server.model.domain.ship.Position;
 import it.polimi.ingsw.server.model.domain.ship.Ship;
+import it.polimi.ingsw.server.model.domain.ship.components.Shield;
+import it.polimi.ingsw.server.model.enums.ship.ComponentType;
 import it.polimi.ingsw.server.model.enums.ship.ConnectorType;
 import it.polimi.ingsw.server.model.enums.ship.Direction;
 
@@ -181,7 +183,7 @@ public class Printer {
             return;
         }
 
-        String currentPlayerId = clientState.getPlayerId();
+//        String currentPlayerId = clientState.getPlayerId();
         String hostId = clientState.getHostPlayerId();
 
         String[] headers = {"NICKNAME", "STATUS", "HOST"};
@@ -202,7 +204,7 @@ public class Printer {
         print("");
     }
 
-    private void printGameLobbyCommands(ClientState clientState) {
+    public void printGameLobbyCommands(ClientState clientState) {
         print("Available Commands:");
 
         String currentPlayerId = clientState.getPlayerId();
@@ -211,24 +213,24 @@ public class Printer {
         boolean allReady = clientState.areAllPlayersReady();
 
         if (isReady) {
-            print("  (u) unready - Mark yourself as not ready");
+            print("  (u) unready    - Mark yourself as not ready");
         } else {
-            print("  (r) ready - Mark yourself as ready");
+            print("  (r) ready      - Mark yourself as ready");
         }
 
         if (isHost && allReady) {
-            print("  (s) start - Start the game");
+            print("  (s) start      - Start the game");
         }
 
-        print("  (l) leave - Leave the lobby");
-        print("  (r) refresh - Refresh the lobby display");
-        print("  (h) help - Show this help message");
+        print("  (l) leave      - Leave the game lobby");
+        print("  (r) refresh    - Refresh the game lobby display");
+        print("  (h) help       - Show this help message");
         print("");
     }
 
     // Building Phase
 
-    public void displayBuilding(ClientState clientState, Component heldComponent) {
+    public void displayBuilding(ClientState clientState) {
         clearScreen();
         printSectionHeader("SHIP BUILDING");
 
@@ -238,15 +240,71 @@ public class Printer {
             return;
         }
 
-        printShipBoard(ship);
-        print("");
-        printHeldComponent(heldComponent);
-        print("");
         printComponentDeck(clientState.getComponentDeck());
         print("");
+        printShipBoard(ship);
+        print("");
+//        printHeldComponent(heldComponent); // TODO: DA DOVE LO PRENDO?
+//        print("");
         printShipStats(ship);
         print("");
-        printShipBuildingCommands();
+        printBuildingCommands();
+    }
+
+    private void printComponentDeck(ComponentDeck deck) {
+        print("COMPONENT DECK:");
+        if (deck == null) {
+            print("  Deck data not available.");
+            return;
+        }
+        print(String.format("  Draw pile: %d | Face-up: %d | Discarded: %d",
+                deck.getRemainingCards(), deck.getFaceUpCount(), deck.getDiscardedCards()));
+
+        printFaceUpComponents(deck.getFaceUpComponents());
+    }
+
+    private void printFaceUpComponents(List<Component> faceUpComponents) {
+        print("FACE-UP COMPONENTS:");
+        if (faceUpComponents.isEmpty()) {
+            print("  (none)");
+            return;
+        }
+
+        StringBuilder sb = new StringBuilder();
+        int rowFirst = 0;
+        int rowEnd = 10;
+        int size = faceUpComponents.size();
+        for (int row = 0; row < Math.ceilDiv(size, 10); row++) {
+            for (Component component : faceUpComponents.subList(rowFirst, Math.min(rowEnd, size))) {
+                sb.append("  ");
+                sb.append(getConnectorSymbol(component, Direction.UP));
+                sb.append("    ");
+            }
+            sb.append("\n");
+
+            for (Component component : faceUpComponents.subList(rowFirst, Math.min(rowEnd, size))) {
+                sb.append("  ");
+                sb.append(getConnectorSymbol(component, Direction.LEFT));
+                sb.append(getComponentEmoji(component));
+                sb.append(getConnectorSymbol(component, Direction.RIGHT));
+                sb.append("  ");
+            }
+            sb.append("\n");
+
+            for (Component component : faceUpComponents.subList(rowFirst, Math.min(rowEnd, size))) {
+                sb.append("  ");
+                sb.append(getConnectorSymbol(component, Direction.DOWN));
+                sb.append("    ");
+            }
+            sb.append("\n");
+
+            rowFirst += 10;
+            rowEnd += 10;
+
+            sb.append("\n\n");
+        }
+
+        print(sb.toString());
     }
 
     private void printShipBoard(Ship ship) {
@@ -267,7 +325,7 @@ public class Printer {
                     sb.append("     ");
                 } else {
                     sb.append("  ");
-                    sb.append(getConnectorSymbol(component.getConnectorAt(Direction.UP)));
+                    sb.append(getConnectorSymbol(component, Direction.UP));
                     sb.append("  ");
                 }
                 sb.append("\t");
@@ -284,9 +342,9 @@ public class Printer {
                         sb.append("  ⬛️  ");
                 } else {
                     sb.append(" ");
-                    sb.append(getConnectorSymbol(component.getConnectorAt(Direction.LEFT)));
+                    sb.append(getConnectorSymbol(component, Direction.LEFT));
                     sb.append(getComponentEmoji(component));
-                    sb.append(getConnectorSymbol(component.getConnectorAt(Direction.RIGHT)));
+                    sb.append(getConnectorSymbol(component, Direction.RIGHT));
                     sb.append(" ");
                 }
                 sb.append("\t");
@@ -300,7 +358,7 @@ public class Printer {
                     sb.append("     ");
                 } else {
                     sb.append("  ");
-                    sb.append(getConnectorSymbol(component.getConnectorAt(Direction.DOWN)));
+                    sb.append(getConnectorSymbol(component, Direction.DOWN));
                     sb.append("  ");
                 }
                 sb.append("\t");
@@ -332,8 +390,18 @@ public class Printer {
         };
     }
 
-    private String getConnectorSymbol(ConnectorType connectorType) {
-        return switch (connectorType) {
+    private String getConnectorSymbol(Component component, Direction direction) {
+        if (component == null)
+            return null;
+
+        if (component.getType() == ComponentType.SHIELD && ((Shield) component).getProtectedDirections().contains(direction)) {
+            return switch (direction) {
+                case UP, DOWN -> ansi().bgBrightGreen().a("—").reset().toString();
+                case RIGHT, LEFT -> ansi().bgBrightGreen().a("|").reset().toString();
+            };
+        }
+
+        return switch (component.getConnectorAt(direction)) {
             case UNIVERSAL -> "U";
             case DOUBLE -> "D";
             case SINGLE -> "S";
@@ -353,17 +421,6 @@ public class Printer {
     }
 
     // TODO: CONTROLLA
-    private void printComponentDeck(ComponentDeck deck) {
-        print("COMPONENT DECK:");
-        if (deck == null) {
-            print("  Deck data not available.");
-            return;
-        }
-        print(String.format("  Draw pile: %d | Face-up: %d | Discarded: %d",
-                deck.getRemainingCards(), deck.getFaceUpCount(), deck.getDiscardedCards()));
-    }
-
-    // TODO: CONTROLLA
     private void printShipStats(Ship ship) {
         print("Ship Stats:");
         print(String.format("  Engines: %d | Cannons: %d | Crew: %d | Cargo: %d | Batteries: %d | Shields: %d",
@@ -371,7 +428,7 @@ public class Printer {
                 ship.getCargoCapacity(), ship.getBatteryCount(), ship.getShieldCount()));
     }
 
-    public void printShipBuildingCommands() {
+    public void printBuildingCommands() {
         printInfo("Available Commands:");
         print("  take                   - Draw a component");
         print("  place <row> <col>      - Place held component");

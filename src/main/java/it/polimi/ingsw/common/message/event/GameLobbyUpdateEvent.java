@@ -60,6 +60,8 @@ public class GameLobbyUpdateEvent extends AbstractEvent {
                 // Note: GameModel players list is managed through addPlayer/removePlayer
                 // so we don't directly set the players list here
             }
+
+            context.getController().getUI().onGameLobbyUpdateEvent(this);
         });
     }
 }

@@ -10,6 +10,7 @@ import it.polimi.ingsw.server.model.domain.general.config.RewardSystemConfig;
 import it.polimi.ingsw.server.model.domain.player.Player;
 import it.polimi.ingsw.server.model.domain.general.config.GameConfig;
 import it.polimi.ingsw.server.model.domain.player.PlayerId;
+import it.polimi.ingsw.server.model.domain.ship.Ship;
 import it.polimi.ingsw.server.model.domain.ship.components.Component;
 import it.polimi.ingsw.server.model.enums.GameLevel;
 import it.polimi.ingsw.server.model.enums.GamePhase;
@@ -123,7 +124,7 @@ public class GameModel implements Serializable {
         
         // Create ship separately with proper configuration
         var shipGridConfig = config.shipGridConfig();
-        var ship = new it.polimi.ingsw.server.model.domain.ship.Ship(level, shipGridConfig);
+        var ship = new Ship(level, shipGridConfig);
         
         // Assign ship to player
         player.setShip(ship);

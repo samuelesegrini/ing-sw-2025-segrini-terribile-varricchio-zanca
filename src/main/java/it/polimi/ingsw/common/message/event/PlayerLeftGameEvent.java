@@ -118,6 +118,8 @@ public class PlayerLeftGameEvent extends AbstractEvent {
                     )
                 );
             }
+
+            context.getController().getUI().onPlayerLeftGameEvent(this);
         });
     }
 }

@@ -127,6 +127,8 @@ public class GameStartedEvent extends AbstractEvent {
             } else {
                 LOGGER.warning("DEBUG: NotificationService is null - cannot show notification");
             }
+
+            context.getController().getUI().onGameStartedEvent(this);
         });
     }
 }
