@@ -357,7 +357,7 @@ public class EnhancedHandView extends VBox implements UIView {
     @Override
     public ClientState.ViewState getViewState() {
         // This view is part of the GAME view, so it returns GAME
-        return ClientState.ViewState.GAME;
+        return ClientState.ViewState.BUILDING;
     }
 
     @Override

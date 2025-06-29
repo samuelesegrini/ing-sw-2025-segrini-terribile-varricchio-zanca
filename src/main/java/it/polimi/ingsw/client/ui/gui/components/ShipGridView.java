@@ -493,7 +493,7 @@ public class ShipGridView extends StackPane implements UIView {
 
     @Override
     public ClientState.ViewState getViewState() {
-        return ClientState.ViewState.GAME;
+        return ClientState.ViewState.BUILDING;
     }
 
     @Override

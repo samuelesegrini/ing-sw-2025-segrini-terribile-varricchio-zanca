@@ -41,7 +41,7 @@ public class TuiGameView implements UIView {
 
     @Override
     public ClientState.ViewState getViewState() {
-        return ClientState.ViewState.GAME;
+        return ClientState.ViewState.BUILDING;
     }
 
     @Override

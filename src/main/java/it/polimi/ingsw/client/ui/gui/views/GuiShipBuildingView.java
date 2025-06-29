@@ -73,7 +73,7 @@ public class GuiShipBuildingView extends BaseUIView implements UIView {
 
     @Override
     public ClientState.ViewState getViewState() {
-        return ClientState.ViewState.GAME;
+        return ClientState.ViewState.BUILDING;
     }
 
     @Override

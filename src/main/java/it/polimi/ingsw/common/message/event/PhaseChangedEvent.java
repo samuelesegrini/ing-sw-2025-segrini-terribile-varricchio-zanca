@@ -1,5 +1,6 @@
 package it.polimi.ingsw.common.message.event;
 
+import it.polimi.ingsw.client.core.ClientState;
 import it.polimi.ingsw.server.model.enums.GamePhase;
 
 import java.util.logging.Logger;
@@ -53,23 +54,38 @@ public class PhaseChangedEvent extends AbstractEvent {
 
             // For END phase, might want to navigate to a results view in the future
             // For now, just ensure we're in GAME view to see the phase change
-            if (newPhase == GamePhase.BUILDING || newPhase == GamePhase.FLIGHT) {
-                // Ensure we're in GAME view to see the phase UI
-                if (context.getController().getUIContext() != null && 
-                    context.getController().getUIContext().getViewNavigator() != null &&
-                    context.getClientState().getCurrentView() != it.polimi.ingsw.client.core.ClientState.ViewState.GAME) {
-                    
+            if (newPhase == GamePhase.BUILDING) {
+                if (context.getController().getUIContext() != null &&
+                        context.getController().getUIContext().getViewNavigator() != null &&
+                        context.getClientState().getCurrentView() != ClientState.ViewState.BUILDING) {
+
                     boolean success = context.getController().getUIContext().getViewNavigator()
-                        .navigateTo(it.polimi.ingsw.client.core.ClientState.ViewState.GAME, 
-                                   "Phase changed to " + newPhase);
-                    
+                            .navigateTo(ClientState.ViewState.BUILDING,
+                                    "Phase changed to " + newPhase);
+
                     if (!success) {
                         String reason = context.getController().getUIContext().getViewNavigator()
-                            .getNavigationFailureReason(it.polimi.ingsw.client.core.ClientState.ViewState.GAME);
+                                .getNavigationFailureReason(ClientState.ViewState.BUILDING);
+                        LOGGER.warning("Failed to navigate to GAME after phase change - Reason: " + reason);
+                    }
+                }
+            } else if (newPhase == GamePhase.FLIGHT) {
+                if (context.getController().getUIContext() != null &&
+                        context.getController().getUIContext().getViewNavigator() != null &&
+                        context.getClientState().getCurrentView() != ClientState.ViewState.FLIGHT) {
+
+                    boolean success = context.getController().getUIContext().getViewNavigator()
+                            .navigateTo(ClientState.ViewState.FLIGHT,
+                                    "Phase changed to " + newPhase);
+
+                    if (!success) {
+                        String reason = context.getController().getUIContext().getViewNavigator()
+                                .getNavigationFailureReason(ClientState.ViewState.FLIGHT);
                         LOGGER.warning("Failed to navigate to GAME after phase change - Reason: " + reason);
                     }
                 }
             }
+            // TODO: Gestisci END phase
         });
     }
 

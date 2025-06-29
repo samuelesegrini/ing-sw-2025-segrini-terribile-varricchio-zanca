@@ -7,6 +7,8 @@ import it.polimi.ingsw.client.ui.tui.Printer;
 import it.polimi.ingsw.common.message.response.*;
 
 import it.polimi.ingsw.server.model.domain.player.Player;
+import it.polimi.ingsw.server.model.domain.ship.Position;
+import it.polimi.ingsw.server.model.domain.ship.components.Component;
 import org.jline.reader.EndOfFileException;
 import org.jline.reader.LineReader;
 import org.jline.reader.LineReaderBuilder;
@@ -44,7 +46,7 @@ public class newTUI implements newUI {
     public void start() {
         printer.printHeader();
 
-        printer.printConnectionPhase();
+        printer.displayConnection();
         if (!elaborateConnection()) {
             printer.printError("Connection failed. Exiting.");
             shutdown();
@@ -53,13 +55,13 @@ public class newTUI implements newUI {
 
         System.out.println("Connected to server.");
 
-        printer.printLoginPhase();
+        printer.displayLogin();
         elaborateLogin();
 
         String input;
         while (true) {
             try {
-                input = reader.readLine("> ");
+                input = reader.readLine();
                 elaborateInput(input);
             } catch (UserInterruptException e) {
                 printer.printWarning("Operation cancelled. Exiting client.");
@@ -84,12 +86,9 @@ public class newTUI implements newUI {
         switch (clientState.getCurrentView()) {
             case LOBBY -> elaborateLobbyCommand(tokens);
             case GAME_LOBBY -> elaborateGameLobbyCommand(tokens);
-            case GAME -> {
-                // TODO: Implement building/flight phase command handling
-                // Should route to different handlers based on current game phase
-                // elaborateBuildingCommand(tokens) or elaborateFlightCommand(tokens)
-                printer.printError("Game phase commands not yet implemented. Type 'help' for available commands.");
-            }
+            case BUILDING -> elaborateBuildingCommand(tokens);
+            case FLIGHT -> elaborateFlightCommand(tokens);
+            //case END -> displayEndGame();
             default -> printer.printError("Invalid command. Type 'help' for available commands.");
         }
     }
@@ -177,8 +176,7 @@ public class newTUI implements newUI {
                 break;
             case "h":
             case "help":
-                // TODO: Implement context-specific help display
-                printer.printInfo("Help not yet implemented for this phase");
+                //displayCommands();
                 break;
             default:
                 printer.printError("Unknown command: " + command + ". Type 'help' for available commands.");
@@ -236,24 +234,23 @@ public class newTUI implements newUI {
         switch (command) {
             case "r":
             case "ready":
-                handleReadyCommand();
+                elaborateReadyCommand();
                 break;
             case "u":
             case "unready":
-                handleUnreadyCommand();
+                elaborateUnreadyCommand();
                 break;
             case "start":
-                handleStartCommand();
+                elaborateStartCommand();
                 break;
             case "l":
             case "leave":
             case "quit":
-                handleLeaveCommand();
+                elaborateLeaveCommand();
                 break;
             case "h":
             case "help":
-                // TODO: Implement context-specific help display
-                printer.printInfo("Help not yet implemented for this phase");
+                //displayCommands();
                 break;
             default:
                 printer.printError("Unknown command: " + command + ". Type 'help' for available commands.");
@@ -261,7 +258,7 @@ public class newTUI implements newUI {
         }
     }
 
-    private void handleReadyCommand() {
+    private void elaborateReadyCommand() {
         String playerId = controller.getPlayerId();
         if (!controller.getClientState().isPlayerReady(playerId)) {
             controller.setPlayerReady(true);
@@ -271,7 +268,7 @@ public class newTUI implements newUI {
         }
     }
 
-    private void handleUnreadyCommand() {
+    private void elaborateUnreadyCommand() {
         String playerId = controller.getPlayerId();
         if (controller.getClientState().isPlayerReady(playerId)) {
             controller.setPlayerReady(false);
@@ -281,14 +278,14 @@ public class newTUI implements newUI {
         }
     }
 
-    private void handleStartCommand() {
+    private void elaborateStartCommand() {
         String playerId = controller.getPlayerId();
-        if (!playerId.equals(getHostPlayerId())) {
+        if (!playerId.equals(clientState.getHostPlayerId())) {
             printer.printError("Only the host can start the game!");
             return;
         }
 
-        if (!areAllPlayersReady()) {
+        if (!clientState.areAllPlayersReady()) {
             printer.printError("Not all players are ready!");
             return;
         }
@@ -297,7 +294,7 @@ public class newTUI implements newUI {
         printer.printSuccess("Starting game...");
     }
 
-    private void handleLeaveCommand() {
+    private void elaborateLeaveCommand() {
         printer.printWarning("Are you sure you want to leave the lobby? (y/n)");
         String confirmation = reader.readLine().trim().toLowerCase();
         if (confirmation.startsWith("y")) {
@@ -308,24 +305,162 @@ public class newTUI implements newUI {
         }
     }
 
-    //
+    // Building
 
-    // TODO: CONTROLLA
-    private String getHostPlayerId() {
-        // Get host from GameModel which tracks the actual creator/host
-        if (controller.getClientState().getCurrentGameLobby() != null) {
-            return controller.getClientState().getCurrentGameLobby().getCreatorId();
+    private void elaborateBuildingCommand(String[] tokens) {
+        String command = tokens[0].toLowerCase();
+        switch (command) {
+            case "h":
+            case "help":
+                //showHelp();
+                break;
+            case "p":
+            case "place":
+                elaboratePlaceCommand(tokens);
+                break;
+            case "t":
+            case "take":
+                elaborateTakeCommand();
+                break;
+            case "r":
+            case "return":
+                elaborateReturnCommand(tokens);
+                break;
+            case "v":
+            case "validate":
+                elaborateValidateCommand();
+                break;
+            case "f":
+            case "flip":
+                elaborateFlipTimerCommand();
+                break;
+            case "q":
+            case "quit":
+                elaborateQuitCommand();
+                break;
+            default:
+                printer.printError("Unknown command: " + command + ". Type 'help' for available commands.");
+                break;
         }
-        // Fallback to the first player if GameModel is not available
-        List<Player> players = controller.getClientState().getPlayersInLobby();
-        return players != null && !players.isEmpty() ? players.getFirst().getId().toString() : null;
     }
 
-    // TODO: CONTROLLA
-    private boolean areAllPlayersReady() {
-        List<Player> players = controller.getClientState().getPlayersInLobby();
-        return players != null && !players.isEmpty() &&
-                players.stream().allMatch(Player::isReady);
+    private void elaboratePlaceCommand(String[] tokens) {
+        if (tokens.length < 4) {
+            printer.printError("Usage: place <row> <col> <component_number>");
+            printer.printInfo("Example: place 2 3 1 (places held component #1 at row 2, col 3)");
+            return;
+        }
+
+        try {
+            int row = Integer.parseInt(tokens[1]) - 5;
+            int col = Integer.parseInt(tokens[2]) - 4;
+            int componentIndex = Integer.parseInt(tokens[3]) - 1;
+
+            var heldTiles = clientState.getLocalPlayer().getHeldComponents();
+
+            if (componentIndex < 0 || componentIndex >= heldTiles.size()) {
+                printer.printError("Invalid component number. You have " + heldTiles.size() + " held components.");
+                return;
+            }
+
+            if (row < 0 || row >= 5 || col < 0 || col >= 7) {
+                printer.printError("Invalid position. Row must be 0-4, column must be 0-6.");
+                return;
+            }
+
+            Component component = heldTiles.get(componentIndex);
+
+            // TODO: Check place component (SERVER)
+//            if (!clientState.canPlaceComponent(component, position)) {
+//                printer.printError("Cannot place component at that position.");
+//                return;
+//            }
+
+            printer.printLoading("Placing component at (" + row + "," + col + ")");
+            controller.placeTile(component.getId(), row, col, 0);
+
+        } catch (NumberFormatException e) {
+            printer.printError("Invalid number format. Please use integers for row, col, and component number.");
+        }
+    }
+
+    private void elaborateTakeCommand() {
+        // TODO: Check if player already has a tile in hand
+//        if (!clientState.canReserveMoreTiles()) {
+//            printer.printError("You already have the maximum number of held components (2).");
+//            return;
+//        }
+
+        printer.printInfo("Taking a random component from the pile...");
+        controller.takeTile();
+    }
+
+    private void elaborateReturnCommand(String[] tokens) {
+        if (tokens.length != 2) {
+            printer.printError("Usage: return <component_number>");
+            printer.printInfo("Example: return 1 (returns held component #1)");
+            return;
+        }
+
+        try {
+            int componentIndex = Integer.parseInt(tokens[1]) - 1;
+
+            var heldComponents = clientState.getLocalPlayer().getHeldComponents();
+
+            if (componentIndex < 0 || componentIndex >= heldComponents.size()) {
+                printer.printError("Invalid component number. You have " + heldComponents.size() + " held components.");
+                return;
+            }
+
+            Component component = heldComponents.get(componentIndex);
+
+            printer.printInfo("Returning component to face-up pile...");
+            controller.returnTile(component.getId());
+        } catch (NumberFormatException e) {
+            printer.printError("Invalid number format. Please use an integer for component number.");
+        }
+    }
+
+    private void elaborateValidateCommand() {
+        printer.printLoading("Validating your ship");
+        controller.validateShip();
+    }
+
+    private void elaborateFlipTimerCommand() {
+        printer.printLoading("Flipping the building timer");
+        controller.flipBuildingTimer();
+    }
+
+    private void elaborateQuitCommand() {
+        printer.printLoading("Disconnecting");
+        controller.disconnect();
+        //shutdown();
+    }
+
+    // Flight
+
+    private void elaborateFlightCommand(String[] tokens) {
+        String command = tokens[0].toLowerCase();
+
+        // TODO: Dipende dalla carta
+
+        switch (command) {
+            case "h":
+            case "help":
+                printer.printFlightCommands();
+                break;
+            case "q":
+            case "quit":
+                elaborateQuitCommand();
+                break;
+            case "giveup":
+            case "surrender":
+                //elaborateSurrenderCommand();
+                break;
+            default:
+                printer.printError("Unknown command: " + command + ". Type 'help' for available commands.");
+                break;
+        }
     }
 
     // ON RESPONSE METHODS
@@ -359,9 +494,8 @@ public class newTUI implements newUI {
             printer.printSuccess("Login successful!");
             printer.print("Welcome " + r.getNickname() + "!");
 
-            // Set current view to LOBBY for command processing
             clientState.setCurrentView(ClientState.ViewState.LOBBY);
-            printer.printLobbyPhase(clientState);
+            printer.displayLobby(clientState);
         } else {
             printer.printError("Login failed.");
         }
@@ -373,7 +507,7 @@ public class newTUI implements newUI {
     public void onCreateGameResponse(CreateGameResponse r) {
         if (r.isSuccess()) {
             printer.printSuccess("Game created successfully!");
-            // Set current view to GAME_LOBBY since creator automatically joins
+
             clientState.setCurrentView(ClientState.ViewState.GAME_LOBBY);
             printer.printInfo("You are now in the game lobby. Use 'ready' to mark yourself ready, 'leave' to exit.");
             // TODO: Implement proper game lobby display
@@ -381,7 +515,7 @@ public class newTUI implements newUI {
             // - Display current players list with ready status
             // - Show available commands (ready, unready, start, leave, help)
             // - Real-time updates when players join/leave/ready
-            // printer.printGameLobbyPhase(clientState);
+            printer.displayGameLobby(clientState);
         } else {
             printer.printError("Failed to create game.");
         }
@@ -391,11 +525,11 @@ public class newTUI implements newUI {
     public void onJoinGameResponse(JoinGameResponse r) {
         if (r.isSuccess()) {
             printer.printSuccess("Game joined successfully!");
-            // Set current view to GAME_LOBBY
+
             clientState.setCurrentView(ClientState.ViewState.GAME_LOBBY);
             printer.printInfo("You are now in the game lobby. Use 'ready' to mark yourself ready, 'leave' to exit.");
-            // TODO: Implement proper game lobby display (same as create response)
-            // printer.printGameLobbyPhase(clientState);
+
+            printer.displayGameLobby(clientState);
         } else {
             printer.printError("Failed to join game.");
         }
@@ -404,9 +538,7 @@ public class newTUI implements newUI {
     @Override
     public void onListGamesResponse(ListGamesResponse r) {
         if (r.isSuccess()) {
-            // Games list is already updated in clientState by the response
-            // Just refresh the lobby display
-            printer.printLobbyPhase(clientState);
+            printer.displayLobby(clientState);
         } else {
             printer.printError("Failed to fetch games list.");
         }
@@ -418,11 +550,9 @@ public class newTUI implements newUI {
     public void onStartGameResponse(GenericSuccessResponse r) {
         if (r.isSuccess()) {
             printer.printSuccess("Game started successfully!");
-            // TODO: Transition to building phase
-            // - Set current view to BUILDING
-            // - Display building phase UI with ship grid and component deck
-            // clientState.setCurrentView(ClientState.ViewState.GAME);
-            // printer.printBuildingPhase(clientState);
+
+            clientState.setCurrentView(ClientState.ViewState.BUILDING);
+            printer.displayBuilding(clientState, null);
         } else {
             printer.printError("Failed to start game.");
         }
@@ -432,11 +562,9 @@ public class newTUI implements newUI {
     public void onLeaveGameResponse(LeaveGameResponse r) {
         if (r.isSuccess()) {
             printer.printSuccess("Game left successfully!");
-            // TODO: Return to main lobby
-            // - Set current view back to LOBBY
-            // - Refresh lobby display
-            // clientState.setCurrentView(ClientState.ViewState.LOBBY);
-            // printer.printLobbyPhase(clientState);
+
+            clientState.setCurrentView(ClientState.ViewState.LOBBY);
+            printer.displayLobby(clientState);
         } else {
             printer.printError("Failed to leave game.");
         }

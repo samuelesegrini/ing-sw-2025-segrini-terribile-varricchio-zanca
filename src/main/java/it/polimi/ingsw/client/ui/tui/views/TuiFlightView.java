@@ -69,7 +69,7 @@ public class TuiFlightView extends BaseUIView {
 
     @Override
     public ClientState.ViewState getViewState() {
-        return ClientState.ViewState.GAME;
+        return ClientState.ViewState.FLIGHT;
     }
 
     @Override

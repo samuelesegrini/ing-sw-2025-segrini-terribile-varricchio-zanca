@@ -65,9 +65,9 @@ public class TUI implements UI {
             case LOBBY:
                 //printer.printLobby(clientState);
                 break;
-            case GAME:
+            //case GAME:
                 //printer.printShipBuildingInterface(clientState, heldComponent);
-                break;
+                //break;
             default:
                 System.out.print("> ");
         }
@@ -87,7 +87,7 @@ public class TUI implements UI {
             case LOGIN -> elaborateLoginCommand(input);
             case LOBBY -> elaborateLobbyCommand(input);
             // case GAME_LOBBY -> elaborateGameLobbyCommand(input);
-            case GAME -> elaborateBuildingCommand(input);
+            //case GAME -> elaborateBuildingCommand(input);
             default -> printer.printError("Unknown client state. No commands available.");
         }
     }
