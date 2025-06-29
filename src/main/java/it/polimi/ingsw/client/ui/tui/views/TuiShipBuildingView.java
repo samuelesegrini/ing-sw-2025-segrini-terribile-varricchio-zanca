@@ -43,7 +43,7 @@ public class TuiShipBuildingView extends BaseUIView {
 
     @Override
     public ClientState.ViewState getViewState() {
-        return ClientState.ViewState.GAME;
+        return ClientState.ViewState.BUILDING;
     }
 
     @Override

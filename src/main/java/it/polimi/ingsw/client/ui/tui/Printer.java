@@ -2,10 +2,13 @@ package it.polimi.ingsw.client.ui.tui;
 
 import it.polimi.ingsw.client.core.ClientState;
 import it.polimi.ingsw.common.model.GameInfo;
+import it.polimi.ingsw.server.model.domain.adventure.card.AdventureCard;
 import it.polimi.ingsw.server.model.domain.general.ComponentDeck;
+import it.polimi.ingsw.server.model.domain.player.Player;
 import it.polimi.ingsw.server.model.domain.ship.components.Component;
 import it.polimi.ingsw.server.model.domain.ship.Position;
 import it.polimi.ingsw.server.model.domain.ship.Ship;
+import it.polimi.ingsw.server.model.enums.ship.ConnectorType;
 import it.polimi.ingsw.server.model.enums.ship.Direction;
 
 import java.io.PrintWriter;
@@ -14,8 +17,11 @@ import org.fusesource.jansi.Ansi;
 import org.fusesource.jansi.AnsiConsole;
 import org.jline.reader.LineReader;
 import org.jline.terminal.Terminal;
+import org.jline.utils.InfoCmp;
 
 import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.Set;
 
 import static org.fusesource.jansi.Ansi.ansi;
@@ -103,26 +109,28 @@ public class Printer {
 
     // Connection Phase
 
-    public void printConnectionPhase() {
+    public void displayConnection() {
+        clearScreen();
         printSectionHeader("CONNECTION");
     }
 
     // Login Phase
 
-    public void printLoginPhase() {
+    public void displayLogin() {
+        clearScreen();
         printSectionHeader("LOGIN");
     }
 
     // Lobby Phase
 
-    public void printLobbyPhase(ClientState clientState) {
+    public void displayLobby(ClientState clientState) {
         clearScreen();
-        printSectionHeader("LOBBY - Welcome " + clientState.getCurrentNickname());
+        printSectionHeader("LOBBY");
 
         printInfo("Joinable Games:");
         List<GameInfo> joinableGames = clientState.getJoinableGames();
         if (joinableGames.isEmpty()) {
-            System.out.println("No games available to join.");
+            print("No games available to join.");
         } else {
             String[] headers = {"GAME ID", "GAME NAME", "LEVEL", "PLAYERS"};
             String[][] data = joinableGames.stream()
@@ -130,22 +138,97 @@ public class Printer {
                     .toArray(String[][]::new);
             printTable(headers, data);
         }
-        System.out.println();
+        print("");
         printLobbyCommands();
     }
 
     public void printLobbyCommands() {
         printInfo("Available Commands:");
-        System.out.println("  create <name> <players> <level> - Create a game (e.g., create my_game 4 LEVEL_II)");
-        System.out.println("  join <gameId>                   - Join an existing game");
-        System.out.println("  refresh                         - Refresh the list of games");
-        System.out.println("  help                            - Show this help message");
-        System.out.println();
+        print("  (c) create <gameName> <maxPlayers> <gameLevel>     - Create a game (create my_game 4 LEVEL_II)");
+        print("  (j) join <gameId>                                  - Join an existing game");
+        print("  (r) refresh                                        - Refresh the list of games");
+        print("  (h) help                                           - Show this help message");
+        print("");
+    }
+
+    // Game Lobby Phase
+
+    public void displayGameLobby(ClientState clientState) {
+        clearScreen();
+        printSectionHeader("GAME LOBBY");
+
+        // Display game information
+        if (clientState.getCurrentGameLobby() != null) {
+            var gameModel = clientState.getCurrentGameLobby();
+            printInfo("Game: " + gameModel.getGameId());
+            printInfo("Level: " + gameModel.getGameLevel());
+            printInfo("Players: " + gameModel.getPlayers().size() +
+                    "/" + gameModel.getMaxPlayers());
+            print("");
+        }
+
+        printPlayersInGameLobby(clientState);
+        //displayStatus();
+        printGameLobbyCommands(clientState);
+    }
+
+    private void printPlayersInGameLobby(ClientState clientState) {
+        print("Players in Lobby:");
+
+        List<Player> players = clientState.getPlayersInLobby();
+        if (players == null || players.isEmpty()) {
+            printError("No players in lobby");
+            return;
+        }
+
+        String currentPlayerId = clientState.getPlayerId();
+        String hostId = clientState.getHostPlayerId();
+
+        String[] headers = {"NICKNAME", "STATUS", "HOST"};
+        String[][] data = new String[players.size()][3];
+
+        for (int i = 0; i < players.size(); i++) {
+            Player player = players.get(i);
+            boolean isHost = player.getId().toString().equals(hostId);
+            String status = player.isReady() ? "Ready" : "Not Ready";
+            String hostIndicator = isHost ? "★" : "";
+
+            data[i][0] = player.getId().getNickname();
+            data[i][1] = status;
+            data[i][2] = hostIndicator;
+        }
+
+        printTable(headers, data);
+        print("");
+    }
+
+    private void printGameLobbyCommands(ClientState clientState) {
+        print("Available Commands:");
+
+        String currentPlayerId = clientState.getPlayerId();
+        boolean isHost = currentPlayerId != null && currentPlayerId.equals(clientState.getHostPlayerId());
+        boolean isReady = clientState.isPlayerReady(currentPlayerId);
+        boolean allReady = clientState.areAllPlayersReady();
+
+        if (isReady) {
+            print("  (u) unready - Mark yourself as not ready");
+        } else {
+            print("  (r) ready - Mark yourself as ready");
+        }
+
+        if (isHost && allReady) {
+            print("  (s) start - Start the game");
+        }
+
+        print("  (l) leave - Leave the lobby");
+        print("  (r) refresh - Refresh the lobby display");
+        print("  (h) help - Show this help message");
+        print("");
     }
 
     // Building Phase
 
-    public void printBuildingPhase(ClientState clientState, Component heldComponent) {
+    public void displayBuilding(ClientState clientState, Component heldComponent) {
         clearScreen();
         printSectionHeader("SHIP BUILDING");
 
@@ -156,15 +239,14 @@ public class Printer {
         }
 
         printShipBoard(ship);
-        System.out.println();
+        print("");
         printHeldComponent(heldComponent);
-        System.out.println();
+        print("");
         printComponentDeck(clientState.getComponentDeck());
-        System.out.println();
+        print("");
         printShipStats(ship);
-        System.out.println();
+        print("");
         printShipBuildingCommands();
-        System.out.print("Shipyard > ");
     }
 
     private void printShipBoard(Ship ship) {
@@ -185,12 +267,7 @@ public class Printer {
                     sb.append("     ");
                 } else {
                     sb.append("  ");
-                    switch (component.getConnectorAt(Direction.UP)) {
-                        case UNIVERSAL -> sb.append("U");
-                        case DOUBLE -> sb.append("D");
-                        case SINGLE -> sb.append("S");
-                        case PLAIN -> sb.append(" ");
-                    }
+                    sb.append(getConnectorSymbol(component.getConnectorAt(Direction.UP)));
                     sb.append("  ");
                 }
                 sb.append("\t");
@@ -207,37 +284,9 @@ public class Printer {
                         sb.append("  ⬛️  ");
                 } else {
                     sb.append(" ");
-
-                    switch (component.getConnectorAt(Direction.LEFT)) {
-                        case UNIVERSAL -> sb.append("U");
-                        case DOUBLE -> sb.append("D");
-                        case SINGLE -> sb.append("S");
-                        case PLAIN -> sb.append(" ");
-                    }
-
-                    switch (component.getType()) {
-                        case BATTERY -> sb.append("🔋");
-                        case CABIN -> sb.append("⛺️");
-                        case CABIN_START -> sb.append(ansi().bgBrightYellow().a("⛺️").reset());
-                        case CANNON_SINGLE -> sb.append("🔫");
-                        case CANNON_DOUBLE -> sb.append(ansi().bgBrightGreen().append("🔫").reset());
-                        case CARGO_HOLD -> sb.append("📦️");
-                        case CARGO_HOLD_SPECIAL -> sb.append(ansi().bgBrightRed().append("📦️").reset());
-                        case ENGINE_SINGLE -> sb.append("🚀");
-                        case ENGINE_DOUBLE -> sb.append(ansi().bgBrightGreen().append("🚀").reset());
-                        case LIFE_SUPPORT_BROWN -> sb.append(ansi().bgYellow().append("🫁️").reset());
-                        case LIFE_SUPPORT_PURPLE -> sb.append(ansi().bgBrightMagenta().append("🫁️").reset());
-                        case SHIELD -> sb.append("🛡️");
-                        case STRUCTURAL -> sb.append("🔗️");
-                    }
-
-                    switch (component.getConnectorAt(Direction.RIGHT)) {
-                        case UNIVERSAL -> sb.append("U");
-                        case DOUBLE -> sb.append("D");
-                        case SINGLE -> sb.append("S");
-                        case PLAIN -> sb.append(" ");
-                    }
-
+                    sb.append(getConnectorSymbol(component.getConnectorAt(Direction.LEFT)));
+                    sb.append(getComponentEmoji(component));
+                    sb.append(getConnectorSymbol(component.getConnectorAt(Direction.RIGHT)));
                     sb.append(" ");
                 }
                 sb.append("\t");
@@ -251,83 +300,145 @@ public class Printer {
                     sb.append("     ");
                 } else {
                     sb.append("  ");
-                    switch (component.getConnectorAt(Direction.DOWN)) {
-                        case UNIVERSAL -> sb.append("U");
-                        case DOUBLE -> sb.append("D");
-                        case SINGLE -> sb.append("S");
-                        case PLAIN -> sb.append(" ");
-                    }
+                    sb.append(getConnectorSymbol(component.getConnectorAt(Direction.DOWN)));
                     sb.append("  ");
                 }
                 sb.append("\t");
             }
             sb.append("\n");
         }
-        System.out.println(sb);
-        System.out.println();
+        print(sb.toString());
+        print("");
     }
 
-    // TODO
-    private String getComponentAscii(Component component) {
-        if (component == null) return "   ";
+    private String getComponentEmoji(Component component) {
+        if (component == null)
+            return null;
+
         return switch (component.getType()) {
-            case CABIN, CABIN_START -> "🏠 ";
-            case ENGINE_SINGLE, ENGINE_DOUBLE -> "🔥 ";
-            case CANNON_SINGLE, CANNON_DOUBLE -> "💥 ";
-            case SHIELD -> "🛡 ";
-            case CARGO_HOLD, CARGO_HOLD_SPECIAL -> "📦 ";
-            case BATTERY -> "🔋 ";
-            case LIFE_SUPPORT_BROWN, LIFE_SUPPORT_PURPLE -> "🫁 ";
-            case STRUCTURAL -> "⚙️ ";
-            default -> "⚪️ ";
-        } + " ";
+            case BATTERY -> "🔋";
+            case CABIN -> "⛺️";
+            case CABIN_START -> ansi().bgBrightYellow().a("⛺️").reset().toString();
+            case CANNON_SINGLE -> "🔫";
+            case CANNON_DOUBLE -> ansi().bgBrightGreen().append("🔫").reset().toString();
+            case CARGO_HOLD -> "📦️";
+            case CARGO_HOLD_SPECIAL -> ansi().bgBrightRed().append("📦️").reset().toString();
+            case ENGINE_SINGLE -> "🚀";
+            case ENGINE_DOUBLE -> ansi().bgBrightGreen().append("🚀").reset().toString();
+            case LIFE_SUPPORT_BROWN -> ansi().bgYellow().append("🫁️").reset().toString();
+            case LIFE_SUPPORT_PURPLE -> ansi().bgBrightMagenta().append("🫁️").reset().toString();
+            case SHIELD -> "🛡️";
+            case STRUCTURAL -> "🔗️";
+        };
     }
 
+    private String getConnectorSymbol(ConnectorType connectorType) {
+        return switch (connectorType) {
+            case UNIVERSAL -> "U";
+            case DOUBLE -> "D";
+            case SINGLE -> "S";
+            case PLAIN -> " ";
+        };
+    }
+
+    // TODO: CONTROLLA
     private void printHeldComponent(Component heldComponent) {
-        System.out.println("✋ HELD COMPONENT:");
+        print("HELD COMPONENT:");
         if (heldComponent == null) {
-            System.out.println("  (none) - Use 'take' to draw a component.");
+            print("  (none) - Use 'take' to draw a component.");
         } else {
-            System.out.println("  Type: " + heldComponent.getType() + " " + getComponentAscii(heldComponent));
-            System.out.println("  Direction: " + heldComponent.getCurrentDirection());
+            print("  Type: " + heldComponent.getType() + " " + getComponentEmoji(heldComponent));
+            print("  Direction: " + heldComponent.getCurrentDirection());
         }
     }
 
+    // TODO: CONTROLLA
     private void printComponentDeck(ComponentDeck deck) {
-        System.out.println("📚 COMPONENT DECK:");
+        print("COMPONENT DECK:");
         if (deck == null) {
-            System.out.println("  Deck data not available.");
+            print("  Deck data not available.");
             return;
         }
-        System.out.println(String.format("  Draw pile: %d | Face-up: %d | Discarded: %d",
+        print(String.format("  Draw pile: %d | Face-up: %d | Discarded: %d",
                 deck.getRemainingCards(), deck.getFaceUpCount(), deck.getDiscardedCards()));
     }
 
+    // TODO: CONTROLLA
     private void printShipStats(Ship ship) {
-        System.out.println("📊 SHIP STATISTICS:");
-        System.out.println(String.format("  Engines: %d | Cannons: %d | Crew: %d | Cargo: %d | Batteries: %d | Shields: %d",
+        print("Ship Stats:");
+        print(String.format("  Engines: %d | Cannons: %d | Crew: %d | Cargo: %d | Batteries: %d | Shields: %d",
                 ship.getEngineCount(), ship.getCannonCount(), ship.getCrewCapacity(),
                 ship.getCargoCapacity(), ship.getBatteryCount(), ship.getShieldCount()));
     }
 
     public void printShipBuildingCommands() {
         printInfo("Available Commands:");
-        System.out.println("  take                   - Draw a component");
-        System.out.println("  place <row> <col>      - Place held component");
-        System.out.println("  rotate                 - Rotate held component");
-        System.out.println("  return                 - Return held component to deck");
-        System.out.println("  validate               - Validate ship construction");
-        System.out.println("  flip                   - Flip building timer");
-        System.out.println("  help                   - Show commands again");
-        System.out.println();
+        print("  take                   - Draw a component");
+        print("  place <row> <col>      - Place held component");
+        print("  rotate                 - Rotate held component");
+        print("  return                 - Return held component to deck");
+        print("  validate               - Validate ship construction");
+        print("  flip                   - Flip building timer");
+        print("  help                   - Show commands again");
+        print("");
     }
+
+    // Flight Phase
+
+    public void displayFlight(ClientState clientState) {
+        clearScreen();
+        printSectionHeader("FLIGHT");
+
+        Ship ship = clientState.getLocalPlayerShip();
+        if (ship == null) {
+            printError("Ship data not available.");
+            return;
+        }
+
+        // Print adventure card if available
+        AdventureCard currentCard = null;
+        Optional<AdventureCard> optCard = clientState.getGameModel().getAdventureDeck().getCurrentCard();
+        if (optCard.isPresent()) {
+            currentCard = optCard.get();
+            printAdventureCard(currentCard);
+            print("");
+        }
+
+        printShipBoard(ship);
+        print("");
+        printShipStats(ship);
+        print("");
+        printFlightCommands();
+    }
+
+    public void printAdventureCard(AdventureCard card) {
+        // TODO
+    }
+
+    public void printFlightCommands() {
+        print("Available Commands:");
+        print("  (h) help                              - Show this help message");
+        print("  (q) quit                              - Quit the game");
+        print("  giveup                                - Give up the game");
+        // TODO
+//        if (currentCard != null) {
+//            print("  [number]                              - Make choice for current adventure card");
+//        }
+        print("");
+    }
+
+
 
 
     // UTILITIES
 
     private void clearScreen() {
-        System.out.print(ansi().eraseScreen().cursor(1, 1));
-        System.out.flush();
+        if (terminal.puts(InfoCmp.Capability.clear_screen)) {
+            terminal.flush();
+        } else {
+            System.out.print(Ansi.ansi().eraseScreen().cursor(1, 1).toString());
+            System.out.flush();
+        }
     }
 
     // Table Printing
@@ -380,7 +491,7 @@ public class Printer {
             }
             rowLine.append("│");
         }
-        System.out.println(rowLine.toString());
+        print(rowLine.toString());
     }
 
     private void printTableSeparator(int[] widths, char left, char mid, char right) {
@@ -393,7 +504,7 @@ public class Printer {
             }
         }
         separatorLine.append(right);
-        System.out.println(separatorLine.toString());
+        print(separatorLine.toString());
     }
 
     // TODO: Add missing phase display methods

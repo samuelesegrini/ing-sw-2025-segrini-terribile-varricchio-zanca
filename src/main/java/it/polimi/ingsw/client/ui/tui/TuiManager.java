@@ -53,7 +53,7 @@ public class TuiManager implements ViewNavigator.ViewStateChangeListener, UI {
             case LOGIN -> new TuiLoginView((TuiContext) context);
             case LOBBY -> new TuiLobbyView((TuiContext) context);
             case GAME_LOBBY -> new TuiGameLobbyView((TuiContext) context);
-            case GAME -> new TuiGameView(context.getController(), (TuiContext) context);
+            case BUILDING -> new TuiGameView(context.getController(), (TuiContext) context);
             default -> throw new IllegalArgumentException("Unknown view state: " + viewState);
         };
     }
@@ -63,7 +63,7 @@ public class TuiManager implements ViewNavigator.ViewStateChangeListener, UI {
         views.put(ClientState.ViewState.LOGIN, createView(ClientState.ViewState.LOGIN, context));
         views.put(ClientState.ViewState.LOBBY, createView(ClientState.ViewState.LOBBY, context));
         views.put(ClientState.ViewState.GAME_LOBBY, createView(ClientState.ViewState.GAME_LOBBY, context));
-        views.put(ClientState.ViewState.GAME, createView(ClientState.ViewState.GAME, context));
+        views.put(ClientState.ViewState.BUILDING, createView(ClientState.ViewState.BUILDING, context));
         
         LOGGER.info("Initialized " + views.size() + " TUI views");
     }

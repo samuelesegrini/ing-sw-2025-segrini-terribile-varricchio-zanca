@@ -127,8 +127,8 @@ public class ViewNavigatorImpl implements ViewNavigator {
                 return "From LOBBY view, can only navigate to GAME_LOBBY or LOGIN";
                        
             case GAME_LOBBY:
-                // From game lobby, can go to game view when game starts or back to lobby
-                if (viewState == ClientState.ViewState.GAME) {
+                // From game lobby, can go to building view when game starts or back to lobby
+                if (viewState == ClientState.ViewState.BUILDING) {
                     if (clientState.getCurrentGameId() == null) {
                         return "Not in a game (no game ID)";
                     }

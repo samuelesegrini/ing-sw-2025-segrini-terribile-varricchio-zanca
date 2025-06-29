@@ -1,5 +1,6 @@
 package it.polimi.ingsw.common.message.event;
 
+import it.polimi.ingsw.client.core.ClientState;
 import it.polimi.ingsw.server.model.domain.general.GameModel;
 import it.polimi.ingsw.client.ui.NotificationType;
 
@@ -33,8 +34,8 @@ public class BuildingPhaseStartedEvent extends AbstractEvent {
             context.getClientState().setGameModel(gameModel);
             logger.info("Building phase started - game model updated");
             
-            // Navigate to GAME view if not already there
-            if (context.getClientState().getCurrentView() != it.polimi.ingsw.client.core.ClientState.ViewState.GAME) {
+            // Navigate to the BUILDING view if not already there
+            if (context.getClientState().getCurrentView() != ClientState.ViewState.BUILDING) {
                 
                 if (context.getController() == null || context.getController().getUIContext() == null || 
                     context.getController().getUIContext().getViewNavigator() == null) {
@@ -44,12 +45,12 @@ public class BuildingPhaseStartedEvent extends AbstractEvent {
                 }
                 
                 boolean success = context.getController().getUIContext().getViewNavigator()
-                    .navigateTo(it.polimi.ingsw.client.core.ClientState.ViewState.GAME, 
+                    .navigateTo(ClientState.ViewState.BUILDING,
                                "Building phase started - entering ship building");
                 
                 if (!success) {
                     String reason = context.getController().getUIContext().getViewNavigator()
-                        .getNavigationFailureReason(it.polimi.ingsw.client.core.ClientState.ViewState.GAME);
+                        .getNavigationFailureReason(ClientState.ViewState.BUILDING);
                     logger.severe("Failed to navigate to GAME view for building phase - Reason: " + reason);
                     
                     // Show error notification to user

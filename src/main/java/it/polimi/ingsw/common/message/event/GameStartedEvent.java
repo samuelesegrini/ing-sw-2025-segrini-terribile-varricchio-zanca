@@ -57,14 +57,15 @@ public class GameStartedEvent extends AbstractEvent {
                 clientState.setGameModel(gameModel);
                 
                 // Use ViewNavigator for proper navigation instead of direct state manipulation
+                // TODO: NON ENTRA NELL'IF, FIXA
                 if (context.getController().getUIContext() != null && 
                     context.getController().getUIContext().getViewNavigator() != null) {
                     
                     boolean success = context.getController().getUIContext().getViewNavigator()
-                        .navigateTo(ClientState.ViewState.GAME, "Game started - entering building phase");
+                        .navigateTo(ClientState.ViewState.BUILDING, "Game started - entering building phase");
                     
                     if (!success) {
-                        LOGGER.severe("Failed to navigate to GAME after game started - Reason: " + context.getController().getUIContext().getViewNavigator().getNavigationFailureReason(ClientState.ViewState.GAME));
+                        LOGGER.severe("Failed to navigate to BUILDING after game started - Reason: " + context.getController().getUIContext().getViewNavigator().getNavigationFailureReason(ClientState.ViewState.BUILDING));
                     }
                 } else {
                     LOGGER.severe("ViewNavigator not available - cannot navigate to BUILDING after game started");

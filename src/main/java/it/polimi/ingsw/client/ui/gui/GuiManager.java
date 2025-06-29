@@ -145,7 +145,7 @@ public class GuiManager extends Application implements ViewNavigator.ViewStateCh
         
         GuiShipBuildingView shipBuildingView = new GuiShipBuildingView(primaryStage, staticController, context);
         shipBuildingView.initialize(context);
-        views.put(ClientState.ViewState.GAME, shipBuildingView);
+        //views.put(ClientState.ViewState.GAME, shipBuildingView);
         
         // TODO: Add other views
     }

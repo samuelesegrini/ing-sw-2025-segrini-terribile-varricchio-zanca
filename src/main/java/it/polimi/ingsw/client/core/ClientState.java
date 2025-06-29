@@ -6,6 +6,8 @@ import it.polimi.ingsw.server.model.domain.player.Player;
 import it.polimi.ingsw.server.model.domain.player.PlayerId;
 import it.polimi.ingsw.server.model.domain.ship.Ship;
 import it.polimi.ingsw.server.model.domain.general.ComponentDeck;
+import it.polimi.ingsw.server.model.domain.ship.components.Component;
+import it.polimi.ingsw.server.model.enums.GameLevel;
 import it.polimi.ingsw.server.model.enums.GamePhase;
 import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
@@ -29,7 +31,7 @@ public class ClientState {
     }
 
     public enum ViewState {
-        CONNECTION, LOGIN, LOBBY, GAME_LOBBY, GAME
+        CONNECTION, LOGIN, LOBBY, GAME_LOBBY, BUILDING, FLIGHT, END
     }
 
     // Connection & Authentication
@@ -45,7 +47,7 @@ public class ClientState {
     // Current game lobby basic info (for display when GameModel not yet available)
     private String currentGameId;
     private String currentGameName;
-    private it.polimi.ingsw.server.model.enums.GameLevel currentGameLevel;
+    private GameLevel currentGameLevel;
     private int currentGameMaxPlayers;
 
     // Game State (null when not in game)
@@ -183,6 +185,20 @@ public class ClientState {
         return gameModel;
     }
 
+    public String getHostPlayerId() {
+        if (currentGameLobby != null) {
+            return currentGameLobby.getCreatorId();
+        }
+
+        // Fallback to the first player if GameModel is not available
+        return playersInLobby != null && !playersInLobby.isEmpty() ? playersInLobby.getFirst().getId().toString() : null;
+    }
+
+    public boolean areAllPlayersReady() {
+        return playersInLobby != null && !playersInLobby.isEmpty() &&
+                playersInLobby.stream().allMatch(Player::isReady);
+    }
+
     public void updatePlayer(Player updatedPlayer) {
         System.out.println("[TAKETILE DEBUG] ClientState.updatePlayer() called for player: " + updatedPlayer.getId() + 
             " with " + updatedPlayer.getHeldComponents().size() + " held components");
@@ -295,7 +311,7 @@ public class ClientState {
      * @param playerId The player ID
      * @param component The component being held
      */
-    public void setPlayerHeldComponent(String playerId, it.polimi.ingsw.server.model.domain.ship.components.Component component) {
+    public void setPlayerHeldComponent(String playerId, Component component) {
         if (gameModel != null) {
             Player player = gameModel.getPlayerById(PlayerId.fromString(playerId));
             if (player != null) {
