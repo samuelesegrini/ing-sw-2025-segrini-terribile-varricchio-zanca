@@ -69,6 +69,8 @@ public class FlipBuildingTimerResponse extends AbstractResponse {
                     NotificationType.ERROR
             );
         }
+
+        context.getController().getUI().onFlipBuildingTimerResponse(this);
     }
 
     private String getStageNotificationMessage() {

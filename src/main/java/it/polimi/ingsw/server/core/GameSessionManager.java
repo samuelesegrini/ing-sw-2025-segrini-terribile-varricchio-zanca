@@ -83,7 +83,7 @@ public class GameSessionManager {
         
         // Check if player is already in a game
         if (playerToGameMap.containsKey(creatorId)) {
-            LOGGER.warning("REATE FAILED - Player " + creatorId + " already in a game");
+            LOGGER.warning("CREATE FAILED - Player " + creatorId + " already in a game");
             return null;
         }
 
@@ -125,46 +125,36 @@ public class GameSessionManager {
      * Joins a player to an existing game.
      */
     public synchronized boolean joinGame(String gameId, PlayerId playerId) {
-        LOGGER.info("🔍 JOIN GAME ATTEMPT - Player " + playerId + " trying to join game: " + gameId);
-        LOGGER.info("📊 CURRENT STATE - Total games: " + gameSessions.size() + ", Player already in game: " + playerToGameMap.containsKey(playerId));
-        
+        LOGGER.info("JOIN GAME ATTEMPT - Player " + playerId + " trying to join game: " + gameId);
+
         // Log all available game IDs for debugging
         if (gameSessions.isEmpty()) {
-            LOGGER.warning("⚠️ NO GAMES AVAILABLE - gameSessions map is empty");
+            LOGGER.warning("NO GAMES AVAILABLE - gameSessions map is empty");
         } else {
-            LOGGER.info("🎮 AVAILABLE GAMES: " + gameSessions.keySet());
+            LOGGER.info("AVAILABLE GAMES: " + gameSessions.keySet());
         }
         
         // Check if player is already in a game
         if (playerToGameMap.containsKey(playerId)) {
             String currentGameId = playerToGameMap.get(playerId);
-            LOGGER.warning("❌ JOIN FAILED - Player " + playerId + " already in game: " + currentGameId);
+            LOGGER.warning("JOIN FAILED - Player " + playerId + " already in game: " + currentGameId);
             return false;
         }
 
         GameSession session = gameSessions.get(gameId);
         if (session == null) {
-            LOGGER.severe("❌ JOIN FAILED - Game " + gameId + " not found in gameSessions map! Available games: " + gameSessions.keySet());
-            
-            // Additional debugging: check if gameId format is correct
-            LOGGER.severe("🔍 DEBUG INFO - Requested gameId: '" + gameId + "' (length: " + gameId.length() + ")");
-            if (!gameSessions.isEmpty()) {
-                String firstAvailableGame = gameSessions.keySet().iterator().next();
-                LOGGER.severe("🔍 COMPARISON - First available game: '" + firstAvailableGame + "' (length: " + firstAvailableGame.length() + ")");
-                LOGGER.severe("🔍 EQUALS CHECK - gameId.equals(firstAvailable): " + gameId.equals(firstAvailableGame));
-            }
-            
+            LOGGER.severe("JOIN FAILED - Game " + gameId + " not found in gameSessions map! Available games: " + gameSessions.keySet());
             return false;
         }
         
-        LOGGER.info("✅ GAME FOUND - Game " + gameId + " exists, attempting to add player");
+        LOGGER.info("GAME FOUND - Game " + gameId + " exists, attempting to add player");
 
         if (session.addPlayer(playerId)) {
             playerToGameMap.put(playerId, gameId);
-            LOGGER.info("🎉 JOIN SUCCESS - Player " + playerId + " successfully joined game: " + gameId);
+            LOGGER.info("JOIN SUCCESS - Player " + playerId + " successfully joined game: " + gameId);
             return true;
         } else {
-            LOGGER.warning("❌ JOIN FAILED - GameSession.addPlayer() returned false for player " + playerId + " and game " + gameId);
+            LOGGER.warning("JOIN FAILED - GameSession.addPlayer() returned false for player " + playerId + " and game " + gameId);
         }
 
         return false;

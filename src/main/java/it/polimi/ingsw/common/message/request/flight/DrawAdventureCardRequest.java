@@ -1,10 +1,12 @@
-package it.polimi.ingsw.common.message.request;
+package it.polimi.ingsw.common.message.request.flight;
 
+import it.polimi.ingsw.common.message.request.AbstractRequest;
+import it.polimi.ingsw.common.message.request.RequestContext;
 import it.polimi.ingsw.common.message.response.ErrorResponse;
 import it.polimi.ingsw.common.message.response.Response;
 import it.polimi.ingsw.common.message.response.DrawAdventureCardResponse;
 import it.polimi.ingsw.common.message.validation.ValidationResult;
-import it.polimi.ingsw.common.message.event.AdventureCardDrawnEvent;
+import it.polimi.ingsw.common.message.event.flight.AdventureCardDrawnEvent;
 import it.polimi.ingsw.server.core.GameSession;
 import it.polimi.ingsw.server.model.domain.adventure.card.AdventureCard;
 import it.polimi.ingsw.server.model.domain.adventure.AdventureCardController;

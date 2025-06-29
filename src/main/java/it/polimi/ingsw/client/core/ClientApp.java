@@ -7,7 +7,6 @@ import it.polimi.ingsw.client.controller.ClientController;
 import it.polimi.ingsw.client.ui.newTUI;
 import it.polimi.ingsw.client.ui.newUI;
 
-import java.io.InputStream;
 import java.util.Scanner;
 import java.util.logging.*;
 import java.util.Arrays;
@@ -25,28 +24,14 @@ public class ClientApp {
     private UIManager uiManager;
 
     public static void main(String[] args) {
-        // --- IMPORTANT: Load logging configuration FIRST ---
-        try (InputStream is = ClientApp.class.getResourceAsStream("/client_logging.properties")) {
-            if (is != null) {
-                LogManager.getLogManager().readConfiguration(is);
-            } else {
-                // This warning will go to System.err, not the configured logger,
-                // as logging might not be fully set up yet.
-                System.err.println("WARNING: client_logging.properties not found. Default JUL logging will be used.");
-            }
-        } catch (Exception e) {
-            System.err.println("ERROR loading client logging configuration: " + e.getMessage());
-            e.printStackTrace();
-        }
-
-        // Now, any Logger.getLogger() calls will use the configuration from client_logging.properties
         LOGGER.info("ClientApp started. Logging configured.");
 
-        UIType uiType = parseUIType(args);
-        if (uiType == null) {
-            printUsage();
-            System.exit(1);
-        }
+        UIType uiType = UIType.TUI;
+//        UIType uiType = parseUIType(args);
+//        if (uiType == null) {
+//            printUsage();
+//            System.exit(1);
+//        }
 
         ClientApp app = new ClientApp();
         app.start(uiType);
@@ -57,22 +42,23 @@ public class ClientApp {
         LOGGER.info("Starting Galaxy Trucker Client with " + uiType + " interface");
 
         try {
-            // Initialize components following Simple Direct Model Architecture
             clientState = new ClientState();
             networkClient = new NetworkClient();
-            
-            // Create controller without UIContext first
             controller = new ClientController(networkClient, clientState);
+            
+            // Set up callbacks BEFORE starting UI
+            networkClient.setMessageHandler(controller::handleMessage);
+            
             //uiManager = new UIManager(uiType, controller);
+
             if (uiType == UIType.GUI) {
                 // TODO
+                System.out.println("GUI not connected.");
             } else {
                 newUI UI = new newTUI(controller);
+                controller.setUI(UI);
                 UI.start();
             }
-
-            // Set up callbacks
-            networkClient.setMessageHandler(controller::handleMessage);
 
             // Start UI
             //uiManager.start();

@@ -29,13 +29,14 @@ public class ValidateShipRequest extends AbstractRequest {
         Player player = session.getPlayer(playerId);
         Ship ship = player.getShip();
 
-        // ENHANCED: Use comprehensive validation from ShipValidationService
+        //TODO: Use comprehensive validation from ShipValidationService cos'è sta roba?
         List<String> errors = new ArrayList<>();
         List<String> warnings = new ArrayList<>();
-        
+
         // Get current game phase for validation context
         var currentPhase = session.getCurrentPhase();
-        
+
+        //TODO: cos'è sta roba?
         // Use the comprehensive Galaxy Trucker validation system
         ShipValidationService.ValidationResult validationResult = 
             ShipValidationService.validateGalaxyTruckerRules(ship, currentPhase);
@@ -57,7 +58,9 @@ public class ValidateShipRequest extends AbstractRequest {
             }
             allFeedback.addAll(warnings);
         }
-        
+
+        //TODO: event updates
+
         // Publish event FIRST - this is the single source of truth for state updates
         ShipValidationEvent event = new ShipValidationEvent(
                 session.getGameId(),
@@ -68,9 +71,10 @@ public class ValidateShipRequest extends AbstractRequest {
                 player,                // Full Player model
                 session.getGameModel() // Full GameModel
         );
-        context.publishEvent(event);
+        // Model operation will fire the event automatically
 
-        // Return lightweight response - event contains the state update
+        //TODO: recheck if ValidateShipRequest should be fire-and-forget or stay synchronous
+        // Currently kept synchronous as requested
         return new ValidateShipResponse(getCorrelationId());
     }
 }

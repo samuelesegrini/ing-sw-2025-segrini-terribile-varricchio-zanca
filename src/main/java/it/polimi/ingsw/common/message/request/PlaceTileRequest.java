@@ -2,7 +2,6 @@ package it.polimi.ingsw.common.message.request;
 
 import it.polimi.ingsw.common.message.event.ComponentPlacedEvent;
 import it.polimi.ingsw.common.message.response.ErrorResponse;
-import it.polimi.ingsw.common.message.response.PlaceTileResponse;
 import it.polimi.ingsw.common.message.response.Response;
 import it.polimi.ingsw.common.message.validation.ValidationResult;
 import it.polimi.ingsw.server.core.GameSession;
@@ -23,6 +22,7 @@ public class PlaceTileRequest extends AbstractRequest {
     private final int row;
     private final int col;
     private final int rotation; // 0, 1, 2, 3 for 0°, 90°, 180°, 270°
+    //TODO: use better direction pattern (?)
 
     public PlaceTileRequest(String tileId, int row, int col, int rotation) {
         super();
@@ -74,24 +74,25 @@ public class PlaceTileRequest extends AbstractRequest {
 
         // Get player
         PlayerId playerId = context.getPlayerId();
-        System.out.println("[DEBUG] PlaceTileRequest - Player ID from context: " + playerId);
-        System.out.println("[DEBUG] PlaceTileRequest - Client ID: " + context.getSenderId());
         Player player = session.getPlayer(playerId);
-        System.out.println("[DEBUG] PlaceTileRequest - Player lookup result: " + (player != null ? player.getId() : "null"));
         if (player == null) {
-            System.out.println("[DEBUG] PlaceTileRequest - Available players in session:");
-            session.getGameModel().getPlayers().forEach(p -> 
-                System.out.println("[DEBUG]   - Player: " + p.getId() + ", Nickname: " + p.getId().getNickname()));
             return createErrorResponse("Player not found", ErrorResponse.INTERNAL_ERROR);
         }
 
-        // Get component
-        Component component = session.getAvailableComponent(tileId);
+        // Get component from GameModel
+        Component component = gameModel.getComponentDeck().findComponentById(tileId);
         if (component == null) {
-            return createErrorResponse("Component not available", ErrorResponse.NOT_FOUND);
+            return createErrorResponse("Component not found", ErrorResponse.NOT_FOUND);
+        }
+        
+        // Check if component is available (not held by any player)
+        for (Player p : gameModel.getPlayers()) {
+            if (component.equals(p.getHeldComponent())) {
+                return createErrorResponse("Component not available", ErrorResponse.NOT_FOUND);
+            }
         }
 
-        // Apply rotation
+        //TODO: va bene(?)
         for (int i = 0; i < rotation; i++) {
             component.rotate();
         }
@@ -102,6 +103,7 @@ public class PlaceTileRequest extends AbstractRequest {
 
         try {
             // ENHANCED: Use comprehensive real-time validation from ShipValidationService
+            //TODO: the fuck (?)
             ShipValidationService.ValidationResult placementValidation = 
                 ShipValidationService.validateComponentPlacement(ship, component, position);
             
@@ -114,24 +116,15 @@ public class PlaceTileRequest extends AbstractRequest {
             // Place the component (validation already confirmed this is safe)
             ship.addComponent(component, position);
 
-            // Mark component as used
-            session.useComponent(tileId, playerId);
+            // Component is now placed on ship - clear from player's held component
+            player.clearHeldComponent();
 
             // Update ship stats
             ship.updateStats();
 
-            // Publish event FIRST - this is the single source of truth for state updates
-            ComponentPlacedEvent event = new ComponentPlacedEvent(
-                    session.getGameId(),
-                    player,                    // Full Player model
-                    component,                 // Full Component model  
-                    player.getShip(),          // Updated Ship model
-                    gameModel.getComponentDeck() // Updated ComponentDeck model
-            );
-            context.publishEvent(event);
+            // Model operation will fire the event automatically
 
-            // Return lightweight response - event contains the state update
-            return new PlaceTileResponse(getCorrelationId());
+            return createSuccessResponse();
 
         } catch (IllegalArgumentException e) {
             // Revert rotation

@@ -1,6 +1,6 @@
 package it.polimi.ingsw.common.message.response;
 
-import it.polimi.ingsw.common.message.request.DeclareStrengthRequest;
+import it.polimi.ingsw.common.message.request.flight.DeclareStrengthRequest;
 
 import java.util.UUID;
 
@@ -36,6 +36,8 @@ public class DeclareStrengthResponse extends AbstractResponse {
         } else {
             context.showError("Declare Strength Error", getErrorMessage());
         }
+
+        context.getController().getUI().onDeclareStrengthResponse(this);
     }
 
     @Override

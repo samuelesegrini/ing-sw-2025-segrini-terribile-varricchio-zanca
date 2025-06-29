@@ -21,5 +21,7 @@ public class ErrorResponse extends AbstractResponse {
     public void handleOnClient(ClientContext context) {
         // Show error to user
         context.showError("Request Failed", getErrorMessage());
+
+        context.getController().getUI().onErrorResponse(this);
     }
 }

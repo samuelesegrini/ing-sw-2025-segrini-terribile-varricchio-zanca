@@ -33,6 +33,8 @@ public class CreateGameResponse extends AbstractResponse {
             
         // DO NOT navigate or update the game model here.
         // The GameCreatedEvent handler is responsible for state updates and navigation.
+
+        context.getController().getUI().onCreateGameResponse(this);
     }
 
 }

@@ -1,8 +1,10 @@
-package it.polimi.ingsw.common.message.request;
+package it.polimi.ingsw.common.message.request.flight;
 
+import it.polimi.ingsw.common.message.request.AbstractRequest;
+import it.polimi.ingsw.common.message.request.RequestContext;
 import it.polimi.ingsw.common.message.response.ErrorResponse;
 import it.polimi.ingsw.common.message.response.Response;
-import it.polimi.ingsw.common.message.response.EngineStrengthResponse;
+import it.polimi.ingsw.common.message.response.CombatStrengthResponse;
 import it.polimi.ingsw.common.message.validation.ValidationResult;
 import it.polimi.ingsw.server.core.GameSession;
 import it.polimi.ingsw.server.model.domain.adventure.AdventureCardController;
@@ -11,25 +13,14 @@ import it.polimi.ingsw.server.model.domain.player.Player;
 import it.polimi.ingsw.server.model.enums.GamePhase;
 
 /**
- * Request from a player to declare their engine strength during Open Space cards.
- * Player must declare how much engine strength they want to use.
+ * Request from a player to declare their combat strength during enemy encounters.
+ * Includes the number of batteries to commit to cannon strength.
  */
-public class EngineStrengthRequest extends AbstractRequest {
-    private final int engineStrength;
+public class CombatStrengthRequest extends AbstractRequest {
     private final int batteriesToUse;
 
-    public EngineStrengthRequest(int engineStrength) {
-        this.engineStrength = engineStrength;
-        this.batteriesToUse = 0;
-    }
-
-    public EngineStrengthRequest(int engineStrength, int batteriesToUse) {
-        this.engineStrength = engineStrength;
+    public CombatStrengthRequest(int batteriesToUse) {
         this.batteriesToUse = batteriesToUse;
-    }
-
-    public int getEngineStrength() {
-        return engineStrength;
     }
 
     public int getBatteriesToUse() {
@@ -38,9 +29,6 @@ public class EngineStrengthRequest extends AbstractRequest {
 
     @Override
     public ValidationResult validate() {
-        if (engineStrength < 0) {
-            return ValidationResult.failure("Engine strength cannot be negative", "engineStrength");
-        }
         if (batteriesToUse < 0) {
             return ValidationResult.failure("Batteries to use cannot be negative", "batteriesToUse");
         }
@@ -60,7 +48,7 @@ public class EngineStrengthRequest extends AbstractRequest {
         }
 
         if (session.getCurrentPhase() != GamePhase.FLIGHT) {
-            return createErrorResponse("Can only declare engine strength during flight phase", 
+            return createErrorResponse("Can only declare combat strength during flight phase", 
                                      ErrorResponse.INVALID_STATE);
         }
 
@@ -70,16 +58,9 @@ public class EngineStrengthRequest extends AbstractRequest {
                 return createErrorResponse("Player not found", ErrorResponse.INTERNAL_ERROR);
             }
 
-            // Check if player has engine strength > 0
-            if (player.getShip().getEngines() <= 0) {
-                return createErrorResponse("No engine strength available", ErrorResponse.INVALID_STATE);
-            }
-
-            // Check if declared strength is within available range
-            double maxEngineStrength = player.getShip().getEngines();
-            if (engineStrength > maxEngineStrength) {
-                return createErrorResponse("Declared engine strength exceeds available engine power", 
-                                         ErrorResponse.INVALID_STATE);
+            // Check if player has enough batteries
+            if (player.getShip().getBatteries() < batteriesToUse) {
+                return createErrorResponse("Not enough batteries", ErrorResponse.INVALID_STATE);
             }
 
             // Get the adventure card controller
@@ -89,30 +70,24 @@ public class EngineStrengthRequest extends AbstractRequest {
                                          ErrorResponse.INVALID_STATE);
             }
 
-            // Check if player has enough batteries if they want to use them
-            if (batteriesToUse > 0 && player.getShip().getBatteries() < batteriesToUse) {
-                return createErrorResponse("Not enough batteries", ErrorResponse.INVALID_STATE);
-            }
-
             // Create player choice
             AdventureCardState.PlayerChoice choice = new AdventureCardState.PlayerChoice(
                 context.getPlayerId(), 
-                AdventureCardState.AdventureChoiceType.ENGINE_STRENGTH
+                AdventureCardState.AdventureChoiceType.COMBAT_STRENGTH
             );
-            choice.setParameter("engineStrength", engineStrength);
             choice.setParameter("batteriesToUse", batteriesToUse);
 
             // Submit choice to controller
             boolean success = cardController.handlePlayerChoice(context.getPlayerId(), choice);
             
             if (success) {
-                return new EngineStrengthResponse(getCorrelationId(), engineStrength);
+                return new CombatStrengthResponse(getCorrelationId(), batteriesToUse);
             } else {
-                return createErrorResponse("Failed to submit engine strength - not your turn or invalid choice", 
+                return createErrorResponse("Failed to submit combat strength - not your turn or invalid choice", 
                                          ErrorResponse.INVALID_STATE);
             }
         } catch (Exception e) {
-            return createErrorResponse("Failed to process engine strength: " + e.getMessage(), 
+            return createErrorResponse("Failed to process combat strength: " + e.getMessage(), 
                                      ErrorResponse.INTERNAL_ERROR);
         }
     }

@@ -54,47 +54,36 @@ public class LoginRequest extends AbstractRequest {
 
     @Override
     public Response execute(RequestContext context) {
-        LOGGER.info("🔐 LOGIN REQUEST - Starting authentication for nickname: '" + nickname + "' from client: " + context.getSenderId());
-        
         // Validate the request
         ValidationResult validation = validate();
         if (!validation.isValid()) {
-            LOGGER.warning("❌ LOGIN FAILED - Validation error for nickname '" + nickname + "': " + validation.getErrorMessage());
             return createErrorResponse(validation.getErrorMessage(), ErrorResponse.VALIDATION_ERROR);
         }
-        LOGGER.fine("✅ LOGIN VALIDATION - Nickname '" + nickname + "' passed validation checks");
 
         // Check if already authenticated
         try {
             PlayerId existingPlayerId = context.getPlayerId();
             if (existingPlayerId != null) {
-                LOGGER.warning("❌ LOGIN FAILED - Client " + context.getSenderId() + " already authenticated as player: " + existingPlayerId);
                 return createErrorResponse("Already logged in", ErrorResponse.INVALID_STATE);
             }
-            LOGGER.fine("✅ AUTH STATE - Client " + context.getSenderId() + " is not yet authenticated");
         } catch (Exception e) {
-            LOGGER.warning("⚠️ AUTH CHECK - Exception during authentication check for client " + context.getSenderId() + ": " + e.getMessage());
             // Continue with login - this just means the client wasn't found in registry yet, which is expected
         }
 
         PlayerSessionRegistry registry = context.getPlayerRegistry();
         String trimmedNickname = nickname.trim();
-        LOGGER.fine("🔍 NICKNAME CHECK - Checking availability of nickname: '" + trimmedNickname + "'");
 
         // Check if nickname is already in use
         if (registry.isNicknameInUse(trimmedNickname)) {
-            LOGGER.warning("❌ LOGIN FAILED - Nickname '" + trimmedNickname + "' is already taken");
             return createErrorResponse(
                     "Nickname '" + trimmedNickname + "' is already taken",
                     ErrorResponse.VALIDATION_ERROR
             );
         }
-        LOGGER.fine("✅ NICKNAME AVAILABLE - Nickname '" + trimmedNickname + "' is available");
 
         // Create player with PlayerId
         PlayerId playerId = PlayerId.fromString(trimmedNickname);
-        LOGGER.info("👤 PLAYER CREATION - Generated playerId: " + playerId + " for nickname: '" + trimmedNickname + "'");
-        
+
         boolean registered = registry.registerPlayer(
                 context.getSenderId(),
                 playerId,
@@ -102,17 +91,13 @@ public class LoginRequest extends AbstractRequest {
         );
 
         if (!registered) {
-            LOGGER.severe("❌ LOGIN FAILED - Failed to register player with ID: " + playerId + " and nickname: '" + trimmedNickname + "'");
             return createErrorResponse(
                     "Failed to register player",
                     ErrorResponse.INTERNAL_ERROR
             );
         }
-        LOGGER.info("✅ PLAYER REGISTERED - Successfully registered player: " + playerId + " ('" + trimmedNickname + "') for client: " + context.getSenderId());
-
 
         // Return success response
-        LOGGER.info("🎉 LOGIN SUCCESS - Returning LoginResponse for player: " + playerId + " ('" + trimmedNickname + "') to client: " + context.getSenderId());
         return new LoginResponse(getCorrelationId(), playerId, trimmedNickname);
     }
 }

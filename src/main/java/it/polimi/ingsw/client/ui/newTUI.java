@@ -2,14 +2,15 @@ package it.polimi.ingsw.client.ui;
 
 import it.polimi.ingsw.client.controller.ClientController;
 import it.polimi.ingsw.client.core.ClientState;
+import it.polimi.ingsw.client.network.NetworkClient;
 import it.polimi.ingsw.client.ui.tui.Printer;
-import it.polimi.ingsw.client.ui.tui.TuiConsole;
 import it.polimi.ingsw.common.message.response.*;
-import it.polimi.ingsw.common.model.GameInfo;
 
 import it.polimi.ingsw.server.model.domain.player.Player;
+import org.jline.reader.EndOfFileException;
 import org.jline.reader.LineReader;
 import org.jline.reader.LineReaderBuilder;
+import org.jline.reader.UserInterruptException;
 import org.jline.terminal.Terminal;
 import org.jline.terminal.TerminalBuilder;
 
@@ -23,18 +24,20 @@ public class newTUI implements newUI {
     private static LineReader reader;
     private final Printer printer;
 
-    // Temporanei
     private final ClientController controller;
     private final ClientState clientState;
+    private final NetworkClient networkClient;
 
     public newTUI(ClientController controller) throws IOException {
         terminal = TerminalBuilder.builder().system(true).build();
         reader = LineReaderBuilder.builder().terminal(terminal).build();
         this.printer = new Printer(terminal, reader);
 
-        // Temporanei
         this.controller = controller;
+        controller.setUI(this);
+
         this.clientState = controller.getClientState();
+        this.networkClient = controller.getNetworkClient();
     }
 
     @Override
@@ -42,106 +45,123 @@ public class newTUI implements newUI {
         printer.printHeader();
 
         printer.printConnectionPhase();
-        elaborateConnectionPhase();
+        if (!elaborateConnection()) {
+            printer.printError("Connection failed. Exiting.");
+            shutdown();
+            return;
+        }
+
+        System.out.println("Connected to server.");
 
         printer.printLoginPhase();
         elaborateLogin();
 
         String input;
         while (true) {
-            input = reader.readLine();
-            elaborateInput(input);
+            try {
+                input = reader.readLine("> ");
+                elaborateInput(input);
+            } catch (UserInterruptException e) {
+                printer.printWarning("Operation cancelled. Exiting client.");
+                break;
+            } catch (EndOfFileException e) {
+                printer.printWarning("Exiting client (Ctrl+D detected).");
+                break;
+            } catch (Exception e) {
+                printer.printError("An unexpected error occurred: " + e.getMessage());
+            }
         }
+        shutdown();
     }
 
     private void elaborateInput(String input) {
-        if (input == null || input.trim().isEmpty()) {
+        if (input.isEmpty()) {
             return;
         }
 
-        String[] tokens = input.trim().split("\\s+");
+        String[] tokens = input.split("\\s+");
 
         switch (clientState.getCurrentView()) {
-            //case CONNECTION -> elaborateConnectionCommand(tokens);
-            //case LOGIN -> elaborateLoginCommand(tokens);
             case LOBBY -> elaborateLobbyCommand(tokens);
             case GAME_LOBBY -> elaborateGameLobbyCommand(tokens);
+            case GAME -> {
+                // TODO: Implement building/flight phase command handling
+                // Should route to different handlers based on current game phase
+                // elaborateBuildingCommand(tokens) or elaborateFlightCommand(tokens)
+                printer.printError("Game phase commands not yet implemented. Type 'help' for available commands.");
+            }
+            default -> printer.printError("Invalid command. Type 'help' for available commands.");
         }
     }
 
-    private void elaborateConnectionPhase() {
-        // Get hostname
-        printer.print("Enter hostname (default: localhost): ");
-        String hostname = reader.readLine().trim();
-        if (hostname.isEmpty()) {
-            hostname = "localhost";
-        }
-
-        // Get protocol selection
-        printer.print("Select protocol - (1) Socket, (2) RMI (default: 1): ");
-        String protocol = reader.readLine().trim().toLowerCase();
-        boolean useSocket = true;
-        int defaultPort = 12345;
-
-        if (protocol.equals("2") || protocol.equals("rmi")) {
-            useSocket = false;
-            defaultPort = 1099;
-            printer.printInfo("Selected protocol: RMI");
-        } else {
-            printer.printInfo("Selected protocol: Socket");
-        }
-
-        // Get port
-        printer.print("Enter port (default: " + defaultPort + "): ");
-        String portInput = reader.readLine().trim();
-        int port = defaultPort;
-        if (!portInput.isEmpty()) {
-            try {
-                port = Integer.parseInt(portInput);
-            } catch (NumberFormatException e) {
-                printer.printError("Invalid port number. Using default port " + defaultPort + ".");
-                port = defaultPort;
+    private boolean elaborateConnection() {
+        // Hostname
+        String hostname;
+        try {
+            hostname = reader.readLine("Enter hostname (default: localhost): ").trim();
+            if (hostname.isEmpty()) {
+                hostname = "localhost";
             }
+        } catch (UserInterruptException | EndOfFileException e) {
+            return false;
         }
 
-        // Attempt connection by directly calling the controller
+        // Protocol
+        boolean useSocket = true;
+        try {
+            String protocol = reader.readLine("Select protocol: (1) Socket, (2) RMI (default: 1): ").trim().toLowerCase();
+            if (protocol.equals("2") || protocol.equals("rmi")) {
+                useSocket = false;
+                printer.printInfo("Selected protocol: RMI");
+            } else {
+                printer.printInfo("Selected protocol: Socket");
+            }
+        } catch (UserInterruptException | EndOfFileException e) {
+            return false;
+        }
+
+        // Port
+        int port = useSocket ? 12345 : 1099;
+        try {
+            String portInput = reader.readLine("Enter port (default: " + port + "): ").trim();
+            if (!portInput.isEmpty()) {
+                try {
+                    port = Integer.parseInt(portInput);
+                } catch (NumberFormatException e) {
+                    printer.printError("Invalid port number. Using default port " + port + ".");
+                }
+            }
+        } catch (NumberFormatException e) {
+            printer.printError("Invalid port number. Using default port " + port + ".");
+        }
+
         String protocolName = useSocket ? "Socket" : "RMI";
         printer.printLoading("Connecting to " + hostname + ":" + port + " via " + protocolName);
 
-        // We use .get() here to block the TUI input loop until the connection attempt is complete.
         try {
-            boolean success = controller.connect(hostname, port, useSocket).get();  // TODO: Sistema
+            return controller.connect(hostname, port, useSocket).get();
         } catch (ExecutionException | InterruptedException e) {
             printer.printError("Connection error: " + e.getMessage());
+            if (e instanceof InterruptedException)
+                Thread.currentThread().interrupt();
+            return false;
         }
     }
 
     private void elaborateLogin() {
-        printer.print("Enter nickname: ");
-        String nickname = reader.readLine().trim();
+        String nickname = reader.readLine("Enter nickname: ").trim();
 
         Pattern NICKNAME_PATTERN = Pattern.compile("^[a-zA-Z0-9_-]{3,20}$");
         while (!NICKNAME_PATTERN.matcher(nickname).matches()) {
             printer.printError("Invalid nickname format. Please try again.");
-            nickname = reader.readLine().trim();
+            nickname = reader.readLine("Enter nickname: ").trim();
         }
 
         printer.printLoading("Logging in as " + nickname);
 
-        try {
-            boolean success = controller.login(nickname).get();
+        controller.login(nickname);
 
-            if (!success) {
-                printer.printError("Login failed. The nickname might already be taken or is invalid.");
-                elaborateLogin();
-            }
-            // On success, the controller changes the view state, which will make isActive() false
-            // for the next iteration, breaking the loop.
-
-        } catch (InterruptedException | java.util.concurrent.ExecutionException e) {
-            printer.printError("Login error: " + e.getMessage());
-            if (e instanceof InterruptedException) Thread.currentThread().interrupt();
-        }
+        printer.printLoading("Done");
     }
 
     private void elaborateLobbyCommand(String[] tokens) {
@@ -157,7 +177,8 @@ public class newTUI implements newUI {
                 break;
             case "h":
             case "help":
-                //displayCommands();
+                // TODO: Implement context-specific help display
+                printer.printInfo("Help not yet implemented for this phase");
                 break;
             default:
                 printer.printError("Unknown command: " + command + ". Type 'help' for available commands.");
@@ -231,7 +252,8 @@ public class newTUI implements newUI {
                 break;
             case "h":
             case "help":
-                //displayCommands();
+                // TODO: Implement context-specific help display
+                printer.printInfo("Help not yet implemented for this phase");
                 break;
             default:
                 printer.printError("Unknown command: " + command + ". Type 'help' for available commands.");
@@ -240,8 +262,7 @@ public class newTUI implements newUI {
     }
 
     private void handleReadyCommand() {
-        String playerId = controller.getPlayerId() != null ?
-                controller.getPlayerId() : null;
+        String playerId = controller.getPlayerId();
         if (!controller.getClientState().isPlayerReady(playerId)) {
             controller.setPlayerReady(true);
             printer.printSuccess("Marked as ready!");
@@ -251,8 +272,7 @@ public class newTUI implements newUI {
     }
 
     private void handleUnreadyCommand() {
-        String playerId = controller.getPlayerId() != null ?
-                controller.getPlayerId() : null;
+        String playerId = controller.getPlayerId();
         if (controller.getClientState().isPlayerReady(playerId)) {
             controller.setPlayerReady(false);
             printer.printSuccess("Marked as not ready!");
@@ -262,9 +282,8 @@ public class newTUI implements newUI {
     }
 
     private void handleStartCommand() {
-        String currentPlayerId = controller.getPlayerId() != null ?
-                controller.getPlayerId() : null;
-        if (!currentPlayerId.equals(getHostPlayerId())) {
+        String playerId = controller.getPlayerId();
+        if (!playerId.equals(getHostPlayerId())) {
             printer.printError("Only the host can start the game!");
             return;
         }
@@ -289,6 +308,8 @@ public class newTUI implements newUI {
         }
     }
 
+    //
+
     // TODO: CONTROLLA
     private String getHostPlayerId() {
         // Get host from GameModel which tracks the actual creator/host
@@ -310,23 +331,41 @@ public class newTUI implements newUI {
     // ON RESPONSE METHODS
 
     @Override
-    public void onErrorResponse(ErrorResponse r) {};
+    public void onErrorResponse(ErrorResponse r) {
+        // TODO: Implement error response handling
+        // - Display error message with appropriate formatting
+        // - Handle different error types (connection, game, validation)
+        printer.printError("Error: " + (r.getErrorMessage() != null ? r.getErrorMessage() : "Unknown error"));
+    }
 
     @Override
-    public void onReconnectResponse(ReconnectResponse r) {};
+    public void onReconnectResponse(ReconnectResponse r) {
+        // TODO: Implement reconnect response handling
+        // - Show reconnection status
+        // - Restore game state if successful
+        if (r.isSuccess()) {
+            printer.printSuccess("Reconnected successfully!");
+        } else {
+            printer.printError("Reconnection failed.");
+        }
+    }
 
     // Login
 
     @Override
     public void onLoginResponse(LoginResponse r) {
+        printer.printInfo("ENTRATO");
         if (r.isSuccess()) {
             printer.printSuccess("Login successful!");
             printer.print("Welcome " + r.getNickname() + "!");
+
+            // Set current view to LOBBY for command processing
+            clientState.setCurrentView(ClientState.ViewState.LOBBY);
+            printer.printLobbyPhase(clientState);
         } else {
             printer.printError("Login failed.");
         }
     }
-
 
     // Lobby
 
@@ -334,16 +373,29 @@ public class newTUI implements newUI {
     public void onCreateGameResponse(CreateGameResponse r) {
         if (r.isSuccess()) {
             printer.printSuccess("Game created successfully!");
+            // Set current view to GAME_LOBBY since creator automatically joins
+            clientState.setCurrentView(ClientState.ViewState.GAME_LOBBY);
+            printer.printInfo("You are now in the game lobby. Use 'ready' to mark yourself ready, 'leave' to exit.");
+            // TODO: Implement proper game lobby display
+            // - Show game name, level, max players
+            // - Display current players list with ready status
+            // - Show available commands (ready, unready, start, leave, help)
+            // - Real-time updates when players join/leave/ready
+            // printer.printGameLobbyPhase(clientState);
         } else {
             printer.printError("Failed to create game.");
         }
-
     }
 
     @Override
     public void onJoinGameResponse(JoinGameResponse r) {
         if (r.isSuccess()) {
             printer.printSuccess("Game joined successfully!");
+            // Set current view to GAME_LOBBY
+            clientState.setCurrentView(ClientState.ViewState.GAME_LOBBY);
+            printer.printInfo("You are now in the game lobby. Use 'ready' to mark yourself ready, 'leave' to exit.");
+            // TODO: Implement proper game lobby display (same as create response)
+            // printer.printGameLobbyPhase(clientState);
         } else {
             printer.printError("Failed to join game.");
         }
@@ -351,15 +403,26 @@ public class newTUI implements newUI {
 
     @Override
     public void onListGamesResponse(ListGamesResponse r) {
-        // TODO: Serve?
+        if (r.isSuccess()) {
+            // Games list is already updated in clientState by the response
+            // Just refresh the lobby display
+            printer.printLobbyPhase(clientState);
+        } else {
+            printer.printError("Failed to fetch games list.");
+        }
     }
 
     // Game Lobby
 
     @Override
-    public void onStartGameResponse(StartGameResponse r) {
+    public void onStartGameResponse(GenericSuccessResponse r) {
         if (r.isSuccess()) {
             printer.printSuccess("Game started successfully!");
+            // TODO: Transition to building phase
+            // - Set current view to BUILDING
+            // - Display building phase UI with ship grid and component deck
+            // clientState.setCurrentView(ClientState.ViewState.GAME);
+            // printer.printBuildingPhase(clientState);
         } else {
             printer.printError("Failed to start game.");
         }
@@ -369,6 +432,11 @@ public class newTUI implements newUI {
     public void onLeaveGameResponse(LeaveGameResponse r) {
         if (r.isSuccess()) {
             printer.printSuccess("Game left successfully!");
+            // TODO: Return to main lobby
+            // - Set current view back to LOBBY
+            // - Refresh lobby display
+            // clientState.setCurrentView(ClientState.ViewState.LOBBY);
+            // printer.printLobbyPhase(clientState);
         } else {
             printer.printError("Failed to leave game.");
         }
@@ -390,7 +458,7 @@ public class newTUI implements newUI {
     // Building
 
     @Override
-    public void onTakeTileResponse(TakeTileResponse response) {
+    public void onTakeTileResponse(GenericSuccessResponse response) {
         if (response.isSuccess()) {
             printer.printSuccess("Tile taken successfully!");
         } else {
@@ -399,7 +467,7 @@ public class newTUI implements newUI {
     }
 
     @Override
-    public void onReserveTileResponse(ReserveTileResponse response) {
+    public void onReserveTileResponse(GenericSuccessResponse response) {
         if (response.isSuccess()) {
             printer.printSuccess("Tile reserved successfully!");
         } else {
@@ -408,7 +476,7 @@ public class newTUI implements newUI {
     }
 
     @Override
-    public void onPlaceTileResponse(PlaceTileResponse response) {
+    public void onPlaceTileResponse(GenericSuccessResponse response) {
         if (response.isSuccess()) {
             printer.printSuccess("Tile placed successfully!");
         } else {
@@ -435,21 +503,79 @@ public class newTUI implements newUI {
     }
 
     @Override
-    public void onRequestFaceUpTileResponse(RequestFaceUpTileResponse response) {}
+    public void onRequestFaceUpTileResponse(RequestFaceUpTileResponse response) {
+        // TODO: Implement face-up tile request response
+        // - Show offered tile information
+        // - Display accept/decline options
+        if (response.isSuccess()) {
+            printer.printSuccess("Face-up tile offered!");
+        } else {
+            printer.printError("No face-up tile available.");
+        }
+    }
 
     @Override
-    public void onValidateShipResponse(ValidateShipResponse response) {}
+    public void onValidateShipResponse(ValidateShipResponse response) {
+        // TODO: Implement ship validation response
+        // - Show validation results (valid/invalid)
+        // - Display any validation errors or warnings
+        // - Update ship status display
+        if (response.isSuccess()) {
+            printer.printSuccess("Ship is valid and ready for flight!");
+        } else {
+            printer.printError("Ship validation failed: " + response.getErrorMessage());
+        }
+    }
 
     // Flight
 
     @Override
-    public void onCombatStrengthResponse(CombatStrengthResponse response) {}
-
-    // TODO onCombatStrengthResponse
+    public void onCombatStrengthResponse(CombatStrengthResponse response) {
+        // TODO: Implement combat strength response
+        // - Show combat results (success/failure)
+        // - Display damage taken or goods lost
+        // - Update ship status after combat
+        if (response.isSuccess()) {
+            printer.printSuccess("Combat resolved successfully!");
+        } else {
+            printer.printError("Combat failed!");
+        }
+    }
 
     @Override
-    public void onDeclareStrengthResponse(DeclareStrengthResponse response) {}
+    public void onDeclareStrengthResponse(DeclareStrengthResponse response) {
+        // TODO: Implement declare strength response
+        // - Show strength declaration confirmation
+        // - Display current strength values
+        if (response.isSuccess()) {
+            printer.printSuccess("Strength declared successfully!");
+        } else {
+            printer.printError("Failed to declare strength.");
+        }
+    }
 
     @Override
-    public void onDockResponse(DockResponse response) {}
+    public void onDockResponse(DockResponse response) {
+        // TODO: Implement dock response
+        // - Show docking results
+        // - Display goods delivered and credits earned
+        // - Update player status
+        if (response.isSuccess()) {
+            printer.printSuccess("Successfully docked!");
+        } else {
+            printer.printError("Docking failed.");
+        }
+    }
+
+
+    public void shutdown() {
+        printer.shutdown();
+        try {
+            if (reader != null)
+                reader.getTerminal().close();
+        } catch (IOException e) {
+            System.err.println("Error closing reader terminal: " + e.getMessage());
+        }
+        System.exit(0);
+    }
 }

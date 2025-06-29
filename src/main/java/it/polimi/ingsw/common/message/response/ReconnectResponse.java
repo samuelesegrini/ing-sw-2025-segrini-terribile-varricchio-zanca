@@ -69,6 +69,8 @@ public class ReconnectResponse extends AbstractResponse {
                     NotificationType.ERROR
             );
         }
+
+        context.getController().getUI().onReconnectResponse(this);
     }
 
 }

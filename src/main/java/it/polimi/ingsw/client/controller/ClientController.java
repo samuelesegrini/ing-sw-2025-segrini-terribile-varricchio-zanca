@@ -2,10 +2,12 @@ package it.polimi.ingsw.client.controller;
 
 import it.polimi.ingsw.client.network.NetworkClient;
 import it.polimi.ingsw.client.ui.NotificationType;
+import it.polimi.ingsw.client.ui.UI;
 import it.polimi.ingsw.client.ui.core.UIContext;
 import it.polimi.ingsw.client.ui.core.NotificationService;
 import it.polimi.ingsw.client.core.ClientState;
 import it.polimi.ingsw.client.ui.core.UIContext;
+import it.polimi.ingsw.client.ui.newUI;
 import it.polimi.ingsw.server.model.domain.player.PlayerId;
 import it.polimi.ingsw.common.message.*;
 import it.polimi.ingsw.common.message.PongMessage;
@@ -37,6 +39,8 @@ public class ClientController {
     
     private UIContext uiContext;
     private final ClientState clientState;
+
+    private newUI ui;
     
     // ENHANCED: Conflict resolution system
     private final Map<String, AtomicInteger> requestRetryCounters = new ConcurrentHashMap<>();
@@ -67,6 +71,18 @@ public class ClientController {
     
     public ClientState getClientState() {
         return clientState;
+    }
+
+    public NetworkClient getNetworkClient() {
+        return networkClient;
+    }
+
+    public newUI getUI() {
+        return ui;
+    }
+
+    public void setUI(newUI ui) {
+        this.ui = ui;
     }
 
     public String getPlayerId() {
@@ -132,7 +148,6 @@ public class ClientController {
                         ClientState.ConnectionStatus.CONNECTED : 
                         ClientState.ConnectionStatus.FAILED);
                     if (connected) {
-                        attemptNavigation(ClientState.ViewState.LOGIN, "Successful connection to server");
                         LOGGER.info("Successfully connected to server");
                     } else {
                         LOGGER.warning("Failed to connect to server");
@@ -151,7 +166,7 @@ public class ClientController {
         clientState.setConnectionStatus(ClientState.ConnectionStatus.DISCONNECTED);
         clientState.setPlayerInfo(null, null);
         
-        attemptNavigation(ClientState.ViewState.CONNECTION, "Disconnected from server");
+        // Navigation handled by UI implementation
     }
 
     // Authentication actions
@@ -175,7 +190,7 @@ public class ClientController {
                         if (loginResp.isSuccess()) {
                             clientState.setPlayerInfo(loginResp.getPlayerId(), loginResp.getNickname());
                             
-                            attemptNavigation(ClientState.ViewState.LOBBY, "Login successful for " + loginResp.getNickname());
+                            // Navigation handled by UI response handler
 
                             LOGGER.info("Login successful for player: " + loginResp.getNickname());
                             // Request game list and handle the response to update the client state
@@ -260,7 +275,7 @@ public class ClientController {
                     if (response.isSuccess()) {
                         LOGGER.info("Successfully joined game: " + gameId);
                         
-                        attemptNavigation(ClientState.ViewState.GAME_LOBBY, "Joined game: " + gameId);
+                        // Navigation handled by UI response handler
                     } else {
                         LOGGER.warning("Failed to join game: " + response.getErrorMessage());
                         
@@ -402,7 +417,7 @@ public class ClientController {
                     if (response.isSuccess()) {
                         LOGGER.info("Left game successfully");
                         
-                        attemptNavigation(ClientState.ViewState.LOBBY, "Left game successfully");
+                        // Navigation handled by UI response handler
                         return true;
                     } else {
                         LOGGER.warning("Failed to leave game: " + response.getErrorMessage());
@@ -702,7 +717,7 @@ public class ClientController {
 
         private void handleResponse(Response response) {
             LOGGER.info("📨 RESPONSE RECEIVED - Processing " + response.getClass().getSimpleName());
-            // Create client context
+            // Create client context and let response handle itself
             ClientContext context = new ClientContextImpl();
             response.handleOnClient(context);
             LOGGER.info("✅ RESPONSE PROCESSED - " + response.getClass().getSimpleName() + " handled successfully");

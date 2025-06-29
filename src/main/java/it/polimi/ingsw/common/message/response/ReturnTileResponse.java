@@ -19,5 +19,7 @@ public class ReturnTileResponse extends AbstractResponse {
     }
 
     @Override
-    public void handleOnClient(ClientContext context) {}
+    public void handleOnClient(ClientContext context) {
+        context.getController().getUI().onReturnTileResponse(this);
+    }
 }

@@ -21,6 +21,9 @@ public class ListGamesRequest extends AbstractRequest {
         }
 
         GameSessionManager sessionManager = context.getSessionManager();
+        //TODO: ci serve tutto il model -> penso di si se non usiamo dto
         List<GameModel> games = sessionManager.getAvailableGames();
-        return new ListGamesResponse(getCorrelationId(), games);    }
+
+        return new ListGamesResponse(getCorrelationId(), games);
+    }
 }

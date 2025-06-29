@@ -59,7 +59,7 @@ public class RequestFaceUpTileRequest extends AbstractRequest {
             }
             
             // Check if tile is available in face-up pile
-            var component = gameSession.getFaceUpComponent(tileId);
+            var component = gameSession.getGameModel().getComponentDeck().takeFaceUpComponentById(tileId);
             if (component == null) {
                 return createErrorResponse("Tile not available in face-up pile", "TILE_NOT_AVAILABLE");
             }
@@ -70,17 +70,16 @@ public class RequestFaceUpTileRequest extends AbstractRequest {
                 return createErrorResponse("Player not found", ErrorResponse.INTERNAL_ERROR);
             }
             
-            if (gameSession.getPlayerHeldComponents(playerId).size() >= 2) {
-                return createErrorResponse("Cannot hold more than 2 components", "MAX_COMPONENTS_REACHED");
+            // Check if player already has a held component (max 1 in this model)
+            if (player.getHeldComponent() != null) {
+                return createErrorResponse("Player already holding a component", "MAX_COMPONENTS_REACHED");
             }
             
             // Reserve the component for the player
-            gameSession.reserveFaceUpComponent(tileId, playerId);
-            
-            // Broadcast component taken event to all clients
-            context.getEventPublisher().publishEvent(
-                new ComponentTakenEvent(gameId, component, player, gameSession.getGameModel().getComponentDeck())
-            );
+            gameSession.getGameModel().reserveComponent(playerId, tileId);
+
+
+            // Model operation will fire the event automatically
             
             // Return response with tile details
             return new RequestFaceUpTileResponse(getCorrelationId(), 

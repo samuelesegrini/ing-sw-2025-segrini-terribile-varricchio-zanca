@@ -111,8 +111,6 @@ public class Printer {
 
     public void printLoginPhase() {
         printSectionHeader("LOGIN");
-        printSuccess("Connected to server successfully!");
-        printInfo("Please choose a nickname (3-20 characters, letters, numbers, _, -).");
     }
 
     // Lobby Phase
@@ -397,4 +395,49 @@ public class Printer {
         separatorLine.append(right);
         System.out.println(separatorLine.toString());
     }
+
+    // TODO: Add missing phase display methods
+
+    /**
+     * TODO: Implement game lobby phase display
+     * Should show:
+     * - Game name, level, max players
+     * - Current players list with ready status indicators
+     * - Available commands (ready, unready, start, leave, help)
+     * - Real-time updates when players join/leave/ready
+     */
+    // public void printGameLobbyPhase(ClientState clientState) { }
+
+    /**
+     * TODO: Implement building phase display
+     * Should show:
+     * - Ship grid for building (visual representation)
+     * - Component deck with available tiles
+     * - Timer display and current phase info
+     * - Player's hand (held components)
+     * - Available commands (take, place, reserve, return, flip, validate)
+     * - Other players' ship status
+     */
+    // public void printBuildingPhase(ClientState clientState) { }
+
+    /**
+     * TODO: Implement flight phase display
+     * Should show:
+     * - Current adventure card details
+     * - Ship status (engines, cannons, crew, cargo, shields)
+     * - Flight progress and route position
+     * - Available commands (draw, strength, choice, dock)
+     * - Combat results and damage
+     */
+    // public void printFlightPhase(ClientState clientState) { }
+
+    /**
+     * TODO: Implement game end phase display
+     * Should show:
+     * - Final scores for all players
+     * - Winner announcement
+     * - Game statistics summary
+     * - Return to lobby option
+     */
+    // public void printGameEndPhase(ClientState clientState) { }
 }

@@ -57,6 +57,10 @@ module it.polimi.ingsw2025segriniterribilevarricchiozanca {
     exports it.polimi.ingsw.server.model.enums.crew;
     exports it.polimi.ingsw.server.model.enums.resource;
     exports it.polimi.ingsw.client.ui.tui.newTUI;
+    exports it.polimi.ingsw.common.message.request.flight;
+    opens it.polimi.ingsw.common.message.request.flight to java.rmi;
+    exports it.polimi.ingsw.common.message.event.flight;
+    opens it.polimi.ingsw.common.message.event.flight to java.rmi;
 
     // --- Common packages ---
     // NOTE: client.core.state package removed as part of Simple Direct Model Architecture

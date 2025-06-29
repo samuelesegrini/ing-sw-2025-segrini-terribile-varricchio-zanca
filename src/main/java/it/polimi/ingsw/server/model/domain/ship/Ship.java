@@ -1,6 +1,7 @@
 package it.polimi.ingsw.server.model.domain.ship;
 
 import it.polimi.ingsw.server.model.domain.player.Player;
+import it.polimi.ingsw.server.model.domain.player.PlayerId;
 import it.polimi.ingsw.server.model.domain.ship.Position;
 import it.polimi.ingsw.server.model.domain.ship.components.CargoHold;
 import it.polimi.ingsw.server.model.domain.ship.components.Component;
@@ -8,12 +9,15 @@ import it.polimi.ingsw.server.model.enums.GameLevel;
 import it.polimi.ingsw.server.model.enums.GamePhase;
 import it.polimi.ingsw.server.model.enums.resource.GoodType;
 import it.polimi.ingsw.server.model.enums.ship.ComponentType;
+import it.polimi.ingsw.common.message.event.*;
 
 import it.polimi.ingsw.server.model.domain.ship.components.Battery;
 import it.polimi.ingsw.server.model.domain.ship.components.Shield;
 import it.polimi.ingsw.server.model.enums.ship.ConnectorType;
 import it.polimi.ingsw.server.model.enums.ship.Direction;
 
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeSupport;
 import java.io.Serializable;
 import java.util.*;
 
@@ -25,6 +29,13 @@ public class Ship implements Serializable {
     public Set<Position> forbiddenPositions;
     private Set<Component> reservedComponents;
     private Set<Component> lostComponents;
+    private final int maxReservedComponents; // Max reserved components from configuration
+    
+    // PropertyChangeSupport for event firing
+    private transient PropertyChangeSupport propertyChangeSupport;
+    private String gameId; // For event context
+    private PlayerId playerId; // For event context
+    private String playerNickname; // For event context
 
     // Ship stats
     private double cannons;
@@ -54,6 +65,16 @@ public class Ship implements Serializable {
         this.board = new Component[shipGridConfig.rows()][shipGridConfig.cols()];
         reservedComponents = new HashSet<>();
         lostComponents = new HashSet<>();
+        
+        // Set maximum reserved components from configuration
+        this.maxReservedComponents = shipGridConfig.reservedComponentsPositions().size();
+        
+        // Initialize PropertyChangeSupport
+        this.propertyChangeSupport = new PropertyChangeSupport(this);
+        this.gameId = null; // Will be set when associated with game
+        this.playerId = null; // Will be set when associated with player
+        this.playerNickname = null;
+        
         this.resources = new HashMap<>() {{
             put(GoodType.RED, 0);
             put(GoodType.BLUE, 0);
@@ -69,6 +90,44 @@ public class Ship implements Serializable {
         forbiddenPositions = new HashSet<>();
         for (var posConfig : shipGridConfig.forbiddenPositions()) {
             forbiddenPositions.add(new Position(posConfig.x(), posConfig.y()));
+        }
+        
+    }
+
+    /**
+     * Sets the game context for event firing.
+     */
+    public void setGameContext(String gameId, PlayerId playerId, String playerNickname) {
+        this.gameId = gameId;
+        this.playerId = playerId;
+        this.playerNickname = playerNickname;
+    }
+
+    /**
+     * Adds a PropertyChangeListener to this ship.
+     */
+    public void addPropertyChangeListener(PropertyChangeListener listener) {
+        if (propertyChangeSupport == null) {
+            propertyChangeSupport = new PropertyChangeSupport(this);
+        }
+        propertyChangeSupport.addPropertyChangeListener(listener);
+    }
+
+    /**
+     * Removes a PropertyChangeListener from this ship.
+     */
+    public void removePropertyChangeListener(PropertyChangeListener listener) {
+        if (propertyChangeSupport != null) {
+            propertyChangeSupport.removePropertyChangeListener(listener);
+        }
+    }
+
+    /**
+     * Fires a PropertyChangeEvent with the given property name and new event.
+     */
+    private void firePropertyChange(String propertyName, Object oldValue, Object newValue) {
+        if (propertyChangeSupport != null) {
+            propertyChangeSupport.firePropertyChange(propertyName, oldValue, newValue);
         }
     }
 
@@ -91,6 +150,9 @@ public class Ship implements Serializable {
             board[row][col] = component;
             component.setPosition(position);
             component.setShip(this);
+            
+            // Note: ComponentPlacedEvent should be fired by the calling code (like GameSession)
+            // that has access to the full Player object and ComponentDeck
         }
     }
 
@@ -115,6 +177,11 @@ public class Ship implements Serializable {
             
             componentToRemove.setPosition(null);
             board[row][col] = null;
+            
+            // Fire ComponentRemovedEvent when component is removed from ship
+            String reason = (phase == GamePhase.FLIGHT) ? "Combat damage" : "Manual removal";
+            ComponentRemovedEvent event = new ComponentRemovedEvent(gameId, playerId, playerNickname, componentToRemove, position, reason);
+            firePropertyChange("eventPublished", null, event);
         }
     }
     
@@ -173,21 +240,27 @@ public class Ship implements Serializable {
 
     /**
      * Reserves a component for future use, allowing it to be kept aside without attaching it to the ship.
-     * If there are already 2 reserved components, the first one is removed to make room for the new component.
+     * The maximum number of reserved components is determined by the game level configuration.
+     * If the maximum is already reached, the reservation fails.
      *
      * @param component The component to reserve.
+     * @return true if the component was successfully reserved, false if maximum limit reached
      */
-    public void reserveComponent (Component component) {
-        if (reservedComponents.size() < 2) {
-            reservedComponents.add(component);
-        } else {
-            // If there are already 2 reserved components, remove the first one
-            Iterator<Component> iterator = reservedComponents.iterator();
-            if (iterator.hasNext()) {
-                Component firstReserved = iterator.next();
-                reservedComponents.remove(firstReserved);
+    public boolean reserveComponent(Component component) {
+        if (component == null) {
+            return false;
+        }
+        
+        if (reservedComponents.size() < maxReservedComponents) {
+            boolean added = reservedComponents.add(component);
+            if (added) {
+                // Note: ComponentReservedEvent should be fired by the calling code (like GameSession)
+                // that has access to the full Player object and ComponentDeck
             }
-            reservedComponents.add(component);
+            return added;
+        } else {
+            // Maximum reserved components reached - cannot add more
+            return false;
         }
     }
 
@@ -210,6 +283,10 @@ public class Ship implements Serializable {
                 }
             }
         }
+        
+        // Fire ShipStatsUpdatedEvent when stats are recalculated
+        ShipStatsUpdatedEvent event = new ShipStatsUpdatedEvent(gameId, playerId, playerNickname, this);
+        firePropertyChange("eventPublished", null, event);
     }
     public GameLevel getLevel() { return level; }
 
@@ -260,6 +337,37 @@ public class Ship implements Serializable {
 
     public Set<Component> getReservedComponents() {
         return reservedComponents;
+    }
+    
+    /**
+     * Gets the maximum number of components that can be reserved based on game configuration
+     * @return The maximum number of reserved components allowed
+     */
+    public int getMaxReservedComponents() {
+        return maxReservedComponents;
+    }
+    
+    /**
+     * Checks if component reservation is supported for this ship based on configuration
+     * @return true if reservations are supported (max > 0), false otherwise
+     */
+    public boolean supportsComponentReservation() {
+        return maxReservedComponents > 0;
+    }
+    
+    /**
+     * Releases a reserved component by its ID and returns it
+     * @param componentId The ID of the component to release
+     * @return The released component, or null if not found
+     */
+    public Component releaseReservedComponent(String componentId) {
+        for (Component component : reservedComponents) {
+            if (component.getId().equals(componentId)) {
+                reservedComponents.remove(component);
+                return component;
+            }
+        }
+        return null;
     }
 
     public Set<Component> getLostComponents() {
@@ -1432,6 +1540,16 @@ public class Ship implements Serializable {
     }
     
     /**
+     * Gets the number of cargo holds on the ship.
+     * 
+     * @return The number of cargo holds (both normal and special)
+     */
+    public int getCargoHolds() {
+        return countComponentsByType(ComponentType.CARGO_HOLD) + 
+               countComponentsByType(ComponentType.CARGO_HOLD_SPECIAL);
+    }
+    
+    /**
      * Helper method to count components of a specific type.
      * 
      * @param type The component type to count
@@ -1448,6 +1566,21 @@ public class Ship implements Serializable {
             }
         }
         return count;
+    }
+
+    /**
+     * Custom serialization to handle transient PropertyChangeSupport.
+     */
+    private void writeObject(java.io.ObjectOutputStream out) throws java.io.IOException {
+        out.defaultWriteObject();
+    }
+
+    /**
+     * Custom deserialization to restore transient PropertyChangeSupport.
+     */
+    private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
+        in.defaultReadObject();
+        this.propertyChangeSupport = new PropertyChangeSupport(this);
     }
 
 }

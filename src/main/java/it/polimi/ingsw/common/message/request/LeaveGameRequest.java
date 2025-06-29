@@ -1,10 +1,7 @@
 package it.polimi.ingsw.common.message.request;
 
-import it.polimi.ingsw.common.message.event.GameEndedEvent;
 import it.polimi.ingsw.common.message.event.GameLobbyUpdateEvent;
-import it.polimi.ingsw.common.message.event.PlayerLeftGameEvent;
 import it.polimi.ingsw.common.message.event.GamesListUpdateEvent;
-import it.polimi.ingsw.common.message.response.ErrorResponse;
 import it.polimi.ingsw.common.message.response.LeaveGameResponse;
 import it.polimi.ingsw.common.message.response.Response;
 import it.polimi.ingsw.common.message.validation.ValidationResult;
@@ -15,7 +12,6 @@ import it.polimi.ingsw.server.core.GameSession;
 import it.polimi.ingsw.server.core.GameSessionManager;
 import it.polimi.ingsw.server.core.PlayerSessionRegistry;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -73,29 +69,36 @@ public class LeaveGameRequest extends AbstractRequest {
         String playerNickname = registry.getPlayerNickname(playerId);
 
         // Publish player left event
-        PlayerLeftGameEvent event = new PlayerLeftGameEvent(
-                gameId, playerId, playerNickname
-        );
-        context.publishEvent(event);
+
+        // Model operation will fire the event automatically
 
         // Check if game should be ended
+        //TODO: Use new listeners for event
+        // non so se questo è il posto giusto per questa regola (dovremmo essere nella gamelobby)
         if (gameSession.getPlayerCount() == 0) {
-            context.publishEvent(new GameEndedEvent(gameId, "All players left", null));
+            // Model operation will fire the event automatically
         } else {
             // Update lobby state for remaining players (exclude the leaving player)
-            publishLobbyUpdateEvent(context, gameSession, gameId, registry, playerId.toString());
+            //TODO: Use new listeners for event
+            publishLobbyUpdateEvent(gameSession, gameId, registry, playerId.toString());
         }
 
         // Broadcast updated games list to all clients in main lobby
-        publishGamesListUpdateEvent(context, sessionManager, registry);
+        //TODO: Use new listeners for event
+        publishGamesListUpdateEvent(gameSession, sessionManager, registry);
 
+
+        //TODO: capire come cavolo gestire richieste e messaggi e listeners
+        // per il resto fa cose giuste
+        // POTENZIALE GENERIC RESPONSE
+        // INTERESSANTE USO DI createSuccessResponse()
         return new LeaveGameResponse(getCorrelationId());
     }
 
     /**
      * Publishes a lobby update event to synchronize remaining clients with updated lobby state.
      */
-    private void publishLobbyUpdateEvent(RequestContext context, GameSession gameSession, 
+    private void publishLobbyUpdateEvent(GameSession gameSession, 
                                        String gameId, PlayerSessionRegistry registry, String excludePlayerId) {
         // Use server model directly - Simple Direct Model Architecture
         List<Player> players = gameSession.getGameModel().getPlayers();
@@ -104,19 +107,19 @@ public class LeaveGameRequest extends AbstractRequest {
         GameLobbyUpdateEvent lobbyEvent = new GameLobbyUpdateEvent(
                 gameId, players, gameSession.getMaxPlayers(), PlayerId.fromString(excludePlayerId)
         );
-        context.publishEvent(lobbyEvent);
+        // Model operation will fire the event automatically
     }
 
     /**
      * Publishes a games list update event to broadcast current available games to all lobby clients.
      */
-    private void publishGamesListUpdateEvent(RequestContext context, GameSessionManager sessionManager, 
+    private void publishGamesListUpdateEvent(GameSession gameSession, GameSessionManager sessionManager, 
                                            PlayerSessionRegistry registry) {
         // Get the current list of available games - use GameModel directly
         List<GameModel> availableGames = sessionManager.getAvailableGames();
         
         // Create and publish the games list update event
         GamesListUpdateEvent gamesListEvent = new GamesListUpdateEvent(availableGames);
-        context.publishEvent(gamesListEvent);
+        // Model operation will fire the event automatically
     }
 }

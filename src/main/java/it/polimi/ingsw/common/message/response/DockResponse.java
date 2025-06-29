@@ -25,5 +25,7 @@ public class DockResponse extends AbstractResponse {
     @Override
     public void handleOnClient(ClientContext context) {
         // TODO
+
+        context.getController().getUI().onDockResponse(this);
     }
 }

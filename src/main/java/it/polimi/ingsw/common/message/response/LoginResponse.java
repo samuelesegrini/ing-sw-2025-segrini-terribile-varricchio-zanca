@@ -59,6 +59,8 @@ public class LoginResponse extends AbstractResponse {
                     NotificationType.ERROR
             );
         }
+
+        context.getController().getUI().onLoginResponse(this);
     }
 
 }

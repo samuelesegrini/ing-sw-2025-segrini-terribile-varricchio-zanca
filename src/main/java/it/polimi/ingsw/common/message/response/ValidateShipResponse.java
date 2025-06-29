@@ -37,5 +37,7 @@ public class ValidateShipResponse extends AbstractResponse {
                     NotificationType.ERROR
             );
         }
+
+        context.getController().getUI().onValidateShipResponse(this);
     }
 }

@@ -1,6 +1,9 @@
 package it.polimi.ingsw.common.message.event;
 
 import it.polimi.ingsw.server.model.domain.player.PlayerId;
+import it.polimi.ingsw.server.model.domain.player.Player;
+import it.polimi.ingsw.server.model.domain.ship.components.Component;
+import it.polimi.ingsw.server.model.domain.general.ComponentDeck;
 
 import java.util.logging.Logger;
 
@@ -16,6 +19,17 @@ public class ComponentOfferedEvent extends AbstractEvent {
     private final String offeredToPlayerNickname;
     private final String reason;
     private final long offerExpiresAt;
+
+    public ComponentOfferedEvent(String gameId, Component component, Player player, ComponentDeck componentDeck) {
+        super(EventType.COMPONENT_OFFERED, gameId, player.getId());
+        this.tileId = component.getId();
+        this.tileType = component.getType().toString();
+        this.offeredToPlayerId = player.getId().toString();
+        this.offeredToPlayerNickname = player.getNickname();
+        this.reason = "Component returned to deck";
+        this.offerExpiresAt = System.currentTimeMillis() + 30000; // 30 seconds from now
+        LOGGER.fine("ComponentOfferedEvent instantiated for game: " + gameId + ", tile: " + tileType + ", offered to: " + offeredToPlayerNickname);
+    }
 
     public ComponentOfferedEvent(String gameId, String tileId, String tileType, 
                                 String offeredToPlayerId, String offeredToPlayerNickname,

@@ -19,6 +19,9 @@ public enum EventType {
     PLAYER_DISCONNECTED,
     PLAYER_RECONNECTED,
     PLAYER_READY_CHANGED,
+    PLAYER_REGISTERED,        // NEW: Player authentication events
+    PLAYER_UNREGISTERED,      // NEW: Player disconnection events
+    PLAYER_COMPONENT_CHANGED, // NEW: Player held component changes
 
     // Game settings events
     GAME_SETTINGS_CHANGED,
@@ -39,6 +42,8 @@ public enum EventType {
     BUILDING_PHASE_COMPLETED,
     PHASE_CHANGED,
     SHIP_BUILDING_STATE_SYNC,
+    COMPONENT_REMOVED,        // NEW: For component removal from ship
+    SHIP_STATS_UPDATED,       // NEW: For ship stats recalculation
 
     // Flight phase events
     FLIGHT_PHASE_STARTED,
@@ -52,6 +57,7 @@ public enum EventType {
     COMPONENT_LOST,
     RESOURCE_UPDATE,
     CREDITS_CHANGED,
+    PLAYER_CREDITS_CHANGED,   // NEW: Player credit changes
     CREW_CHANGED,
     DICE_ROLLED,
 

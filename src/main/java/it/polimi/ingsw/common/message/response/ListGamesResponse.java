@@ -32,6 +32,8 @@ public class ListGamesResponse extends AbstractResponse {
         } else {
             context.showError("Could not fetch games", getErrorMessage());
         }
+
+        context.getController().getUI().onListGamesResponse(this);
     }
 
 }
