@@ -12,4 +12,6 @@ public record ComponentConfig(
     String type,
     List<String> connectors,
     Map<String, Object> properties
-) implements Serializable {} 
+) implements Serializable {
+    private static final long serialVersionUID = 1L;
+} 

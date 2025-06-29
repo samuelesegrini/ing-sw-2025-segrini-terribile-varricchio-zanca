@@ -10,6 +10,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class CargoHold extends Component {
+    private static final long serialVersionUID = 1L;
+    
     private int capacity;
     private int occupiedCapacity;
     private Map<GoodType, Integer> storedGoods;

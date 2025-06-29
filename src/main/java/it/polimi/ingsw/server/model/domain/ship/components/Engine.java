@@ -9,6 +9,7 @@ import it.polimi.ingsw.server.model.enums.ship.Direction;
 import java.util.Map;
 
 public class Engine extends Component {
+    private static final long serialVersionUID = 1L;
 
     public Engine(ComponentType type, Map<Direction, ConnectorType> connectors, String id) {
         super(type, connectors, id);
@@ -22,11 +23,11 @@ public class Engine extends Component {
 
     @Override
     public void count(Ship ship) {
-        // Galaxy Trucker: Engines provide base power without batteries
-        // Double engines need batteries during movement calculation to function at full power
+        // Galaxy Trucker: Single engines work without batteries, double engines require batteries
+        // Double engines provide 0 base power and need batteries to function at all
         int basePower = switch (super.getType()) {
             case ENGINE_SINGLE -> 1;
-            case ENGINE_DOUBLE -> 1; // Base power, can be boosted with batteries during movement
+            case ENGINE_DOUBLE -> 0; // Require batteries for ANY power
             default -> 0;
         };
 

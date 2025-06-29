@@ -14,6 +14,7 @@ import it.polimi.ingsw.server.model.enums.adventure.CardLevel;
  * the meteor strike on the ship. Players must defend their ship from the meteors or suffer damage.
  */
 public class MeteorSwarmCard extends AdventureCard {
+    private static final long serialVersionUID = 1L;
 
     private final List<Meteor> meteorPattern;
 

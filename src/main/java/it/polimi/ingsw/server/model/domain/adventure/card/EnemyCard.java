@@ -6,6 +6,7 @@ import it.polimi.ingsw.server.model.enums.adventure.AdventureType;
 import it.polimi.ingsw.server.model.enums.adventure.CardLevel;
 
 public abstract class EnemyCard extends AdventureCard {
+    private static final long serialVersionUID = 1L;
 
     private int powerLevel;
     private int movementPenalty;

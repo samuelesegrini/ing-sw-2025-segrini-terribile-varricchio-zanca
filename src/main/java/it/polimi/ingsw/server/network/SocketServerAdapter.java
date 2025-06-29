@@ -248,8 +248,11 @@ public class SocketServerAdapter implements ServerNetworkInterface {
             }
             
             LOGGER.fine("Client " + clientId + " appears connected, attempting to write message to stream");
+            
             try {
                 synchronized (oos) {
+                    // Reset the stream to prevent using back references to outdated object state
+                    oos.reset();
                     oos.writeObject(message);
                     oos.flush();
                 }

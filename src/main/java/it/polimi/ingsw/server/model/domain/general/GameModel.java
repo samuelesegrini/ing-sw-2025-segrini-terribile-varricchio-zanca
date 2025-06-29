@@ -127,6 +127,7 @@ public class GameModel implements Serializable {
         
         // Assign ship to player
         player.setShip(ship);
+        
         players.add(player);
     }
 
@@ -827,5 +828,6 @@ public class GameModel implements Serializable {
         
         return isValid;
     }
+
 
 }

@@ -3,6 +3,7 @@ package it.polimi.ingsw.common.message.response;
 import it.polimi.ingsw.client.ui.NotificationType;
 
 import java.util.UUID;
+import java.util.logging.Logger;
 
 /**
  * Lightweight response to game creation request.
@@ -23,16 +24,13 @@ public class CreateGameResponse extends AbstractResponse {
 
     @Override
     public void handleOnClient(ClientContext context) {
-        java.util.logging.Logger logger = java.util.logging.Logger.getLogger(CreateGameResponse.class.getName());
+        Logger logger = java.util.logging.Logger.getLogger(CreateGameResponse.class.getName());
         logger.info("🎯 CREATE GAME RESPONSE - Received confirmation that the create game request was successful. GameId: " + gameId);
 
         // Show a simple acknowledgment notification
         context.showNotification("Request Acknowledged", 
             "Game creation request processed successfully.", 
             NotificationType.SUCCESS);
-            
-        // DO NOT navigate or update the game model here.
-        // The GameCreatedEvent handler is responsible for state updates and navigation.
 
         context.getController().getUI().onCreateGameResponse(this);
     }

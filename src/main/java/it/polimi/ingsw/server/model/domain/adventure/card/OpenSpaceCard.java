@@ -10,6 +10,7 @@ import it.polimi.ingsw.server.model.enums.adventure.CardLevel;
  * The player decides whether to use battery tokens on double engines to enhance their engine strength for the race.
  */
 public class OpenSpaceCard extends AdventureCard {
+    private static final long serialVersionUID = 1L;
 
     /**
      * Constructs a new Open Space event card with the specified details.

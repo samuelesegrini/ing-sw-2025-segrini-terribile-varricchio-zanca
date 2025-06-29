@@ -1,12 +1,14 @@
 package it.polimi.ingsw.common.message;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
 /**
  * Abstract base class for all messages providing common functionality.
  */
-public abstract class AbstractMessage implements Message {
+public abstract class AbstractMessage implements Message, Serializable {
+    private static final long serialVersionUID = 1L;
     private final UUID messageId;
     private final String timestamp; // Use String instead of LocalDateTime for simplicity
 

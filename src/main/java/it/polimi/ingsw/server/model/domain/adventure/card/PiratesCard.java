@@ -10,6 +10,7 @@ import it.polimi.ingsw.server.model.enums.adventure.AdventureType;
 import it.polimi.ingsw.server.model.enums.adventure.CardLevel;
 
 public class PiratesCard extends EnemyCard {
+    private static final long serialVersionUID = 1L;
 
     private int creditReward;
     private List<CannonFire> attackPattern;

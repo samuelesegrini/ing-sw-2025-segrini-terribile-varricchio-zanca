@@ -85,7 +85,7 @@ public class BuildingTimer implements Serializable {
     private transient ScheduledFuture<?> currentTimer;
     private long stageStartTime;
     private final long STAGE_DURATION;
-    private TimerEventListener eventListener;
+    private transient TimerEventListener eventListener;
     private String lastFlipperPlayerId;
     private int totalFlips;
     private final Map<String, Boolean> playerFinishStatus; // Track who has finished
@@ -268,13 +268,6 @@ public class BuildingTimer implements Serializable {
         }
     }
     
-    /**
-     * Reinitializes transient fields after deserialization
-     */
-    private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
-        in.defaultReadObject();
-        this.executor = Executors.newSingleThreadScheduledExecutor();
-    }
     
     private void startFirstTimer(String playerId) {
         currentStage = TimerStage.FIRST_TIMER;
@@ -341,5 +334,15 @@ public class BuildingTimer implements Serializable {
         if (eventListener != null) {
             eventListener.onTimerEvent(event, playerId, getTimeRemaining());
         }
+    }
+    
+    /**
+     * Custom deserialization to reinitialize transient fields.
+     */
+    private void readObject(ObjectInputStream stream) throws IOException, ClassNotFoundException {
+        stream.defaultReadObject();
+        // Reinitialize transient fields
+        this.executor = Executors.newSingleThreadScheduledExecutor();
+        // Note: eventListener will need to be set manually after deserialization via setEventListener()
     }
 }

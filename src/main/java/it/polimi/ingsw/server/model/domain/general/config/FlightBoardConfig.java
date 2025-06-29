@@ -8,4 +8,6 @@ public record FlightBoardConfig(
         String length, // JSON has this as string, e.g., "18"
         List<Integer> startingPositions,
         RewardSystemConfig rewardSystem
-) implements Serializable {}
+) implements Serializable {
+    private static final long serialVersionUID = 1L;
+}

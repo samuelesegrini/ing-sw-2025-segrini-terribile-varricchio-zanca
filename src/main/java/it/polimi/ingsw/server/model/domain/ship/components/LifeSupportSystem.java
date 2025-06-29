@@ -16,6 +16,8 @@ import java.util.ArrayList;
  * Different types support different alien colors according to Galaxy Trucker rules.
  */
 public class LifeSupportSystem extends Component {
+    private static final long serialVersionUID = 1L;
+    
     private AlienColor supportedAlienColor;
     private int lifeSupportCapacity;
 

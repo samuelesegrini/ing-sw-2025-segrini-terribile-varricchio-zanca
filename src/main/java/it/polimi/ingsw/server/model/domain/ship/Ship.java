@@ -12,6 +12,7 @@ import it.polimi.ingsw.server.model.enums.ship.ComponentType;
 import it.polimi.ingsw.common.message.event.*;
 
 import it.polimi.ingsw.server.model.domain.ship.components.Battery;
+import it.polimi.ingsw.server.model.domain.ship.components.Cannon;
 import it.polimi.ingsw.server.model.domain.ship.components.Shield;
 import it.polimi.ingsw.server.model.enums.ship.ConnectorType;
 import it.polimi.ingsw.server.model.enums.ship.Direction;
@@ -376,6 +377,46 @@ public class Ship implements Serializable {
 
     public double getCannons() {
         return cannons + getPurpleAlienCombatBonus();
+    }
+
+    /**
+     * Calculates cannon strength with direction bonuses applied.
+     * Forward-facing cannons (UP) get full strength (1.0x multiplier).
+     * Other directions get reduced strength (0.5x multiplier).
+     * 
+     * @return Total cannon strength with direction bonuses
+     */
+    public double getCannonsWithDirectionBonus() {
+        double totalStrength = 0.0;
+        
+        // Calculate strength for each cannon component with direction bonus
+        for (Component[] row : board) {
+            for (Component component : row) {
+                if (component instanceof Cannon cannon) {
+                    double cannonStrength = 0.0;
+                    
+                    // Get base cannon strength
+                    if (cannon.getType() == ComponentType.CANNON_SINGLE) {
+                        cannonStrength = 1.0;
+                    } else if (cannon.getType() == ComponentType.CANNON_DOUBLE) {
+                        cannonStrength = 0.0; // Double cannons require batteries (handled elsewhere)
+                    }
+                    
+                    // Apply direction multiplier
+                    double directionMultiplier = cannon.getDirection() == Direction.UP ? 1.0 : 0.5;
+                    cannonStrength *= directionMultiplier;
+                    
+                    totalStrength += cannonStrength;
+                }
+            }
+        }
+        
+        // Add alien bonuses (only if base strength > 0)
+        if (totalStrength > 0) {
+            totalStrength += getPurpleAlienCombatBonus();
+        }
+        
+        return totalStrength;
     }
 
     public void setCannons(double cannons) {
@@ -1568,19 +1609,5 @@ public class Ship implements Serializable {
         return count;
     }
 
-    /**
-     * Custom serialization to handle transient PropertyChangeSupport.
-     */
-    private void writeObject(java.io.ObjectOutputStream out) throws java.io.IOException {
-        out.defaultWriteObject();
-    }
-
-    /**
-     * Custom deserialization to restore transient PropertyChangeSupport.
-     */
-    private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
-        in.defaultReadObject();
-        this.propertyChangeSupport = new PropertyChangeSupport(this);
-    }
 
 }

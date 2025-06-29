@@ -10,6 +10,8 @@ import it.polimi.ingsw.server.model.enums.ship.Direction;
 import java.util.Map;
 
 public class Cabin extends Component {
+    private static final long serialVersionUID = 1L;
+    
     private CrewType currentCrewType;
     private int maxCrew;
     private int currentCrew;
