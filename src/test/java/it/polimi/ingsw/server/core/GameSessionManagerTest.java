@@ -11,6 +11,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.AfterEach;
 
+import java.beans.PropertyChangeListener;
 import java.util.List;
 import java.util.UUID;
 
@@ -27,25 +28,27 @@ class GameSessionManagerTest {
     private PlayerId testPlayerId3;
 
     // Dummy EventPublisher for testing
-    private static class DummyEventPublisher implements EventPublisher {
+    private static class DummyEventPublisher implements EventPublisher, java.beans.PropertyChangeListener {
         @Override
         public void publishEvent(Event event) {
-
+            // Mock implementation
         }
 
         @Override
         public void publishEventToClient(Event event, String clientId) {
-
+            // Mock implementation
         }
 
         @Override
         public void publishEventToGame(Event event, String gameId) {
-
+            // Mock implementation
         }
-        // Implement required methods with no-op behavior for testing
-        // Add methods as needed based on your EventPublisher interface
-    }
 
+        @Override
+        public void propertyChange(java.beans.PropertyChangeEvent evt) {
+            // Mock implementation per PropertyChangeListener
+        }
+    }
     // Dummy ServerNetworkManager for testing
     private static class DummyServerNetworkManager extends ServerNetworkManager {
         // Override methods as needed with no-op behavior for testing
@@ -70,7 +73,7 @@ class GameSessionManagerTest {
         testPlayerId3 = PlayerId.fromString("player3");
 
         // Initialize GameSessionManager with the new constructor signature
-        gameSessionManager = new GameSessionManager(networkManager, playerRegistry, eventPublisher);
+        gameSessionManager = new GameSessionManager(networkManager, playerRegistry);
     }
 
     @AfterEach
@@ -502,5 +505,256 @@ class GameSessionManagerTest {
 
         // Note: We can't easily test that the executor is actually shut down
         // without access to internal state, but we can verify no exceptions are thrown
+    }
+    // Aggiungi questi test alla classe GameSessionManagerTest esistente
+
+    @Test
+    void testAddPropertyChangeListener() {
+        // Given
+        PropertyChangeListener listener = evt -> {
+            // Mock listener implementation
+        };
+
+        // When - Should not throw exception
+        assertDoesNotThrow(() -> gameSessionManager.addPropertyChangeListener(listener),
+                "Adding property change listener should not throw exception");
+    }
+
+    @Test
+    void testRemovePropertyChangeListener() {
+        // Given
+        PropertyChangeListener listener = evt -> {
+            // Mock listener implementation
+        };
+        gameSessionManager.addPropertyChangeListener(listener);
+
+        // When - Should not throw exception
+        assertDoesNotThrow(() -> gameSessionManager.removePropertyChangeListener(listener),
+                "Removing property change listener should not throw exception");
+    }
+
+    @Test
+    void testCreateGame_PropertyChangeEventFired() {
+        // Given
+        final boolean[] eventFired = {false};
+        PropertyChangeListener listener = evt -> {
+            if (evt.getNewValue() instanceof it.polimi.ingsw.common.message.event.GameCreatedEvent) {
+                eventFired[0] = true;
+            }
+        };
+        gameSessionManager.addPropertyChangeListener(listener);
+
+        // When
+        String gameId = gameSessionManager.createGame(testPlayerId1, 4, GameLevel.TEST_FLIGHT, "Event Test Game");
+
+        // Then
+        assertNotNull(gameId, "Game should be created");
+        assertTrue(eventFired[0], "Property change event should be fired when game is created");
+
+        // Cleanup
+        gameSessionManager.removePropertyChangeListener(listener);
+    }
+
+    private static class TestEventPublisher implements EventPublisher, java.beans.PropertyChangeListener {
+        private boolean eventPublished = false;
+
+        @Override
+        public void publishEvent(Event event) {
+            eventPublished = true;
+        }
+
+        @Override
+        public void publishEventToClient(Event event, String clientId) {}
+
+        @Override
+        public void publishEventToGame(Event event, String gameId) {}
+
+        @Override
+        public void propertyChange(java.beans.PropertyChangeEvent evt) {
+            // Handle property change events
+            if (evt.getNewValue() instanceof Event) {
+                publishEvent((Event) evt.getNewValue());
+            }
+        }
+
+        public boolean isEventPublished() {
+            return eventPublished;
+        }
+    }
+
+    @Test
+    void testCreateGame_WithEventPublisher() {
+        // Given - Create an EventPublisher that also implements PropertyChangeListener
+        TestEventPublisher testEventPublisher = new TestEventPublisher();
+        gameSessionManager.setEventPublisher(testEventPublisher);
+
+        // When
+        String gameId = gameSessionManager.createGame(testPlayerId1, 4, GameLevel.TEST_FLIGHT, "EventPublisher Test");
+
+        // Then
+        assertNotNull(gameId, "Game should be created successfully with event publisher");
+        // The actual event publishing depends on the GameSession implementation
+    }
+
+    @Test
+    void testRemovePlayerFromGame_PlayerNotInSpecifiedGame() {
+        // Given - Create two games
+        String gameId1 = gameSessionManager.createGame(testPlayerId1, 4, GameLevel.TEST_FLIGHT, "Game 1");
+        String gameId2 = gameSessionManager.createGame(testPlayerId2, 4, GameLevel.LEVEL_II, "Game 2");
+
+        // When - Try to remove player1 from game2 (player1 is in game1)
+        boolean removeResult = gameSessionManager.removePlayerFromGame(gameId2, testPlayerId1);
+
+        // Then
+        assertFalse(removeResult, "Should not be able to remove player from wrong game");
+        assertEquals(gameId1, gameSessionManager.getPlayerGameId(testPlayerId1),
+                "Player should still be in original game");
+    }
+
+    @Test
+    void testRemovePlayerFromGame_PlayerNotInGame() {
+        // Given - Create a game but don't add testPlayerId2
+        String gameId = gameSessionManager.createGame(testPlayerId1, 4, GameLevel.TEST_FLIGHT, "Test Game");
+
+        // When - Try to remove player not in the game
+        boolean removeResult = gameSessionManager.removePlayerFromGame(gameId, testPlayerId2);
+
+        // Then
+        assertFalse(removeResult, "Should not be able to remove player not in the game");
+    }
+
+    @Test
+    void testJoinGame_GameAtMaxCapacity() {
+        // Given - Create a game with max 2 players
+        String gameId = gameSessionManager.createGame(testPlayerId1, 2, GameLevel.TEST_FLIGHT, "Small Game");
+
+        // Fill the game to capacity
+        boolean join2 = gameSessionManager.joinGame(gameId, testPlayerId2);
+        assertTrue(join2, "Second player should join successfully");
+
+        // When - Try to add a third player
+        PlayerId testPlayerId4 = PlayerId.fromString("player4");
+        boolean join3 = gameSessionManager.joinGame(gameId, testPlayerId4);
+
+        // Then
+        assertFalse(join3, "Third player should not be able to join full game");
+        assertNull(gameSessionManager.getPlayerGameId(testPlayerId4),
+                "Fourth player should not be mapped to any game");
+    }
+
+    @Test
+    void testGetAvailableGames_AfterGameRemoval() {
+        // Given - Create games
+        String gameId1 = gameSessionManager.createGame(testPlayerId1, 4, GameLevel.TEST_FLIGHT, "Game 1");
+        String gameId2 = gameSessionManager.createGame(testPlayerId2, 4, GameLevel.LEVEL_II, "Game 2");
+
+        List<GameModel> initialGames = gameSessionManager.getAvailableGames();
+        assertEquals(2, initialGames.size(), "Should have 2 games initially");
+
+        // When - Remove all players from first game (should remove the game)
+        gameSessionManager.removePlayerFromGame(gameId1, testPlayerId1);
+
+        // Then
+        List<GameModel> remainingGames = gameSessionManager.getAvailableGames();
+        assertEquals(1, remainingGames.size(), "Should have 1 game after removal");
+
+        // Verify the remaining game is the correct one
+        assertEquals(gameId2, remainingGames.get(0).getGameId(), "Remaining game should be game 2");
+    }
+
+    @Test
+    void testGameSessionManager_ConfigurationLoadingFailure() {
+        // This test verifies the exception handling in constructor
+        // Note: This would require mocking or a different configuration setup
+        // For now, we test that normal initialization doesn't throw
+        assertDoesNotThrow(() -> {
+            new GameSessionManager(new DummyServerNetworkManager(), new DummyPlayerSessionRegistry());
+        }, "GameSessionManager constructor should not throw with valid setup");
+    }
+
+    @Test
+    void testPlayerId_EqualsAndHashCode() {
+        // Test equals method
+        PlayerId id1 = PlayerId.fromString("testPlayer");
+        PlayerId id2 = PlayerId.fromString("testPlayer");
+        PlayerId id3 = PlayerId.fromString("differentPlayer");
+
+        assertEquals(id1, id2, "Same string should create equal PlayerId objects");
+        assertNotEquals(id1, id3, "Different strings should create different PlayerId objects");
+        assertNotEquals(id1, null, "PlayerId should not equal null");
+        assertNotEquals(id1, "testPlayer", "PlayerId should not equal String");
+
+        // Test hashCode consistency
+        assertEquals(id1.hashCode(), id2.hashCode(), "Equal objects should have same hash code");
+    }
+
+    @Test
+    void testConcurrentGameRemoval() throws InterruptedException {
+        // Given - Create a game
+        String gameId = gameSessionManager.createGame(testPlayerId1, 4, GameLevel.TEST_FLIGHT, "Concurrent Test");
+        gameSessionManager.joinGame(gameId, testPlayerId2);
+
+        // When - Remove players concurrently
+        Thread removeThread1 = new Thread(() ->
+                gameSessionManager.removePlayerFromGame(gameId, testPlayerId1));
+        Thread removeThread2 = new Thread(() ->
+                gameSessionManager.removePlayerFromGame(gameId, testPlayerId2));
+
+        removeThread1.start();
+        removeThread2.start();
+
+        removeThread1.join();
+        removeThread2.join();
+
+        // Then - Game should be removed and no players should be mapped
+        assertNull(gameSessionManager.getGameSession(gameId), "Game should be removed after all players leave");
+        assertNull(gameSessionManager.getPlayerGameId(testPlayerId1), "Player 1 should not be in any game");
+        assertNull(gameSessionManager.getPlayerGameId(testPlayerId2), "Player 2 should not be in any game");
+    }
+
+    @Test
+    void testShutdown_WithActiveGames() {
+        // Given - Create some active games
+        gameSessionManager.createGame(testPlayerId1, 4, GameLevel.TEST_FLIGHT, "Active Game 1");
+        gameSessionManager.createGame(testPlayerId2, 4, GameLevel.LEVEL_II, "Active Game 2");
+
+        // When - Shutdown with active games
+        assertDoesNotThrow(() -> gameSessionManager.shutdown(),
+                "Shutdown should handle active games gracefully");
+    }
+
+    @Test
+    void testShutdown_InterruptedException() {
+        // Given - Create game session manager
+        GameSessionManager manager = new GameSessionManager(new DummyServerNetworkManager(), new DummyPlayerSessionRegistry());
+
+        // Interrupt current thread to simulate InterruptedException during shutdown
+        Thread.currentThread().interrupt();
+
+        // When - Shutdown while interrupted
+        assertDoesNotThrow(() -> manager.shutdown(),
+                "Shutdown should handle interruption gracefully");
+
+        // Clean up interrupt status
+        Thread.interrupted();
+    }
+
+    @Test
+    void testSetEventPublisher_WithExistingGames() {
+        // Given - Create games first
+        String gameId1 = gameSessionManager.createGame(testPlayerId1, 4, GameLevel.TEST_FLIGHT, "Game 1");
+        String gameId2 = gameSessionManager.createGame(testPlayerId2, 4, GameLevel.LEVEL_II, "Game 2");
+
+        // When - Set event publisher after games exist
+        EventPublisher newEventPublisher = new DummyEventPublisher();
+        gameSessionManager.setEventPublisher(newEventPublisher);
+
+        // Then - Games should still be accessible
+        assertNotNull(gameSessionManager.getGameSession(gameId1), "Game 1 should still exist");
+        assertNotNull(gameSessionManager.getGameSession(gameId2), "Game 2 should still exist");
+
+        // New games should still be creatable
+        String gameId3 = gameSessionManager.createGame(testPlayerId3, 4, GameLevel.TEST_FLIGHT, "Game 3");
+        assertNotNull(gameId3, "Should be able to create new games after setting event publisher");
     }
 }

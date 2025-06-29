@@ -183,6 +183,7 @@ public class ClientController {
 
         LOGGER.info("Logging in with nickname: " + nickname);
 
+
         LoginRequest request = new LoginRequest(nickname.trim());
         return networkClient.sendRequest(request)
                 .thenApply(response -> {

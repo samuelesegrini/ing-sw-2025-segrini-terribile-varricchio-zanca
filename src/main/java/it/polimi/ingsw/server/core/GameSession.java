@@ -60,12 +60,12 @@ public class GameSession {
     private volatile GamePhase currentPhase;
     private volatile boolean started;
     private volatile boolean ended;
-    
+
     // Adventure card management
     private AdventureCardController adventureCardController;
-    
+
     // Building timer management delegated to GameModel
-    
+
     // Property change support
     private final PropertyChangeSupport propertyChangeSupport;
 
@@ -83,8 +83,8 @@ public class GameSession {
         // Create decks from configuration manager
         ComponentDeck componentDeck = configManager.createComponentDeck(gameLevel);
         AdventureDeck adventureDeck = configManager.createAdventureDeck(gameLevel);
-        
-        this.gameModel = new GameModel(gameId, gameName, gameLevel, configManager.getConfigForLevel(gameLevel), 
+
+        this.gameModel = new GameModel(gameId, gameName, gameLevel, configManager.getConfigForLevel(gameLevel),
                                      componentDeck, adventureDeck, maxPlayers);
         this.joinedPlayers = ConcurrentHashMap.newKeySet();
         this.currentPhase = GamePhase.SETUP;
@@ -111,7 +111,7 @@ public class GameSession {
     public void removePropertyChangeListener(PropertyChangeListener listener) {
         propertyChangeSupport.removePropertyChangeListener(listener);
     }
-    
+
     public void firePropertyChange(String propertyName, Object oldValue, Object newValue) {
         propertyChangeSupport.firePropertyChange(propertyName, oldValue, newValue);
     }
@@ -140,11 +140,11 @@ public class GameSession {
 
             String playerNickname = playerRegistry.getPlayerNickname(playerId);
             PlayerJoinedGameEvent event = new PlayerJoinedGameEvent(
-                    gameId, playerId, playerNickname, 
+                    gameId, playerId, playerNickname,
                     joinedPlayers.size(), this.getGameModel()
             );
             propertyChangeSupport.firePropertyChange("eventPublished", null, event);
-            
+
             return true;
         }
     }
@@ -190,10 +190,10 @@ public class GameSession {
         Player player = gameModel.getPlayerById(playerId);
         if (player != null) {
             player.setReady(ready);
-            
+
             boolean isCreator = playerId.equals(creatorId);
             LOGGER.info("Ready: " + playerId + "=" + ready + (isCreator ? " (creator)" : ""));
-            
+
             String playerNickname = playerRegistry.getPlayerNickname(playerId);
             PlayerReadyChangedEvent event = new PlayerReadyChangedEvent(gameId, playerId, playerNickname, ready);
             propertyChangeSupport.firePropertyChange("eventPublished", null, event);
@@ -205,7 +205,14 @@ public class GameSession {
      */
     public boolean canStart() {
         synchronized (lock) {
-            if (started || joinedPlayers.size() < 2) {
+            if ( ended ) {
+                LOGGER.warning("Cannot start an ended game.");
+                return false;
+            } else if (started) {
+                LOGGER.warning("Cannot start an already started game.");
+                return false;
+            } else if (joinedPlayers.size() < 2 ) {
+                LOGGER.warning("Not enough players to start the game.");
                 return false;
             }
 
@@ -219,7 +226,17 @@ public class GameSession {
      */
     public boolean startGame() {
         synchronized (lock) {
+            if (ended) {
+                LOGGER.warning("Cannot start game - game has already ended: " + gameId);
+                return false;
+            }
+            if (started) {
+                LOGGER.warning("Cannot start game - game has already started: " + gameId);
+                return false;
+            }
+
             if (!canStart()) {
+                LOGGER.warning("Cannot start game - not all players are ready or not enough players: " + gameId);
                 return false;
             }
 
@@ -232,10 +249,10 @@ public class GameSession {
             transitionToPhase(GamePhase.BUILDING);
 
             LOGGER.info("Started: " + gameId + " (" + joinedPlayers.size() + " players)");
-            
+
             GameStartedEvent event = new GameStartedEvent(gameId, this.getGameModel(), creatorId);
             propertyChangeSupport.firePropertyChange("eventPublished", null, event);
-            
+
             return true;
         }
     }
@@ -303,14 +320,14 @@ public class GameSession {
             }, buildingTimeMinutes, TimeUnit.MINUTES);
         }
     }
-    
+
     /**
      * Checks if the timer system is supported for the given game level.
      */
     private boolean supportsTimerSystem(GameLevel level) {
         return level != GameLevel.TEST_FLIGHT;
     }
-    
+
     /**
      * Handles timer events from the BuildingTimer.
      */
@@ -328,7 +345,7 @@ public class GameSession {
             // Other events are handled by the BuildingTimerFlippedEvent when players flip
         }
     }
-    
+
     /**
      * Broadcasts timer expiration events to all players.
      */
@@ -337,7 +354,7 @@ public class GameSession {
         LOGGER.info("Timer event: " + event + ", time remaining: " + timeRemaining);
         // Additional broadcast logic could be added here if needed
     }
-    
+
     /**
      * Ends the building phase and transitions to flight.
      */
@@ -380,7 +397,7 @@ public class GameSession {
         // Delegate to GameModel - no session state involved
         ComponentDeck deck = gameModel.getComponentDeck();
         Player player = gameModel.getPlayerById(playerId);
-        
+
         if (player != null) {
             // Return held component
             Component heldComponent = player.getHeldComponent();
@@ -388,7 +405,7 @@ public class GameSession {
                 player.clearHeldComponent();
                 deck.returnToFaceUp(heldComponent);
             }
-            
+
             // Return any reserved components from the player's ship
             Ship ship = player.getShip();
             if (ship != null) {
@@ -410,26 +427,26 @@ public class GameSession {
         if (player == null) {
             return false;
         }
-        
+
         // Check if player has marked themselves as ready
         if (player.isReady()) {
             return true;
         }
-        
+
         // Alternative: Check if ship meets minimum requirements
         Ship ship = player.getShip();
         if (ship == null) {
             return false;
         }
-        
+
         ship.updateStats();
-        
+
         // Minimum requirements to be considered "finished"
         return ship.getEngines() >= 1 &&
                ship.getCrew() >= 2 &&
                ship.isStructurallyValid();
     }
-    
+
     /**
      * Flips the building timer following Galaxy Trucker three-stage rules.
      * @param playerId The player attempting to flip the timer
@@ -441,7 +458,7 @@ public class GameSession {
         if (currentPhase != GamePhase.BUILDING) {
             throw new IllegalStateException("Can only flip timer during building phase");
         }
-        
+
         // Delegate to GameModel and convert boolean result to FlipResult
         boolean success = gameModel.flipBuildingTimer(PlayerId.fromString(playerId), playerHasFinishedShip);
         return success ? BuildingTimer.FlipResult.SUCCESS : BuildingTimer.FlipResult.INVALID_STAGE;
@@ -472,7 +489,7 @@ public class GameSession {
     private void endGame(String reason) {
         synchronized (lock) {
             if (ended) {
-                return;
+                return; // Already ended
             }
 
             ended = true;
@@ -481,13 +498,13 @@ public class GameSession {
             if (phaseTimer != null) {
                 phaseTimer.cancel(false);
             }
-            
+
             // Shutdown building timer if active (handled by GameModel)
             BuildingTimer timer = gameModel.getBuildingTimer();
             if (timer != null) {
                 timer.shutdown();
             }
-            
+
             // Shutdown adventure card controller if active
             if (adventureCardController != null) {
                 adventureCardController.cleanup();
@@ -510,7 +527,7 @@ public class GameSession {
     public PlayerId getCreatorId() {
         return creatorId;
     }
-    
+
 
     public GameModel getGameModel() {
         return gameModel;
@@ -566,7 +583,7 @@ public class GameSession {
         }
         return gameModel.getPlayers().stream().allMatch(Player::isReady);
     }
-    
+
     public boolean isCreator(PlayerId playerId) {
         return creatorId != null && creatorId.equals(playerId);
     }

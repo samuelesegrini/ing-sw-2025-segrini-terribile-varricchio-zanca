@@ -49,7 +49,7 @@ class CommandDispatcherTest {
         playerRegistry = new PlayerSessionRegistry();
         networkManager = new ServerNetworkManager();
         eventPublisher = new TestEventPublisher(); // Create test event publisher
-        sessionManager = new GameSessionManager(networkManager, playerRegistry, eventPublisher);
+        sessionManager = new GameSessionManager(networkManager, playerRegistry);
         networkClientToGamePlayerMap = new ConcurrentHashMap<>();
 
         // Create test adapter to intercept messages
