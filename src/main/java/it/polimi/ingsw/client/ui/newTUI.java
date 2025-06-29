@@ -51,6 +51,8 @@ public class newTUI implements newUI {
             return;
         }
 
+        System.out.println("Connected to server.");
+
         printer.printLoginPhase();
         elaborateLogin();
 
@@ -152,6 +154,8 @@ public class newTUI implements newUI {
         printer.printLoading("Logging in as " + nickname);
 
         controller.login(nickname);
+
+        printer.printLoading("Done");
     }
 
     private void elaborateLobbyCommand(String[] tokens) {
@@ -250,7 +254,7 @@ public class newTUI implements newUI {
     }
 
     private void handleReadyCommand() {
-        String playerId = controller.getPlayerId() != null ? controller.getPlayerId() : null;
+        String playerId = controller.getPlayerId();
         if (!controller.getClientState().isPlayerReady(playerId)) {
             controller.setPlayerReady(true);
             printer.printSuccess("Marked as ready!");
@@ -260,7 +264,7 @@ public class newTUI implements newUI {
     }
 
     private void handleUnreadyCommand() {
-        String playerId = controller.getPlayerId() != null ? controller.getPlayerId() : null;
+        String playerId = controller.getPlayerId();
         if (controller.getClientState().isPlayerReady(playerId)) {
             controller.setPlayerReady(false);
             printer.printSuccess("Marked as not ready!");
@@ -270,8 +274,8 @@ public class newTUI implements newUI {
     }
 
     private void handleStartCommand() {
-        String currentPlayerId = controller.getPlayerId() != null ? controller.getPlayerId() : null;
-        if (!currentPlayerId.equals(getHostPlayerId())) {
+        String playerId = controller.getPlayerId();
+        if (!playerId.equals(getHostPlayerId())) {
             printer.printError("Only the host can start the game!");
             return;
         }
@@ -295,6 +299,8 @@ public class newTUI implements newUI {
             printer.printInfo("Cancelled leaving lobby.");
         }
     }
+
+    //
 
     // TODO: CONTROLLA
     private String getHostPlayerId() {
@@ -326,6 +332,7 @@ public class newTUI implements newUI {
 
     @Override
     public void onLoginResponse(LoginResponse r) {
+        printer.printInfo("ENTRATO");
         if (r.isSuccess()) {
             printer.printSuccess("Login successful!");
             printer.print("Welcome " + r.getNickname() + "!");
@@ -335,7 +342,6 @@ public class newTUI implements newUI {
             printer.printError("Login failed.");
         }
     }
-
 
     // Lobby
 
