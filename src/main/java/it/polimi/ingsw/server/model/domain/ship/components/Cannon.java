@@ -9,6 +9,7 @@ import it.polimi.ingsw.server.model.enums.ship.Direction;
 import java.util.Map;
 
 public class Cannon extends Component {
+    private static final long serialVersionUID = 1L;
 
     public Cannon(ComponentType type, Map<Direction, ConnectorType> connectors, String id) {
         super(type, connectors, id);
@@ -22,11 +23,11 @@ public class Cannon extends Component {
 
     @Override
     public void count(Ship ship) {
-        // Galaxy Trucker: Cannons provide base power without batteries
-        // Double cannons need batteries during combat calculation to function at full power
+        // Galaxy Trucker: Single cannons work without batteries, double cannons require batteries
+        // Double cannons provide 0 base power and need batteries to function at all
         int basePower = switch (super.getType()) {
             case CANNON_SINGLE -> 1;
-            case CANNON_DOUBLE -> 1; // Base power, can be boosted with batteries during combat
+            case CANNON_DOUBLE -> 0; // Require batteries for ANY strength
             default -> 0;
         };
 

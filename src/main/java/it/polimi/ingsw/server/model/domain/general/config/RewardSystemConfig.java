@@ -8,4 +8,6 @@ public record RewardSystemConfig(
         Map<String, Integer> resourceBonus, // Keys like "RED", "BLUE"
         int bestLookingShipBonus,
         int exposedConnectorsPenalty
-) implements Serializable {}
+) implements Serializable {
+    private static final long serialVersionUID = 1L;
+}

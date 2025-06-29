@@ -90,8 +90,6 @@ public class CreateGameRequest extends AbstractRequest {
         // Get player info
         String creatorNickname = registry.getPlayerNickname(playerId);
 
-        // Model operation will fire the event automatically
-
         // Return gameId
         CreateGameResponse response = new CreateGameResponse(getCorrelationId(), gameId);
         return response;

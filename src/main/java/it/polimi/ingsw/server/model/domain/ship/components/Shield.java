@@ -18,6 +18,8 @@ import java.util.ArrayList;
  * Shields can absorb shots and protect adjacent components according to Galaxy Trucker rules.
  */
 public class Shield extends Component {
+    private static final long serialVersionUID = 1L;
+    
     private Set<Direction> protectedDirections;
     private boolean charged;
     private int shieldStrength;

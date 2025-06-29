@@ -74,13 +74,17 @@ public class StartGameRequest extends AbstractRequest {
         }
 
         // Start the game
+        LOGGER.info("DEBUG: StartGameRequest.execute() - About to call gameSession.startGame()");
         boolean started = gameSession.startGame();
+        LOGGER.info("DEBUG: StartGameRequest.execute() - gameSession.startGame() returned: " + started);
+        
         if (!started) {
+            LOGGER.warning("DEBUG: StartGameRequest.execute() - Game failed to start, returning error response");
             return createErrorResponse("Failed to start game", "INTERNAL_ERROR");
         }
 
+        LOGGER.info("DEBUG: StartGameRequest.execute() - Game started successfully, returning success response");
         // Model operation will fire the event automatically
-
         return createSuccessResponse();
     }
 } 

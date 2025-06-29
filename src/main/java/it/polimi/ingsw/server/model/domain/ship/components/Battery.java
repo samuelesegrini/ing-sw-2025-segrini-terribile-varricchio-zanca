@@ -12,6 +12,8 @@ import java.util.Map;
  * Batteries are consumed (trashed) when used for power - no complex state management.
  */
 public class Battery extends Component {
+    private static final long serialVersionUID = 1L;
+    
     private int maxBatteries;
     private int availableBatteries;
 

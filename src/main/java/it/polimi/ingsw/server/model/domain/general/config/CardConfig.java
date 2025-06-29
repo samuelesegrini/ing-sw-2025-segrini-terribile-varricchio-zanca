@@ -11,4 +11,6 @@ public record CardConfig(
     String type,
     String description,
     Map<String, Object> properties
-) implements Serializable {} 
+) implements Serializable {
+    private static final long serialVersionUID = 1L;
+} 

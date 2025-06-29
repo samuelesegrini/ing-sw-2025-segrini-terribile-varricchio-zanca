@@ -11,6 +11,8 @@ import it.polimi.ingsw.server.model.enums.adventure.CardLevel;
  * Once a player repairs the ship, no other players can take the opportunity.
  */
 public class AbandonedShipCard extends AdventureCard {
+    private static final long serialVersionUID = 1L;
+    
     private int crewLost;
     private int creditsGained;
     private int lostDays;

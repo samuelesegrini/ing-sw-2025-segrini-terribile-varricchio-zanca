@@ -19,6 +19,8 @@ import it.polimi.ingsw.server.model.enums.adventure.CardLevel;
  *
  */
  public class SlaversCard extends EnemyCard {
+    private static final long serialVersionUID = 1L;
+    
     private int creditReward;
     private int crewLossAmount;
 

@@ -15,6 +15,7 @@ import it.polimi.ingsw.server.model.enums.adventure.CardLevel;
  * Only one rocket is allowed per planet, and the leader chooses first, followed by other players in order.
  */
 public class PlanetsCard extends AdventureCard {
+    private static final long serialVersionUID = 1L;
 
     private List<Planet> planets;
     private int lostDays;

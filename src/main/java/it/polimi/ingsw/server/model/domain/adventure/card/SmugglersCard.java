@@ -18,6 +18,7 @@ import it.polimi.ingsw.server.model.enums.resource.GoodType;
  * - Once defeated, the Smugglers do not attack further players.
  */
  public class SmugglersCard extends EnemyCard {
+    private static final long serialVersionUID = 1L;
 
     private Map<GoodType, Integer> availableGoods;
     private int goodsLostIfDefeated;

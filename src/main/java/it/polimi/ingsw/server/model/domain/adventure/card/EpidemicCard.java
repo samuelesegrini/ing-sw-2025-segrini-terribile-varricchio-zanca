@@ -10,6 +10,7 @@ import it.polimi.ingsw.server.model.enums.adventure.CardLevel;
  * (human or alien) from every occupied cabin that is joined to another occupied cabin.
  */
 public class EpidemicCard extends AdventureCard {
+    private static final long serialVersionUID = 1L;
 
     /**
      * Constructs a new Epidemic event card with the specified attributes.

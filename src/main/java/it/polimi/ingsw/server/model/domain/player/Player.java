@@ -375,20 +375,5 @@ public class Player implements Serializable {
                 '}';
     }
 
-    /**
-     * Custom serialization to handle transient PropertyChangeSupport.
-     */
-    private void writeObject(java.io.ObjectOutputStream out) throws java.io.IOException {
-        out.defaultWriteObject();
-    }
-
-    /**
-     * Custom deserialization to restore transient PropertyChangeSupport.
-     */
-    private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
-        in.defaultReadObject();
-        this.propertyChangeSupport = new PropertyChangeSupport(this);
-        this.playerNickname = playerId.getNickname(); // Restore nickname
-    }
 }
 

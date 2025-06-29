@@ -17,6 +17,7 @@ import java.util.Map;
  * and lose the specified number of flight days.
  */
 public class AbandonedStationCard extends AdventureCard {
+    private static final long serialVersionUID = 1L;
 
     private Map<GoodType, Integer> goodQuantities;
     private int minCrewRequired;

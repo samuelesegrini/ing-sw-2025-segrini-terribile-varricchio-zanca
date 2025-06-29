@@ -158,19 +158,38 @@ public class ClientState {
     // === Game State Management ===
     public void setGameModel(GameModel newGameModel) {
         java.util.logging.Logger logger = java.util.logging.Logger.getLogger(ClientState.class.getName());
+        
+        logger.info("DEBUG: ClientState.setGameModel() called");
+        logger.info("DEBUG: Current GameModel: " + (this.gameModel != null ? "exists" : "null"));
+        logger.info("DEBUG: New GameModel: " + (newGameModel != null ? "exists" : "null"));
+        
         if (newGameModel != null) {
-            logger.info("🔄 CLIENT STATE - Setting GameModel with " + newGameModel.getPlayers().size() +
+            logger.info("DEBUG: 🔄 CLIENT STATE - Setting GameModel with " + newGameModel.getPlayers().size() +
                        " players in " + newGameModel.getCurrentPhase() + " phase (Hash: " +
                        System.identityHashCode(newGameModel) + ")");
-            logger.info("CLIENT STATE: GameModel received. Phase: " + newGameModel.getCurrentPhase());
+            logger.info("DEBUG: CLIENT STATE: GameModel received. Phase: " + newGameModel.getCurrentPhase());
+            
+            // Debug player info
+            for (it.polimi.ingsw.server.model.domain.player.Player player : newGameModel.getPlayers()) {
+                logger.info("DEBUG: Player in GameModel: " + player.getId() + " (" + player.getNickname() + ")");
+            }
         } else {
-            logger.info("🔄 CLIENT STATE - Setting GameModel to NULL");
+            logger.info("DEBUG: 🔄 CLIENT STATE - Setting GameModel to NULL");
         }
+        
+        GameModel oldGameModel = this.gameModel;
         this.gameModel = newGameModel;
+        
         if (this.gameModel != null) {
-            logger.info("CLIENT STATE: GameModel set. Phase: " + this.gameModel.getCurrentPhase());
+            logger.info("DEBUG: CLIENT STATE: GameModel successfully set. Phase: " + this.gameModel.getCurrentPhase());
+            logger.info("DEBUG: GameModel assignment successful - can access players: " + this.gameModel.getPlayers().size());
+        } else {
+            logger.info("DEBUG: CLIENT STATE: GameModel set to null");
         }
+        
+        logger.info("DEBUG: Calling refreshCurrentView()");
         refreshCurrentView(); // Refresh game views
+        logger.info("DEBUG: refreshCurrentView() completed");
     }
 
     public GameModel getGameModel() {

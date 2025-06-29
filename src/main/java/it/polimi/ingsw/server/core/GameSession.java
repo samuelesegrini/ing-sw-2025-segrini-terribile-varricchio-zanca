@@ -139,9 +139,10 @@ public class GameSession {
             }
 
             String playerNickname = playerRegistry.getPlayerNickname(playerId);
+            
             PlayerJoinedGameEvent event = new PlayerJoinedGameEvent(
                     gameId, playerId, playerNickname, 
-                    joinedPlayers.size(), this.getGameModel()
+                    joinedPlayers.size(), gameModel
             );
             propertyChangeSupport.firePropertyChange("eventPublished", null, event);
             
@@ -219,22 +220,42 @@ public class GameSession {
      */
     public boolean startGame() {
         synchronized (lock) {
+            LOGGER.info("DEBUG: GameSession.startGame() called for gameId: " + gameId);
+            LOGGER.info("DEBUG: canStart() check: " + canStart());
+            LOGGER.info("DEBUG: Player count: " + joinedPlayers.size());
+            LOGGER.info("DEBUG: All players ready: " + areAllPlayersReady());
+            
             if (!canStart()) {
+                LOGGER.warning("DEBUG: Cannot start game - canStart() returned false");
                 return false;
             }
 
+            LOGGER.info("DEBUG: Setting game as started and initializing...");
             started = true;
             gameModel.initializeGame();
             gameModel.startGame();
 
+            LOGGER.info("DEBUG: Game model initialized, transitioning to BUILDING phase");
             // Initialize components
             // Start building phase
             transitionToPhase(GamePhase.BUILDING);
 
-            LOGGER.info("Started: " + gameId + " (" + joinedPlayers.size() + " players)");
+            LOGGER.info("DEBUG: Started: " + gameId + " (" + joinedPlayers.size() + " players)");
             
-            GameStartedEvent event = new GameStartedEvent(gameId, this.getGameModel(), creatorId);
+            LOGGER.info("DEBUG: Creating GameStartedEvent with GameModel containing " + 
+                       this.getGameModel().getPlayers().size() + " players");
+            
+            // Debug: Log each player before creating the event
+            GameModel gameModelToSend = this.getGameModel();
+            for (Player p : gameModelToSend.getPlayers()) {
+                LOGGER.info("DEBUG: SERVER PLAYER BEFORE EVENT: " + p.getId() + " - " + p.getNickname());
+            }
+            
+            GameStartedEvent event = new GameStartedEvent(gameId, gameModelToSend, creatorId);
+            
+            LOGGER.info("DEBUG: Firing GameStartedEvent via propertyChangeSupport");
             propertyChangeSupport.firePropertyChange("eventPublished", null, event);
+            LOGGER.info("DEBUG: GameStartedEvent fired successfully");
             
             return true;
         }

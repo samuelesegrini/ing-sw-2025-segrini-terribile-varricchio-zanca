@@ -31,9 +31,12 @@ public class PlayerJoinedGameEvent extends AbstractEvent {
         this.playerId = playerId;
         this.playerNickname = playerNickname;
         this.currentPlayerCount = currentPlayerCount;
+        
         this.gameModel = gameModel;
+        
         LOGGER.fine("PlayerJoinedGameEvent instantiated for game: " + gameId + ", player: " + playerNickname);
     }
+
     
 
     public PlayerId getPlayerId() {
@@ -56,9 +59,6 @@ public class PlayerJoinedGameEvent extends AbstractEvent {
     @Override
     public void handleOnClient(ClientEventContext context) {
         ClientState clientState = context.getClientState();
-        if (gameId != null && clientState != null) {
-            LOGGER.fine("PlayerJoined: " + playerNickname + " -> " + gameId + " (" + currentPlayerCount + " players)");
-        }
         
         context.runOnUIThread(() -> {
             // Update client state with the full GameModel if available (single source of truth)

@@ -10,6 +10,7 @@ import it.polimi.ingsw.server.model.enums.adventure.CardLevel;
  * for every exposed connector on their ship. The event is applied in reverse order, starting with the last player.
  */
 public class StardustCard extends AdventureCard {
+    private static final long serialVersionUID = 1L;
 
     /**
      * Constructs a new Stardust event card with the specified details.

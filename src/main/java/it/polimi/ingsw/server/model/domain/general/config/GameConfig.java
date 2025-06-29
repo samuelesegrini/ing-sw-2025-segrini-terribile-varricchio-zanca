@@ -8,5 +8,7 @@ public record GameConfig(
         GameLevel levelEnum,
         FlightBoardConfig flightBoardConfig,
         ShipGridConfig shipGridConfig
-) implements Serializable {}
+) implements Serializable {
+    private static final long serialVersionUID = 1L;
+}
 
