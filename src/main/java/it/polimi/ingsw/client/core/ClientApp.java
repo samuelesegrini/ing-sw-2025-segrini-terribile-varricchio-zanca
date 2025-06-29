@@ -45,6 +45,10 @@ public class ClientApp {
             clientState = new ClientState();
             networkClient = new NetworkClient();
             controller = new ClientController(networkClient, clientState);
+            
+            // Set up callbacks BEFORE starting UI
+            networkClient.setMessageHandler(controller::handleMessage);
+            
             //uiManager = new UIManager(uiType, controller);
 
             if (uiType == UIType.GUI) {
@@ -52,11 +56,9 @@ public class ClientApp {
                 System.out.println("GUI not connected.");
             } else {
                 newUI UI = new newTUI(controller);
+                controller.setUI(UI);
                 UI.start();
             }
-
-            // Set up callbacks
-            networkClient.setMessageHandler(controller::handleMessage);
 
             // Start UI
             //uiManager.start();

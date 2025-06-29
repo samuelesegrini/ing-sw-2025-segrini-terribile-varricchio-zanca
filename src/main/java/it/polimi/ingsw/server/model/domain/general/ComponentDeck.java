@@ -1,11 +1,15 @@
 package it.polimi.ingsw.server.model.domain.general;
 
+import it.polimi.ingsw.server.model.domain.player.Player;
 import it.polimi.ingsw.server.model.enums.GameLevel;
 import it.polimi.ingsw.server.model.domain.ship.components.Component;
+import it.polimi.ingsw.common.message.event.*;
+import it.polimi.ingsw.server.model.domain.player.PlayerId;
 
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeSupport;
 import java.io.Serializable;
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * Represents a deck of ship components that players can draw from during the game.
@@ -17,9 +21,11 @@ public class ComponentDeck implements Serializable {
     private final List<Component> discardPile; // Permanently discarded
     private final List<Component> faceUpPile; // Face-up returned components
     private final Map<String, Component> reservedComponents; // Components reserved by players
-    private final Map<String, Component> allComponents; // Master registry of all components by ID
-    private final Map<String, String> componentOwnership; // componentId -> playerId mapping
     private final GameLevel gameLevel; // Track level for feature gating
+    
+    // PropertyChangeSupport for event firing
+    private transient PropertyChangeSupport propertyChangeSupport;
+    private String gameId; // For event context
 
     /**
      * Creates a new component deck with the given list of components
@@ -30,14 +36,9 @@ public class ComponentDeck implements Serializable {
         this.discardPile = new ArrayList<>();
         this.faceUpPile = new ArrayList<>();
         this.reservedComponents = new HashMap<>();
-        this.allComponents = new HashMap<>();
-        this.componentOwnership = new HashMap<>();
         this.gameLevel = GameLevel.TEST_FLIGHT; // Default level
-        
-        // Build master registry of all components
-        for (Component component : components) {
-            allComponents.put(component.getId(), component);
-        }
+        this.propertyChangeSupport = new PropertyChangeSupport(this);
+        this.gameId = null; // Will be set when associated with a game
         shuffle();
     }
     
@@ -51,14 +52,9 @@ public class ComponentDeck implements Serializable {
         this.discardPile = new ArrayList<>();
         this.faceUpPile = new ArrayList<>();
         this.reservedComponents = new HashMap<>();
-        this.allComponents = new HashMap<>();
-        this.componentOwnership = new HashMap<>();
         this.gameLevel = gameLevel;
-        
-        // Build master registry of all components
-        for (Component component : components) {
-            allComponents.put(component.getId(), component);
-        }
+        this.propertyChangeSupport = new PropertyChangeSupport(this);
+        this.gameId = null; // Will be set when associated with a game
         shuffle();
     }
 
@@ -71,10 +67,45 @@ public class ComponentDeck implements Serializable {
         this.discardPile = new ArrayList<>();
         this.faceUpPile = new ArrayList<>();
         this.reservedComponents = new HashMap<>();
-        this.allComponents = new HashMap<>();
-        this.componentOwnership = new HashMap<>();
         this.gameLevel = level;
+        this.propertyChangeSupport = new PropertyChangeSupport(this);
+        this.gameId = null; // Will be set when associated with a game
         initializeDeckForLevel(level);
+    }
+
+    /**
+     * Sets the game ID for event context.
+     */
+    public void setGameId(String gameId) {
+        this.gameId = gameId;
+    }
+
+    /**
+     * Adds a PropertyChangeListener to this deck.
+     */
+    public void addPropertyChangeListener(PropertyChangeListener listener) {
+        if (propertyChangeSupport == null) {
+            propertyChangeSupport = new PropertyChangeSupport(this);
+        }
+        propertyChangeSupport.addPropertyChangeListener(listener);
+    }
+
+    /**
+     * Removes a PropertyChangeListener from this deck.
+     */
+    public void removePropertyChangeListener(PropertyChangeListener listener) {
+        if (propertyChangeSupport != null) {
+            propertyChangeSupport.removePropertyChangeListener(listener);
+        }
+    }
+
+    /**
+     * Fires a PropertyChangeEvent with the given property name and new event.
+     */
+    private void firePropertyChange(String propertyName, Object oldValue, Object newValue) {
+        if (propertyChangeSupport != null) {
+            propertyChangeSupport.firePropertyChange(propertyName, oldValue, newValue);
+        }
     }
 
     /**
@@ -88,7 +119,13 @@ public class ComponentDeck implements Serializable {
             }
             reshuffleDiscardPile();
         }
-        return Optional.of(drawPile.removeLast());
+        Component component = drawPile.removeLast();
+        
+        // Fire ComponentTakenEvent - use null for player since this is anonymous draw
+        ComponentTakenEvent event = new ComponentTakenEvent(gameId, null, null, this);
+        firePropertyChange("eventPublished", null, event);
+        
+        return Optional.of(component);
     }
 
     /**
@@ -167,6 +204,10 @@ public class ComponentDeck implements Serializable {
     public void returnToFaceUp(Component component) {
         if (component != null) {
             faceUpPile.add(component);
+            
+            // Fire ComponentOfferedEvent for components returned to face-up pile
+            ComponentOfferedEvent event = new ComponentOfferedEvent(gameId, null, null, this);
+            firePropertyChange("eventPublished", null, event);
         }
     }
     
@@ -188,6 +229,11 @@ public class ComponentDeck implements Serializable {
         for (Component component : faceUpPile) {
             if (component.getId().equals(componentId)) {
                 faceUpPile.remove(component);
+                
+                // Fire ComponentTakenEvent - use null for player since player context handled at higher level
+                ComponentTakenEvent event = new ComponentTakenEvent(gameId, null, null, this);
+                firePropertyChange("eventPublished", null, event);
+                
                 return component;
             }
         }
@@ -242,6 +288,13 @@ public class ComponentDeck implements Serializable {
         reservedComponents.put(component.getId(), component);
         component.setReservedBy(playerId);
         System.out.println("[ComponentDeck] Component " + component.getId() + " reserved by player " + playerId);
+        
+        // Fire ComponentReservedEvent - need Player object, so comment out for now
+        // TODO: Need to get Player object to create ComponentReservedEvent properly
+        // PlayerId playerIdObj = PlayerId.fromString(playerId);
+        // ComponentReservedEvent event = new ComponentReservedEvent(gameId, component, player, this);
+        // firePropertyChange("eventPublished", null, event);
+        
         return true;
     }
     
@@ -256,6 +309,10 @@ public class ComponentDeck implements Serializable {
         if (component != null && playerId.equals(component.getReservedBy())) {
             reservedComponents.remove(componentId);
             component.setReservedBy(null);
+            
+            // Note: ComponentOfferedEvent should be fired by the calling code (like GameSession)
+            // that has access to the full Player object
+            
             return component;
         }
         return null;
@@ -374,58 +431,33 @@ public class ComponentDeck implements Serializable {
     }
 
     /**
-     * Gets a component by its ID from all components (regardless of location)
+     * Finds a component by ID in the available piles (draw pile + face-up pile)
      * @param componentId The component ID to search for
-     * @return The component if found, null otherwise
+     * @return The component if found in available piles, null otherwise
      */
-    public Component getComponentById(String componentId) {
-        return allComponents.get(componentId);
+    public Component findComponentById(String componentId) {
+        // Search in draw pile
+        for (Component component : drawPile) {
+            if (component.getId().equals(componentId)) {
+                return component;
+            }
+        }
+        
+        // Search in face-up pile
+        for (Component component : faceUpPile) {
+            if (component.getId().equals(componentId)) {
+                return component;
+            }
+        }
+        
+        return null;
     }
 
     /**
-     * Assigns ownership of a component to a player
-     * @param componentId The component ID
-     * @param playerId The player ID who owns the component
+     * Gets all available components from draw and face-up piles for UI sync
+     * @return Map of componentId to Component
      */
-    public void setComponentOwnership(String componentId, String playerId) {
-        componentOwnership.put(componentId, playerId);
-    }
-
-    /**
-     * Gets the owner of a component
-     * @param componentId The component ID
-     * @return The player ID who owns the component, null if unowned
-     */
-    public String getComponentOwner(String componentId) {
-        return componentOwnership.get(componentId);
-    }
-
-    /**
-     * Removes ownership of a component
-     * @param componentId The component ID
-     */
-    public void clearComponentOwnership(String componentId) {
-        componentOwnership.remove(componentId);
-    }
-
-    /**
-     * Gets all components currently owned by a player
-     * @param playerId The player ID
-     * @return List of components owned by the player
-     */
-    public List<Component> getPlayerOwnedComponents(String playerId) {
-        return componentOwnership.entrySet().stream()
-                .filter(entry -> playerId.equals(entry.getValue()))
-                .map(entry -> allComponents.get(entry.getKey()))
-                .filter(Objects::nonNull)
-                .collect(java.util.stream.Collectors.toList());
-    }
-
-    /**
-     * Gets a map of all components for UI synchronization
-     * @return Map of componentId to Component for all available components
-     */
-    public Map<String, Component> getAllComponentsMap() {
+    public Map<String, Component> getAvailableComponentsMap() {
         Map<String, Component> availableComponents = new HashMap<>();
         
         // Include draw pile components
@@ -433,7 +465,7 @@ public class ComponentDeck implements Serializable {
             availableComponents.put(component.getId(), component);
         }
         
-        // Include face-up pile components
+        // Include face-up pile components  
         for (Component component : faceUpPile) {
             availableComponents.put(component.getId(), component);
         }
@@ -442,12 +474,18 @@ public class ComponentDeck implements Serializable {
     }
 
     /**
-     * Checks if a component is currently available (not owned by a player)
-     * @param componentId The component ID to check
-     * @return true if the component is available, false if owned or not found
+     * Custom serialization to handle transient PropertyChangeSupport.
      */
-    public boolean isComponentAvailable(String componentId) {
-        return allComponents.containsKey(componentId) && 
-               !componentOwnership.containsKey(componentId);
+    private void writeObject(java.io.ObjectOutputStream out) throws java.io.IOException {
+        out.defaultWriteObject();
     }
+
+    /**
+     * Custom deserialization to restore transient PropertyChangeSupport.
+     */
+    private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
+        in.defaultReadObject();
+        this.propertyChangeSupport = new PropertyChangeSupport(this);
+    }
+
 } 

@@ -17,6 +17,9 @@ import it.polimi.ingsw.server.model.enums.player.PlayerColor;
 import it.polimi.ingsw.server.model.enums.player.PlayerOrder;
 import it.polimi.ingsw.server.model.enums.resource.GoodType;
 
+// Event imports
+import it.polimi.ingsw.common.message.event.*;
+
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.io.Serializable;
@@ -35,7 +38,7 @@ public class GameModel implements Serializable {
     private final GameConfig config;
     private final List<Player> players;
     private final int maxPlayers;
-    
+
     private GamePhase currentPhase;
     private ComponentDeck componentDeck;
     private AdventureDeck adventureDeck;
@@ -573,6 +576,256 @@ public class GameModel implements Serializable {
      */
     public String getCreatorId() {
         return players.isEmpty() ? null : players.get(0).getId().toString();
+    }
+    
+    // Component Management Operations (moved from GameSession)
+    
+    /**
+     * Handles a player taking a component from the deck
+     */
+    public boolean takeComponent(PlayerId playerId) {
+        if (currentPhase != GamePhase.BUILDING) {
+            return false;
+        }
+        
+        Player player = getPlayerById(playerId);
+        if (player == null) return false;
+        
+        Optional<Component> drawnComponentOpt = componentDeck.draw();
+        if (drawnComponentOpt.isEmpty()) return false;
+        
+        Component drawnComponent = drawnComponentOpt.get();
+        
+        // Player can only hold one component at a time
+        if (player.getHeldComponent() != null) {
+            // Return current held component to face-up pile
+            componentDeck.returnToFaceUp(player.getHeldComponent());
+        }
+        
+        player.setHeldComponent(drawnComponent);
+        
+        // Fire event
+        if (propertyChangeSupport != null) {
+            ComponentTakenEvent event = new ComponentTakenEvent(
+                gameId, 
+                drawnComponent, 
+                player, 
+                componentDeck
+            );
+            propertyChangeSupport.firePropertyChange("eventPublished", null, event);
+        }
+        
+        return true;
+    }
+    
+    /**
+     * Handles a player placing a component on their ship
+     */
+    public boolean placeComponent(PlayerId playerId, Component component, it.polimi.ingsw.server.model.domain.ship.Position position) {
+        if (currentPhase != GamePhase.BUILDING) {
+            return false;
+        }
+        
+        Player player = getPlayerById(playerId);
+        if (player == null || player.getShip() == null) return false;
+        
+        // Verify player owns this component
+        if (!component.equals(player.getHeldComponent())) {
+            return false;
+        }
+        
+        try {
+            player.getShip().addComponent(component, position);
+            player.getShip().updateStats();
+            player.clearHeldComponent(); // Component is now on ship
+            
+            // Fire event
+            if (propertyChangeSupport != null) {
+                ComponentPlacedEvent event = new ComponentPlacedEvent(
+                    gameId,
+                    player,
+                    component,
+                    player.getShip(),
+                    componentDeck
+                );
+                propertyChangeSupport.firePropertyChange("eventPublished", null, event);
+            }
+            
+            return true;
+        } catch (IllegalArgumentException e) {
+            return false;
+        }
+    }
+    
+    /**
+     * Handles a player reserving a component for later placement
+     */
+    public boolean reserveComponent(PlayerId playerId, String componentId) {
+        if (currentPhase != GamePhase.BUILDING) {
+            return false;
+        }
+        
+        Player player = getPlayerById(playerId);
+        if (player == null || player.getShip() == null) return false;
+        
+        // Check if reservations are supported for this ship based on configuration
+        if (!player.getShip().supportsComponentReservation()) {
+            return false;
+        }
+        
+        // Find component in player's held component or face-up pile
+        Component component = null;
+        if (player.getHeldComponent() != null && player.getHeldComponent().getId().equals(componentId)) {
+            component = player.getHeldComponent();
+        } else {
+            component = componentDeck.takeFaceUpComponentById(componentId);
+            if (component == null) return false;
+        }
+        
+        try {
+            // Add to ship's reserved components (Ship.reserveComponent now returns boolean)
+            boolean reserved = player.getShip().reserveComponent(component);
+            if (!reserved) {
+                // Reservation failed (max limit reached), return component to face-up pile if we took it
+                if (player.getHeldComponent() != component) {
+                    componentDeck.returnToFaceUp(component);
+                }
+                return false;
+            }
+            
+            if (player.getHeldComponent() == component) {
+                player.clearHeldComponent(); // Component is now reserved on ship
+            }
+            
+            // Fire event
+            if (propertyChangeSupport != null) {
+                ComponentReservedEvent event = new ComponentReservedEvent(
+                    gameId,
+                    component,
+                    player,
+                    componentDeck
+                );
+                propertyChangeSupport.firePropertyChange("eventPublished", null, event);
+            }
+            
+            return true;
+        } catch (Exception e) {
+            // If reservation failed, return component to face-up pile if we took it
+            if (player.getHeldComponent() != component) {
+                componentDeck.returnToFaceUp(component);
+            }
+            return false;
+        }
+    }
+    
+    /**
+     * Handles a player returning a component to the face-up pile
+     */
+    public boolean returnComponent(PlayerId playerId, String componentId) {
+        if (currentPhase != GamePhase.BUILDING) {
+            return false;
+        }
+        
+        Player player = getPlayerById(playerId);
+        if (player == null) return false;
+        
+        Component componentToReturn = null;
+        
+        // Check if it's the held component
+        if (player.getHeldComponent() != null && player.getHeldComponent().getId().equals(componentId)) {
+            componentToReturn = player.getHeldComponent();
+            player.clearHeldComponent();
+        } else {
+            // Check if it's a reserved component on ship
+            if (player.getShip() != null) {
+                componentToReturn = player.getShip().releaseReservedComponent(componentId);
+            }
+        }
+        
+        if (componentToReturn == null) return false;
+        
+        componentDeck.returnToFaceUp(componentToReturn);
+        
+        // Fire event
+        if (propertyChangeSupport != null) {
+            ComponentOfferedEvent event = new ComponentOfferedEvent(
+                gameId,
+                componentToReturn,
+                player,
+                componentDeck
+            );
+            propertyChangeSupport.firePropertyChange("eventPublished", null, event);
+        }
+        
+        return true;
+    }
+    
+    /**
+     * Gets a component by ID from available sources
+     */
+    public Component getComponentById(String componentId) {
+        return componentDeck.findComponentById(componentId);
+    }
+    
+    /**
+     * Gets all available components for UI sync
+     */
+    public Map<String, Component> getAvailableComponents() {
+        Map<String, Component> allComponents = componentDeck.getAvailableComponentsMap();
+        Map<String, Component> availableComponents = new HashMap<>();
+        
+        // Filter out components held by players
+        for (Map.Entry<String, Component> entry : allComponents.entrySet()) {
+            Component component = entry.getValue();
+            boolean isHeld = false;
+            
+            // Check if any player is holding this component
+            for (Player player : players) {
+                if (component.equals(player.getHeldComponent())) {
+                    isHeld = true;
+                    break;
+                }
+            }
+            
+            if (!isHeld) {
+                availableComponents.put(entry.getKey(), component);
+            }
+        }
+        
+        return availableComponents;
+    }
+    
+    /**
+     * Handles ship validation for a player
+     */
+    public boolean validateShip(PlayerId playerId, String playerNickname, List<String> feedback) {
+        Player player = getPlayerById(playerId);
+        if (player == null || player.getShip() == null) return false;
+        
+        // Update ship stats and check validity
+        player.getShip().updateStats();
+        
+        // Basic validation - ship must be structurally valid
+        boolean isValid = player.getShip().isStructurallyValid();
+        
+        // Mark player as ready if validation passes
+        player.setReady(isValid);
+        
+        // Fire event
+        if (propertyChangeSupport != null) {
+            ShipValidationEvent event = new ShipValidationEvent(
+                gameId,
+                playerId.toString(),
+                playerNickname,
+                isValid,
+                feedback != null ? feedback : new ArrayList<>(),
+                player,
+                this
+            );
+            propertyChangeSupport.firePropertyChange("eventPublished", null, event);
+        }
+        
+        return isValid;
     }
 
 }

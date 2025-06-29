@@ -5,7 +5,10 @@ import it.polimi.ingsw.server.model.domain.ship.Ship;
 import it.polimi.ingsw.server.model.domain.ship.components.Component;
 import it.polimi.ingsw.server.model.enums.crew.CrewType;
 import it.polimi.ingsw.server.model.enums.player.PlayerColor;
+import it.polimi.ingsw.common.message.event.*;
 
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeSupport;
 import java.io.Serializable;
 import java.util.*;
 
@@ -20,7 +23,13 @@ public class Player implements Serializable {
     private Ship ship;
     private int finalScore;
     private Component heldComponent;
+    private final List<Component> lostComponents; // Components lost during flight phase
     private boolean ready;
+    
+    // PropertyChangeSupport for event firing
+    private transient PropertyChangeSupport propertyChangeSupport;
+    private String gameId; // For event context
+    private String playerNickname; // For event context
 
     /**
      * Creates a new player with the specified ID
@@ -38,7 +47,11 @@ public class Player implements Serializable {
         this.credits = 0;
         this.crewMembers = 0;
         this.heldComponent = null;
+        this.lostComponents = new ArrayList<>();
         this.ready = false;
+        this.propertyChangeSupport = new PropertyChangeSupport(this);
+        this.gameId = null; // Will be set when added to game
+        this.playerNickname = playerId.getNickname();
     }
 
     /**
@@ -54,6 +67,41 @@ public class Player implements Serializable {
             throw new IllegalArgumentException("Player color cannot be null");
         }
         this.color = color;
+    }
+
+    /**
+     * Sets the game ID for event context.
+     */
+    public void setGameId(String gameId) {
+        this.gameId = gameId;
+    }
+
+    /**
+     * Adds a PropertyChangeListener to this player.
+     */
+    public void addPropertyChangeListener(PropertyChangeListener listener) {
+        if (propertyChangeSupport == null) {
+            propertyChangeSupport = new PropertyChangeSupport(this);
+        }
+        propertyChangeSupport.addPropertyChangeListener(listener);
+    }
+
+    /**
+     * Removes a PropertyChangeListener from this player.
+     */
+    public void removePropertyChangeListener(PropertyChangeListener listener) {
+        if (propertyChangeSupport != null) {
+            propertyChangeSupport.removePropertyChangeListener(listener);
+        }
+    }
+
+    /**
+     * Fires a PropertyChangeEvent with the given property name and new event.
+     */
+    private void firePropertyChange(String propertyName, Object oldValue, Object newValue) {
+        if (propertyChangeSupport != null) {
+            propertyChangeSupport.firePropertyChange(propertyName, oldValue, newValue);
+        }
     }
 
     public PlayerId getId() {
@@ -112,6 +160,26 @@ public class Player implements Serializable {
     public int getCredits() {
         return this.credits;
     }
+
+    /**
+     * Sets the player's credits to the specified value.
+     *
+     * @param credits number of credits to set
+     * @throws IllegalArgumentException if credits is negative
+     */
+    public void setCredits(int credits) {
+        if (credits < 0) {
+            throw new IllegalArgumentException("Credits cannot be negative");
+        }
+        int oldCredits = this.credits;
+        this.credits = credits;
+        
+        // Fire PlayerCreditsChangedEvent when credits change
+        if (oldCredits != credits) {
+            PlayerCreditsChangedEvent event = new PlayerCreditsChangedEvent(gameId, playerId, playerNickname, oldCredits, this.credits);
+            firePropertyChange("eventPublished", null, event);
+        }
+    }
     /**
      * Adds the specified credits to the player's total.
      *
@@ -122,7 +190,12 @@ public class Player implements Serializable {
         if (credits < 0) {
             throw new IllegalArgumentException("Credits to add cannot be negative");
         }
+        int oldCredits = this.credits;
         this.credits += credits;
+        
+        // Fire PlayerCreditsChangedEvent when credits change
+        PlayerCreditsChangedEvent event = new PlayerCreditsChangedEvent(gameId, playerId, playerNickname, oldCredits, this.credits);
+        firePropertyChange("eventPublished", null, event);
     }
 
     /**
@@ -138,7 +211,12 @@ public class Player implements Serializable {
         if (credits > this.credits) {
             throw new IllegalArgumentException("Cannot subtract more credits than available");
         }
+        int oldCredits = this.credits;
         this.credits -= credits;
+        
+        // Fire PlayerCreditsChangedEvent when credits change
+        PlayerCreditsChangedEvent event = new PlayerCreditsChangedEvent(gameId, playerId, playerNickname, oldCredits, this.credits);
+        firePropertyChange("eventPublished", null, event);
     }
     
     /**
@@ -178,7 +256,12 @@ public class Player implements Serializable {
      * @param component The component to hold (replaces any existing one)
      */
     public void setHeldComponent(Component component) {
+        Component oldComponent = this.heldComponent;
         this.heldComponent = component;
+        
+        // Fire PlayerComponentChangedEvent when held component changes
+        PlayerComponentChangedEvent event = new PlayerComponentChangedEvent(gameId, playerId, playerNickname, oldComponent, component);
+        firePropertyChange("eventPublished", null, event);
     }
     
     /**
@@ -186,7 +269,12 @@ public class Player implements Serializable {
      * @param component The component to add
      */
     public void addComponent(Component component) {
+        Component oldComponent = this.heldComponent;
         this.heldComponent = component;
+        
+        // Fire PlayerComponentChangedEvent when held component changes
+        PlayerComponentChangedEvent event = new PlayerComponentChangedEvent(gameId, playerId, playerNickname, oldComponent, component);
+        firePropertyChange("eventPublished", null, event);
     }
     
     /**
@@ -206,7 +294,39 @@ public class Player implements Serializable {
      * Clears the held component
      */
     public void clearHeldComponent() {
+        Component oldComponent = this.heldComponent;
         this.heldComponent = null;
+        
+        // Fire PlayerComponentChangedEvent when held component is cleared
+        if (oldComponent != null) {
+            PlayerComponentChangedEvent event = new PlayerComponentChangedEvent(gameId, playerId, playerNickname, oldComponent, null);
+            firePropertyChange("eventPublished", null, event);
+        }
+    }
+    
+    /**
+     * Adds a component to the lost components list (flight phase)
+     * @param component The component that was lost/damaged
+     */
+    public void loseComponent(Component component) {
+        if (component != null) {
+            lostComponents.add(component);
+        }
+    }
+    
+    /**
+     * Gets all components lost during flight phase
+     * @return Unmodifiable list of lost components
+     */
+    public List<Component> getLostComponents() {
+        return Collections.unmodifiableList(lostComponents);
+    }
+    
+    /**
+     * Clears all lost components (for game reset)
+     */
+    public void clearLostComponents() {
+        lostComponents.clear();
     }
     
     /**
@@ -222,7 +342,14 @@ public class Player implements Serializable {
      * @param ready true if the player is ready
      */
     public void setReady(boolean ready) {
+        boolean oldReady = this.ready;
         this.ready = ready;
+        
+        // Fire PlayerReadyChangedEvent when ready status changes
+        if (oldReady != ready) {
+            PlayerReadyChangedEvent event = new PlayerReadyChangedEvent(gameId, playerId, playerNickname, ready);
+            firePropertyChange("eventPublished", null, event);
+        }
     }
 
     @Override
@@ -246,6 +373,22 @@ public class Player implements Serializable {
                 ", credits=" + credits +
                 ", crewMembers=" + crewMembers +
                 '}';
+    }
+
+    /**
+     * Custom serialization to handle transient PropertyChangeSupport.
+     */
+    private void writeObject(java.io.ObjectOutputStream out) throws java.io.IOException {
+        out.defaultWriteObject();
+    }
+
+    /**
+     * Custom deserialization to restore transient PropertyChangeSupport.
+     */
+    private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
+        in.defaultReadObject();
+        this.propertyChangeSupport = new PropertyChangeSupport(this);
+        this.playerNickname = playerId.getNickname(); // Restore nickname
     }
 }
 

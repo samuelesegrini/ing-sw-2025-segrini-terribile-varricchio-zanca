@@ -58,7 +58,7 @@ public class ReserveTileRequest extends AbstractRequest {
 
         // For now, implement basic validation - full server logic can be added later
         // Get component by ID
-        Component component = session.getComponentById(tileId);
+        Component component = session.getGameModel().getComponentById(tileId);
         if (component == null) {
             return createErrorResponse("Component not found", ErrorResponse.NOT_FOUND);
         }

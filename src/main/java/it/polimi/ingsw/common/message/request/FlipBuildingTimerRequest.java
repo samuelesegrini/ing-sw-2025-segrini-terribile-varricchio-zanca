@@ -65,7 +65,7 @@ public class FlipBuildingTimerRequest extends AbstractRequest {
         boolean playerHasFinishedShip = isPlayerShipFinished(player);
 
         // Attempt to flip the timer
-        BuildingTimer timer = gameSession.getBuildingTimer();
+        BuildingTimer timer = gameSession.getGameModel().getBuildingTimer();
         BuildingTimer.FlipResult result = timer.flipTimer(playerId.toString(), playerHasFinishedShip);
 
         switch (result) {

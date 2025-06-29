@@ -1,10 +1,7 @@
 package it.polimi.ingsw.common.message.request;
 
-import it.polimi.ingsw.common.message.event.GameEndedEvent;
 import it.polimi.ingsw.common.message.event.GameLobbyUpdateEvent;
-import it.polimi.ingsw.common.message.event.PlayerLeftGameEvent;
 import it.polimi.ingsw.common.message.event.GamesListUpdateEvent;
-import it.polimi.ingsw.common.message.response.ErrorResponse;
 import it.polimi.ingsw.common.message.response.LeaveGameResponse;
 import it.polimi.ingsw.common.message.response.Response;
 import it.polimi.ingsw.common.message.validation.ValidationResult;
@@ -15,7 +12,6 @@ import it.polimi.ingsw.server.core.GameSession;
 import it.polimi.ingsw.server.core.GameSessionManager;
 import it.polimi.ingsw.server.core.PlayerSessionRegistry;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**

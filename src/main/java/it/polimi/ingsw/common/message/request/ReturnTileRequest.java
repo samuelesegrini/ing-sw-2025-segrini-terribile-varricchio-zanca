@@ -43,7 +43,7 @@ public class ReturnTileRequest extends AbstractRequest {
         // 3. Add tile to the face-up discard pile.
 
         // Use GameSession method which handles both business logic and event firing
-        boolean success = session.returnComponent(context.getPlayerId(), tileId);
+        boolean success = session.getGameModel().returnComponent(context.getPlayerId(), tileId);
         if (!success) {
             return createErrorResponse("Tile not found", ErrorResponse.NOT_FOUND);
         }

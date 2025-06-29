@@ -6,7 +6,7 @@ import it.polimi.ingsw.common.message.response.ErrorResponse;
 import it.polimi.ingsw.common.message.response.Response;
 import it.polimi.ingsw.common.message.response.StartFlightPhaseResponse;
 import it.polimi.ingsw.common.message.validation.ValidationResult;
-import it.polimi.ingsw.common.message.event.FlightPhaseStartedEvent;
+import it.polimi.ingsw.common.message.event.flight.FlightPhaseStartedEvent;
 import it.polimi.ingsw.server.core.GameSession;
 import it.polimi.ingsw.server.model.enums.GamePhase;
 
@@ -48,7 +48,7 @@ public class StartFlightPhaseRequest extends AbstractRequest {
             session.getGameModel().changePhase(GamePhase.FLIGHT);
             
             // Publish flight phase started event
-            int playerCount = session.getPlayers().size();
+            int playerCount = session.getGameModel().getPlayers().size();
             int routeLength = session.getGameModel().getFlightBoard().getRoute().getLength();
             context.publishEvent(new FlightPhaseStartedEvent(context.getGameId(), playerCount, routeLength));
             

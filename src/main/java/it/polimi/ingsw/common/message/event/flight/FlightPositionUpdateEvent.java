@@ -1,4 +1,8 @@
-package it.polimi.ingsw.common.message.event;
+package it.polimi.ingsw.common.message.event.flight;
+
+import it.polimi.ingsw.common.message.event.AbstractEvent;
+import it.polimi.ingsw.common.message.event.ClientEventContext;
+import it.polimi.ingsw.common.message.event.EventType;
 
 import java.util.Map;
 import java.util.logging.Logger;

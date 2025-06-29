@@ -35,7 +35,7 @@ public class TakeTileRequest extends AbstractRequest {
         Component drawnComponent = drawnComponentOpt.get();
         
         // Use GameSession method which handles both business logic and event firing
-        boolean success = session.takeComponent(context.getPlayerId());
+        boolean success = session.getGameModel().takeComponent(context.getPlayerId());
         if (!success) {
             return createErrorResponse("Failed to take component", ErrorResponse.INTERNAL_ERROR);
         }

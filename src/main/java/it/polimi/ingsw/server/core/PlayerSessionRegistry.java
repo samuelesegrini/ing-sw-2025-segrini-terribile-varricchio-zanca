@@ -1,6 +1,10 @@
 package it.polimi.ingsw.server.core;
 
 import it.polimi.ingsw.server.model.domain.player.PlayerId;
+import it.polimi.ingsw.common.message.event.*;
+
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeSupport;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
@@ -17,6 +21,9 @@ public class PlayerSessionRegistry {
     private final Map<PlayerId, PlayerSession> playerSessions; // playerId -> PlayerSession
     private final Set<String> activeNicknames;
     private final Map<PlayerId, String> reconnectTokens; // playerId -> token
+    
+    // PropertyChangeSupport for event firing
+    private final PropertyChangeSupport propertyChangeSupport;
 
     public PlayerSessionRegistry() {
         this.clientToPlayerMap = new ConcurrentHashMap<>();
@@ -24,6 +31,28 @@ public class PlayerSessionRegistry {
         this.playerSessions = new ConcurrentHashMap<>();
         this.activeNicknames = Collections.newSetFromMap(new ConcurrentHashMap<>());
         this.reconnectTokens = new ConcurrentHashMap<>();
+        this.propertyChangeSupport = new PropertyChangeSupport(this);
+    }
+
+    /**
+     * Adds a PropertyChangeListener to this registry.
+     */
+    public void addPropertyChangeListener(PropertyChangeListener listener) {
+        propertyChangeSupport.addPropertyChangeListener(listener);
+    }
+
+    /**
+     * Removes a PropertyChangeListener from this registry.
+     */
+    public void removePropertyChangeListener(PropertyChangeListener listener) {
+        propertyChangeSupport.removePropertyChangeListener(listener);
+    }
+
+    /**
+     * Fires a PropertyChangeEvent with the given property name and new event.
+     */
+    private void firePropertyChange(String propertyName, Object oldValue, Object newValue) {
+        propertyChangeSupport.firePropertyChange(propertyName, oldValue, newValue);
     }
 
     /**
@@ -52,6 +81,10 @@ public class PlayerSessionRegistry {
 
         LOGGER.info("Registered player " + nickname + " (ID: " + playerId + ")");
         
+        // Fire PlayerRegisteredEvent
+        PlayerRegisteredEvent event = new PlayerRegisteredEvent(playerId, nickname);
+        firePropertyChange("eventPublished", null, event);
+        
         return true;
     }
     
@@ -73,6 +106,10 @@ public class PlayerSessionRegistry {
             session.setConnected(false);
 
             LOGGER.info("Unregistered player " + session.nickname);
+            
+            // Fire PlayerUnregisteredEvent
+            PlayerUnregisteredEvent event = new PlayerUnregisteredEvent(session.playerId, session.nickname, "Disconnected");
+            firePropertyChange("eventPublished", null, event);
         }
     }
 
@@ -98,7 +135,6 @@ public class PlayerSessionRegistry {
         PlayerSession session = clientToPlayerMap.get(clientId);
         return session != null ? session.playerId : null;
     }
-    
 
     /**
      * Gets client ID for a player.
@@ -110,7 +146,6 @@ public class PlayerSessionRegistry {
         }
         return playerToClientMap.get(playerId);
     }
-    
 
     /**
      * Gets player nickname.
@@ -183,6 +218,10 @@ public class PlayerSessionRegistry {
             playerToClientMap.put(playerId, newClientId);
 
             LOGGER.info("Restored session for player " + session.nickname);
+            
+            // Fire PlayerReconnectedEvent (reuse existing event type)
+            PlayerReconnectedEvent event = new PlayerReconnectedEvent(null, playerId, session.nickname, false);
+            firePropertyChange("eventPublished", null, event);
         }
     }
     

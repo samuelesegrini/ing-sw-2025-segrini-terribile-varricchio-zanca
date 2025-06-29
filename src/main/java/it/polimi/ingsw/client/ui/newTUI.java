@@ -84,6 +84,12 @@ public class newTUI implements newUI {
         switch (clientState.getCurrentView()) {
             case LOBBY -> elaborateLobbyCommand(tokens);
             case GAME_LOBBY -> elaborateGameLobbyCommand(tokens);
+            case GAME -> {
+                // TODO: Implement building/flight phase command handling
+                // Should route to different handlers based on current game phase
+                // elaborateBuildingCommand(tokens) or elaborateFlightCommand(tokens)
+                printer.printError("Game phase commands not yet implemented. Type 'help' for available commands.");
+            }
             default -> printer.printError("Invalid command. Type 'help' for available commands.");
         }
     }
@@ -171,7 +177,8 @@ public class newTUI implements newUI {
                 break;
             case "h":
             case "help":
-                //displayCommands();
+                // TODO: Implement context-specific help display
+                printer.printInfo("Help not yet implemented for this phase");
                 break;
             default:
                 printer.printError("Unknown command: " + command + ". Type 'help' for available commands.");
@@ -245,7 +252,8 @@ public class newTUI implements newUI {
                 break;
             case "h":
             case "help":
-                //displayCommands();
+                // TODO: Implement context-specific help display
+                printer.printInfo("Help not yet implemented for this phase");
                 break;
             default:
                 printer.printError("Unknown command: " + command + ". Type 'help' for available commands.");
@@ -323,10 +331,24 @@ public class newTUI implements newUI {
     // ON RESPONSE METHODS
 
     @Override
-    public void onErrorResponse(ErrorResponse r) {};
+    public void onErrorResponse(ErrorResponse r) {
+        // TODO: Implement error response handling
+        // - Display error message with appropriate formatting
+        // - Handle different error types (connection, game, validation)
+        printer.printError("Error: " + (r.getErrorMessage() != null ? r.getErrorMessage() : "Unknown error"));
+    }
 
     @Override
-    public void onReconnectResponse(ReconnectResponse r) {};
+    public void onReconnectResponse(ReconnectResponse r) {
+        // TODO: Implement reconnect response handling
+        // - Show reconnection status
+        // - Restore game state if successful
+        if (r.isSuccess()) {
+            printer.printSuccess("Reconnected successfully!");
+        } else {
+            printer.printError("Reconnection failed.");
+        }
+    }
 
     // Login
 
@@ -337,6 +359,8 @@ public class newTUI implements newUI {
             printer.printSuccess("Login successful!");
             printer.print("Welcome " + r.getNickname() + "!");
 
+            // Set current view to LOBBY for command processing
+            clientState.setCurrentView(ClientState.ViewState.LOBBY);
             printer.printLobbyPhase(clientState);
         } else {
             printer.printError("Login failed.");
@@ -349,6 +373,15 @@ public class newTUI implements newUI {
     public void onCreateGameResponse(CreateGameResponse r) {
         if (r.isSuccess()) {
             printer.printSuccess("Game created successfully!");
+            // Set current view to GAME_LOBBY since creator automatically joins
+            clientState.setCurrentView(ClientState.ViewState.GAME_LOBBY);
+            printer.printInfo("You are now in the game lobby. Use 'ready' to mark yourself ready, 'leave' to exit.");
+            // TODO: Implement proper game lobby display
+            // - Show game name, level, max players
+            // - Display current players list with ready status
+            // - Show available commands (ready, unready, start, leave, help)
+            // - Real-time updates when players join/leave/ready
+            // printer.printGameLobbyPhase(clientState);
         } else {
             printer.printError("Failed to create game.");
         }
@@ -358,6 +391,11 @@ public class newTUI implements newUI {
     public void onJoinGameResponse(JoinGameResponse r) {
         if (r.isSuccess()) {
             printer.printSuccess("Game joined successfully!");
+            // Set current view to GAME_LOBBY
+            clientState.setCurrentView(ClientState.ViewState.GAME_LOBBY);
+            printer.printInfo("You are now in the game lobby. Use 'ready' to mark yourself ready, 'leave' to exit.");
+            // TODO: Implement proper game lobby display (same as create response)
+            // printer.printGameLobbyPhase(clientState);
         } else {
             printer.printError("Failed to join game.");
         }
@@ -365,7 +403,13 @@ public class newTUI implements newUI {
 
     @Override
     public void onListGamesResponse(ListGamesResponse r) {
-        // TODO: Serve?
+        if (r.isSuccess()) {
+            // Games list is already updated in clientState by the response
+            // Just refresh the lobby display
+            printer.printLobbyPhase(clientState);
+        } else {
+            printer.printError("Failed to fetch games list.");
+        }
     }
 
     // Game Lobby
@@ -374,6 +418,11 @@ public class newTUI implements newUI {
     public void onStartGameResponse(GenericSuccessResponse r) {
         if (r.isSuccess()) {
             printer.printSuccess("Game started successfully!");
+            // TODO: Transition to building phase
+            // - Set current view to BUILDING
+            // - Display building phase UI with ship grid and component deck
+            // clientState.setCurrentView(ClientState.ViewState.GAME);
+            // printer.printBuildingPhase(clientState);
         } else {
             printer.printError("Failed to start game.");
         }
@@ -383,6 +432,11 @@ public class newTUI implements newUI {
     public void onLeaveGameResponse(LeaveGameResponse r) {
         if (r.isSuccess()) {
             printer.printSuccess("Game left successfully!");
+            // TODO: Return to main lobby
+            // - Set current view back to LOBBY
+            // - Refresh lobby display
+            // clientState.setCurrentView(ClientState.ViewState.LOBBY);
+            // printer.printLobbyPhase(clientState);
         } else {
             printer.printError("Failed to leave game.");
         }
@@ -449,23 +503,69 @@ public class newTUI implements newUI {
     }
 
     @Override
-    public void onRequestFaceUpTileResponse(RequestFaceUpTileResponse response) {}
+    public void onRequestFaceUpTileResponse(RequestFaceUpTileResponse response) {
+        // TODO: Implement face-up tile request response
+        // - Show offered tile information
+        // - Display accept/decline options
+        if (response.isSuccess()) {
+            printer.printSuccess("Face-up tile offered!");
+        } else {
+            printer.printError("No face-up tile available.");
+        }
+    }
 
     @Override
-    public void onValidateShipResponse(ValidateShipResponse response) {}
+    public void onValidateShipResponse(ValidateShipResponse response) {
+        // TODO: Implement ship validation response
+        // - Show validation results (valid/invalid)
+        // - Display any validation errors or warnings
+        // - Update ship status display
+        if (response.isSuccess()) {
+            printer.printSuccess("Ship is valid and ready for flight!");
+        } else {
+            printer.printError("Ship validation failed: " + response.getErrorMessage());
+        }
+    }
 
     // Flight
 
     @Override
-    public void onCombatStrengthResponse(CombatStrengthResponse response) {}
-
-    // TODO onCombatStrengthResponse
+    public void onCombatStrengthResponse(CombatStrengthResponse response) {
+        // TODO: Implement combat strength response
+        // - Show combat results (success/failure)
+        // - Display damage taken or goods lost
+        // - Update ship status after combat
+        if (response.isSuccess()) {
+            printer.printSuccess("Combat resolved successfully!");
+        } else {
+            printer.printError("Combat failed!");
+        }
+    }
 
     @Override
-    public void onDeclareStrengthResponse(DeclareStrengthResponse response) {}
+    public void onDeclareStrengthResponse(DeclareStrengthResponse response) {
+        // TODO: Implement declare strength response
+        // - Show strength declaration confirmation
+        // - Display current strength values
+        if (response.isSuccess()) {
+            printer.printSuccess("Strength declared successfully!");
+        } else {
+            printer.printError("Failed to declare strength.");
+        }
+    }
 
     @Override
-    public void onDockResponse(DockResponse response) {}
+    public void onDockResponse(DockResponse response) {
+        // TODO: Implement dock response
+        // - Show docking results
+        // - Display goods delivered and credits earned
+        // - Update player status
+        if (response.isSuccess()) {
+            printer.printSuccess("Successfully docked!");
+        } else {
+            printer.printError("Docking failed.");
+        }
+    }
 
 
     public void shutdown() {

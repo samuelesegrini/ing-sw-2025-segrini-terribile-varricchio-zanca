@@ -79,10 +79,17 @@ public class PlaceTileRequest extends AbstractRequest {
             return createErrorResponse("Player not found", ErrorResponse.INTERNAL_ERROR);
         }
 
-        // Get component
-        Component component = session.getAvailableComponent(tileId);
+        // Get component from GameModel
+        Component component = gameModel.getComponentDeck().findComponentById(tileId);
         if (component == null) {
-            return createErrorResponse("Component not available", ErrorResponse.NOT_FOUND);
+            return createErrorResponse("Component not found", ErrorResponse.NOT_FOUND);
+        }
+        
+        // Check if component is available (not held by any player)
+        for (Player p : gameModel.getPlayers()) {
+            if (component.equals(p.getHeldComponent())) {
+                return createErrorResponse("Component not available", ErrorResponse.NOT_FOUND);
+            }
         }
 
         //TODO: va bene(?)
@@ -109,8 +116,8 @@ public class PlaceTileRequest extends AbstractRequest {
             // Place the component (validation already confirmed this is safe)
             ship.addComponent(component, position);
 
-            // Mark component as used
-            session.useComponent(tileId, playerId);
+            // Component is now placed on ship - clear from player's held component
+            player.clearHeldComponent();
 
             // Update ship stats
             ship.updateStats();

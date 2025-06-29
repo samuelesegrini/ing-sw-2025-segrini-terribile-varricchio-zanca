@@ -277,6 +277,53 @@ public class ClientState {
         return gameModel != null;
     }
     
+    // === Player Management Methods (for TODO:SISTEMARE fixes) ===
+    
+    /**
+     * Removes an active player from the lobby display
+     * @param playerId The player ID to remove
+     */
+    public void removeActivePlayer(String playerId) {
+        if (playersInLobby != null) {
+            playersInLobby.removeIf(player -> player.getId().toString().equals(playerId));
+            refreshCurrentViewOnly();
+        }
+    }
+    
+    /**
+     * Sets a player's held component
+     * @param playerId The player ID
+     * @param component The component being held
+     */
+    public void setPlayerHeldComponent(String playerId, it.polimi.ingsw.server.model.domain.ship.components.Component component) {
+        if (gameModel != null) {
+            Player player = gameModel.getPlayerById(PlayerId.fromString(playerId));
+            if (player != null) {
+                // Clear existing held components and add the new one
+                player.getHeldComponents().clear();
+                if (component != null) {
+                    player.getHeldComponents().add(component);
+                }
+                refreshCurrentViewOnly();
+            }
+        }
+    }
+    
+    /**
+     * Sets a player's credit amount
+     * @param playerId The player ID
+     * @param credits The new credit amount
+     */
+    public void setPlayerCredits(String playerId, int credits) {
+        if (gameModel != null) {
+            Player player = gameModel.getPlayerById(PlayerId.fromString(playerId));
+            if (player != null) {
+                player.setCredits(credits);
+                refreshCurrentViewOnly();
+            }
+        }
+    }
+    
     /**
      * Gets the JavaFX property for connection status binding
      * @return The connected property
@@ -503,5 +550,49 @@ public class ClientState {
         setPlayerReadyStatus(playerId, ready);
     }
     
+    /**
+     * Removes a component from a ship at the specified position
+     * @param playerId Player ID
+     * @param position Position of the component to remove
+     */
+    public void removeShipComponent(String playerId, it.polimi.ingsw.server.model.domain.ship.Position position) {
+        if (gameModel != null) {
+            Player player = gameModel.getPlayerById(PlayerId.fromString(playerId));
+            if (player != null && player.getShip() != null) {
+                // Use current game phase or assume BUILDING phase
+                GamePhase currentPhase = gameModel.getCurrentPhase() != null ? 
+                    gameModel.getCurrentPhase() : GamePhase.BUILDING;
+                player.getShip().removeComponent(position, currentPhase);
+                refreshCurrentViewOnly();
+            }
+        }
+    }
+    
+    /**
+     * Adds an active player to the lobby
+     * @param playerId Player ID
+     * @param playerNickname Player nickname
+     */
+    public void addActivePlayer(String playerId, String playerNickname) {
+        // This method is called when a player registers/joins the lobby
+        // Since we're using direct model updates, the player should already be in the game model
+        // Just refresh the view to show the updated state
+        refreshCurrentViewOnly();
+    }
+    
+    /**
+     * Updates ship stats for a player
+     * @param playerId Player ID  
+     * @param ship Updated ship object
+     */
+    public void updateShipStats(String playerId, Ship ship) {
+        if (gameModel != null) {
+            Player player = gameModel.getPlayerById(PlayerId.fromString(playerId));
+            if (player != null) {
+                player.setShip(ship);
+                refreshCurrentViewOnly();
+            }
+        }
+    }
     
 }
