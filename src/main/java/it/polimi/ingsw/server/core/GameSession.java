@@ -85,7 +85,7 @@ public class GameSession {
         AdventureDeck adventureDeck = configManager.createAdventureDeck(gameLevel);
 
         this.gameModel = new GameModel(gameId, gameName, gameLevel, configManager.getConfigForLevel(gameLevel),
-                                     componentDeck, adventureDeck, maxPlayers);
+                componentDeck, adventureDeck, maxPlayers);
         this.joinedPlayers = ConcurrentHashMap.newKeySet();
         this.currentPhase = GamePhase.SETUP;
         this.started = false;
