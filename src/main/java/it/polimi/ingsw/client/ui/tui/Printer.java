@@ -488,7 +488,7 @@ public class Printer {
 
     public void printBuildingCommands() {
         printInfo("Available Commands:");
-        print("  take                   - Draw a component");
+        print("  take / take <num>      - Draw a component");
         print("  place <row> <col>      - Place held component");
         print("  rotate                 - Rotate held component");
         print("  return                 - Return held component to deck");

@@ -2,6 +2,7 @@ package it.polimi.ingsw.common.message.response;
 
 import it.polimi.ingsw.client.ui.NotificationType;
 
+import java.io.Serializable;
 import java.util.UUID;
 
 /**
@@ -51,7 +52,7 @@ public class RequestFaceUpTileResponse extends AbstractResponse {
      * Represents a component tile in the game.
      * This is a simplified version - the actual implementation may be more complex.
      */
-    public static class Tile {
+    public static class Tile implements Serializable {
         private final String tileId;
         private final String type;
         private final int connectors;

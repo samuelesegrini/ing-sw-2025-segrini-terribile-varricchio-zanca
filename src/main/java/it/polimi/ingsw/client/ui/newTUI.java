@@ -393,10 +393,16 @@ public class newTUI implements newUI {
 //        }
 
         if (tokens.length == 2) {
-            // Take specific face-up tile by ID
-            String tileId = tokens[1];
-            printer.printLoading("Taking face-up tile: " + tileId);
-            controller.requestFaceUpTile(tileId);
+            try {
+                int numComponent = Integer.parseInt(tokens[1]);
+
+                printer.printLoading("Taking face-up tile " + numComponent);
+
+                String tileId = clientState.getGameModel().getComponentDeck().getFaceUpComponents().get(numComponent - 1).getId();
+                controller.requestFaceUpTile(tileId);
+            } catch (NumberFormatException e) {
+                printer.printError("Invalid number format. Please use an integer for the component's number.");
+            }
         } else {
             printer.printLoading("Taking a random component from the pile");
             controller.takeTile();
@@ -693,13 +699,13 @@ public class newTUI implements newUI {
 
     @Override
     public void onRequestFaceUpTileResponse(RequestFaceUpTileResponse response) {
-        // TODO: Implement face-up tile request response
-        // - Show offered tile information
-        // - Display accept/decline options
         if (response.isSuccess()) {
-            printer.printSuccess("Face-up tile offered!");
+            printer.printSuccess("Face-up tile taken successfully!");
+            if (clientState.getCurrentView() == ClientState.ViewState.BUILDING) {
+                printer.displayBuilding(clientState);
+            }
         } else {
-            printer.printError("No face-up tile available.");
+            printer.printError("Face-up tile request failed.");
         }
     }
 
