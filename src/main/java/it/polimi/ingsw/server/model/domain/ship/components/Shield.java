@@ -32,7 +32,9 @@ public class Shield extends Component {
         super(type, connectors, id);
         this.charged = false;
         this.protectedDirections = new HashSet<>();
-        this.protectedDirections.addAll(connectors.keySet());
+        
+        // Shield protects based on facing direction: facing direction + clockwise direction
+        updateProtectedDirections();
         
         // Initialize shield properties with hardcoded values (no JSON properties exist)
         this.shieldStrength = 1;
@@ -41,6 +43,25 @@ public class Shield extends Component {
         
         this.isActive = true;
         this.damageAbsorbed = 0;
+    }
+
+    @Override
+    public void rotate() {
+        // Call parent rotation to handle connectors
+        super.rotate();
+        
+        // Recalculate protected directions based on new facing direction
+        updateProtectedDirections();
+    }
+
+    /**
+     * Updates protected directions based on the shield's facing direction.
+     * A shield protects its facing direction and the clockwise adjacent direction.
+     */
+    private void updateProtectedDirections() {
+        this.protectedDirections.clear();
+        this.protectedDirections.add(getDirection()); // Facing direction
+        this.protectedDirections.add(getDirection().rotateClockwise()); // Clockwise adjacent
     }
 
     @Override
