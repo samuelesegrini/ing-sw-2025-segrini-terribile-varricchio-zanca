@@ -333,24 +333,24 @@ public class Printer {
 
         StringBuilder sb = new StringBuilder();
 
-        sb.append("\t  4  \t  5  \t  6  \t  7  \t  8  \t  9  \t  10\n");
+        sb.append("\t\t4\t\t5\t\t6\t\t7\t\t8\t\t9\t\t10\n");
 
         for (int row = 0; row < shipBoard.length; row++) {
-            sb.append("   ");
+            sb.append("\t");
             for (int col = 0; col < shipBoard[0].length; col++) {
                 Component component = shipBoard[row][col];
                 if (component == null) {
-                    sb.append("     ");
+                    sb.append("\t");
                 } else {
-                    sb.append("  ");
+                    sb.append("\t");
                     sb.append(getConnectorSymbol(component, Direction.UP));
-                    sb.append("  ");
+                    sb.append("\t");
                 }
                 sb.append("\t");
             }
             sb.append("\n");
 
-            sb.append(" ").append(row + 5).append(" ").append("\t");
+            sb.append(" ").append(row + 5).append("\t");
             for (int col = 0; col < shipBoard[0].length; col++) {
                 Component component = shipBoard[row][col];
                 if (component == null) {
@@ -375,7 +375,7 @@ public class Printer {
                 if (component == null) {
                     sb.append("     ");
                 } else {
-                    sb.append("  ");
+                    sb.append("   ");
                     sb.append(getConnectorSymbol(component, Direction.DOWN));
                     sb.append("  ");
                 }
@@ -393,8 +393,8 @@ public class Printer {
 
         return switch (component.getType()) {
             case BATTERY -> "🔋";
-            case CABIN -> "⛺️";
-            case CABIN_START -> ansi().bgBrightYellow().a("⛺️").reset().toString();
+            case CABIN, CABIN_START -> "⛺️";
+            //case CABIN_START -> ansi().bgBrightYellow().a("⛺️").reset().toString(); // TODO: Colore del giocatore
             case CANNON_SINGLE -> "🔫";
             case CANNON_DOUBLE -> ansi().bgBrightGreen().append("🔫").reset().toString();
             case CARGO_HOLD -> "📦️";
@@ -420,9 +420,9 @@ public class Printer {
         }
 
         return switch (component.getConnectorAt(direction)) {
-            case UNIVERSAL -> "U";
-            case DOUBLE -> "D";
-            case SINGLE -> "S";
+            case UNIVERSAL -> "💠️";
+            case DOUBLE -> "🔷️";
+            case SINGLE -> "🔶️";
             case PLAIN -> " ";
         };
     }

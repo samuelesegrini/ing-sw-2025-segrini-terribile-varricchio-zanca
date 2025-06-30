@@ -76,6 +76,8 @@ public class ComponentOfferedEvent extends AbstractEvent {
                 // context.getClientState().addComponentOffer(tileId, offeredToPlayerId, offerExpiresAt);
             }
 
+            context.getNewUI().onComponentOfferedEvent(this);
+
             // Show notification
             if (context.getNotificationService() != null) {
                 String message;

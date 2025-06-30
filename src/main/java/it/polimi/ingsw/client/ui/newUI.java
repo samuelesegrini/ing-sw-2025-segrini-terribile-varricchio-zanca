@@ -16,11 +16,11 @@ public interface newUI {
 
     void onPhaseChangedEvent(PhaseChangedEvent event);
 
-    // Login
+    // LOGIN
 
     public void onLoginResponse(LoginResponse response);
 
-    // Lobby
+    // LOBBY
 
     void onCreateGameResponse(CreateGameResponse response);
 
@@ -32,7 +32,7 @@ public interface newUI {
 
     void onGameCreatedEvent(GameCreatedEvent event);
 
-    // Game Lobby
+    // GAME LOBBY
 
     void onStartGameResponse(GenericSuccessResponse response);
 
@@ -50,7 +50,7 @@ public interface newUI {
 
     void onGameStartedEvent(GameStartedEvent event);
 
-    // Building
+    // BUILDING
 
     void onTakeTileResponse(GenericSuccessResponse response);
 
@@ -66,20 +66,19 @@ public interface newUI {
 
     void onValidateShipResponse(ValidateShipResponse response);
 
-    // Flight
-
-    void onCombatStrengthResponse(CombatStrengthResponse response);
-
-    void onDeclareStrengthResponse(DeclareStrengthResponse response);
-
-    void onDockResponse(DockResponse response);
-
-    // Building events (TODO: These were already being called but not declared)
-
     void onComponentPlacedEvent(ComponentPlacedEvent event);
 
     void onComponentTakenEvent(ComponentTakenEvent event);
 
     void onComponentReservedEvent(ComponentReservedEvent event);
 
+    void onComponentOfferedEvent(ComponentOfferedEvent event);
+
+    // FLIGHT
+
+    void onCombatStrengthResponse(CombatStrengthResponse response);
+
+    void onDeclareStrengthResponse(DeclareStrengthResponse response);
+
+    void onDockResponse(DockResponse response);
 }

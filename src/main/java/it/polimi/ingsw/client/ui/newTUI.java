@@ -334,7 +334,11 @@ public class newTUI implements newUI {
                 break;
             case "r":
             case "return":
-                elaborateReturnCommand(tokens);
+                elaborateReturnCommand();
+                break;
+            case "rot":
+            case "rotate":
+                elaborateRotateCommand();
                 break;
             case "v":
             case "validate":
@@ -355,39 +359,26 @@ public class newTUI implements newUI {
     }
 
     private void elaboratePlaceCommand(String[] tokens) {
-        if (tokens.length < 4) {
-            printer.printError("Usage: place <row> <col> <component_number>");
-            printer.printInfo("Example: place 2 3 1 (places held component #1 at row 2, col 3)");
+        if (tokens.length != 3) {
+            printer.printError("Usage: place <row> <col>");
             return;
         }
 
         try {
             int row = Integer.parseInt(tokens[1]) - 5;
             int col = Integer.parseInt(tokens[2]) - 4;
-            int componentIndex = Integer.parseInt(tokens[3]) - 1;
-
-            var heldTiles = clientState.getLocalPlayer().getHeldComponents();
-
-            if (componentIndex < 0 || componentIndex >= heldTiles.size()) {
-                printer.printError("Invalid component number. You have " + heldTiles.size() + " held components.");
-                return;
-            }
 
             if (row < 0 || row >= 5 || col < 0 || col >= 7) {
-                printer.printError("Invalid position. Row must be 0-4, column must be 0-6.");
+                printer.printError("Invalid position. Row must be 5-9, column must be 4-10.");
                 return;
             }
 
-            Component component = heldTiles.get(componentIndex);
-
             // TODO: Check place component (SERVER)
-//            if (!clientState.canPlaceComponent(component, position)) {
-//                printer.printError("Cannot place component at that position.");
-//                return;
-//            }
 
-            printer.printLoading("Placing component at (" + row + "," + col + ")");
-            controller.placeTile(component.getId(), row, col, 0);
+            Component heldComponent = clientState.getLocalPlayer().getHeldComponent();
+
+            printer.printLoading("Placing component at (" + row + 5 + "," + col + 4 + ")");
+            controller.placeTile(heldComponent.getId(), row, col, 0);
 
         } catch (NumberFormatException e) {
             printer.printError("Invalid number format. Please use integers for row, col, and component number.");
@@ -401,34 +392,26 @@ public class newTUI implements newUI {
 //            return;
 //        }
 
-        printer.printInfo("Taking a random component from the pile...");
+        printer.printLoading("Taking a random component from the pile");
         controller.takeTile();
     }
 
-    private void elaborateReturnCommand(String[] tokens) {
-        if (tokens.length != 2) {
-            printer.printError("Usage: return <component_number>");
-            printer.printInfo("Example: return 1 (returns held component #1)");
-            return;
-        }
-
+    private void elaborateReturnCommand() {
         try {
-            int componentIndex = Integer.parseInt(tokens[1]) - 1;
+            Component component = clientState.getLocalPlayer().getHeldComponent();
 
-            var heldComponents = clientState.getLocalPlayer().getHeldComponents();
-
-            if (componentIndex < 0 || componentIndex >= heldComponents.size()) {
-                printer.printError("Invalid component number. You have " + heldComponents.size() + " held components.");
-                return;
-            }
-
-            Component component = heldComponents.get(componentIndex);
-
-            printer.printInfo("Returning component to face-up pile...");
+            printer.printLoading("Returning component to face-up pile");
             controller.returnTile(component.getId());
         } catch (NumberFormatException e) {
             printer.printError("Invalid number format. Please use an integer for component number.");
         }
+    }
+
+    private void elaborateRotateCommand() {
+        Component component = clientState.getLocalPlayer().getHeldComponent();
+
+        printer.printLoading("Rotating component");
+        // TODO: Chiama funzione rotate controller (MANCA)
     }
 
     private void elaborateValidateCommand() {
@@ -723,6 +706,13 @@ public class newTUI implements newUI {
             printer.printSuccess("Ship is valid and ready for flight!");
         } else {
             printer.printError("Ship validation failed: " + response.getErrorMessage());
+        }
+    }
+
+    @Override
+    public void onComponentOfferedEvent(ComponentOfferedEvent event) {
+        if (clientState.getCurrentView() == ClientState.ViewState.BUILDING) {
+            printer.displayBuilding(clientState);
         }
     }
 
