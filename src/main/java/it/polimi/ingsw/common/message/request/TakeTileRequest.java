@@ -25,19 +25,10 @@ public class TakeTileRequest extends AbstractRequest {
             return createErrorResponse("Not in building phase", ErrorResponse.INVALID_STATE);
         }
 
-        ComponentDeck deck = session.getGameModel().getComponentDeck();
-        Optional<Component> drawnComponentOpt = deck.draw();
-
-        if (drawnComponentOpt.isEmpty()) {
-            return createErrorResponse("No tiles left in the deck", ErrorResponse.INVALID_STATE);
-        }
-
-        Component drawnComponent = drawnComponentOpt.get();
-        
         // Use GameSession method which handles both business logic and event firing
         boolean success = session.getGameModel().takeComponent(context.getPlayerId());
         if (!success) {
-            return createErrorResponse("Failed to take component", ErrorResponse.INTERNAL_ERROR);
+            return createErrorResponse("Failed to take component - deck may be empty", ErrorResponse.INVALID_STATE);
         }
 
         return createSuccessResponse();
