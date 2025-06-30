@@ -215,6 +215,8 @@ public class AdventureCardController {
     
     /**
      * Processes a combat choice for combat-type cards.
+     * @param playerId The player ID
+     * @param choice The player's choice
      */
     private void processCombatChoice(PlayerId playerId, AdventureCardState.PlayerChoice choice) {
         // Simplified implementation - just resolve the card
@@ -227,6 +229,8 @@ public class AdventureCardController {
     
     /**
      * Processes a planet choice for planet cards.
+     * @param playerId The player ID
+     * @param choice The player's choice
      */
     private void processPlanetChoice(PlayerId playerId, AdventureCardState.PlayerChoice choice) {
         // Simplified implementation - just resolve the card
@@ -239,6 +243,8 @@ public class AdventureCardController {
     
     /**
      * Processes a choice for abandoned location cards.
+     * @param playerId The player ID
+     * @param choice The player's choice
      */
     private void processAbandonedLocationChoice(PlayerId playerId, AdventureCardState.PlayerChoice choice) {
         // Simplified implementation - just resolve the card

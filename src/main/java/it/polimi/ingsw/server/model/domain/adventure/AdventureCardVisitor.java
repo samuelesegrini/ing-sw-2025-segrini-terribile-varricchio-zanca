@@ -184,6 +184,12 @@ public class AdventureCardVisitor {
     
     /**
      * Helper method to find the specific cannon protecting against a meteor.
+     *
+     * @param ship The ship to inspect
+     * @param direction The direction the meteor is coming from
+     * @param index The row or column the meteor is pointing
+     * @return The cannon protecting against the meteor
+     *
      */
     private Component findProtectingCannon(Ship ship, Direction direction, int index) {
         Component[][] board = ship.getBoard();
@@ -227,6 +233,7 @@ public class AdventureCardVisitor {
      * @param card The pirates card to process
      * @param state Current game state
      * @return Result of processing the card
+     *
      */
     public boolean visitPiratesCard(PiratesCard card, GameModel state){
         System.out.println("Resolving: " + card.getType());
@@ -304,7 +311,7 @@ public class AdventureCardVisitor {
      *
      * @param card The planets card to process
      * @param state Current game state
-     * @return Returns {code @true} f at least one player has landed on a planet, {code @false} otherwise.
+     * @return Returns {code @true} if at least one player has landed on a planet, {code @false} otherwise.
      */
     public boolean visitPlanetsCard(PlanetsCard card, GameModel state){
         System.out.println("Resolving planet: " + card.getType());
@@ -390,6 +397,10 @@ public class AdventureCardVisitor {
     /**
      * Calculates the number of exposed connectors on a ship with detailed analysis.
      * An exposed connector is one that is not plain and not connected to another component.
+     *
+     * @param ship The ship to inspect
+     * @return The number of exposed connectors
+     *
      */
     private int calculateExposedConnectors(Ship ship) {
         Component[][] board = ship.getBoard();
@@ -424,6 +435,13 @@ public class AdventureCardVisitor {
     
     /**
      * Determines if a connector is exposed (not properly connected to an adjacent component).
+     * @param board The board to inspect
+     * @param row The row index of the connector to inspect
+     * @param col The column index of the connector to inspect
+     * @param direction The side of the component to inspect
+     * @param neighborPos The position of the neighbor
+     * @return true if the connector is exposed, false otherwise
+     *
      */
     private boolean isConnectorExposed(Component[][] board, int row, int col, Direction direction, Position neighborPos) {
         int nRow = neighborPos.getRow();
@@ -613,6 +631,11 @@ public class AdventureCardVisitor {
     
     /**
      * Gets the attribute value for a player based on the combat attribute type.
+     *
+     * @param player The player
+     * @param attributeType The type of attribute to find value of
+     * @return the value of the attribute for the player
+     *
      */
     private double getPlayerAttributeValue(Player player, CombatAttributeType attributeType) {
         switch (attributeType) {
@@ -628,7 +651,12 @@ public class AdventureCardVisitor {
     }
     
     /**
+     *
      * Processes cannon fire attacks for combat zones.
+     *
+     * @param target The player target of the attack
+     * @param cannonFires The list of cannons attacking the player
+     *
      */
     private void processCombatCannonFire(Player target, List<CannonFire> cannonFires) {
         Ship ship = target.getShip();
@@ -716,6 +744,9 @@ public class AdventureCardVisitor {
     /**
      * Analyzes connected cabin groups to determine epidemic crew loss.
      * Uses flood-fill algorithm to find connected cabin components.
+     *
+     * @param ship The ship to analyze
+     * @return the number of cabin groups in which the cabins are connected to each other
      */
     private int analyzeConnectedCabins(Ship ship) {
         Component[][] board = ship.getBoard();
@@ -746,6 +777,12 @@ public class AdventureCardVisitor {
     
     /**
      * Flood-fill algorithm specifically for cabin connectivity analysis.
+     *
+     * @param ship The ship to inspect
+     * @param position The position where to start to search for connected cabins
+     * @param visited To save whether the cabin was already added to a cabin group or not
+     * @param cabinGroup The cabin group to which cabins are being added
+     *
      */
     private void floodFillCabins(Ship ship, Position position, boolean[][] visited, Set<Position> cabinGroup) {
         int row = position.getRow();
@@ -850,6 +887,10 @@ public class AdventureCardVisitor {
     
     /**
      * Helper method to count total resources in a ship.
+     *
+     * @param ship The ship that contains the resources
+     * @return The total number resources in a ship
+     *
      */
     private int countTotalResources(Ship ship) {
         Map<GoodType, Integer> resources = ship.getResources();
@@ -858,6 +899,12 @@ public class AdventureCardVisitor {
     
     /**
      * Helper method to check if a ship can add resources (simplified version).
+     *
+     * @param ship The ship to add resources to
+     * @param resourcesToAdd The resources to add to the ship
+     *
+     * @return true if the ship can add resources, false if there is no more cargo space available
+     *
      */
     private boolean canShipAddResources(Ship ship, Map<GoodType, Integer> resourcesToAdd) {
         // Simple implementation - try to add and see if it succeeds
