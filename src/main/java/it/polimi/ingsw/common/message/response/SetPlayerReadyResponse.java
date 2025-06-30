@@ -9,16 +9,33 @@ import java.util.UUID;
  */
 public class SetPlayerReadyResponse extends AbstractResponse {
     private final boolean ready;
-    
+
+    /**
+     * constructor
+     *
+     * @param correlationId The correlation ID
+     * @param ready whether the player is ready or not
+     */
+
     public SetPlayerReadyResponse(UUID correlationId, boolean ready) {
         super(correlationId);
         this.ready = ready;
     }
-    
+
+    /**
+     *
+     * @return true if the player is ready, false otherwise
+     */
+
     public boolean isReady() {
         return ready;
     }
-    
+
+    /**
+     *
+     * @param context The client context
+     */
+
     @Override
     public void handleOnClient(ClientContext context) {
         // Response provides immediate feedback with ready state

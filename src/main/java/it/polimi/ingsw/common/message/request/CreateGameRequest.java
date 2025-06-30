@@ -20,6 +20,14 @@ public class CreateGameRequest extends AbstractRequest {
     private final GameLevel gameLevel;
     private final String gameName;
 
+    /**
+     * constructor
+     *
+     * @param maxPlayers the maximum number of players
+     * @param gameLevel the level of the game to create
+     * @param gameName the name of the game to create
+     */
+
     public CreateGameRequest(int maxPlayers, GameLevel gameLevel, String gameName) {
         super();
         this.maxPlayers = maxPlayers;
@@ -27,17 +35,37 @@ public class CreateGameRequest extends AbstractRequest {
         this.gameName = gameName;
     }
 
+    /**
+     *
+     * @return the maximum number of players in the game to create
+     */
+
     public int getMaxPlayers() {
         return maxPlayers;
     }
+
+    /**
+     *
+     * @return the level of the game to create
+     */
 
     public GameLevel getGameLevel() {
         return gameLevel;
     }
 
+    /**
+     *
+     * @return  the name of the game to create
+     */
+
     public String getGameName() {
         return gameName;
     }
+
+    /**
+     *
+     * @return ValidationResult.failure or ValidationResult.success
+     */
 
     @Override
     public ValidationResult validate() {
@@ -55,6 +83,12 @@ public class CreateGameRequest extends AbstractRequest {
 
         return ValidationResult.success();
     }
+
+    /**
+     *
+     * @param context The execution context providing access to server resources
+     * @return an ErrorResponse or a CreateGameResponse
+     */
 
     @Override
     public Response execute(RequestContext context) {

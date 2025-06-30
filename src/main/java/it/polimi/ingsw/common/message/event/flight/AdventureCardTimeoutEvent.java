@@ -17,15 +17,33 @@ public class AdventureCardTimeoutEvent extends AbstractEvent {
     private static final Logger LOGGER = Logger.getLogger(AdventureCardTimeoutEvent.class.getName());
     private final AdventureCard card;
 
+    /**
+     * constructor
+     *
+     * @param gameId the game ID
+     * @param playerId the player ID
+     * @param card the adventure card during which the player's turn timed out
+     */
+
     public AdventureCardTimeoutEvent(String gameId, PlayerId playerId, AdventureCard card) {
         super(EventType.ADVENTURE_CARD_TIMEOUT, gameId, playerId);
         this.card = card;
         LOGGER.fine("AdventureCardTimeoutEvent instantiated for game: " + gameId + ", player: " + playerId + ", card: " + card.getClass().getSimpleName());
     }
 
+    /**
+     *
+     * @return the adventure card during which the player's turn timed out
+     */
+
     public AdventureCard getCard() {
         return card;
     }
+
+    /**
+     *
+     * @param context The client event context
+     */
 
     @Override
     public void handleOnClient(ClientEventContext context) {
@@ -54,6 +72,11 @@ public class AdventureCardTimeoutEvent extends AbstractEvent {
             }
         });
     }
+
+    /**
+     *
+     * @return a string: AdventureCardTimeoutEvent{gameId= .., playerId= .., card= .. }
+     */
 
     @Override
     public String toString() {

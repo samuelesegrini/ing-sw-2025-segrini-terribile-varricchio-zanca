@@ -14,6 +14,13 @@ import java.util.stream.Collectors;
 public class ListGamesResponse extends AbstractResponse {
     private final List<GameInfo> games;
 
+    /**
+     * constructor
+     *
+     * @param correlationId The correlation ID
+     * @param gameModels The list of game models
+     */
+
     public ListGamesResponse(UUID correlationId, List<GameModel> gameModels) {
         super(correlationId);
         this.games = gameModels.stream()
@@ -21,9 +28,19 @@ public class ListGamesResponse extends AbstractResponse {
                 .collect(Collectors.toList());
     }
 
+    /**
+     *
+     * @return a list of the available games
+     */
+
     public List<GameInfo> getGames() {
         return new ArrayList<>(games);
     }
+
+    /**
+     *
+     * @param context The client context
+     */
 
     @Override
     public void handleOnClient(ClientContext context) {

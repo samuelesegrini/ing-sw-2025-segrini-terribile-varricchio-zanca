@@ -20,23 +20,50 @@ public class EngineStrengthRequest extends AbstractRequest {
     private final int engineStrength;
     private final int batteriesToUse;
 
+    /**
+     * constructor
+     *
+     * @param engineStrength the engine strength
+     */
+
     public EngineStrengthRequest(int engineStrength) {
         this.engineStrength = engineStrength;
         this.batteriesToUse = 0;
     }
+
+    /**
+     *
+     * @param engineStrength the engine strength
+     * @param batteriesToUse the number of batteries to use
+     */
 
     public EngineStrengthRequest(int engineStrength, int batteriesToUse) {
         this.engineStrength = engineStrength;
         this.batteriesToUse = batteriesToUse;
     }
 
+    /**
+     *
+     * @return the engine strength
+     */
+
     public int getEngineStrength() {
         return engineStrength;
     }
 
+    /**
+     *
+     * @return the number of batteries to use
+     */
+
     public int getBatteriesToUse() {
         return batteriesToUse;
     }
+
+    /**
+     *
+     * @return ValidationResult.failure if the engine strength or the number of batteries are negative, ValidationResult.success otherwise
+     */
 
     @Override
     public ValidationResult validate() {
@@ -48,6 +75,12 @@ public class EngineStrengthRequest extends AbstractRequest {
         }
         return ValidationResult.success();
     }
+
+    /**
+     *
+     * @param context The execution context providing access to server resources
+     * @return an ErrorResponse or a EngineStrengthResponse
+     */
 
     @Override
     public Response execute(RequestContext context) {

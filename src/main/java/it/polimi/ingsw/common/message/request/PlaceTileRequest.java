@@ -24,6 +24,15 @@ public class PlaceTileRequest extends AbstractRequest {
     private final int rotation; // 0, 1, 2, 3 for 0°, 90°, 180°, 270°
     //TODO: use better direction pattern (?)
 
+    /**
+     * constructor
+     *
+     * @param tileId the tile ID
+     * @param row the row where to place the tile
+     * @param col the column where to place the tile
+     * @param rotation the rotation how to place the tile
+     */
+
     public PlaceTileRequest(String tileId, int row, int col, int rotation) {
         super();
         this.tileId = tileId;
@@ -31,6 +40,11 @@ public class PlaceTileRequest extends AbstractRequest {
         this.col = col;
         this.rotation = rotation;
     }
+
+    /**
+     *
+     * @return a ValidationResult.failure or a ValidationResult.success
+     */
 
     @Override
     public ValidationResult validate() {
@@ -52,6 +66,12 @@ public class PlaceTileRequest extends AbstractRequest {
 
         return ValidationResult.success();
     }
+
+    /**
+     *
+     * @param context The execution context providing access to server resources
+     * @return an ErrorResponse or a SuccessResponse
+     */
 
     @Override
     public Response execute(RequestContext context) {

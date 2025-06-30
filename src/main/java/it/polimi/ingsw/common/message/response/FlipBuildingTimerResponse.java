@@ -15,6 +15,16 @@ public class FlipBuildingTimerResponse extends AbstractResponse {
     private final BuildingTimer.TimerStage currentStage;
     private final String message;
 
+    /**
+     * constructor
+     *
+     * @param correlationId The correlation ID
+     * @param success whether it was successful or not
+     * @param message The message
+     * @param currentStage The current stage
+     * @param timeRemaining The amount of time remaining
+     */
+
     public FlipBuildingTimerResponse(UUID correlationId, boolean success, String message, 
                                    BuildingTimer.TimerStage currentStage, long timeRemaining) {
         super(correlationId, success, message);
@@ -23,13 +33,28 @@ public class FlipBuildingTimerResponse extends AbstractResponse {
         this.timeRemaining = timeRemaining;
     }
 
+    /**
+     *
+     * @return The amount of time remaining
+     */
+
     public long getTimeRemaining() {
         return timeRemaining;
     }
 
+    /**
+     *
+     * @return The current stage
+     */
+
     public BuildingTimer.TimerStage getCurrentStage() {
         return currentStage;
     }
+
+    /**
+     *
+     * @return The message
+     */
 
     public String getMessage() {
         return message;
@@ -46,7 +71,7 @@ public class FlipBuildingTimerResponse extends AbstractResponse {
                     java.lang.reflect.Method updateMethod = timerView.getClass().getMethod(
                         "updateStage", 
                         it.polimi.ingsw.server.model.domain.general.BuildingTimer.TimerStage.class,
-                        long.class, 
+                        long.class,
                         int.class
                     );
                     updateMethod.invoke(timerView, currentStage, timeRemaining, 0);
@@ -73,6 +98,11 @@ public class FlipBuildingTimerResponse extends AbstractResponse {
         context.getController().getUI().onFlipBuildingTimerResponse(new GenericSuccessResponse(getCorrelationId()));
     }
 
+    /**
+     *
+     * @return the current stage of the timer as a string: "First/Second timer started/expired" or "Building phase ended!"
+     */
+
     private String getStageNotificationMessage() {
         return switch (currentStage) {
             case FIRST_TIMER -> "First timer started! " + (timeRemaining / 1000) + "s remaining";
@@ -83,6 +113,11 @@ public class FlipBuildingTimerResponse extends AbstractResponse {
             default -> "Timer updated";
         };
     }
+
+    /**
+     *
+     * @return the notification type (info/warning/critical)
+     */
 
     private NotificationType getNotificationType() {
         return switch (currentStage) {

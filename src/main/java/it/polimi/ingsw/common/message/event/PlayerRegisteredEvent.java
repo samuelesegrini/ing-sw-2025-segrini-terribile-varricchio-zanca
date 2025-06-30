@@ -16,6 +16,13 @@ public class PlayerRegisteredEvent extends AbstractEvent {
     private final String playerNickname;
     private final LocalDateTime registrationTime;
 
+    /**
+     *   constructor
+     *
+     * @param playerId the player ID
+     * @param playerNickname the player nickname
+     */
+
     public PlayerRegisteredEvent(PlayerId playerId, String playerNickname) {
         super(EventType.PLAYER_REGISTERED, null, playerId); // Global event (no specific game)
         this.playerId = playerId;
@@ -24,23 +31,50 @@ public class PlayerRegisteredEvent extends AbstractEvent {
         LOGGER.fine("PlayerRegisteredEvent created for player: " + playerNickname);
     }
 
+    /**
+     *
+     * @return the player ID
+     */
+
     public PlayerId getPlayerId() {
         return playerId;
     }
+
+    /**
+     *
+     * @return the layer nickname
+     */
 
     public String getPlayerNickname() {
         return playerNickname;
     }
 
+    /**
+     *
+     * @return the registration time
+     */
+
     public LocalDateTime getRegistrationTime() {
         return registrationTime;
     }
+
+    /**
+     *
+     * @param clientId The client to check
+     * @param context The filter context
+     * @return true
+     */
 
     @Override
     public boolean shouldSendTo(String clientId, EventFilterContext context) {
         // Send to all clients for lobby updates
         return true;
     }
+
+    /**
+     *
+     * @param context The client event context
+     */
 
     @Override
     public void handleOnClient(ClientEventContext context) {

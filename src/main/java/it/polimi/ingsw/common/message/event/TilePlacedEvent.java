@@ -17,6 +17,19 @@ public class TilePlacedEvent extends AbstractEvent {
     private final int row, col, rotation;
     private final ComponentType componentType;
 
+    /**
+     * constructor
+     *
+     * @param gameId the game ID
+     * @param playerId the player ID
+     * @param playerNickname the player nickname
+     * @param tileId the tile ID
+     * @param row the row where to place the tile
+     * @param col the column where to place the tile
+     * @param rotation  the rotation how to place the tile
+     * @param componentType the type of the component to place
+     */
+
     public TilePlacedEvent(String gameId, String playerId, String playerNickname,
                            String tileId, int row, int col, int rotation,
                            ComponentType componentType) {
@@ -31,12 +44,22 @@ public class TilePlacedEvent extends AbstractEvent {
         LOGGER.fine("TilePlacedEvent instantiated for game: " + gameId + ", player: " + playerNickname + ", tile: " + tileId + " at (" + row + "," + col + ")");
     }
 
+    /**
+     *
+     * @param clientState The client state to update
+     */
+
     @Override
     public void updateClientState(it.polimi.ingsw.client.core.ClientState clientState) {
         // This is a legacy event - model updates are handled by ComponentPlacedEvent
         // Only increment version for consistency
         clientState.incrementStateVersion();
     }
+
+    /**
+     *
+     * @param context The client event context
+     */
 
     @Override
     public void handleOnClient(ClientEventContext context) {

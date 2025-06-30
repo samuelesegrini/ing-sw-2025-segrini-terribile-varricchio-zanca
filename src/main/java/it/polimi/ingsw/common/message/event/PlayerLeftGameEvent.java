@@ -14,22 +14,46 @@ public class PlayerLeftGameEvent extends AbstractEvent {
     private final PlayerId playerId;
     private final String playerNickname;
 
+    /**
+     * constructor
+     *
+     * @param gameId the game ID
+     * @param playerId the player ID
+     * @param playerNickname the player nickname
+     */
+
     public PlayerLeftGameEvent(String gameId, PlayerId playerId, String playerNickname) {
         super(EventType.PLAYER_LEFT_GAME, gameId, playerId);
         this.playerId = playerId;
         this.playerNickname = playerNickname;
         LOGGER.fine("PlayerLeftGameEvent instantiated for game: " + gameId + ", player: " + playerNickname);
     }
-    
+
+    /**
+     *
+     * @return  the player ID
+     */
 
     public PlayerId getPlayerId() {
         return playerId;
     }
+
+    /**
+     *
+     * @return the player nickname
+     */
     
 
     public String getPlayerNickname() {
         return playerNickname;
     }
+
+    /**
+     *
+     * @param clientId The client to check
+     * @param context The filter context
+     *
+     */
 
     @Override
     public boolean shouldSendTo(String clientId, EventFilterContext context) {
@@ -38,6 +62,11 @@ public class PlayerLeftGameEvent extends AbstractEvent {
         LOGGER.finer("EVENT FILTERING - PlayerLeftGameEvent shouldSendTo clientId: " + clientId + " = " + shouldSend + " (including leaving player)");
         return shouldSend;
     }
+
+    /**
+     *
+     * @param clientState The client state to update
+     */
 
     @Override
     public void updateClientState(it.polimi.ingsw.client.core.ClientState clientState) {
@@ -57,6 +86,11 @@ public class PlayerLeftGameEvent extends AbstractEvent {
             }
         }
     }
+
+    /**
+     *
+     * @param context The client event context
+     */
 
     @Override
     public void handleOnClient(ClientEventContext context) {

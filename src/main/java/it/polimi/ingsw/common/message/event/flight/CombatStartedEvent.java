@@ -20,6 +20,17 @@ public class CombatStartedEvent extends AbstractEvent {
     private final CombatType combatType;
     private final long decisionTimeLimit;
 
+    /**
+     * constructor
+     *
+     * @param gameId the game ID
+     * @param enemyName the enemy name
+     * @param enemyStrength the enemy strength
+     * @param enemyDescription the enemy description
+     * @param combatType the type of the combat
+     * @param decisionTimeLimit the decision time limit
+     */
+
     public CombatStartedEvent(String gameId, String enemyName, int enemyStrength, 
                              String enemyDescription, CombatType combatType, long decisionTimeLimit) {
         super(EventType.COMBAT_STARTED, gameId, null);
@@ -31,21 +42,47 @@ public class CombatStartedEvent extends AbstractEvent {
         LOGGER.fine("CombatStartedEvent instantiated for game: " + gameId + ", enemy: " + enemyName + ", type: " + combatType);
     }
 
+    /**
+     *
+     * @return  the enemy name
+     */
+
     public String getEnemyName() {
         return enemyName;
     }
+
+    /**
+     *
+     * @return  the enemy strength
+     */
 
     public int getEnemyStrength() {
         return enemyStrength;
     }
 
+    /**
+     *
+     * @return  the enemy description
+     */
+
     public String getEnemyDescription() {
         return enemyDescription;
     }
 
+    /**
+     *
+     * @return the type of the combat
+     */
+
+
     public CombatType getCombatType() {
         return combatType;
     }
+
+    /**
+     *
+     * @return  the decision time limit
+     */
 
     public long getDecisionTimeLimit() {
         return decisionTimeLimit;

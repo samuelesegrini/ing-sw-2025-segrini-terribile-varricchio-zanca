@@ -25,6 +25,21 @@ public class AdventureCardResultEvent extends AbstractEvent {
     private final Map<GoodType, Integer> collectedGoods;
     private final int collectedCredits;
 
+    /**
+     * constructor
+     *
+     * @param gameId
+     * @param playerAffected
+     * @param card
+     * @param cardNumber
+     * @param lostFlightDays
+     * @param lostCrew
+     * @param lostGoods
+     * @param lostCredits
+     * @param collectedGoods
+     * @param collectedCredits
+     */
+
     public AdventureCardResultEvent(String gameId, PlayerId playerAffected, AdventureCard card, int cardNumber, int lostFlightDays, int lostCrew, Map<GoodType, Integer> lostGoods, int lostCredits, Map<GoodType, Integer> collectedGoods, int collectedCredits) {
         super(EventType.ADVENTURE_CARD_DRAWN, gameId, null);
         this.playerAffected = playerAffected;
@@ -40,13 +55,29 @@ public class AdventureCardResultEvent extends AbstractEvent {
         LOGGER.fine("AdventureCardResultEvent instantiated for game: " + gameId + ", player: " + playerAffected + ", card: " + card.getName());
     }
 
+    /**
+     *
+     * @return the card  resolved for a player during the flight phase
+     */
+
     public AdventureCard getCard() {
         return card;
     }
 
+
+    /**
+     *
+     * @return the number of the card
+     */
+
     public int getCardNumber() {
         return cardNumber;
     }
+
+    /**
+     *
+     * @param context The client event context
+     */
 
     @Override
     public void handleOnClient(ClientEventContext context) {
@@ -64,6 +95,16 @@ public class AdventureCardResultEvent extends AbstractEvent {
         private final AdventureCardType type;
         private final String imageUrl;
 
+        /**
+         * constructor
+         *
+         * @param cardId
+         * @param name
+         * @param description
+         * @param type
+         * @param imageUrl
+         */
+
         public AdventureCard(String cardId, String name, String description, 
                            AdventureCardType type, String imageUrl) {
             this.cardId = cardId;
@@ -74,21 +115,46 @@ public class AdventureCardResultEvent extends AbstractEvent {
             LOGGER.fine("AdventureCard instantiated: " + name + " (ID: " + cardId + ", Type: " + type + ")");
         }
 
+        /**
+         *
+         * @return the card ID
+         */
+
         public String getCardId() {
             return cardId;
         }
+
+        /**
+         *
+         * @return the name of the card
+         */
 
         public String getName() {
             return name;
         }
 
+        /**
+         *
+         * @return the description of the card
+         */
+
         public String getDescription() {
             return description;
         }
 
+        /**
+         *
+         * @return the type of the card
+         */
+
         public AdventureCardType getType() {
             return type;
         }
+
+        /**
+         *
+         * @return the image url of the card
+         */
 
         public String getImageUrl() {
             return imageUrl;

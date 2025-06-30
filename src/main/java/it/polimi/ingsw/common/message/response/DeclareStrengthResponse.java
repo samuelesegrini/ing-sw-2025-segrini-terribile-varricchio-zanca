@@ -11,15 +11,33 @@ public class DeclareStrengthResponse extends AbstractResponse {
     private final int batteriesToUse;
     private final DeclareStrengthRequest.DecisionType decisionType;
 
+    /**
+     * constructor
+     *
+     * @param correlationId The correlation ID
+     * @param batteriesToUse The number of batteries to use
+     * @param decisionType The decision Type
+     */
+
     public DeclareStrengthResponse(UUID correlationId, int batteriesToUse, DeclareStrengthRequest.DecisionType decisionType) {
         super(correlationId);
         this.batteriesToUse = batteriesToUse;
         this.decisionType = decisionType;
     }
 
+    /**
+     *
+     * @return The number of batteries to use
+     */
+
     public int getBatteriesToUse() {
         return batteriesToUse;
     }
+
+    /**
+     *
+     * @return The decision Type
+     */
 
     public DeclareStrengthRequest.DecisionType getDecisionType() {
         return decisionType;
@@ -39,6 +57,11 @@ public class DeclareStrengthResponse extends AbstractResponse {
 
         context.getController().getUI().onDeclareStrengthResponse(this);
     }
+
+    /**
+     *
+     * @return the declare strength response as a string: "DeclareStrengthResponse{correlationId= ID, success= true/false, batteriesToUse= int, decisionType= ..}
+     */
 
     @Override
     public String toString() {

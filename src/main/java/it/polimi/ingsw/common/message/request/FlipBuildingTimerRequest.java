@@ -21,9 +21,18 @@ import it.polimi.ingsw.server.model.enums.GamePhase;
  */
 public class FlipBuildingTimerRequest extends AbstractRequest {
 
+    /**
+     * constructor
+     */
+
     public FlipBuildingTimerRequest() {
         super();
     }
+
+    /**
+     *
+     * @return always ValidationResult.success
+     */
 
     @Override
     public ValidationResult validate() {
@@ -31,6 +40,12 @@ public class FlipBuildingTimerRequest extends AbstractRequest {
         //TODO: basta lasciare implementazione vuota (?)
         return ValidationResult.success();
     }
+
+    /**
+     *
+     * @param context The execution context providing access to server resources
+     * @return an ErrorResponse or a GenericSuccessResponse
+     */
 
     @Override
     public Response execute(RequestContext context) {
@@ -100,9 +115,21 @@ public class FlipBuildingTimerRequest extends AbstractRequest {
         }
     }
 
+    /**
+     *
+     * @param level the level of the game
+     * @return true if the level needs the timer, false otherwise
+     */
+
     private boolean supportsTimerSystem(GameLevel level) {
         return level != GameLevel.TEST_FLIGHT;
     }
+
+    /**
+     *
+     * @param player the player
+     * @return true if the player has validated their ship and marked themselves as ready or if there are at least 1 engine, 2 crew members and the ship is structurally valid, false otherwise
+     */
 
     private boolean isPlayerShipFinished(Player player) {
         // Check if player has validated their ship and marked themselves as ready

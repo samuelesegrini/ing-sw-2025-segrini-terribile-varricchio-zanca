@@ -14,21 +14,42 @@ public class LoginResponse extends AbstractResponse {
     private final PlayerId playerId;
     private final String nickname;
 
+    /**
+     * constructor
+     *
+     * @param correlationId The correlation ID
+     * @param playerId The player ID
+     * @param nickname The nickname
+     */
+
     public LoginResponse(UUID correlationId, PlayerId playerId, String nickname) {
         super(correlationId);
         this.playerId = playerId;
         this.nickname = nickname;
     }
-    
+
+    /**
+     *
+     * @return The player ID
+     */
 
     public PlayerId getPlayerId() {
         return playerId;
     }
-    
+
+    /**
+     *
+     * @return The nickname
+     */
 
     public String getNickname() {
         return nickname;
     }
+
+    /**
+     *
+     * @param context The client context
+     */
 
     @Override
     public void handleOnClient(ClientContext context) {

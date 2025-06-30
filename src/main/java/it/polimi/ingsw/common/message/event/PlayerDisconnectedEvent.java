@@ -15,6 +15,14 @@ public class PlayerDisconnectedEvent extends AbstractEvent {
     private final String playerNickname;
     private final boolean isInActiveGame; // Whether disconnection happened during active gameplay
 
+    /**
+     *
+     * @param gameId the game ID
+     * @param playerId the player ID
+     * @param playerNickname the player nickname
+     * @param isInActiveGame
+     */
+
     public PlayerDisconnectedEvent(String gameId, PlayerId playerId, String playerNickname, boolean isInActiveGame) {
         super(EventType.PLAYER_DISCONNECTED, gameId, playerId);
         this.playerId = playerId;
@@ -23,17 +31,39 @@ public class PlayerDisconnectedEvent extends AbstractEvent {
         LOGGER.fine("PlayerDisconnectedEvent instantiated for game: " + gameId + ", player: " + playerNickname + ", in active game: " + isInActiveGame);
     }
 
+    /**
+     *
+     * @return  the player ID
+     */
+
     public PlayerId getPlayerId() {
         return playerId;
     }
+
+    /**
+     *
+     * @return  the player nickname
+     */
 
     public String getPlayerNickname() {
         return playerNickname;
     }
 
+    /**
+     *
+     * @return true if the player is in an active game
+     */
+
     public boolean isInActiveGame() {
         return isInActiveGame;
     }
+
+    /**
+     *
+     * @param clientId The client to check
+     * @param context The filter context
+     *
+     */
 
     @Override
     public boolean shouldSendTo(String clientId, EventFilterContext context) {
@@ -47,6 +77,11 @@ public class PlayerDisconnectedEvent extends AbstractEvent {
         // Use default game filtering for other clients in the same game
         return super.shouldSendTo(clientId, context);
     }
+
+    /**
+     *
+     * @param context The client event context
+     */
 
     @Override
     public void handleOnClient(ClientEventContext context) {

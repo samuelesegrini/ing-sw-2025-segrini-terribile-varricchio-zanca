@@ -15,6 +15,17 @@ public class SlaversResponse extends AbstractResponse {
     private final int lostFlightDays;
     private final int collectedCredits;
 
+    /**
+     * constructors
+     *
+     * @param correlationId The correlation ID
+     * @param usedBatteries The number of  used batteries
+     * @param hasWon whether the player has won
+     * @param lostCrew The number crew members lost
+     * @param lostFlightDays The number of lost flight days
+     * @param collectedCredits The number of credits collected
+     */
+
     public SlaversResponse(UUID correlationId, int usedBatteries, boolean hasWon, int lostCrew, int lostFlightDays, int collectedCredits) {
         super(correlationId);
         this.usedBatteries = usedBatteries;
@@ -23,7 +34,12 @@ public class SlaversResponse extends AbstractResponse {
         this.lostFlightDays = lostFlightDays;
         this.collectedCredits = collectedCredits;
     }
-    
+
+    /**
+     *
+     * @param context The client context
+     */
+
     @Override
     public void handleOnClient(ClientContext context) {
         // TODO

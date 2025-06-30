@@ -18,14 +18,30 @@ public class LoginRequest extends AbstractRequest {
     private static final Pattern NICKNAME_PATTERN = Pattern.compile("^[a-zA-Z0-9_-]{3,20}$");
     private final String nickname;
 
+    /**
+     * constructor
+     *
+     * @param nickname the nickname used for the login
+     */
+
     public LoginRequest(String nickname) {
         super();
         this.nickname = nickname;
     }
 
+    /**
+     *
+     * @return the nickname used for the login
+     */
+
     public String getNickname() {
         return nickname;
     }
+
+    /**
+     *
+     * @return ValidationResult.failure or ValidationResult.success
+     */
 
     @Override
     public ValidationResult validate() {
@@ -51,6 +67,12 @@ public class LoginRequest extends AbstractRequest {
 
         return ValidationResult.success();
     }
+
+    /**
+     *
+     * @param context The execution context providing access to server resources
+     * @return an ErrorResponse or a LoginResponse
+     */
 
     @Override
     public Response execute(RequestContext context) {

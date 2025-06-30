@@ -8,14 +8,30 @@ import java.util.UUID;
 public class CombatStrengthResponse extends AbstractResponse {
     private final int batteriesToUse;
 
+    /**
+     *
+     * @param correlationId The correlation ID
+     * @param batteriesToUse The number of batteries to use
+     */
+
     public CombatStrengthResponse(UUID correlationId, int batteriesToUse) {
         super(correlationId);
         this.batteriesToUse = batteriesToUse;
     }
 
+    /**
+     *
+     * @return The number of batteries to use
+     */
+
     public int getBatteriesToUse() {
         return batteriesToUse;
     }
+
+    /**
+     *
+     * @param context The client context
+     */
 
     @Override
     public void handleOnClient(ClientContext context) {
@@ -31,6 +47,11 @@ public class CombatStrengthResponse extends AbstractResponse {
 
         context.getController().getUI().onCombatStrengthResponse(this);
     }
+
+    /**
+     *
+     * @return the combat strength response as a string: "CombatStrengthResponse{correlationId= ID, success= true/false, batteriesToUse= int}
+     */
 
     @Override
     public String toString() {

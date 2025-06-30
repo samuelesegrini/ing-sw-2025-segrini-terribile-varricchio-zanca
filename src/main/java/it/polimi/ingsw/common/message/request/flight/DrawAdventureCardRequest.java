@@ -21,14 +21,29 @@ import java.util.Optional;
  */
 public class DrawAdventureCardRequest extends AbstractRequest {
 
+    /**
+     * constructor
+     */
+
     public DrawAdventureCardRequest() {
         super();
     }
+
+    /**
+     *
+     * @return always ValidationResult.success
+     */
 
     @Override
     public ValidationResult validate() {
         return ValidationResult.success();
     }
+
+    /**
+     *
+     * @param context The execution context providing access to server resources
+     * @return an ErrorResponse or a DrawAdventureCardResponse
+     */
 
     @Override
     public Response execute(RequestContext context) {

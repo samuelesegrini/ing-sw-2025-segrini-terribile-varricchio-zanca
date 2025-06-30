@@ -19,13 +19,29 @@ import it.polimi.ingsw.server.model.enums.GamePhase;
 public class CombatStrengthRequest extends AbstractRequest {
     private final int batteriesToUse;
 
+    /**
+     * constructor
+     *
+     * @param batteriesToUse the number of batteries to use
+     */
+
     public CombatStrengthRequest(int batteriesToUse) {
         this.batteriesToUse = batteriesToUse;
     }
 
+    /**
+     *
+     * @return the number of batteries to use
+     */
+
     public int getBatteriesToUse() {
         return batteriesToUse;
     }
+
+    /**
+     *
+     * @return ValidationResult.failure if the number of batteries to use is negative, ValidationResult.successotherwise
+     */
 
     @Override
     public ValidationResult validate() {
@@ -34,6 +50,12 @@ public class CombatStrengthRequest extends AbstractRequest {
         }
         return ValidationResult.success();
     }
+
+    /**
+     *
+     * @param context The execution context providing access to server resources
+     * @return an ErrorResponse or a CombatStrengthResponse
+     */
 
     @Override
     public Response execute(RequestContext context) {

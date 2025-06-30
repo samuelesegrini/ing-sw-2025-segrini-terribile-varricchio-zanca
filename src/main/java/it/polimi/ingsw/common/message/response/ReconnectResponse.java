@@ -13,6 +13,16 @@ public class ReconnectResponse extends AbstractResponse {
     private final String gameId;
     private final Object gameState; // Serialized game state
 
+    /**
+     * constructor
+     *
+     * @param correlationId The correlation ID
+     * @param playerId The player ID
+     * @param nickname The nickname
+     * @param gameId The game ID
+     * @param gameState The game state
+     */
+
     public ReconnectResponse(UUID correlationId, String playerId, String nickname,
                              String gameId, Object gameState) {
         super(correlationId);
@@ -22,21 +32,46 @@ public class ReconnectResponse extends AbstractResponse {
         this.gameState = gameState;
     }
 
+    /**
+     *
+     * @return The player ID
+     */
+
     public String getPlayerId() {
         return playerId;
     }
+
+    /**
+     *
+     * @return The nickname of the player
+     */
 
     public String getNickname() {
         return nickname;
     }
 
+    /**
+     *
+     * @return the game ID
+     */
+
     public String getGameId() {
         return gameId;
     }
 
+    /**
+     *
+     * @return the game state
+     */
+
     public Object getClientState() {
         return gameState;
     }
+
+    /**
+     *
+     * @param context The client context
+     */
 
     @Override
     public void handleOnClient(ClientContext context) {

@@ -20,14 +20,30 @@ import java.util.List;
 public class LeaveGameRequest extends AbstractRequest {
     private final String gameId;
 
+    /**
+     * constructor
+     *
+     * @param gameId the game ID
+     */
+
     public LeaveGameRequest(String gameId) {
         super();
         this.gameId = gameId;
     }
 
+    /**
+     *
+     * @return the game ID
+     */
+
     public String getGameId() {
         return gameId;
     }
+
+    /**
+     *
+     * @return ValidationResult.failure or ValidationResult.success
+     */
 
     @Override
     public ValidationResult validate() {
@@ -36,6 +52,12 @@ public class LeaveGameRequest extends AbstractRequest {
         }
         return ValidationResult.success();
     }
+
+    /**
+     *
+     * @param context The execution context providing access to server resources
+     * @return an ErrorResponse or a LeaveGameResponse
+     */
 
     @Override
     public Response execute(RequestContext context) {
@@ -93,8 +115,13 @@ public class LeaveGameRequest extends AbstractRequest {
 
     /**
      * Publishes a lobby update event to synchronize remaining clients with updated lobby state.
+     *
+     * @param gameId the game ID
+     * @param gameSession the game session
+     * @param registry the player session registry
+     * @param excludePlayerId the ID of the player that left
      */
-    private void publishLobbyUpdateEvent(GameSession gameSession, 
+    private void publishLobbyUpdateEvent(GameSession gameSession,
                                        String gameId, PlayerSessionRegistry registry, String excludePlayerId) {
         // Use server model directly - Simple Direct Model Architecture
         List<Player> players = gameSession.getGameModel().getPlayers();
@@ -108,6 +135,10 @@ public class LeaveGameRequest extends AbstractRequest {
 
     /**
      * Publishes a games list update event to broadcast current available games to all lobby clients.
+     *
+     * @param gameSession the game session
+     * @param sessionManager the session manager
+     * @param registry the player session registry
      */
     private void publishGamesListUpdateEvent(GameSession gameSession, GameSessionManager sessionManager, 
                                            PlayerSessionRegistry registry) {

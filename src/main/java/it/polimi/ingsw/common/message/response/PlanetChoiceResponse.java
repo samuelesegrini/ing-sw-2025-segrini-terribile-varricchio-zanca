@@ -8,14 +8,31 @@ import java.util.UUID;
 public class PlanetChoiceResponse extends AbstractResponse {
     private final int planetIndex;
 
+    /**
+     * constructor
+     *
+     * @param correlationId The correlation ID
+     * @param planetIndex The planet index
+     */
+
     public PlanetChoiceResponse(UUID correlationId, int planetIndex) {
         super(correlationId);
         this.planetIndex = planetIndex;
     }
 
+    /**
+     *
+     * @return The planet index
+     */
+
     public int getPlanetIndex() {
         return planetIndex;
     }
+
+    /**
+     *
+     * @param context The client context
+     */
 
     @Override
     public void handleOnClient(ClientContext context) {
@@ -32,6 +49,11 @@ public class PlanetChoiceResponse extends AbstractResponse {
             context.showError("Planet Choice Error", getErrorMessage());
         }
     }
+
+    /**
+     *
+     * @return the planet choice response as a string
+     */
 
     @Override
     public String toString() {

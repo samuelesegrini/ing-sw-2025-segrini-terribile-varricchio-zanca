@@ -21,6 +21,17 @@ public class RequestContextImpl implements RequestContext {
     private final ServerNetworkManager networkManager;
     private final Map<String, String> networkClientToGamePlayerMap;
 
+    /**
+     * constructor
+     *
+     * @param senderId the sender ID
+     * @param sessionManager the session manager
+     * @param playerRegistry The player registry
+     * @param eventPublisher The event publisher
+     * @param networkManager The network manager
+     * @param networkClientToGamePlayerMap
+     */
+
     public RequestContextImpl(String senderId,
                               GameSessionManager sessionManager,
                               PlayerSessionRegistry playerRegistry,
@@ -35,40 +46,80 @@ public class RequestContextImpl implements RequestContext {
         this.networkClientToGamePlayerMap = networkClientToGamePlayerMap;
     }
 
+    /**
+     *
+     * @return the sender ID
+     */
+
     @Override
     public String getSenderId() {
         return senderId;
     }
+
+    /**
+     *
+     * @return the player ID for the sender ID
+     */
 
     @Override
     public PlayerId getPlayerId() {
         return playerRegistry.getPlayerIdForClient(senderId);
     }
 
+    /**
+     *
+     * @return the session manager
+     */
+
     @Override
     public GameSessionManager getSessionManager() {
         return sessionManager;
     }
+
+    /**
+     *
+     * @return  The player registry
+     */
 
     @Override
     public PlayerSessionRegistry getPlayerRegistry() {
         return playerRegistry;
     }
 
+    /**
+     *
+     * @return the event publisher
+     */
+
     @Override
     public EventPublisher getEventPublisher() {
         return eventPublisher;
     }
+
+    /**
+     *
+     * @return the network manager
+     */
 
     @Override
     public ServerNetworkManager getNetworkManager() {
         return networkManager;
     }
 
+    /**
+     *
+     * @param event The event to publish
+     */
+
     @Override
     public void publishEvent(Event event) {
         eventPublisher.publishEvent(event);
     }
+
+    /**
+     *
+     * @return the game session
+     */
 
     @Override
     public GameSession getGameSession() {
@@ -77,7 +128,13 @@ public class RequestContextImpl implements RequestContext {
             return null;
         }
         return sessionManager.getGameSessionForPlayer(playerId);
-    }    
+    }
+
+    /**
+     *
+     * @return the game ID
+     */
+
     @Override
     public String getGameId() {
         PlayerId playerId = getPlayerId();
@@ -86,7 +143,12 @@ public class RequestContextImpl implements RequestContext {
         }
         return sessionManager.getPlayerGameId(playerId);
     }
-    
+
+    /**
+     *
+     * @return the player's nickname
+     */
+
     @Override
     public String getPlayerNickname() {
         PlayerId playerId = getPlayerId();

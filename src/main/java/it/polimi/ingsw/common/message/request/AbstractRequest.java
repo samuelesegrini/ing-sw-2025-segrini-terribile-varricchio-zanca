@@ -12,17 +12,33 @@ import java.util.UUID;
  */
 public abstract class AbstractRequest extends AbstractMessage implements Request {
     private final UUID correlationId;
-    
+
+    /**
+     * constructor
+     *
+     * generates a random correlation ID
+     */
+
     protected AbstractRequest() {
         super();
         this.correlationId = UUID.randomUUID();
     }
+
+    /**
+     *
+     * @return the correlation ID of the request
+     */
     
     @Override
     public UUID getCorrelationId() {
         return correlationId;
     }
-    
+
+    /**
+     *
+     * @return ValidationResult.success - no validation errors
+     */
+
     @Override
     public ValidationResult validate() {
         // Default implementation - no validation errors

@@ -17,6 +17,17 @@ public class SmugglersResponse extends AbstractResponse {
     private final int lostFlightDays;
     private final Map<GoodType, Integer> collectedGoods;
 
+    /**
+     * constructor
+     *
+     * @param correlationId The correlation ID
+     * @param usedBatteries The number of  used batteries
+     * @param hasWon whether the player has won
+     * @param lostGoods The number of every type of lost goods
+     * @param lostFlightDays The number of lost flight days
+     * @param collectedGoods The number of every type of collected goods
+     */
+
     public SmugglersResponse(UUID correlationId, int usedBatteries, boolean hasWon, Map<GoodType, Integer> lostGoods, int lostFlightDays, Map<GoodType, Integer> collectedGoods) {
         super(correlationId);
         this.usedBatteries = usedBatteries;
@@ -25,7 +36,12 @@ public class SmugglersResponse extends AbstractResponse {
         this.lostFlightDays = lostFlightDays;
         this.collectedGoods = Map.copyOf(collectedGoods);
     }
-    
+
+    /**
+     *
+     * @param context The client context
+     */
+
     @Override
     public void handleOnClient(ClientContext context) {
         // TODO

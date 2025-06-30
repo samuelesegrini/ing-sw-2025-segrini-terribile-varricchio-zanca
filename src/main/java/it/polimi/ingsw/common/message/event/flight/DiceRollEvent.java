@@ -15,6 +15,14 @@ public class DiceRollEvent extends AbstractEvent {
     private final String purpose;
     private final List<Integer> diceValues;
 
+    /**
+     * constructor
+     *
+     * @param gameId the game ID
+     * @param purpose the purpose of the dice roll
+     * @param diceValues the rolled dices values
+     */
+
     public DiceRollEvent(String gameId, String purpose, List<Integer> diceValues) {
         super(EventType.DICE_ROLLED, gameId, null);
         this.purpose = purpose;
@@ -22,13 +30,28 @@ public class DiceRollEvent extends AbstractEvent {
         LOGGER.fine("DiceRollEvent instantiated for game: " + gameId + ", purpose: " + purpose + ", values: " + diceValues);
     }
 
+    /**
+     *
+     * @return  the purpose of the dice roll
+     */
+
     public String getPurpose() {
         return purpose;
     }
 
+    /**
+     *
+     * @return the rolled dices values
+     */
+
     public List<Integer> getDiceValues() {
         return diceValues;
     }
+
+    /**
+     *
+     * @param context The client event context
+     */
 
     @Override
     public void handleOnClient(ClientEventContext context) {

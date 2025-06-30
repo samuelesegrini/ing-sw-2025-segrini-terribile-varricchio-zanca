@@ -8,14 +8,31 @@ import java.util.UUID;
 public class EngineStrengthResponse extends AbstractResponse {
     private final int engineStrength;
 
+    /**
+     * constructor
+     *
+     * @param correlationId The correlation ID
+     * @param engineStrength The engine strength
+     */
+
     public EngineStrengthResponse(UUID correlationId, int engineStrength) {
         super(correlationId);
         this.engineStrength = engineStrength;
     }
 
+    /**
+     *
+     * @return The engine strength
+     */
+
     public int getEngineStrength() {
         return engineStrength;
     }
+
+    /**
+     *
+     * @param context The client context
+     */
 
     @Override
     public void handleOnClient(ClientContext context) {
@@ -29,6 +46,11 @@ public class EngineStrengthResponse extends AbstractResponse {
             context.showError("Engine Strength Error", getErrorMessage());
         }
     }
+
+    /**
+     *
+     * @return the engine strength as a string
+     */
 
     @Override
     public String toString() {

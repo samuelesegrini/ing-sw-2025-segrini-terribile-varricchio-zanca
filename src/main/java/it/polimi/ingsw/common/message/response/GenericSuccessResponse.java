@@ -6,6 +6,13 @@ import java.util.UUID;
  * Generic success response for simple acknowledgments.
  */
 public class GenericSuccessResponse extends AbstractResponse {
+
+    /**
+     * constructor
+     *
+     * @param correlationId The correlation ID
+     */
+
     public GenericSuccessResponse(UUID correlationId) {
         super(correlationId);
     }

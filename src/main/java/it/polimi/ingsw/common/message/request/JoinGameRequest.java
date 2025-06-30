@@ -19,10 +19,21 @@ public class JoinGameRequest extends AbstractRequest {
     private static final Logger LOGGER = Logger.getLogger(JoinGameRequest.class.getName());
     private final String gameId;
 
+    /**
+     * constructor
+     *
+     * @param gameId the ID of the game to join
+     */
+
     public JoinGameRequest(String gameId) {
         super();
         this.gameId = gameId;
     }
+
+    /**
+     *
+     * @return ValidationResult.failure or ValidationResult.success
+     */
 
     @Override
     public ValidationResult validate() {
@@ -31,6 +42,12 @@ public class JoinGameRequest extends AbstractRequest {
         }
         return ValidationResult.success();
     }
+
+    /**
+     *
+     * @param context The execution context providing access to server resources
+     * @return an ErrorResponse or a JoinGameResponse
+     */
 
     @Override
     public Response execute(RequestContext context) {

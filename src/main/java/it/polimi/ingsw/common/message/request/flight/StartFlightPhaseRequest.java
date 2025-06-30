@@ -16,14 +16,30 @@ import it.polimi.ingsw.server.model.enums.GamePhase;
  */
 public class StartFlightPhaseRequest extends AbstractRequest {
 
+    /**
+     * constructor
+     *
+     */
+
     public StartFlightPhaseRequest() {
         super();
     }
+
+    /**
+     *
+     * @return ValidationResult.success
+     */
 
     @Override
     public ValidationResult validate() {
         return ValidationResult.success();
     }
+
+    /**
+     *
+     * @param context The execution context providing access to server resources
+     * @return an ErrorResponse or a StartFlightPhaseResponse
+     */
 
     @Override
     public Response execute(RequestContext context) {

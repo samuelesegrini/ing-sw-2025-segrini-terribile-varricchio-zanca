@@ -15,6 +15,14 @@ public class ResourceUpdateEvent extends AbstractEvent {
     private final String playerId;
     private final Map<String, Integer> updatedResources;
 
+    /**
+     * constructor
+     *
+     * @param gameId the game ID
+     * @param playerId the player ID
+     * @param updatedResources the quantity of every resource
+     */
+
     public ResourceUpdateEvent(String gameId, String playerId, Map<String, Integer> updatedResources) {
         super(EventType.RESOURCE_UPDATE, gameId, PlayerId.fromString(playerId));
         this.playerId = playerId;
@@ -22,13 +30,28 @@ public class ResourceUpdateEvent extends AbstractEvent {
         LOGGER.fine("ResourceUpdateEvent instantiated for game: " + gameId + ", player: " + playerId + ", resources: " + updatedResources);
     }
 
+    /**
+     *
+     * @return  the game ID
+     */
+
     public String getPlayerId() {
         return playerId;
     }
 
+    /**
+     *
+     * @return the quantity of every resource
+     */
+
     public Map<String, Integer> getUpdatedResources() {
         return updatedResources;
     }
+
+    /**
+     *
+     * @param context The client event context
+     */
 
     @Override
     public void handleOnClient(ClientEventContext context) {

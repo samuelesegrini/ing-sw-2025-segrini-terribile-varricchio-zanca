@@ -15,14 +15,30 @@ public class RequestFaceUpTileRequest extends AbstractRequest {
 
     private final String tileId;
 
+    /**
+     * constructor
+     *
+     * @param tileId the requested tile ID
+     */
+
     public RequestFaceUpTileRequest(String tileId) {
         super();
         this.tileId = tileId;
     }
 
+    /**
+     *
+     * @return the requested tile ID
+     */
+
     public String getTileId() {
         return tileId;
     }
+
+    /**
+     *
+     * @return a failure message or a success
+     */
 
     @Override
     public ValidationResult validate() {
@@ -31,6 +47,12 @@ public class RequestFaceUpTileRequest extends AbstractRequest {
         }
         return ValidationResult.success();
     }
+
+    /**
+     *
+     * @param context The execution context providing access to server resources
+     * @return an ErrorResponse or a RequestFaceUpTileResponse
+     */
 
     @Override
     public Response execute(RequestContext context) {

@@ -18,7 +18,9 @@ public interface ClientContext {
     
     /**
      * Gets the player ID as string (legacy compatibility).
+     * @return the player ID as a string
      */
+
     default String getPlayerIdString() {
         PlayerId playerId = getPlayerId();
         return playerId != null ? playerId.toString() : null;
@@ -27,7 +29,9 @@ public interface ClientContext {
     /**
      * Gets the timer view for displaying timer updates.
      * Returns null if no timer view is available.
+     * @return null
      */
+
     default Object getTimerView() {
         return null; // Default implementation returns null
     }

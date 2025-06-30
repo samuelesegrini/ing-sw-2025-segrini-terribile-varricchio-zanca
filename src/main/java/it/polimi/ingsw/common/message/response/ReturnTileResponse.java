@@ -12,11 +12,21 @@ import java.util.UUID;
 public class ReturnTileResponse extends AbstractResponse {
     // TODO
 
+
+    /**
+     *
+     * @param correlationId
+     */
     // Legacy constructor for backward compatibility
     public ReturnTileResponse(UUID correlationId) {
         super(correlationId);
         // TODO
     }
+
+    /**
+     *
+     * @param context The client context
+     */
 
     @Override
     public void handleOnClient(ClientContext context) {

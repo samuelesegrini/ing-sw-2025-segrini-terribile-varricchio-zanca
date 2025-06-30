@@ -31,14 +31,32 @@ public class DockRequest extends AbstractRequest {
     private final boolean isDocking;
     private final String cardId; // To identify which card the player is responding to
 
+    /**
+     * constructor
+     *
+     * @param isDocking whether is docking or not
+     */
+
     public DockRequest(boolean isDocking) {
         this(isDocking, null);
     }
-    
+
+    /**
+     *
+     * @param isDocking whether is docking or not
+     * @param cardId the card ID
+     */
+
     public DockRequest(boolean isDocking, String cardId) {
         this.isDocking = isDocking;
         this.cardId = cardId;
     }
+
+    /**
+     *
+     * @param context The execution context providing access to server resources
+     * @return an ErrorResponse or a DockResponse or calls processDockAtAbandonedShip or processDockAtAbandonedStation
+     */
 
     @Override
     public Response execute(RequestContext context) {
@@ -107,6 +125,12 @@ public class DockRequest extends AbstractRequest {
 
     /**
      * Processes docking at an abandoned ship.
+     *
+     * @param card the card
+     * @param player the player
+     * @param gameModel the game model
+     *
+     * @return an ErrorResponse or a DockResponse
      */
     private Response processDockAtAbandonedShip(AbandonedShipCard card, Player player, GameModel gameModel) {
         // Check if ship is already visited
@@ -139,7 +163,14 @@ public class DockRequest extends AbstractRequest {
 
     /**
      * Processes docking at an abandoned station.
+     *
+     * @param card the abandoned station card
+     * @param player the player approaching tha abandoned station
+     * @param gameModel the game model
+     *
+     * @return an ErrorResponse or a DockResponse
      */
+
     private Response processDockAtAbandonedStation(AbandonedStationCard card, Player player, GameModel gameModel) {
         // Check if station is already visited
         if (card.isVisited()) {
@@ -172,9 +203,19 @@ public class DockRequest extends AbstractRequest {
         return new DockResponse(getCorrelationId(), lostFlightDays, 0, stationGoods, 0);
     }
 
+    /**
+     *
+     * @return whether the player is docking or not
+     */
+
     public boolean isDocking() {
         return isDocking;
     }
+
+    /**
+     *
+     * @return the card ID
+     */
 
     public String getCardId() {
         return cardId;

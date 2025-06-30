@@ -14,6 +14,14 @@ public class PlayerReconnectedEvent extends AbstractEvent {
     private final String playerNickname;
     private final boolean wasInActiveGame; // Whether reconnection happened during active gameplay
 
+    /**
+     *
+     * @param gameId the game ID
+     * @param playerId the player ID
+     * @param playerNickname the player nickname
+     * @param wasInActiveGame
+     */
+
     public PlayerReconnectedEvent(String gameId, PlayerId playerId, String playerNickname, boolean wasInActiveGame) {
         super(EventType.PLAYER_RECONNECTED, gameId, playerId);
         this.playerId = playerId;
@@ -22,17 +30,39 @@ public class PlayerReconnectedEvent extends AbstractEvent {
         LOGGER.fine("PlayerReconnectedEvent instantiated for game: " + gameId + ", player: " + playerNickname + ", was in active game: " + wasInActiveGame);
     }
 
+    /**
+     *
+     * @return the player ID
+     */
+
     public PlayerId getPlayerId() {
         return playerId;
     }
+
+    /**
+     *
+     * @return  the player nickname
+     */
 
     public String getPlayerNickname() {
         return playerNickname;
     }
 
+    /**
+     *
+     * @return true if the player was in an active game
+     */
+
     public boolean wasInActiveGame() {
         return wasInActiveGame;
     }
+
+    /**
+     *
+     * @param clientId The client to check
+     * @param context The filter context
+     *
+     */
 
     @Override
     public boolean shouldSendTo(String clientId, EventFilterContext context) {
@@ -46,6 +76,11 @@ public class PlayerReconnectedEvent extends AbstractEvent {
         // Use default game filtering for other clients in the same game
         return super.shouldSendTo(clientId, context);
     }
+
+    /**
+     *
+     * @param context The client event context
+     */
 
     @Override
     public void handleOnClient(ClientEventContext context) {

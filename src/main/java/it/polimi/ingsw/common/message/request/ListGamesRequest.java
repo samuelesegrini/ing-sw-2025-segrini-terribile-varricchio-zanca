@@ -13,6 +13,12 @@ import java.util.List;
  */
 public class ListGamesRequest extends AbstractRequest {
 
+    /**
+     *
+     * @param context The execution context providing access to server resources
+     * @return an ErrorResponse or a ListGamesResponse
+     */
+
     @Override
     public Response execute(RequestContext context) {
         // Check authentication

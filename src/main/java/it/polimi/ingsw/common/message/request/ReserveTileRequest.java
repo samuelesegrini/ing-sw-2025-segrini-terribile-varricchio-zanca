@@ -18,10 +18,21 @@ import it.polimi.ingsw.server.model.enums.GamePhase;
 public class ReserveTileRequest extends AbstractRequest {
     private final String tileId;
 
+    /**
+     * constructor
+     *
+     * @param tileId the tile ID
+     */
+
     public ReserveTileRequest(String tileId) {
         super();
         this.tileId = tileId;
     }
+
+    /**
+     *
+     * @return an error message or a success
+     */
 
     @Override
     public ValidationResult validate() {
@@ -30,6 +41,12 @@ public class ReserveTileRequest extends AbstractRequest {
         }
         return ValidationResult.success();
     }
+
+    /**
+     *
+     * @param context The execution context providing access to server resources
+     * @return an error message or a success response
+     */
 
     @Override
     public Response execute(RequestContext context) {
@@ -100,6 +117,11 @@ public class ReserveTileRequest extends AbstractRequest {
             return createErrorResponse("Failed to reserve component: " + e.getMessage(), ErrorResponse.INTERNAL_ERROR);
         }
     }
+
+    /**
+     *
+     * @return the ID of the tile to reserve
+     */
 
     public String getTileId() {
         return tileId;

@@ -23,6 +23,18 @@ public class ShipDamagedEvent extends AbstractEvent {
     private final String damageSource;
     private final ComponentType componentLost;
 
+    /**
+     * constructor
+     *
+     * @param gameId the game ID
+     * @param playerId the player ID
+     * @param playerNickname the player nickname
+     * @param row the row of the damage
+     * @param col the column of the damage
+     * @param damageSource what damaged the ship
+     * @param componentLost type of the lost component
+     */
+
     public ShipDamagedEvent(String gameId, String playerId, String playerNickname,
                             int row, int col, String damageSource, ComponentType componentLost) {
         super(EventType.SHIP_DAMAGED, gameId, PlayerId.fromString(playerId));
@@ -35,29 +47,64 @@ public class ShipDamagedEvent extends AbstractEvent {
         LOGGER.fine("ShipDamagedEvent instantiated for game: " + gameId + ", player: " + playerNickname + ", component: " + componentLost + " at (" + row + "," + col + ") by " + damageSource);
     }
 
+    /**
+     *
+     * @return  the player ID
+     */
+
     public String getPlayerId() {
         return playerId;
     }
+
+    /**
+     *
+     * @return  the player nickname
+     */
 
     public String getPlayerNickname() {
         return playerNickname;
     }
 
+    /**
+     *
+     * @return the row where the damage is
+     */
+
     public int getRow() {
         return row;
     }
+
+    /**
+     *
+     * @return  the column where the damage is
+     */
 
     public int getCol() {
         return col;
     }
 
+    /**
+     *
+     * @return  what damaged the ship
+     */
+
     public String getDamageSource() {
         return damageSource;
     }
 
+    /**
+     *
+     * @return the type of the lost component
+     */
+
     public ComponentType getComponentLost() {
         return componentLost;
     }
+
+    /**
+     *
+     * @param context The client event context
+     */
 
     @Override
     public void handleOnClient(ClientEventContext context) {

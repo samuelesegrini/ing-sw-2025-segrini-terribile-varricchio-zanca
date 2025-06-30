@@ -12,11 +12,24 @@ public class ErrorResponse extends AbstractResponse {
     public static final String NOT_FOUND = "NOT_FOUND";
     public static final String INVALID_STATE = "INVALID_STATE";
     public static final String INTERNAL_ERROR = "INTERNAL_ERROR";
-    
+
+    /**
+     * constructor
+     *
+     * @param correlationId The correlation ID
+     * @param errorMessage The error message
+     * @param errorCode The error code
+     */
+
     public ErrorResponse(UUID correlationId, String errorMessage, String errorCode) {
         super(correlationId, false, errorMessage, errorCode);
     }
-    
+
+    /**
+     *
+     * @param context The client context
+     */
+
     @Override
     public void handleOnClient(ClientContext context) {
         // Show error to user

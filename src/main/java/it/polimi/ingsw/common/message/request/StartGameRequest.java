@@ -17,14 +17,30 @@ public class StartGameRequest extends AbstractRequest {
 
     private final String gameId;
 
+    /**
+     * constructor
+     *
+     * @param gameId the game ID
+     */
+
     public StartGameRequest(String gameId) {
         super();
         this.gameId = gameId;
     }
 
+    /**
+     *
+     * @return the game ID
+     */
+
     public String getGameId() {
         return gameId;
     }
+
+    /**
+     *
+     * @return whether the start game request succedeed or not
+     */
 
     @Override
     public ValidationResult validate() {
@@ -33,6 +49,12 @@ public class StartGameRequest extends AbstractRequest {
         }
         return ValidationResult.success();
     }
+
+    /**
+     *
+     * @param context The execution context providing access to server resources
+     * @return an error message or a success response
+     */
 
     @Override
     public Response execute(RequestContext context) {

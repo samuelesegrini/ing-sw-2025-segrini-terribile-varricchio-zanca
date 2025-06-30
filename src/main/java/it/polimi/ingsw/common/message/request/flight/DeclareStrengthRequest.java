@@ -15,6 +15,10 @@ import it.polimi.ingsw.server.model.domain.player.Player;
  */
 public class DeclareStrengthRequest extends AbstractRequest {
 
+    /**
+     * the type of strength (engine strength or cannon strength)
+     */
+
     public enum DecisionType {
         DECLARE_ENGINE_STRENGTH,
         DECLARE_CANNON_STRENGTH
@@ -23,10 +27,23 @@ public class DeclareStrengthRequest extends AbstractRequest {
     private final DecisionType decisionType;
     private final int batteriesToUse;
 
+    /**
+     * constructor
+     *
+     * @param decisionType the type of strength (engine strength or cannon strength) to declare
+     * @param batteriesToUse the number of batteries to use
+     *
+     */
+
     public DeclareStrengthRequest(DecisionType decisionType, int batteriesToUse) {
         this.decisionType = decisionType;
         this.batteriesToUse = batteriesToUse;
     }
+
+    /**
+     *
+     * @return ValidationResult.failure if the number of batteries is negative, ValidationResult.success otherwise
+     */
 
     @Override
     public ValidationResult validate() {
@@ -35,6 +52,12 @@ public class DeclareStrengthRequest extends AbstractRequest {
         }
         return ValidationResult.success();
     }
+
+    /**
+     *
+     * @param context The execution context providing access to server resources
+     * @return an ErrorResponse or a DeclareStrengthResponse
+     */
 
     @Override
     public Response execute(RequestContext context) {

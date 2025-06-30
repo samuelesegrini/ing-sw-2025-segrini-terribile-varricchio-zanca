@@ -24,6 +24,20 @@ public class CombatResolvedEvent extends AbstractEvent {
     private final CombatReward reward;
     private final CombatPenalty penalty;
 
+    /**
+     * constructor
+     *
+     * @param gameId the game ID
+     * @param enemyName the enemy name
+     * @param playerId the player ID
+     * @param playerNickname the player's nickname
+     * @param playerStrength the player's strength
+     * @param enemyStrength the enemy's strength
+     * @param outcome the outcome of the combat
+     * @param reward the reward of the combat
+     * @param penalty the penalty of the combat
+     */
+
     public CombatResolvedEvent(String gameId, String enemyName, String playerId, String playerNickname,
                               int playerStrength, int enemyStrength, CombatOutcome outcome,
                               CombatReward reward, CombatPenalty penalty) {
@@ -39,37 +53,81 @@ public class CombatResolvedEvent extends AbstractEvent {
         LOGGER.fine("CombatResolvedEvent instantiated for game: " + gameId + ", player: " + playerNickname + ", enemy: " + enemyName + ", outcome: " + outcome);
     }
 
+    /**
+     *
+     * @return the enemyName the enemy name
+     */
+
     public String getEnemyName() {
         return enemyName;
     }
+
+    /**
+     *
+     * @return  the player ID
+     */
 
     public String getPlayerId() {
         return playerId;
     }
 
+    /**
+     *
+     * @return the player's nickname
+     */
+
     public String getPlayerNickname() {
         return playerNickname;
     }
+
+    /**
+     *
+     * @return the player's strength
+     */
 
     public int getPlayerStrength() {
         return playerStrength;
     }
 
+    /**
+     *
+     * @return  the enemy's strength
+     */
+
     public int getEnemyStrength() {
         return enemyStrength;
     }
+
+    /**
+     *
+     * @return  the outcome of the combat
+     */
 
     public CombatOutcome getOutcome() {
         return outcome;
     }
 
+    /**
+     *
+     * @return the reward of the combat
+     */
+
     public CombatReward getReward() {
         return reward;
     }
 
+    /**
+     *
+     * @return the penalty of the combat
+     */
+
     public CombatPenalty getPenalty() {
         return penalty;
     }
+
+    /**
+     * @param context The client event context
+     */
 
     @Override
     public void handleOnClient(ClientEventContext context) {
@@ -130,9 +188,20 @@ public class CombatResolvedEvent extends AbstractEvent {
 
         private final String description;
 
+        /**
+         * constructor
+         *
+         * @param description the outcome of the combat
+         */
+
         CombatOutcome(String description) {
             this.description = description;
         }
+
+        /**
+         *
+         * @return the outcome of the combat
+         */
 
         public String getDescription() {
             return description;
@@ -148,6 +217,14 @@ public class CombatResolvedEvent extends AbstractEvent {
         private final int goods;
         private final String description;
 
+        /**
+         * constructor
+         *
+         * @param credits the number of reward credits
+         * @param goods the number of reward goods
+         * @param description the description of the reward
+         */
+
         public CombatReward(int credits, int goods, String description) {
             this.credits = credits;
             this.goods = goods;
@@ -155,13 +232,28 @@ public class CombatResolvedEvent extends AbstractEvent {
             LOGGER.fine("CombatReward instantiated: credits=" + credits + ", goods=" + goods + ", description='" + description + "'");
         }
 
+        /**
+         *
+         * @return  the number of reward credits
+         */
+
         public int getCredits() {
             return credits;
         }
 
+        /**
+         *
+         * @return the number of reward goods
+         */
+
         public int getGoods() {
             return goods;
         }
+
+        /**
+         *
+         * @return the description of the reward
+         */
 
         public String getDescription() {
             return description;
@@ -179,6 +271,16 @@ public class CombatResolvedEvent extends AbstractEvent {
         private final int componentsDamaged;
         private final String description;
 
+        /**
+         * constructor
+         *
+         * @param creditsLost the number of lost credits
+         * @param goodsLost  the number of lost goods
+         * @param crewLost the number of lost crew members
+         * @param componentsDamaged the number of damaged components
+         * @param description the description of the penalty
+         */
+
         public CombatPenalty(int creditsLost, int goodsLost, int crewLost, 
                            int componentsDamaged, String description) {
             this.creditsLost = creditsLost;
@@ -189,21 +291,46 @@ public class CombatResolvedEvent extends AbstractEvent {
             LOGGER.fine("CombatPenalty instantiated: creditsLost=" + creditsLost + ", goodsLost=" + goodsLost + ", crewLost=" + crewLost + ", componentsDamaged=" + componentsDamaged + ", description='" + description + "'");
         }
 
+        /**
+         *
+         * @return the number of lost credits
+         */
+
         public int getCreditsLost() {
             return creditsLost;
         }
+
+        /**
+         *
+         * @return  the number of lost goods
+         */
 
         public int getGoodsLost() {
             return goodsLost;
         }
 
+        /**
+         *
+         * @return the number of lost crew members
+         */
+
         public int getCrewLost() {
             return crewLost;
         }
 
+        /**
+         *
+         * @return the number of damaged components
+         */
+
         public int getComponentsDamaged() {
             return componentsDamaged;
         }
+
+        /**
+         *
+         * @return  the description of the penalty
+         */
 
         public String getDescription() {
             return description;

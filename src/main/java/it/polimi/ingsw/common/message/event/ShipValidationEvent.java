@@ -20,6 +20,18 @@ public class ShipValidationEvent extends AbstractEvent {
     private final Player player;       // Full Player model
     private final GameModel gameModel; // Full GameModel
 
+    /**
+     * constructor
+     *
+     * @param gameId the game ID
+     * @param playerId the player ID
+     * @param playerNickname the layer nickname
+     * @param isValid wheter the ship is valid
+     * @param errors the errors
+     * @param player the player
+     * @param gameModel the game model
+     */
+
     // Enhanced constructor with server models
     public ShipValidationEvent(String gameId, String playerId, String playerNickname,
                                boolean isValid, List<String> errors, Player player, GameModel gameModel) {
@@ -32,20 +44,47 @@ public class ShipValidationEvent extends AbstractEvent {
         this.gameModel = gameModel;
         LOGGER.fine("ShipValidationEvent instantiated for game: " + gameId + ", player: " + playerNickname + ", isValid: " + isValid + ", errors: " + errors.size());
     }
+
+    /**
+     *constructors
+     *
+     * @param gameId the game ID
+     * @param playerId the player ID
+     * @param playerNickname the layer nickname
+     * @param isValid wheter the ship is valid
+     * @param errors the errors
+     */
     
     // Legacy constructor for backward compatibility
     public ShipValidationEvent(String gameId, String playerId, String playerNickname,
                                boolean isValid, List<String> errors) {
         this(gameId, playerId, playerNickname, isValid, errors, null, null);
     }
+
+    /**
+     *
+     * @return the player ID
+     */
     
     public Player getPlayer() {
         return player;
     }
+
+    /**
+     *
+     * @return the game model
+     */
     
     public GameModel getGameModel() {
         return gameModel;
     }
+
+    /**
+     *
+     * @param clientId The client to check
+     * @param context The filter context
+     * @return true if the ship is valid
+     */
 
     @Override
     public boolean shouldSendTo(String clientId, EventFilterContext context) {
@@ -54,6 +93,11 @@ public class ShipValidationEvent extends AbstractEvent {
         LOGGER.finer("EVENT FILTERING - ShipValidationEvent shouldSendTo clientId: " + clientId + " = " + shouldSend + " (including requester)");
         return shouldSend;
     }
+
+    /**
+     *
+     * @param context The client event context
+     */
 
     @Override
     public void handleOnClient(ClientEventContext context) {

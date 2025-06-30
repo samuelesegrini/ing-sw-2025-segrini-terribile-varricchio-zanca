@@ -11,9 +11,20 @@ import java.util.UUID;
  */
 public class ValidateShipResponse extends AbstractResponse {
 
+    /**
+     * constructor
+     *
+     * @param correlationId The correlation ID
+     */
+
     public ValidateShipResponse(UUID correlationId) {
         super(correlationId);
     }
+
+    /**
+     *
+     * @param context The client context
+     */
 
     @Override
     public void handleOnClient(ClientContext context) {

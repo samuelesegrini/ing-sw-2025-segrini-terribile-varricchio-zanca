@@ -13,10 +13,22 @@ import java.util.logging.Logger;
 public class CreateGameResponse extends AbstractResponse {
     private final String gameId;
 
+    /**
+     * constructor
+     *
+     * @param correlationId The correlation ID
+     * @param gameId The game ID
+     */
+
     public CreateGameResponse(UUID correlationId, String gameId) {
         super(correlationId);
         this.gameId = gameId;
     }
+
+    /**
+     *
+     * @return the game ID
+     */
 
     public String getGameId() {
         return gameId;

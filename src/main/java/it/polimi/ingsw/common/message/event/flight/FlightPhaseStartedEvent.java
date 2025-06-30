@@ -17,6 +17,14 @@ public class FlightPhaseStartedEvent extends AbstractEvent {
     private final int playerCount;
     private final int routeLength;
 
+    /**
+     * constructor
+     *
+     * @param gameId the game ID
+     * @param playerCount the number of player
+     * @param routeLength the length of the route
+     */
+
     public FlightPhaseStartedEvent(String gameId, int playerCount, int routeLength) {
         super(EventType.FLIGHT_PHASE_STARTED, gameId, null);
         this.playerCount = playerCount;
@@ -24,13 +32,28 @@ public class FlightPhaseStartedEvent extends AbstractEvent {
         LOGGER.fine("FlightPhaseStartedEvent instantiated for game: " + gameId + ", players: " + playerCount + ", route length: " + routeLength);
     }
 
+    /**
+     *
+     * @return the number of player
+     */
+
     public int getPlayerCount() {
         return playerCount;
     }
 
+    /**
+     *
+     * @return the length of the route
+     */
+
     public int getRouteLength() {
         return routeLength;
     }
+
+    /**
+     *
+     * @param context The client event context
+     */
 
     @Override
     public void handleOnClient(ClientEventContext context) {
@@ -55,6 +78,11 @@ public class FlightPhaseStartedEvent extends AbstractEvent {
             // This event focuses on flight-specific UI setup
         });
     }
+
+    /**
+     *
+     * @return the string: FlightPhaseStartedEvent{gameId= .., playerCount= .., routeLength= ..}
+     */
 
     @Override
     public String toString() {

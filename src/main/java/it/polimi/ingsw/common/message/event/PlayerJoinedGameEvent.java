@@ -24,6 +24,15 @@ public class PlayerJoinedGameEvent extends AbstractEvent {
     private final int currentPlayerCount;
     private final GameModel gameModel;
 
+    /**
+     *
+     * @param gameId the game ID
+     * @param playerId the player ID
+     * @param playerNickname the player nickname
+     * @param currentPlayerCount the current player count
+     * @param gameModel the game model
+     */
+
     public PlayerJoinedGameEvent(String gameId, PlayerId playerId, String playerNickname,
                                  int currentPlayerCount, GameModel gameModel) {
         super(EventType.PLAYER_JOINED_GAME, gameId, playerId);
@@ -37,24 +46,48 @@ public class PlayerJoinedGameEvent extends AbstractEvent {
         LOGGER.fine("PlayerJoinedGameEvent instantiated for game: " + gameId + ", player: " + playerNickname);
     }
 
+    /**
+     *
+     * @return the player ID
+     */
     
 
     public PlayerId getPlayerId() {
         return playerId;
     }
+
+    /**
+     *
+     * @return the player nickname
+     */
     
 
     public String getPlayerNickname() {
         return playerNickname;
     }
 
+    /**
+     *
+     * @return the current player number
+     */
+
     public int getCurrentPlayerCount() {
         return currentPlayerCount;
     }
 
+    /**
+     *
+     * @return the game model
+     */
+
     public GameModel getGameModel() {
         return gameModel;
     }
+
+    /**
+     *
+     * @param clientState The client state to update
+     */
 
     @Override
     public void updateClientState(it.polimi.ingsw.client.core.ClientState clientState) {
@@ -65,6 +98,11 @@ public class PlayerJoinedGameEvent extends AbstractEvent {
             clientState.incrementStateVersion();
         }
     }
+
+    /**
+     *
+     * @param context The client event context
+     */
 
     @Override
     public void handleOnClient(ClientEventContext context) {

@@ -13,9 +13,20 @@ import it.polimi.ingsw.server.model.domain.ship.components.Component;
 public class ReturnTileRequest extends AbstractRequest {
     private final String tileId;
 
+    /**
+     * constructor
+     *
+     * @param tileId the returned tile ID
+     */
+
     public ReturnTileRequest(String tileId) {
         this.tileId = tileId;
     }
+
+    /**
+     *
+     * @return an error message or a success
+     */
 
     @Override
     public ValidationResult validate() {
@@ -24,6 +35,12 @@ public class ReturnTileRequest extends AbstractRequest {
         }
         return ValidationResult.success();
     }
+
+    /**
+     *
+     * @param context The execution context providing access to server resources
+     * @return an error message or a success response
+     */
 
     @Override
     public Response execute(RequestContext context) {

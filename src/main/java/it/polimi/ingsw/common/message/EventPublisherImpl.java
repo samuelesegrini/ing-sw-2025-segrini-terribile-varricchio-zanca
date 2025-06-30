@@ -28,6 +28,14 @@ public class EventPublisherImpl implements EventPublisher, PropertyChangeListene
     private final ExecutorService eventExecutor;
     private final EventFilterContextImpl filterContext;
 
+    /**
+     * constructor
+     *
+     * @param networkManager The network manager
+     * @param playerRegistry The player registry
+     * @param sessionManager The session manager
+     */
+
     public EventPublisherImpl(ServerNetworkManager networkManager,
                               PlayerSessionRegistry playerRegistry,
                               GameSessionManager sessionManager) {
@@ -43,6 +51,11 @@ public class EventPublisherImpl implements EventPublisher, PropertyChangeListene
         this.filterContext = new EventFilterContextImpl();
     }
 
+    /**
+     *
+     * @param event The event to publish
+     */
+
     @Override
     public void publishEvent(Event event) {
         LOGGER.fine("Publishing event: " + event.getEventType() +
@@ -52,10 +65,22 @@ public class EventPublisherImpl implements EventPublisher, PropertyChangeListene
         eventExecutor.submit(() -> distributeEvent(event));
     }
 
+    /**
+     *
+     * @param event The event to publish
+     * @param clientId The target client ID
+     */
+
     @Override
     public void publishEventToClient(Event event, String clientId) {
 
     }
+
+    /**
+     *
+     * @param event The event to publish
+     * @param gameId The game ID
+     */
 
     @Override
     public void publishEventToGame(Event event, String gameId) {
@@ -81,6 +106,11 @@ public class EventPublisherImpl implements EventPublisher, PropertyChangeListene
     }
 
 
+    /**
+     *
+     * @param event The event to distribute
+     */
+
     private void distributeEvent(Event event) {
         Set<String> potentialRecipients = getPotentialRecipients(event);
 
@@ -100,6 +130,12 @@ public class EventPublisherImpl implements EventPublisher, PropertyChangeListene
         }
     }
 
+    /**
+     *
+     * @param event
+     * @return the potential recipients of the event
+     */
+
     private Set<String> getPotentialRecipients(Event event) {
         if (event.getGameId() != null) {
             // Game-specific event
@@ -115,6 +151,13 @@ public class EventPublisherImpl implements EventPublisher, PropertyChangeListene
      */
     private class EventFilterContextImpl implements EventFilterContext {
 
+        /**
+         *
+         * @param clientId The client ID
+         * @param gameId The game ID
+         * @return true if the client is in the game, false otherwise
+         */
+
         @Override
         public boolean isClientInGame(String clientId, String gameId) {
             PlayerId playerId = playerRegistry.getPlayerIdForClient(clientId);
@@ -124,10 +167,22 @@ public class EventPublisherImpl implements EventPublisher, PropertyChangeListene
             return session != null && session.getGameId().equals(gameId);
         }
 
+        /**
+         *
+         * @param clientId The client ID
+         * @return The player ID
+         */
+
         @Override
         public PlayerId getPlayerIdForClient(String clientId) {
             return playerRegistry.getPlayerIdForClient(clientId);
         }
+
+        /**
+         *
+         * @param gameId The game ID
+         * @return a set of the clients in the game
+         */
 
         @Override
         public Set<String> getClientsInGame(String gameId) {
@@ -145,6 +200,11 @@ public class EventPublisherImpl implements EventPublisher, PropertyChangeListene
 
             return clients;
         }
+
+        /**
+         *
+         * @return a set containing all the clients
+         */
 
         @Override
         public Set<String> getAllClients() {

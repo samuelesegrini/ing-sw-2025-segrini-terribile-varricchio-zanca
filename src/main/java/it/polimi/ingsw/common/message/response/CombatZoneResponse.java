@@ -12,6 +12,14 @@ public class CombatZoneResponse extends AbstractResponse {
 
     // TODO: IL GIOCATORE CON MENO CANNONI VIENE SPARATO (ALTRO MESSAGGIO?)
 
+    /**
+     *
+     * @param correlationId The correlation ID
+     * @param usedBatteries The number of used batteries
+     * @param lostFlightDays The number of days the player loses
+     * @param lostCrew The number of crew members the player loses
+     */
+
     public CombatZoneResponse(UUID correlationId, int usedBatteries, int lostFlightDays, int lostCrew) {
         super(correlationId);
         this.usedBatteries = usedBatteries;

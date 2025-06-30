@@ -20,6 +20,14 @@ public class GameEndedEvent extends AbstractEvent {
     private final String reason;
     private final Map<String, Integer> finalScores;
 
+    /**
+     * constructor
+     *
+     * @param gameId the game ID
+     * @param reason the reason why the game ended
+     * @param finalScores the final scores
+     */
+
     public GameEndedEvent(String gameId, String reason, Map<String, Integer> finalScores) {
         super(EventType.GAME_ENDED, gameId, null);
         this.reason = reason;
@@ -27,13 +35,28 @@ public class GameEndedEvent extends AbstractEvent {
         LOGGER.fine("GameEndedEvent instantiated for game: " + gameId + " with reason: " + reason);
     }
 
+    /**
+     *
+     * @return  the reason why the game ended
+     */
+
     public String getReason() {
         return reason;
     }
 
+    /**
+     *
+     * @return  the final scores
+     */
+
     public Map<String, Integer> getFinalScores() {
         return finalScores != null ? new HashMap<>(finalScores) : null;
     }
+
+    /**
+     *
+     * @param context The client event context
+     */
 
     @Override
     public void handleOnClient(ClientEventContext context) {

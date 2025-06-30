@@ -15,6 +15,11 @@ import java.util.Optional;
  */
 public class TakeTileRequest extends AbstractRequest {
 
+    /**
+     *
+     * @param context The execution context providing access to server resources
+     * @return an error or a success reponse
+     */
     @Override
     public Response execute(RequestContext context) {
         GameSession session = context.getGameSession();

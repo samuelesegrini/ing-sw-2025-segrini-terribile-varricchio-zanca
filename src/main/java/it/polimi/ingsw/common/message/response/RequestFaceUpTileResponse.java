@@ -13,14 +13,31 @@ public class RequestFaceUpTileResponse extends AbstractResponse {
 
     private final Tile tile;
 
+    /**
+     * constructor
+     *
+     * @param correlationId The correlation ID
+     * @param tile The tile requested
+     */
+
     public RequestFaceUpTileResponse(UUID correlationId, Tile tile) {
         super(correlationId);
         this.tile = tile;
     }
 
+    /**
+     *
+     * @return The tile requested
+     */
+
     public Tile getTile() {
         return tile;
     }
+
+    /**
+     *
+     * @param context The client context
+     */
 
     @Override
     public void handleOnClient(ClientContext context) {
@@ -65,17 +82,37 @@ public class RequestFaceUpTileResponse extends AbstractResponse {
             this.rotation = rotation;
         }
 
+        /**
+         *
+         * @return The requested tile ID
+         */
+
         public String getTileId() {
             return tileId;
         }
+
+        /**
+         *
+         * @return the type of the requested tile
+         */
 
         public String getType() {
             return type;
         }
 
+        /**
+         *
+         * @return the number of connectors of the requested tile
+         */
+
         public int getConnectors() {
             return connectors;
         }
+
+        /**
+         *
+         * @return the rotation of the requested tile
+         */
 
         public int getRotation() {
             return rotation;

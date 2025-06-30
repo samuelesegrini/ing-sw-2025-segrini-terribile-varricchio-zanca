@@ -18,6 +18,15 @@ public class AdventureCardPlayerTurnEvent extends AbstractEvent {
     private final AdventureCard card;
     private final long remainingTime;
 
+    /**
+     * constructor
+     *
+     * @param gameId the game ID
+     * @param playerId the player ID
+     * @param card the adventure card
+     * @param remainingTime the remaining time
+     */
+
     public AdventureCardPlayerTurnEvent(String gameId, PlayerId playerId, AdventureCard card, long remainingTime) {
         super(EventType.ADVENTURE_CARD_PLAYER_TURN, gameId, playerId);
         this.card = card;
@@ -25,13 +34,28 @@ public class AdventureCardPlayerTurnEvent extends AbstractEvent {
         LOGGER.fine("AdventureCardPlayerTurnEvent instantiated for game: " + gameId + ", player: " + playerId + ", card: " + card.getClass().getSimpleName());
     }
 
+    /**
+     *
+     * @return the adventure card
+     */
+
     public AdventureCard getCard() {
         return card;
     }
 
+    /**
+     *
+     * @return the remaining time
+     */
+
     public long getRemainingTime() {
         return remainingTime;
     }
+
+    /**
+     *
+     * @param context The client event context
+     */
 
     @Override
     public void handleOnClient(ClientEventContext context) {
@@ -65,6 +89,11 @@ public class AdventureCardPlayerTurnEvent extends AbstractEvent {
             }
         });
     }
+
+    /**
+     *
+     * @return a string AdventureCardPlayerTurnEvent{gameId= .. , playerId= .., card= .., remainingTime= ..}
+     */
 
     @Override
     public String toString() {

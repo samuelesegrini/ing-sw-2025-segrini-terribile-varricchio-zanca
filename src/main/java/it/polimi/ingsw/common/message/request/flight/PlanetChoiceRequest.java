@@ -18,6 +18,11 @@ import it.polimi.ingsw.server.model.enums.GamePhase;
 public class PlanetChoiceRequest extends AbstractRequest {
     private final int planetIndex;
 
+
+    /**
+     * constructor
+     * @param planetIndex the index of the chosen planet
+     */
     public PlanetChoiceRequest(int planetIndex) {
         this.planetIndex = planetIndex;
     }
@@ -26,6 +31,11 @@ public class PlanetChoiceRequest extends AbstractRequest {
         return planetIndex;
     }
 
+    /**
+     *
+     * @return ValidationResult.failure if the index is negative, or a ValidationResult.success
+     */
+
     @Override
     public ValidationResult validate() {
         if (planetIndex < 0) {
@@ -33,6 +43,13 @@ public class PlanetChoiceRequest extends AbstractRequest {
         }
         return ValidationResult.success();
     }
+
+    /**
+     *
+     * @param context The execution context providing access to server resources
+     * @return an ErrorResponse or a PlanetChoiceResponse
+     *
+     */
 
     @Override
     public Response execute(RequestContext context) {

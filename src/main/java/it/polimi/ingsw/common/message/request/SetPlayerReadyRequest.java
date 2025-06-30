@@ -19,20 +19,42 @@ public class SetPlayerReadyRequest extends AbstractRequest {
 
     private final boolean ready;
 
+    /**
+     * constructor
+     *
+     * @param ready whether the player is ready or not
+     */
+
     public SetPlayerReadyRequest(boolean ready) {
         super();
         this.ready = ready;
     }
 
+    /**
+     *
+     * @return true if the player is ready, false otherwise
+     */
+
     public boolean isReady() {
         return ready;
     }
+
+    /**
+     *
+     * @return true if the validation successed
+     */
 
     @Override
     public ValidationResult validate() {
         // No validation needed - ready status is always valid
         return ValidationResult.success();
     }
+
+    /**
+     *
+     * @param context The execution context providing access to server resources
+     * @return an error message or a SetPlayerReadyResponse
+     */
 
     @Override
     public Response execute(RequestContext context) {

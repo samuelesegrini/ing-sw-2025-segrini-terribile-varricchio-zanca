@@ -11,9 +11,19 @@ import java.util.UUID;
  */
 public class JoinGameResponse extends AbstractResponse {
 
+    /**
+     *
+     * @param correlationId The correlation ID
+     */
+
     public JoinGameResponse(UUID correlationId) {
         super(correlationId);
     }
+
+    /**
+     *
+     * @param context The client context
+     */
 
     @Override
     public void handleOnClient(ClientContext context) {

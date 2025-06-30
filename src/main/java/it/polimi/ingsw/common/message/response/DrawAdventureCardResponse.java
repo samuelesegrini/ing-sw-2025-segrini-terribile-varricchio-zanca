@@ -11,9 +11,19 @@ import java.util.UUID;
  */
 public class DrawAdventureCardResponse extends AbstractResponse {
 
+    /**
+     *
+     * @param correlationId The correlation ID
+     */
+
     public DrawAdventureCardResponse(UUID correlationId) {
         super(correlationId);
     }
+
+    /**
+     *
+     * @param context The client context
+     */
 
     @Override
     public void handleOnClient(ClientContext context) {
@@ -38,6 +48,11 @@ public class DrawAdventureCardResponse extends AbstractResponse {
             );
         }
     }
+
+    /**
+     *
+     * @return the draw adventure card response as a string
+     */
 
     @Override
     public String toString() {

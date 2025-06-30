@@ -16,11 +16,23 @@ public class ReconnectRequest extends AbstractRequest {
     private final String playerId;
     private final String sessionToken;
 
+    /**
+     * constructor
+     *
+     * @param playerId the player ID
+     * @param sessionToken the session token
+     */
+
     public ReconnectRequest(String playerId, String sessionToken) {
         super();
         this.playerId = playerId;
         this.sessionToken = sessionToken;
     }
+
+    /**
+     *
+     * @return an error message or a success
+     */
 
     @Override
     public ValidationResult validate() {
@@ -32,6 +44,12 @@ public class ReconnectRequest extends AbstractRequest {
         }
         return ValidationResult.success();
     }
+
+    /**
+     *
+     * @param context The execution context providing access to server resources
+     * @return an errorResponse or a ReconnectResponse
+     */
 
     @Override
     public Response execute(RequestContext context) {

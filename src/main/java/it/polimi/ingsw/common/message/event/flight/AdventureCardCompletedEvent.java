@@ -18,6 +18,14 @@ public class AdventureCardCompletedEvent extends AbstractEvent {
     private final AdventureCard card;
     private final Map<PlayerId, AdventureCardState.PlayerChoice> playerChoices;
 
+    /**
+     * constructor
+     *
+     * @param gameId the game ID
+     * @param card the adventure card
+     * @param playerChoices the choice of every player
+     */
+
     public AdventureCardCompletedEvent(String gameId, AdventureCard card, 
                                      Map<PlayerId, AdventureCardState.PlayerChoice> playerChoices) {
         super(EventType.ADVENTURE_CARD_COMPLETED, gameId, null);
@@ -26,13 +34,28 @@ public class AdventureCardCompletedEvent extends AbstractEvent {
         LOGGER.fine("AdventureCardCompletedEvent instantiated for game: " + gameId + ", card: " + card.getClass().getSimpleName());
     }
 
+    /**
+     *
+     * @return  the adventure card
+     */
+
     public AdventureCard getCard() {
         return card;
     }
 
+    /**
+     *
+     * @return  the choice of every player
+     */
+
     public Map<PlayerId, AdventureCardState.PlayerChoice> getPlayerChoices() {
         return playerChoices;
     }
+
+    /**
+     *
+     * @param context The client event context
+     */
 
     @Override
     public void handleOnClient(ClientEventContext context) {
@@ -48,6 +71,11 @@ public class AdventureCardCompletedEvent extends AbstractEvent {
             }
         });
     }
+
+    /**
+     *
+     * @return the string: AdventureCardCompletedEvent{gameId= .., card= .., choiceCount= ..}
+     */
 
     @Override
     public String toString() {
