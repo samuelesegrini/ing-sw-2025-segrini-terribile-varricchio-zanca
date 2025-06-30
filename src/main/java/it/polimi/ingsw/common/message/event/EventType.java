@@ -50,7 +50,9 @@ public enum EventType {
     ADVENTURE_CARD_DRAWN,
     ADVENTURE_CARD_PLAYER_TURN,
     ADVENTURE_CARD_COMPLETED,
+    ADVENTURE_CARD_RESOLVED,      // NEW: Adventure card resolution complete
     ADVENTURE_CARD_TIMEOUT,
+    PLAYER_CHOICE_REQUEST,        // NEW: Request player input for adventure cards
     PLAYER_POSITION_CHANGED,
     FLIGHT_POSITION_UPDATE,
     SHIP_DAMAGED,
