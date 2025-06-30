@@ -58,16 +58,22 @@ public class ComponentRemovedEvent extends AbstractEvent {
     }
 
     @Override
+    public void updateClientState(it.polimi.ingsw.client.core.ClientState clientState) {
+        // Remove component from ship
+        clientState.removeShipComponent(playerId.toString(), position);
+        clientState.incrementStateVersion();
+    }
+
+    @Override
     public void handleOnClient(ClientEventContext context) {
+        // First update client state
+        updateClientState(context.getClientState());
+        
         context.runOnUIThread(() -> {
             LOGGER.fine("Handling ComponentRemovedEvent for player: " + playerNickname + 
                        ", component: " + component.getId() + " removed from " + position);
             
-            // Update client state by removing component from ship
-            if (context.getClientState() != null) {
-                context.getClientState().removeShipComponent(playerId.toString(), position);
-                context.getClientState().refreshCurrentViewOnly();
-            }
+            // UI updates will be handled by the refreshCurrentViewOnly() call in updateClientState
         });
     }
 }

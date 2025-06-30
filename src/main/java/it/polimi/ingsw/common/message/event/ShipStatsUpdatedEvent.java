@@ -89,16 +89,22 @@ public class ShipStatsUpdatedEvent extends AbstractEvent {
     }
 
     @Override
+    public void updateClientState(it.polimi.ingsw.client.core.ClientState clientState) {
+        // Update ship stats
+        clientState.updateShipStats(playerId.toString(), ship);
+        clientState.incrementStateVersion();
+    }
+
+    @Override
     public void handleOnClient(ClientEventContext context) {
+        // First update client state
+        updateClientState(context.getClientState());
+        
         context.runOnUIThread(() -> {
             LOGGER.fine("Handling ShipStatsUpdatedEvent for player: " + playerNickname + 
                        ", engines: " + engines + ", crew: " + crew);
             
-            // Update client state with new ship stats
-            if (context.getClientState() != null) {
-                context.getClientState().updateShipStats(playerId.toString(), ship);
-                context.getClientState().refreshCurrentViewOnly();
-            }
+            // UI updates will be handled by the refreshCurrentViewOnly() call in updateClientState
         });
     }
 }

@@ -32,7 +32,16 @@ public class TilePlacedEvent extends AbstractEvent {
     }
 
     @Override
+    public void updateClientState(it.polimi.ingsw.client.core.ClientState clientState) {
+        // This is a legacy event - model updates are handled by ComponentPlacedEvent
+        // Only increment version for consistency
+        clientState.incrementStateVersion();
+    }
+
+    @Override
     public void handleOnClient(ClientEventContext context) {
+        // First update client state
+        updateClientState(context.getClientState());
         context.runOnUIThread(() -> {
             LOGGER.fine("Handling TilePlacedEvent for player: " + playerId + ", tile: " + tileId);
             // Show appropriate notifications

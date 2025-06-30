@@ -109,14 +109,11 @@ public class PlaceTileRequest extends AbstractRequest {
                 return createErrorResponse(detailedError, ErrorResponse.INVALID_STATE);
             }
 
-            // Place the component (validation already confirmed this is safe)
-            ship.addComponent(component, position);
-
-            // Component is now placed on ship - clear from player's held component
-            player.clearHeldComponent();
-
-            // Update ship stats
-            ship.updateStats();
+            // Place the component using GameModel (which fires proper events)
+            boolean placed = gameModel.placeComponent(playerId, component, position);
+            if (!placed) {
+                return createErrorResponse("Failed to place component", ErrorResponse.INTERNAL_ERROR);
+            }
 
             return createSuccessResponse();
 

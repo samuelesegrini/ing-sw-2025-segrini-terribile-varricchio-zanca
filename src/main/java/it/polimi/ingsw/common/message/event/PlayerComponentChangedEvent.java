@@ -52,16 +52,22 @@ public class PlayerComponentChangedEvent extends AbstractEvent {
     }
 
     @Override
+    public void updateClientState(it.polimi.ingsw.client.core.ClientState clientState) {
+        // Update player's held component
+        clientState.setPlayerHeldComponent(playerId.toString(), newComponent);
+        clientState.incrementStateVersion();
+    }
+
+    @Override
     public void handleOnClient(ClientEventContext context) {
+        // First update client state
+        updateClientState(context.getClientState());
+        
         context.runOnUIThread(() -> {
             LOGGER.fine("Handling PlayerComponentChangedEvent for player: " + playerNickname + 
                        ", new component: " + (newComponent != null ? newComponent.getId() : "none"));
             
-            // Update client state with new held component
-            if (context.getClientState() != null) {
-                context.getClientState().setPlayerHeldComponent(playerId.toString(), newComponent);
-                context.getClientState().refreshCurrentViewOnly();
-            }
+            // UI updates will be handled by the refreshCurrentViewOnly() call in updateClientState
         });
     }
 }

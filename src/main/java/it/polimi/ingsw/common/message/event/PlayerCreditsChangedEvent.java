@@ -56,16 +56,22 @@ public class PlayerCreditsChangedEvent extends AbstractEvent {
     }
 
     @Override
+    public void updateClientState(it.polimi.ingsw.client.core.ClientState clientState) {
+        // Update player's credit amount
+        clientState.setPlayerCredits(playerId.toString(), newCredits);
+        clientState.incrementStateVersion();
+    }
+
+    @Override
     public void handleOnClient(ClientEventContext context) {
+        // First update client state
+        updateClientState(context.getClientState());
+        
         context.runOnUIThread(() -> {
             LOGGER.fine("Handling PlayerCreditsChangedEvent for player: " + playerNickname + 
                        ", new credits: " + newCredits);
             
-            // Update client state with new credit amount
-            if (context.getClientState() != null) {
-                context.getClientState().setPlayerCredits(playerId.toString(), newCredits);
-                context.getClientState().refreshCurrentViewOnly();
-            }
+            // UI updates will be handled by the refreshCurrentViewOnly() call in updateClientState
         });
     }
 }
