@@ -26,8 +26,6 @@ public class Ship implements Serializable {
     private Set<Component> reservedComponents;
     private Set<Component> lostComponents;
     private final int maxReservedComponents; // Max reserved components from configuration
-    
-    // Event context removed - events now fired by GameModel
 
     // Ship stats
     private double cannons;
@@ -42,9 +40,6 @@ public class Ship implements Serializable {
 
     private int specialGoodsCapacity;
     private int normalGoodsCapacity;
-
-
-
 
     /**
      * Creates a new ship with the specified level and ship grid configuration.

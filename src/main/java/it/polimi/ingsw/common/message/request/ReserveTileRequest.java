@@ -95,8 +95,6 @@ public class ReserveTileRequest extends AbstractRequest {
             // Remove component from player's hand since it's now reserved
             player.clearHeldComponent();
 
-            // Model operation will fire the event automatically
-
             return createSuccessResponse();
         } catch (Exception e) {
             return createErrorResponse("Failed to reserve component: " + e.getMessage(), ErrorResponse.INTERNAL_ERROR);

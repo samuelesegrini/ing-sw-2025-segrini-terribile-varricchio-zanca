@@ -86,7 +86,7 @@ public class TUI implements UI {
             case CONNECTION -> elaborateConnectionCommand(input);
             case LOGIN -> elaborateLoginCommand(input);
             case LOBBY -> elaborateLobbyCommand(input);
-            // case GAME_LOBBY -> elaborateGameLobbyCommand(input);
+            case GAME_LOBBY -> elaborateGameLobbyCommand(input);
             //case GAME -> elaborateBuildingCommand(input);
             default -> printer.printError("Unknown client state. No commands available.");
         }
@@ -165,6 +165,31 @@ public class TUI implements UI {
         String gameId = tokens[1];
         printer.printInfo("Joining game " + gameId + "...");
         controller.joinGame(gameId);
+    }
+
+    private void elaborateGameLobbyCommand(String input) {
+        // Display current game lobby state
+        printer.displayGameLobby(clientState);
+        
+        String[] parts = input.trim().toLowerCase().split("\\s+");
+        String command = parts[0];
+
+        switch (command) {
+            case "ready" -> {
+                printer.printInfo("Setting ready status...");
+                controller.setPlayerReady(true);
+            }
+            case "start" -> {
+                printer.printInfo("Starting game...");
+                controller.startGame();
+            }
+            case "leave" -> {
+                printer.printInfo("Leaving game...");
+                controller.leaveGame();
+            }
+            case "help" -> printer.printGameLobbyCommands(clientState);
+            default -> printer.printError("Unknown command. Type 'help' for available commands.");
+        }
     }
 
     private void elaborateBuildingCommand(String input) {

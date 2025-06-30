@@ -12,6 +12,7 @@ import it.polimi.ingsw.server.model.domain.ship.components.Shield;
 import it.polimi.ingsw.server.model.enums.ship.ComponentType;
 import it.polimi.ingsw.server.model.enums.ship.ConnectorType;
 import it.polimi.ingsw.server.model.enums.ship.Direction;
+import it.polimi.ingsw.server.model.enums.player.PlayerColor;
 
 import java.io.PrintWriter;
 
@@ -189,13 +190,28 @@ public class Printer {
         String[] headers = {"NICKNAME", "STATUS", "HOST"};
         String[][] data = new String[players.size()][3];
 
+        // Calculate the max visual width needed for nicknames
+        int maxNicknameWidth = "NICKNAME".length();
+        for (Player player : players) {
+            String colorCircle = getColoredCircle(player.getColor());
+            String nameWithCircle = colorCircle + " " + player.getId().getNickname();
+            int visualWidth = stripAnsi(nameWithCircle).length();
+            maxNicknameWidth = Math.max(maxNicknameWidth, visualWidth);
+        }
+
         for (int i = 0; i < players.size(); i++) {
             Player player = players.get(i);
             boolean isHost = player.getId().toString().equals(hostId);
             String status = player.isReady() ? "Ready" : "Not Ready";
             String hostIndicator = isHost ? "★" : "";
+            String colorCircle = getColoredCircle(player.getColor());
 
-            data[i][0] = player.getId().getNickname();
+            String nameWithCircle = colorCircle + " " + player.getId().getNickname();
+            int visualWidth = stripAnsi(nameWithCircle).length();
+            int padding = maxNicknameWidth - visualWidth;
+            String paddedName = nameWithCircle + " ".repeat(Math.max(0, padding));
+
+            data[i][0] = paddedName;
             data[i][1] = status;
             data[i][2] = hostIndicator;
         }
@@ -608,4 +624,30 @@ public class Printer {
      * - Return to lobby option
      */
     // public void printGameEndPhase(ClientState clientState) { }
+    
+    /**
+     * Gets a colored circle representing the player's color.
+     * @param color The player's color
+     * @return A colored circle string with ANSI escape codes
+     */
+    private String getColoredCircle(PlayerColor color) {
+        if (color == null) {
+            return "○"; // Empty circle for null color
+        }
+        
+        return switch (color) {
+            case RED -> Ansi.ansi().fgBrightRed().a("●").reset().toString();
+            case GREEN -> Ansi.ansi().fgBrightGreen().a("●").reset().toString();
+            case BLUE -> Ansi.ansi().fgBrightBlue().a("●").reset().toString();
+            case YELLOW -> Ansi.ansi().fgBrightYellow().a("●").reset().toString();
+        };
+    }
+    
+    /**
+     * Strips ANSI escape codes from a string for width calculation.
+     */
+    private String stripAnsi(String str) {
+        if (str == null) return "";
+        return str.replaceAll("\u001B\\[[0-9;]*m", "");
+    }
 }

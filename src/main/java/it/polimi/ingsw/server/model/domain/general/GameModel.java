@@ -11,7 +11,9 @@ import it.polimi.ingsw.server.model.domain.player.Player;
 import it.polimi.ingsw.server.model.domain.general.config.GameConfig;
 import it.polimi.ingsw.server.model.domain.player.PlayerId;
 import it.polimi.ingsw.server.model.domain.ship.Ship;
+import it.polimi.ingsw.server.model.domain.ship.Position;
 import it.polimi.ingsw.server.model.domain.ship.components.Component;
+import it.polimi.ingsw.server.model.enums.ship.ComponentType;
 import it.polimi.ingsw.server.model.enums.GameLevel;
 import it.polimi.ingsw.server.model.enums.GamePhase;
 import it.polimi.ingsw.server.model.enums.player.PlayerColor;
@@ -128,6 +130,19 @@ public class GameModel implements Serializable {
         
         // Assign ship to player
         player.setShip(ship);
+        
+        // Place starting cabin at row 3, col 4
+        Component startingCabin = getStartingCabinForPlayer(assignedColor);
+        if (startingCabin != null) {
+            Position startingPosition = new Position(3, 4);
+            try {
+                ship.addComponent(startingCabin, startingPosition);
+                ship.updateStats();
+            } catch (IllegalArgumentException e) {
+                // Log error but continue - this shouldn't happen if position 3,4 is valid
+                System.err.println("Failed to place starting cabin for player " + playerId + ": " + e.getMessage());
+            }
+        }
         
         players.add(player);
     }
@@ -966,6 +981,24 @@ public class GameModel implements Serializable {
         if (propertyChangeSupport != null) {
             propertyChangeSupport.firePropertyChange(propertyName, oldValue, newValue);
         }
+    }
+    
+    /**
+     * Finds the starting cabin component for the specified player color.
+     * Starting cabins are removed from the component deck to prevent duplicate placement.
+     */
+    private Component getStartingCabinForPlayer(PlayerColor color) {
+        String cabinIdPattern = "/assets/tiles/starting-cabin-" + color.name().toLowerCase() + ".jpg";
+        
+        // Find component in deck
+        Component startingCabin = componentDeck.findComponentById(cabinIdPattern);
+        if (startingCabin != null && startingCabin.getType() == ComponentType.CABIN_START) {
+            // Remove from deck to prevent it being drawn again
+            componentDeck.removeStartingCabin(startingCabin);
+            return startingCabin;
+        }
+        
+        return null;
     }
 
 

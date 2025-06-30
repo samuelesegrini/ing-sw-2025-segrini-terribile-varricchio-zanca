@@ -423,6 +423,19 @@ public class ComponentDeck implements Serializable {
         
         return availableComponents;
     }
+    
+    /**
+     * Removes a starting cabin from the draw pile to prevent it being drawn during the game.
+     * This method is used when starting cabins are placed on ships at game start.
+     * @param startingCabin The starting cabin component to remove
+     * @return true if the component was removed, false otherwise
+     */
+    public boolean removeStartingCabin(Component startingCabin) {
+        if (startingCabin != null) {
+            return drawPile.remove(startingCabin);
+        }
+        return false;
+    }
 
 
 } 
