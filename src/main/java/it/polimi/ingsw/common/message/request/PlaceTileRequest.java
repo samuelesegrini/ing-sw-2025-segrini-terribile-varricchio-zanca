@@ -79,17 +79,15 @@ public class PlaceTileRequest extends AbstractRequest {
             return createErrorResponse("Player not found", ErrorResponse.INTERNAL_ERROR);
         }
 
-        // Get component from GameModel
-        Component component = gameModel.getComponentDeck().findComponentById(tileId);
+        // Player can only place a component they're holding
+        Component component = player.getHeldComponent();
         if (component == null) {
-            return createErrorResponse("Component not found", ErrorResponse.NOT_FOUND);
+            return createErrorResponse("No component held", ErrorResponse.INVALID_STATE);
         }
         
-        // Check if component is available (not held by any player)
-        for (Player p : gameModel.getPlayers()) {
-            if (component.equals(p.getHeldComponent())) {
-                return createErrorResponse("Component not available", ErrorResponse.NOT_FOUND);
-            }
+        // Verify the held component matches the requested tile ID
+        if (!component.getId().equals(tileId)) {
+            return createErrorResponse("Held component does not match requested tile", ErrorResponse.VALIDATION_ERROR);
         }
 
         //TODO: va bene(?) non dovrei usare direction?
