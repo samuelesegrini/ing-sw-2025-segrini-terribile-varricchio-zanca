@@ -393,8 +393,10 @@ public class newTUI implements newUI {
 //        }
 
         if (tokens.length == 2) {
-            // TODO
-            //controller.requestFaceUpTile()
+            // Take specific face-up tile by ID
+            String tileId = tokens[1];
+            printer.printLoading("Taking face-up tile: " + tileId);
+            controller.requestFaceUpTile(tileId);
         } else {
             printer.printLoading("Taking a random component from the pile");
             controller.takeTile();

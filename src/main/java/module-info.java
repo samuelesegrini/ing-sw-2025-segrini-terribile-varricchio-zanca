@@ -36,6 +36,7 @@ module it.polimi.ingsw2025segriniterribilevarricchiozanca {
     exports it.polimi.ingsw.client.ui.core;
     exports it.polimi.ingsw.client.ui.gui;
     exports it.polimi.ingsw.client.ui.gui.views;
+    exports it.polimi.ingsw.client.ui.gui.newgui.controllers;
     exports it.polimi.ingsw.client.ui.tui;
     exports it.polimi.ingsw.client.ui.tui.views;
 
@@ -43,6 +44,7 @@ module it.polimi.ingsw2025segriniterribilevarricchiozanca {
     opens it.polimi.ingsw.client.core to javafx.fxml;
     opens it.polimi.ingsw.client.ui.gui to javafx.fxml;
     opens it.polimi.ingsw.client.ui.gui.views to javafx.fxml;
+    opens it.polimi.ingsw.client.ui.gui.newgui.controllers to javafx.fxml;
 
     // --- Server packages for shared model classes ---
     exports it.polimi.ingsw.server.model.domain.general;  // GameModel, ComponentDeck, etc.

@@ -19,6 +19,7 @@ public class ComponentOfferedEvent extends AbstractEvent {
     private final String offeredToPlayerNickname;
     private final String reason;
     private final long offerExpiresAt;
+    private final ComponentDeck updatedDeck;
 
     public ComponentOfferedEvent(String gameId, Component component, Player player, ComponentDeck componentDeck) {
         super(EventType.COMPONENT_OFFERED, gameId, player.getId());
@@ -28,6 +29,7 @@ public class ComponentOfferedEvent extends AbstractEvent {
         this.offeredToPlayerNickname = player.getNickname();
         this.reason = "Component returned to deck";
         this.offerExpiresAt = System.currentTimeMillis() + 30000; // 30 seconds from now
+        this.updatedDeck = componentDeck;
         LOGGER.fine("ComponentOfferedEvent instantiated for game: " + gameId + ", tile: " + tileType + ", offered to: " + offeredToPlayerNickname);
     }
 
@@ -41,6 +43,7 @@ public class ComponentOfferedEvent extends AbstractEvent {
         this.offeredToPlayerNickname = offeredToPlayerNickname;
         this.reason = reason;
         this.offerExpiresAt = offerExpiresAt;
+        this.updatedDeck = null; // No deck available in this constructor
         LOGGER.fine("ComponentOfferedEvent instantiated for game: " + gameId + ", tile: " + tileType + ", offered to: " + offeredToPlayerNickname);
     }
 
@@ -67,9 +70,32 @@ public class ComponentOfferedEvent extends AbstractEvent {
     public long getOfferExpiresAt() {
         return offerExpiresAt;
     }
+    
+    public ComponentDeck getUpdatedDeck() {
+        return updatedDeck;
+    }
+
+    @Override
+    public void updateClientState(it.polimi.ingsw.client.core.ClientState clientState) {
+        // Clear held component for the player who returned it
+        if (clientState.getPlayerId() != null && 
+            clientState.getPlayerId().toString().equals(offeredToPlayerId)) {
+            clientState.setPlayerHeldComponent(offeredToPlayerId, null);
+        }
+        
+        // Update component deck state if available
+        if (updatedDeck != null) {
+            clientState.updateComponentDeck(updatedDeck);
+        }
+        
+        clientState.incrementStateVersion();
+    }
 
     @Override
     public void handleOnClient(ClientEventContext context) {
+        // First update client state
+        updateClientState(context.getClientState());
+        
         context.runOnUIThread(() -> {
             // Update game state with component offer
             if (context.getClientState() != null) {

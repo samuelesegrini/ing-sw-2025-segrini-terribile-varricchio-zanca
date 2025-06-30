@@ -527,28 +527,28 @@ public class ClientController {
         return false;
     }
 
-    public CompletableFuture<Boolean> requestFaceUpTile(String componentType) {
+    public CompletableFuture<Boolean> requestFaceUpTile(String tileId) {
         if (clientState.getPlayerId() == null) {
             LOGGER.warning("Cannot request face up tile: not authenticated");
             return CompletableFuture.completedFuture(false);
         }
 
-        if (componentType == null || componentType.trim().isEmpty()) {
-            LOGGER.warning("Cannot request face up tile: invalid component type");
+        if (tileId == null || tileId.trim().isEmpty()) {
+            LOGGER.warning("Cannot request face up tile: invalid tile ID");
             return CompletableFuture.completedFuture(false);
         }
 
-        LOGGER.info("Requesting face up tile: " + componentType);
-        return requestFaceUpTileWithRetry(componentType.trim(), 0);
+        LOGGER.info("Requesting face up tile: " + tileId);
+        return requestFaceUpTileWithRetry(tileId.trim(), 0);
     }
     
     /**
      * ENHANCED: Request face-up tile with automatic retry for conflict resolution
      */
-    private CompletableFuture<Boolean> requestFaceUpTileWithRetry(String componentType, int attempt) {
-        String requestKey = "face_up_" + componentType + "_" + clientState.getPlayerId();
+    private CompletableFuture<Boolean> requestFaceUpTileWithRetry(String tileId, int attempt) {
+        String requestKey = "face_up_" + tileId + "_" + clientState.getPlayerId();
         
-        RequestFaceUpTileRequest request = new RequestFaceUpTileRequest(componentType);
+        RequestFaceUpTileRequest request = new RequestFaceUpTileRequest(tileId);
         return sendRequest(request)
                 .thenCompose(response -> {
                     if (response.isSuccess()) {
@@ -570,7 +570,7 @@ public class ClientController {
                             } catch (InterruptedException e) {
                                 Thread.currentThread().interrupt();
                             }
-                        }).thenCompose(v -> requestFaceUpTileWithRetry(componentType, attempt + 1));
+                        }).thenCompose(v -> requestFaceUpTileWithRetry(tileId, attempt + 1));
                     } else {
                         LOGGER.warning("Failed to request face up tile: " + response.getErrorMessage());
                         requestRetryCounters.remove(requestKey);
@@ -585,20 +585,20 @@ public class ClientController {
                 });
     }
 
-    public CompletableFuture<Boolean> returnTile(String componentType) {
+    public CompletableFuture<Boolean> returnTile(String tileId) {
         if (clientState.getPlayerId() == null) {
             LOGGER.warning("Cannot return tile: not authenticated");
             return CompletableFuture.completedFuture(false);
         }
 
-        if (componentType == null || componentType.trim().isEmpty()) {
-            LOGGER.warning("Cannot return tile: invalid component type");
+        if (tileId == null || tileId.trim().isEmpty()) {
+            LOGGER.warning("Cannot return tile: invalid tile ID");
             return CompletableFuture.completedFuture(false);
         }
 
-        LOGGER.info("Returning tile: " + componentType);
+        LOGGER.info("Returning tile: " + tileId);
 
-        ReturnTileRequest request = new ReturnTileRequest(componentType.trim());
+        ReturnTileRequest request = new ReturnTileRequest(tileId.trim());
         return sendRequest(request)
                 .thenApply(response -> {
                     if (response.isSuccess()) {

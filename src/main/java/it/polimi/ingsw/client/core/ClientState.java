@@ -296,10 +296,11 @@ public class ClientState {
         if (gameModel != null) {
             Player player = gameModel.getPlayerById(PlayerId.fromString(playerId));
             if (player != null) {
-                // Clear existing held components and add the new one
-                player.getHeldComponents().clear();
+                // Use the proper Player method to set held component
                 if (component != null) {
-                    player.getHeldComponents().add(component);
+                    player.setHeldComponent(component);
+                } else {
+                    player.clearHeldComponent();
                 }
                 refreshCurrentViewOnly();
             }
