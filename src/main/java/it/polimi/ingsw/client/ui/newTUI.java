@@ -524,7 +524,7 @@ public class newTUI implements newUI {
         if (r.isSuccess()) {
             printer.printSuccess("Game created successfully!");
 
-            clientState.setCurrentView(ClientState.ViewState.GAME_LOBBY);
+            clientState.setCurrentView(ClientState.ViewState.GAME_LOBBY);  // TODO: FAI FARE A UPDATECLIENTSTATE NEI MESSAGGI
             printer.printInfo("You are now in the game lobby. Use 'ready' to mark yourself ready, 'leave' to exit.");
             // TODO: Implement proper game lobby display
             // - Show game name, level, max players
@@ -542,7 +542,7 @@ public class newTUI implements newUI {
         if (r.isSuccess()) {
             printer.printSuccess("Game joined successfully!");
 
-            clientState.setCurrentView(ClientState.ViewState.GAME_LOBBY);
+            clientState.setCurrentView(ClientState.ViewState.GAME_LOBBY);  // TODO: FAI FARE A UPDATECLIENTSTATE NEI MESSAGGI
             printer.printInfo("You are now in the game lobby. Use 'ready' to mark yourself ready, 'leave' to exit.");
 
             printer.displayGameLobby(clientState);
@@ -645,7 +645,6 @@ public class newTUI implements newUI {
 
     @Override
     public void onGameStartedEvent(GameStartedEvent event) {
-        // TODO: Verifica che sia già stata aggiornata ViewState a BUILDING
         if (clientState.getCurrentView() == ClientState.ViewState.BUILDING) {
             printer.displayBuilding(clientState);
         }

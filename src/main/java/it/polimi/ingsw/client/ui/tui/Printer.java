@@ -250,6 +250,8 @@ public class Printer {
         clearScreen();
         printSectionHeader("SHIP BUILDING");
 
+        Component heldComponent = clientState.getLocalPlayer().getHeldComponent();
+
         Ship ship = clientState.getLocalPlayerShip();
         if (ship == null) {
             printError("Ship data not available.");
@@ -260,8 +262,8 @@ public class Printer {
         print("");
         printShipBoard(ship);
         print("");
-//        printHeldComponent(heldComponent); // TODO: DA DOVE LO PRENDO?
-//        print("");
+        printHeldComponent(heldComponent);
+        print("");
         printShipStats(ship);
         print("");
         printBuildingCommands();
@@ -425,15 +427,42 @@ public class Printer {
         };
     }
 
-    // TODO: CONTROLLA
     private void printHeldComponent(Component heldComponent) {
         print("HELD COMPONENT:");
         if (heldComponent == null) {
             print("  (none) - Use 'take' to draw a component.");
-        } else {
-            print("  Type: " + heldComponent.getType() + " " + getComponentEmoji(heldComponent));
-            print("  Direction: " + heldComponent.getCurrentDirection());
+            return;
         }
+
+        print("  Type: " + heldComponent.getType() + " " + getComponentEmoji(heldComponent));
+        print("  Direction: " + heldComponent.getCurrentDirection());
+
+        StringBuilder sb = new StringBuilder();
+
+        sb.append("   ┌────────┐");
+        sb.append("\n");
+
+        sb.append("   │    ");
+        sb.append(getConnectorSymbol(heldComponent, Direction.UP));
+        sb.append("\t│");
+        sb.append("\n");
+
+        sb.append("   │  ");
+        sb.append(getConnectorSymbol(heldComponent, Direction.LEFT));
+        sb.append(getComponentEmoji(heldComponent));
+        sb.append(getConnectorSymbol(heldComponent, Direction.RIGHT));
+        sb.append("\t│");
+        sb.append("\n");
+
+        sb.append("   │   ");
+        sb.append(getConnectorSymbol(heldComponent, Direction.DOWN));
+        sb.append(" \t│");
+        sb.append("\n");
+
+        sb.append("   └────────┘");
+        sb.append("\n");
+
+        print(sb.toString());
     }
 
     // TODO: CONTROLLA

@@ -56,6 +56,7 @@ public class GameStartedEvent extends AbstractEvent {
         if (gameModel != null) {
             clientState.setGameModel(gameModel);
             clientState.incrementStateVersion();
+            clientState.setCurrentView(ClientState.ViewState.BUILDING);
         }
     }
 
