@@ -9,7 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class CombatCheck implements Serializable {
-    private final static long serialVersionUID = 1L;
+    final static long serialVersionUID = 1L;
 
     private CombatAttributeType attribute;
     private PenaltyType penaltyType;
@@ -43,6 +43,9 @@ public class CombatCheck implements Serializable {
     }
 
     public Player getCombatLoser(List<Player> playersOrdered) {
+        if (playersOrdered == null || playersOrdered.isEmpty()) {
+            throw new IllegalArgumentException("Player list cannot be null or empty.");
+        }
         double count = Double.MAX_VALUE;
         Player combatLoser = null;
 

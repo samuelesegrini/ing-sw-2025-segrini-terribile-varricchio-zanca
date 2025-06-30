@@ -36,6 +36,9 @@ public class AdventureCardController {
      * @param playerId The player who drew the card
      */
     public void startAdventureCard(AdventureCard card, PlayerId playerId) {
+        if (card == null || playerId == null) {
+           return;
+        }
         this.currentCard = card;
         this.currentState = new AdventureCardState(card, playerId.toString());
         activeCards.put(playerId.toString(), currentState);
@@ -54,6 +57,9 @@ public class AdventureCardController {
      * @param value The choice value
      */
     public void recordPlayerChoice(PlayerId playerId, String choiceType, Object value) {
+        if(playerId==null || choiceType == null || value == null) {
+            return;
+        }
         AdventureCardState state = activeCards.get(playerId.toString());
         if (state != null) {
             AdventureCardState.PlayerChoice choice = state.getPlayerChoice(playerId);
@@ -74,8 +80,11 @@ public class AdventureCardController {
      * @param batteryUsed Number of batteries used
      */
     public void processCombatStrength(PlayerId playerId, int combatStrength, int engineStrength, int crewStrength, int batteryUsed) {
+        if(playerId == null) {
+            return;
+        }
         AdventureCardState state = activeCards.get(playerId.toString());
-        if (state != null && state.getCard().getType() == AdventureType.PIRATES) {
+        if (state != null && (state.getCard().getType() == AdventureType.PIRATES || state.getCard().getType() == AdventureType.SLAVERS)) {
             AdventureCardState.PlayerChoice choice = state.getPlayerChoice(playerId);
             if (choice != null) {
                 choice.setParameter("combatStrength", combatStrength);
@@ -92,6 +101,9 @@ public class AdventureCardController {
      * @param playerId The player whose card is being resolved
      */
     public void resolveCard(PlayerId playerId) {
+        if(playerId == null) {
+            return;
+        }
         AdventureCardState state = activeCards.get(playerId.toString());
         if (state != null) {
             // Simplified resolution - actual implementation would handle different card types
@@ -125,6 +137,10 @@ public class AdventureCardController {
      * @return The adventure card state, or null if none active
      */
     public AdventureCardState getCardState(PlayerId playerId) {
+
+        if(playerId == null) {
+            return null;
+        }
         return activeCards.get(playerId.toString());
     }
     
@@ -145,6 +161,9 @@ public class AdventureCardController {
      * @return true if the choice was successfully processed
      */
     public boolean handlePlayerChoice(PlayerId playerId, AdventureCardState.PlayerChoice choice) {
+        if(playerId == null || choice == null) {
+            return false;
+        }
         AdventureCardState state = activeCards.get(playerId.toString());
         if (state != null) {
             // Process the choice based on the card type

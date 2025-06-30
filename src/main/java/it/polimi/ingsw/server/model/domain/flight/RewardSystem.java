@@ -65,6 +65,9 @@ public class RewardSystem implements Serializable {
      * @return A map containing the player with the best looking ship and the bonus amount.
      */
    public Map<Player,Integer> calculateBestLookingShipBonus(List<Player> players) {
+         if (players == null || players.isEmpty()) {
+              return new HashMap<>(); // Return an empty map if no players are provided
+         }
        int exposedConnectors = Integer.MAX_VALUE;
        Player bestPlayer = null;
        for(Player player : players){

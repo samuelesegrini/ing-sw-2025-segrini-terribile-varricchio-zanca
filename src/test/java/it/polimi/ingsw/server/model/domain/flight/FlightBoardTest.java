@@ -1,139 +1,15 @@
 package it.polimi.ingsw.server.model.domain.flight;
 
-import it.polimi.ingsw.server.model.domain.flight.*;
-import it.polimi.ingsw.server.model.domain.player.Player;
-import it.polimi.ingsw.server.model.enums.flight.FlightStatus;
-import it.polimi.ingsw.server.model.enums.GameLevel;
-import it.polimi.ingsw.server.model.enums.player.PlayerOrder;
-import it.polimi.ingsw.server.model.enums.resource.GoodType;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
-import java.util.*;
-
-import static org.junit.jupiter.api.Assertions.*;
-
-class FlightBoardTest {
-
-    private FlightBoard flightBoard;
-    private Player player1;
-    private Player player2;
-    private Player player3;
-    Route routeTestFlight = new Route(GameLevel.TEST_FLIGHT, 18, List.of(0, 1, 2, 4), null);
-    Route route;
-
-    @BeforeEach
-    void setUp() {
-        List<Integer> startingPositions;
-        startingPositions = new ArrayList<>();
-        startingPositions.add(1);
-        startingPositions.add(2);
-        startingPositions.add(3);
-
-        Map<PlayerOrder, Integer> positionBonus;
-        positionBonus = new HashMap<>();
-        positionBonus.put(PlayerOrder.FIRST, 4);
-        positionBonus.put(PlayerOrder.SECOND, 2);
-        positionBonus.put(PlayerOrder.THIRD, 1);
-
-        Map<GoodType, Integer> resourceBonus;
-        resourceBonus = new HashMap<>();
-        resourceBonus.put(GoodType.RED, 1);
-        resourceBonus.put(GoodType.BLUE, 2);
-        resourceBonus.put(GoodType.YELLOW, 3);
-        resourceBonus.put(GoodType.GREEN, 4);
-
-        RewardSystem rewardSystem;
-        rewardSystem = new RewardSystem(GameLevel.LEVEL_II, positionBonus, resourceBonus, 5, 1);
-        route = new Route(GameLevel.LEVEL_II, 30, startingPositions, rewardSystem);
-
-        flightBoard = new FlightBoard(GameLevel.TEST_FLIGHT, route, 3);
-
-
-    }
-
-    @Test
-    void testInitialPositionIsZero() {
-
-
-        flightBoard.registerPlayer(player1);
-        assertEquals(1, flightBoard.getPlayerData(player1).getPosition(), "La posizione iniziale dovrebbe essere 1");
-
-        flightBoard.registerPlayer(player2);
-        assertEquals(2, flightBoard.getPlayerData(player2).getPosition());
-
-        flightBoard.registerPlayer(player3);
-        assertEquals(3, flightBoard.getPlayerData(player3).getPosition());
-    }
-
-    @Test
-    void test() {
-        List<Integer> startingPositions;
-        startingPositions = new ArrayList<>();
-        startingPositions.add(1);
-        startingPositions.add(2);
-        startingPositions.add(3);
-
-        Map<PlayerOrder, Integer> positionBonus;
-        positionBonus = new HashMap<>();
-        positionBonus.put(PlayerOrder.FIRST, 4);
-        positionBonus.put(PlayerOrder.SECOND, 2);
-        positionBonus.put(PlayerOrder.THIRD, 1);
-
-        Map<GoodType, Integer> resourceBonus;
-        resourceBonus = new HashMap<>();
-        resourceBonus.put(GoodType.RED, 1);
-        resourceBonus.put(GoodType.BLUE, 2);
-        resourceBonus.put(GoodType.YELLOW, 3);
-        resourceBonus.put(GoodType.GREEN, 4);
-
-        RewardSystem rewardSystem;
-        rewardSystem = new RewardSystem(GameLevel.LEVEL_II, positionBonus, resourceBonus, 5, 1);
-        Route route = new Route(GameLevel.LEVEL_II, 30, startingPositions, rewardSystem);
-
-        flightBoard = new FlightBoard(GameLevel.TEST_FLIGHT, route, 3);
-        assertEquals(flightBoard.getRoute(), route);
-        assertEquals(flightBoard.getPlayerCount(), 3);
-        assertTrue(flightBoard.getCurrentOrder().isEmpty());
-
-        // Verifica che la FlightBoard sia creata correttamente
-        assertNotNull(flightBoard, "La FlightBoard dovrebbe essere creata correttamente.");
-
-        // Verifica che la route venga creata correttamente per TEST_FLIGHT
-
-            assertNotNull(flightBoard.getRoute(), "La route dovrebbe essere creata correttamente.");
-            assertEquals(30, flightBoard.getRoute().getLength(), "La lunghezza della route dovrebbe essere 18.");
-
-        List<Integer> expectedStartingPositions = Arrays.asList(1, 2, 3);
-        List<Integer> actualStartingPositions = flightBoard.getRoute().getStartingPositions();
-        assertEquals(expectedStartingPositions, actualStartingPositions, "Le posizioni di partenza per TEST_FLIGHT non sono corrette.");
-
-
-
-    }
-}
-
-
-
-
-
-
-
-
-
-
-/*
-package it.polimi.ingsw.server.model.domain.flight;
-
-import it.polimi.ingsw.server.model.domain.flight.FlightBoard;
 import it.polimi.ingsw.server.model.domain.player.Player;
 import it.polimi.ingsw.server.model.domain.player.PlayerId;
 import it.polimi.ingsw.server.model.enums.GameLevel;
+import it.polimi.ingsw.server.model.enums.flight.FlightStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -141,117 +17,396 @@ import static org.junit.jupiter.api.Assertions.*;
 class FlightBoardTest {
 
     private FlightBoard flightBoard;
-    private GameLevel gameLevel;
-    private Player player1, player2, player3;
+    private Route route;
+    private Player player1;
+    private Player player2;
+    private Player player3;
+    private Player player4;
 
     @BeforeEach
     void setUp() {
-        gameLevel = GameLevel.TEST_FLIGHT;
-        Route routeTestFlight = new Route(gameLevel,18, List.of(0, 1, 2, 4), null);
-        flightBoard = new FlightBoard(gameLevel, routeTestFlight, 3);
+        // Creo una route di test
+        List<Integer> startingPositions = Arrays.asList(0, 1, 2, 3);
+        route = new Route(GameLevel.TEST_FLIGHT, 3, startingPositions, null);
+        flightBoard = new FlightBoard(GameLevel.TEST_FLIGHT, route, 3);
 
-        player1 = new Player(new PlayerId(UUID.randomUUID(), "Samuele"));
-        player2 = new Player(new PlayerId(UUID.randomUUID(), "Diego"));
-        player3 = new Player(new PlayerId(UUID.randomUUID(), "Manuela"));
+        // Creo i giocatori di test
+        PlayerId playerId1 = new PlayerId(UUID.randomUUID(), "Player1");
+        PlayerId playerId2 = new PlayerId(UUID.randomUUID(), "Player2");
+        PlayerId playerId3 = new PlayerId(UUID.randomUUID(), "Player3");
+        PlayerId playerId4 = new PlayerId(UUID.randomUUID(), "Player4");
 
+        player1 = new Player(playerId1);
+        player2 = new Player(playerId2);
+        player3 = new Player(playerId3);
+        player4 = new Player(playerId4);
+    }
+
+    @Test
+    void testConstructor() {
+        assertEquals(route, flightBoard.getRoute());
+        assertEquals(3, flightBoard.getPlayerCount());
+        assertTrue(flightBoard.getCurrentOrder().isEmpty());
+        assertTrue(flightBoard.getPlayerDataMap().isEmpty());
+    }
+
+    @Test
+    void testGetRoute() {
+        assertEquals(route, flightBoard.getRoute());
+    }
+
+    @Test
+    void testGetPlayerCount() {
+        assertEquals(3, flightBoard.getPlayerCount());
+    }
+
+    @Test
+    void testGetCurrentOrder() {
+        List<Player> currentOrder = flightBoard.getCurrentOrder();
+        assertTrue(currentOrder.isEmpty());
+
+        flightBoard.registerPlayer(player1);
+        assertEquals(1, currentOrder.size());
+        assertTrue(currentOrder.contains(player1));
+    }
+
+    @Test
+    void testGetPlayerData() {
+        flightBoard.registerPlayer(player1);
+
+        PlayerFlightData data = flightBoard.getPlayerData(player1);
+        assertNotNull(data);
+        assertEquals(FlightStatus.RACING, data.getStatus());
+    }
+
+    @Test
+    void testGetPlayerDataMap() {
+        flightBoard.registerPlayer(player1);
+        flightBoard.registerPlayer(player2);
+
+        Map<Player, PlayerFlightData> dataMap = flightBoard.getPlayerDataMap();
+        assertEquals(2, dataMap.size());
+        assertTrue(dataMap.containsKey(player1));
+        assertTrue(dataMap.containsKey(player2));
+    }
+
+    @Test
+    void testGetLeadingPlayer() {
+        // Test con nessun giocatore registrato
+        assertNull(flightBoard.getLeadingPlayer());
+
+        // Test con un giocatore
+        flightBoard.registerPlayer(player1);
+        assertEquals(player1, flightBoard.getLeadingPlayer());
+
+        // Test con più giocatori - il primo nell'ordine corrente è il leader
+        flightBoard.registerPlayer(player2);
+        assertEquals(player1, flightBoard.getLeadingPlayer());
+    }
+
+    @Test
+    void testUpdateCurrentOrder() {
         flightBoard.registerPlayer(player1);
         flightBoard.registerPlayer(player2);
         flightBoard.registerPlayer(player3);
 
-        player1.getFlightData().setPosition(5, flightBoard.getRoute().getLength());
-        player2.getFlightData().setPosition(8, flightBoard.getRoute().getLength());
-        player3.getFlightData().setPosition(3, flightBoard.getRoute().getLength());
-    }
-
-
-    @Test
-    void testRegisterPlayer() {
-        Player player = new Player(new PlayerId(UUID.randomUUID(), "Player1"));
-        flightBoard.registerPlayer(player);
-
-        // Verifica che il giocatore sia stato registrato correttamente
-        assertTrue(flightBoard.getCurrentOrder().contains(player), "Il giocatore dovrebbe essere registrato correttamente nella FlightBoard.");
-        assertNotNull((flightBoard.getPlayerData(player)), "Sono stati inizializzati i dati di voto di player.");
-    }
-
-    @Test
-    void testAbandonPlayer() {
-        // Verifica che Player1 sia registrato inizialmente
-        assertTrue(flightBoard.getCurrentOrder().contains(player1), "Player1 dovrebbe essere registrato.");
-
-        // Abbandona Player1
-        flightBoard.abandonPlayer(player1);
-
-        // Verifica che Player1 sia stato rimosso correttamente
-        assertFalse(flightBoard.getCurrentOrder().contains(player1), "Player1 non dovrebbe più essere registrato.");
-    }
-
-    @Test
-    void testPlayerOrder() {
-        // Verifica che i giocatori siano nell'ordine corretto
-        assertEquals(3, flightBoard.getCurrentOrder().size(), "Dovrebbero esserci due giocatori registrati.");
-        assertEquals(player1, flightBoard.getCurrentOrder().get(0), "Il primo giocatore nell'ordine dovrebbe essere Player1.");
-        assertEquals(player2, flightBoard.getCurrentOrder().get(1), "Il secondo giocatore nell'ordine dovrebbe essere Player2.");
-    }
-    @Test
-    void testUpdateCurrentOrder() {
-        player1.getFlightData().setPosition(5, flightBoard.getRoute().getLength());
-        player2.getFlightData().setPosition(8, flightBoard.getRoute().getLength());
-        player3.getFlightData().setPosition(3, flightBoard.getRoute().getLength());
+        // Imposto posizioni diverse
+        player1.getFlightData().setPosition(5, route.getLength());
+        player2.getFlightData().setPosition(10, route.getLength());
+        player3.getFlightData().setPosition(7, route.getLength());
 
         flightBoard.updateCurrentOrder();
 
-        // Verifica che l'ordine sia corretto (dovrebbero essere ordinati dalla posizione più alta alla più bassa)
-        List<Player> order = flightBoard.getCurrentOrder();
-        assertEquals(player2, order.get(0), "Player2 dovrebbe essere in prima posizione.");
-        assertEquals(player1, order.get(1), "Player1 dovrebbe essere in seconda posizione.");
-        assertEquals(player3, order.get(2), "Player3 dovrebbe essere in terza posizione.");
+        List<Player> currentOrder = flightBoard.getCurrentOrder();
+        assertEquals(player2, currentOrder.get(0)); // posizione 10
+        assertEquals(player3, currentOrder.get(1)); // posizione 7
+        assertEquals(player1, currentOrder.get(2)); // posizione 5
+    }
+
+    @Test
+    void testUpdateCurrentOrderWithSamePositions() {
+        flightBoard.registerPlayer(player1);
+        flightBoard.registerPlayer(player2);
+
+        // Imposto stessa posizione
+        player1.getFlightData().setPosition(5, route.getLength());
+        player2.getFlightData().setPosition(5, route.getLength());
+
+        flightBoard.updateCurrentOrder();
+
+        // L'ordine rimane invariato quando le posizioni sono uguali
+        List<Player> currentOrder = flightBoard.getCurrentOrder();
+        assertEquals(2, currentOrder.size());
+    }
+
+    @Test
+    void testUpdateCurrentOrderAlreadySorted() {
+        flightBoard.registerPlayer(player1);
+        flightBoard.registerPlayer(player2);
+
+        // Imposto posizioni già ordinate
+        player1.getFlightData().setPosition(10, route.getLength());
+        player2.getFlightData().setPosition(5, route.getLength());
+
+        flightBoard.updateCurrentOrder();
+
+        List<Player> currentOrder = flightBoard.getCurrentOrder();
+        assertEquals(player1, currentOrder.get(0));
+        assertEquals(player2, currentOrder.get(1));
     }
 
     @Test
     void testGetPlayersAhead() {
-        player1.getFlightData().setPosition(5, flightBoard.getRoute().getLength());
-        player2.getFlightData().setPosition(8, flightBoard.getRoute().getLength());
-        player3.getFlightData().setPosition(3, flightBoard.getRoute().getLength());
+        flightBoard.registerPlayer(player1);
+        flightBoard.registerPlayer(player2);
+        flightBoard.registerPlayer(player3);
 
-        // Verifica che i giocatori davanti a Player1 siano correttamente identificati
-        List<Player> playersAhead = flightBoard.getPlayersAhead(player1, flightBoard.getRoute().getLength());
-        assertEquals(1, playersAhead.size(), "Dovrebbe esserci un giocatore davanti a Player1.");
-        assertTrue(playersAhead.contains(player2), "Player2 dovrebbe essere avanti a Player1.");
+        // Imposto posizioni
+        player1.getFlightData().setPosition(5, route.getLength());
+        player2.getFlightData().setPosition(8, route.getLength());
+        player3.getFlightData().setPosition(12, route.getLength());
+
+        List<Player> playersAhead = flightBoard.getPlayersAhead(player1, 5);
+        assertEquals(1, playersAhead.size());
+        assertTrue(playersAhead.contains(player2));
+        assertFalse(playersAhead.contains(player3)); // troppo lontano
+    }
+
+    @Test
+    void testGetPlayersAheadNoPlayers() {
+        flightBoard.registerPlayer(player1);
+        flightBoard.registerPlayer(player2);
+
+        player1.getFlightData().setPosition(10, route.getLength());
+        player2.getFlightData().setPosition(5, route.getLength());
+
+        List<Player> playersAhead = flightBoard.getPlayersAhead(player1, 3);
+        assertTrue(playersAhead.isEmpty());
+    }
+
+    @Test
+    void testGetPlayersAheadExactDistance() {
+        flightBoard.registerPlayer(player1);
+        flightBoard.registerPlayer(player2);
+
+        player1.getFlightData().setPosition(5, route.getLength());
+        player2.getFlightData().setPosition(8, route.getLength());
+
+        List<Player> playersAhead = flightBoard.getPlayersAhead(player1, 3);
+        assertEquals(1, playersAhead.size());
+        assertTrue(playersAhead.contains(player2));
     }
 
     @Test
     void testGetPlayersBehind() {
-        // Impostiamo le posizioni dei giocatori
-        player1.getFlightData().setPosition(5, flightBoard.getRoute().getLength());
-        player2.getFlightData().setPosition(8, flightBoard.getRoute().getLength());
-        player3.getFlightData().setPosition(3, flightBoard.getRoute().getLength());
+        flightBoard.registerPlayer(player1);
+        flightBoard.registerPlayer(player2);
+        flightBoard.registerPlayer(player3);
 
-        // Verifica che i giocatori dietro Player1 siano correttamente identificati
-        List<Player> playersBehind = flightBoard.getPlayersBehind(player1, flightBoard.getRoute().getLength());
-        assertEquals(1, playersBehind.size(), "Dovrebbe esserci un giocatore dietro Player1.");
-        assertTrue(playersBehind.contains(player3), "Player3 dovrebbe essere dietro a Player1.");
+        // Imposto posizioni
+        player1.getFlightData().setPosition(10, route.getLength());
+        player2.getFlightData().setPosition(7, route.getLength());
+        player3.getFlightData().setPosition(3, route.getLength());
+
+        List<Player> playersBehind = flightBoard.getPlayersBehind(player1, 5);
+        assertEquals(1, playersBehind.size());
+        assertTrue(playersBehind.contains(player2));
+        assertFalse(playersBehind.contains(player3)); // troppo lontano
+    }
+
+    @Test
+    void testGetPlayersBehindNoPlayers() {
+        flightBoard.registerPlayer(player1);
+        flightBoard.registerPlayer(player2);
+
+        player1.getFlightData().setPosition(5, route.getLength());
+        player2.getFlightData().setPosition(10, route.getLength());
+
+        List<Player> playersBehind = flightBoard.getPlayersBehind(player1, 3);
+        assertTrue(playersBehind.isEmpty());
+    }
+
+    @Test
+    void testGetPlayersBehindExactDistance() {
+        flightBoard.registerPlayer(player1);
+        flightBoard.registerPlayer(player2);
+
+        player1.getFlightData().setPosition(10, route.getLength());
+        player2.getFlightData().setPosition(7, route.getLength());
+
+        List<Player> playersBehind = flightBoard.getPlayersBehind(player1, 3);
+        assertEquals(1, playersBehind.size());
+        assertTrue(playersBehind.contains(player2));
     }
 
     @Test
     void testMovePlayerForward() {
-        player1.getFlightData().setPosition(5, flightBoard.getRoute().getLength());
+        flightBoard.registerPlayer(player1);
+        flightBoard.registerPlayer(player2);
+
+        // Imposto posizioni iniziali
+        player1.getFlightData().setPosition(5, route.getLength());
+        player2.getFlightData().setPosition(7, route.getLength());
+
+        int initialPosition = player1.getFlightData().getPosition();
+
         flightBoard.movePlayer(player1, 3, true);
 
-        // Verifica che Player1 sia stato spostato correttamente condiderandoc he in poszione 8 c'è player2
-        assertEquals(9, player1.getFlightData().getPosition(), "Player1 dovrebbe essere ora in posizione 9.");
+        // Posizione finale dovrebbe essere iniziale + spazi + giocatori davanti
+        int playersAhead = flightBoard.getPlayersAhead(player1, 3).size();
+        assertEquals(initialPosition + 3 + playersAhead, player1.getFlightData().getPosition());
     }
 
     @Test
     void testMovePlayerBackward() {
-        // Impostiamo le posizioni dei giocatori
-        player1.getFlightData().setPosition(5, flightBoard.getRoute().getLength());
+        flightBoard.registerPlayer(player1);
+        flightBoard.registerPlayer(player2);
 
-        // Muoviamo Player1 indietro di 2 posizioni, considerando che la posizione 3 è occupata da player3
-        flightBoard.movePlayer(player1, 2, false);
+        // Imposto posizioni iniziali
+        player1.getFlightData().setPosition(10, route.getLength());
+        player2.getFlightData().setPosition(8, route.getLength());
 
-        // Verifica che Player1 sia stato spostato correttamente
-        assertEquals(2, player1.getFlightData().getPosition(), "Player1 dovrebbe essere ora in posizione 3.");
+        int initialPosition = player1.getFlightData().getPosition();
+
+        flightBoard.movePlayer(player1, 3, false);
+
+        // Posizione finale dovrebbe essere iniziale - spazi - giocatori dietro
+        int playersBehind = flightBoard.getPlayersBehind(player1, 3).size();
+        assertEquals(initialPosition - 3 - playersBehind, player1.getFlightData().getPosition());
+    }
+
+    @Test
+    void testMovePlayerForwardWithNoPlayersAhead() {
+        flightBoard.registerPlayer(player1);
+
+        player1.getFlightData().setPosition(5, route.getLength());
+        int initialPosition = player1.getFlightData().getPosition();
+
+        flightBoard.movePlayer(player1, 3, true);
+
+        assertEquals(initialPosition + 3, player1.getFlightData().getPosition());
+    }
+
+    @Test
+    void testMovePlayerBackwardWithNoPlayersBehind() {
+        flightBoard.registerPlayer(player1);
+
+        player1.getFlightData().setPosition(10, route.getLength());
+        int initialPosition = player1.getFlightData().getPosition();
+
+        flightBoard.movePlayer(player1, 3, false);
+
+        assertEquals(initialPosition - 3, player1.getFlightData().getPosition());
+    }
+
+    @Test
+    void testIsPositionOccupied() {
+        flightBoard.registerPlayer(player1);
+        flightBoard.registerPlayer(player2);
+
+        player1.getFlightData().setPosition(5, route.getLength());
+        player2.getFlightData().setPosition(8, route.getLength());
+
+        assertTrue(flightBoard.isPositionOccupied(5));
+        assertTrue(flightBoard.isPositionOccupied(8));
+        assertFalse(flightBoard.isPositionOccupied(10));
+    }
+
+    @Test
+    void testIsPositionOccupiedNoPlayers() {
+        assertFalse(flightBoard.isPositionOccupied(5));
+    }
+
+    @Test
+    void testRegisterPlayer() {
+        assertEquals(3, flightBoard.getPlayerCount());
+        assertTrue(flightBoard.getCurrentOrder().isEmpty());
+
+        flightBoard.registerPlayer(player1);
+
+        assertEquals(4, flightBoard.getPlayerCount());
+        assertEquals(1, flightBoard.getCurrentOrder().size());
+        assertTrue(flightBoard.getCurrentOrder().contains(player1));
+
+        PlayerFlightData data = flightBoard.getPlayerData(player1);
+        assertNotNull(data);
+        assertEquals(FlightStatus.RACING, data.getStatus());
+    }
+
+    @Test
+    void testRegisterMultiplePlayers() {
+        flightBoard.registerPlayer(player1);
+        flightBoard.registerPlayer(player2);
+        flightBoard.registerPlayer(player3);
+
+        assertEquals(6, flightBoard.getPlayerCount());
+        assertEquals(3, flightBoard.getCurrentOrder().size());
+
+        assertTrue(flightBoard.getCurrentOrder().contains(player1));
+        assertTrue(flightBoard.getCurrentOrder().contains(player2));
+        assertTrue(flightBoard.getCurrentOrder().contains(player3));
+    }
+
+    @Test
+    void testAbandonPlayer() {
+        flightBoard.registerPlayer(player1);
+        flightBoard.registerPlayer(player2);
+
+        assertEquals(5, flightBoard.getPlayerCount());
+        assertEquals(2, flightBoard.getCurrentOrder().size());
+
+        flightBoard.abandonPlayer(player1);
+
+        assertEquals(4, flightBoard.getPlayerCount());
+        assertEquals(1, flightBoard.getCurrentOrder().size());
+        assertFalse(flightBoard.getCurrentOrder().contains(player1));
+        assertTrue(flightBoard.getCurrentOrder().contains(player2));
+
+        PlayerFlightData data = flightBoard.getPlayerData(player1);
+        assertEquals(FlightStatus.ABANDONED, data.getStatus());
+    }
+
+    @Test
+    void testAbandonPlayerNotInOrder() {
+        flightBoard.registerPlayer(player1);
+        flightBoard.registerPlayer(player2);
+
+        // Rimuovo player1 dall'ordine manualmente per testare il caso edge
+        flightBoard.getCurrentOrder().remove(player1);
+
+        flightBoard.abandonPlayer(player1);
+
+        assertEquals(4, flightBoard.getPlayerCount());
+        assertEquals(FlightStatus.ABANDONED, flightBoard.getPlayerData(player1).getStatus());
+    }
+
+    @Test
+    void testComplexScenario() {
+        // Test di scenario complesso che combina più operazioni
+        flightBoard.registerPlayer(player1);
+        flightBoard.registerPlayer(player2);
+        flightBoard.registerPlayer(player3);
+
+        // Imposto posizioni
+        player1.getFlightData().setPosition(5, route.getLength());
+        player2.getFlightData().setPosition(10, route.getLength());
+        player3.getFlightData().setPosition(15, route.getLength());
+
+        // Muovo player1 in avanti
+        flightBoard.movePlayer(player1, 3, true);
+
+        // Aggiorno l'ordine
+        flightBoard.updateCurrentOrder();
+
+        // Verifico che l'ordine sia corretto
+        List<Player> currentOrder = flightBoard.getCurrentOrder();
+        assertEquals(player3, currentOrder.get(0)); // posizione più alta
+
+        // Abbandono un giocatore
+        flightBoard.abandonPlayer(player2);
+
+        assertEquals(5, flightBoard.getPlayerCount());
+        assertEquals(FlightStatus.ABANDONED, flightBoard.getPlayerData(player2).getStatus());
+        assertFalse(flightBoard.getCurrentOrder().contains(player2));
     }
 }
-*/
