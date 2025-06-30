@@ -29,6 +29,18 @@ public class BuildingTimerFlippedEvent extends AbstractEvent {
         LOGGER.fine("BuildingTimerFlippedEvent instantiated for game: " + gameId + ", player: " + playerNickname + 
                    ", stage: " + currentStage + ", time: " + timeRemaining + ", total flips: " + totalFlips);
     }
+    
+    public BuildingTimerFlippedEvent(String gameId, PlayerId playerId, BuildingTimer.TimerEvent event,
+                                   BuildingTimer.TimerStage currentStage, long timeRemaining) {
+        super(EventType.BUILDING_TIMER_FLIPPED, gameId, playerId);
+        this.playerId = playerId.toString();
+        this.playerNickname = "Player"; // Will be resolved by client
+        this.timeRemaining = timeRemaining;
+        this.totalFlips = 0; // Not available from timer event
+        this.currentStage = currentStage;
+        LOGGER.fine("BuildingTimerFlippedEvent instantiated for game: " + gameId + ", event: " + event + 
+                   ", stage: " + currentStage + ", time: " + timeRemaining);
+    }
 
     public String getPlayerId() {
         return playerId;
@@ -51,7 +63,19 @@ public class BuildingTimerFlippedEvent extends AbstractEvent {
     }
 
     @Override
+    public void updateClientState(it.polimi.ingsw.client.core.ClientState clientState) {
+        // Update building timer state in client
+        if (clientState.getGameModel() != null && clientState.getGameModel().getBuildingTimer() != null) {
+            // Update timer state - the timer state should be synchronized
+            // For now, just increment version to trigger UI refresh
+            clientState.incrementStateVersion();
+        }
+    }
+
+    @Override
     public void handleOnClient(ClientEventContext context) {
+        // First update client state
+        updateClientState(context.getClientState());
         context.runOnUIThread(() -> {
             updateTimerDisplay(context);
             showNotification(context);

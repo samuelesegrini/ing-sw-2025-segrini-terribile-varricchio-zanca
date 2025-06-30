@@ -83,6 +83,25 @@ public class GameModel implements Serializable {
         this.isInitialized = false;
         this.buildingTimer = new BuildingTimer(level);
         this.propertyChangeSupport = new PropertyChangeSupport(this);
+        
+        // Register as timer event listener to fire events to clients
+        this.buildingTimer.setEventListener(this::onTimerEvent);
+    }
+    
+    /**
+     * Handles timer events from BuildingTimer and fires appropriate events to clients
+     */
+    private void onTimerEvent(BuildingTimer.TimerEvent event, String playerId, long timeRemaining) {
+        if (propertyChangeSupport != null) {
+            BuildingTimerFlippedEvent timerEvent = new BuildingTimerFlippedEvent(
+                gameId,
+                PlayerId.fromString(playerId),
+                event,
+                buildingTimer.getCurrentStage(),
+                timeRemaining
+            );
+            propertyChangeSupport.firePropertyChange("eventPublished", null, timerEvent);
+        }
     }
 
     public void addPropertyChangeListener(PropertyChangeListener listener) {
@@ -972,6 +991,16 @@ public class GameModel implements Serializable {
             ComponentOfferedEvent event = new ComponentOfferedEvent(gameId, component, player, componentDeck);
             propertyChangeSupport.firePropertyChange("eventPublished", null, event);
         }
+    }
+    
+    /**
+     * Gets the PropertyChangeSupport instance for event firing
+     */
+    public PropertyChangeSupport getPropertyChangeSupport() {
+        if (propertyChangeSupport == null) {
+            propertyChangeSupport = new PropertyChangeSupport(this);
+        }
+        return propertyChangeSupport;
     }
     
     /**

@@ -70,7 +70,7 @@ public class FlipBuildingTimerResponse extends AbstractResponse {
             );
         }
 
-        context.getController().getUI().onFlipBuildingTimerResponse(this);
+        context.getController().getUI().onFlipBuildingTimerResponse(new GenericSuccessResponse(getCorrelationId()));
     }
 
     private String getStageNotificationMessage() {

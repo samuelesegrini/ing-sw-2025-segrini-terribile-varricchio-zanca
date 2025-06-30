@@ -6,6 +6,7 @@ import it.polimi.ingsw.client.ui.UIType;
 import it.polimi.ingsw.client.controller.ClientController;
 import it.polimi.ingsw.client.ui.newTUI;
 import it.polimi.ingsw.client.ui.newUI;
+import it.polimi.ingsw.client.ui.newGUI;
 
 import java.util.Scanner;
 import java.util.logging.*;
@@ -26,12 +27,11 @@ public class ClientApp {
     public static void main(String[] args) {
         LOGGER.info("ClientApp started. Logging configured.");
 
-        UIType uiType = UIType.TUI;
-//        UIType uiType = parseUIType(args);
-//        if (uiType == null) {
-//            printUsage();
-//            System.exit(1);
-//        }
+        UIType uiType = parseUIType(args);
+        if (uiType == null) {
+            printUsage();
+            System.exit(1);
+        }
 
         ClientApp app = new ClientApp();
         app.start(uiType);
@@ -51,14 +51,15 @@ public class ClientApp {
             
             //uiManager = new UIManager(uiType, controller);
 
+            newUI UI;
             if (uiType == UIType.GUI) {
-                // TODO
-                System.out.println("GUI not connected.");
+                UI = new newGUI(controller);
             } else {
-                newUI UI = new newTUI(controller);
-                controller.setUI(UI);
-                UI.start();
+                UI = new newTUI(controller);
             }
+            
+            controller.setUI(UI);
+            UI.start();
 
             // Start UI
             //uiManager.start();

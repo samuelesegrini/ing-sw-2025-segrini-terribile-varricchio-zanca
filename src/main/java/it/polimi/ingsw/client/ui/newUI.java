@@ -1,6 +1,7 @@
 package it.polimi.ingsw.client.ui;
 
 import it.polimi.ingsw.common.message.event.*;
+import it.polimi.ingsw.common.message.event.flight.*;
 import it.polimi.ingsw.common.message.response.*;
 
 public interface newUI {
@@ -60,7 +61,7 @@ public interface newUI {
 
     void onReturnTileResponse(ReturnTileResponse response);
 
-    void onFlipBuildingTimerResponse(FlipBuildingTimerResponse response);
+    void onFlipBuildingTimerResponse(GenericSuccessResponse response);
 
     void onRequestFaceUpTileResponse(RequestFaceUpTileResponse response);
 
@@ -73,12 +74,42 @@ public interface newUI {
     void onComponentReservedEvent(ComponentReservedEvent event);
 
     void onComponentOfferedEvent(ComponentOfferedEvent event);
+    
+    void onBuildingTimerFlippedEvent(BuildingTimerFlippedEvent event);
 
-    // FLIGHT
+    // FLIGHT RESPONSES
 
     void onCombatStrengthResponse(CombatStrengthResponse response);
 
     void onDeclareStrengthResponse(DeclareStrengthResponse response);
 
     void onDockResponse(DockResponse response);
+    
+    // FLIGHT EVENTS
+    
+    void onFlightPhaseStartedEvent(FlightPhaseStartedEvent event);
+    
+    void onFlightPositionUpdateEvent(FlightPositionUpdateEvent event);
+    
+    void onAdventureCardDrawnEvent(AdventureCardDrawnEvent event);
+    
+    void onAdventureCardPlayerTurnEvent(AdventureCardPlayerTurnEvent event);
+    
+    void onAdventureCardCompletedEvent(AdventureCardCompletedEvent event);
+    
+    void onAdventureCardTimeoutEvent(AdventureCardTimeoutEvent event);
+    
+    void onAdventureCardResultEvent(AdventureCardResultEvent event);
+    
+    void onCombatStartedEvent(CombatStartedEvent event);
+    
+    void onCombatResolvedEvent(CombatResolvedEvent event);
+    
+    void onDiceRollEvent(DiceRollEvent event);
+    
+    void onResourceUpdateEvent(ResourceUpdateEvent event);
+    
+    void onShipDamagedEvent(ShipDamagedEvent event);
+    
+    void onGameEndedEvent(GameEndedEvent event);
 }

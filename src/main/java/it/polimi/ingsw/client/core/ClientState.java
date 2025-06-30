@@ -6,6 +6,7 @@ import it.polimi.ingsw.server.model.domain.player.Player;
 import it.polimi.ingsw.server.model.domain.player.PlayerId;
 import it.polimi.ingsw.server.model.domain.ship.Ship;
 import it.polimi.ingsw.server.model.domain.general.ComponentDeck;
+import it.polimi.ingsw.server.model.domain.general.BuildingTimer;
 import it.polimi.ingsw.server.model.domain.ship.components.Component;
 import it.polimi.ingsw.server.model.enums.GameLevel;
 import it.polimi.ingsw.server.model.enums.GamePhase;
@@ -58,6 +59,11 @@ public class ClientState {
     private UIView currentViewComponent;
     private final Set<UIView> registeredViews = ConcurrentHashMap.newKeySet();
 
+    
+    // Building Timer State
+    private BuildingTimer.TimerStage timerStage = BuildingTimer.TimerStage.NOT_STARTED;
+    private long timeRemaining = -1;
+    private int totalFlips = 0;
     
     // JavaFX properties for UI binding
     private final BooleanProperty connectedProperty = new SimpleBooleanProperty(false);
@@ -698,6 +704,90 @@ public class ClientState {
                 refreshCurrentViewOnly();
             }
         }
+    }
+    
+    // === Building Timer Management ===
+    
+    /**
+     * Updates the building timer state
+     * @param stage Current timer stage
+     * @param timeRemaining Time remaining in milliseconds
+     * @param totalFlips Total number of timer flips
+     */
+    public void updateTimerState(BuildingTimer.TimerStage stage, long timeRemaining, int totalFlips) {
+        this.timerStage = stage;
+        this.timeRemaining = timeRemaining;
+        this.totalFlips = totalFlips;
+        refreshCurrentViewOnly();
+    }
+    
+    /**
+     * Sets the timer stage
+     * @param stage The timer stage
+     */
+    public void setTimerStage(BuildingTimer.TimerStage stage) {
+        this.timerStage = stage;
+        refreshCurrentViewOnly();
+    }
+    
+    /**
+     * Gets the current timer stage
+     * @return The current timer stage
+     */
+    public BuildingTimer.TimerStage getTimerStage() {
+        return timerStage;
+    }
+    
+    /**
+     * Sets the time remaining
+     * @param timeRemaining Time remaining in milliseconds
+     */
+    public void setTimeRemaining(long timeRemaining) {
+        this.timeRemaining = timeRemaining;
+        refreshCurrentViewOnly();
+    }
+    
+    /**
+     * Gets the time remaining
+     * @return Time remaining in milliseconds
+     */
+    public long getTimeRemaining() {
+        return timeRemaining;
+    }
+    
+    /**
+     * Sets the total number of timer flips
+     * @param totalFlips Total number of flips
+     */
+    public void setTotalFlips(int totalFlips) {
+        this.totalFlips = totalFlips;
+        refreshCurrentViewOnly();
+    }
+    
+    /**
+     * Gets the total number of timer flips
+     * @return Total number of flips
+     */
+    public int getTotalFlips() {
+        return totalFlips;
+    }
+    
+    /**
+     * Checks if the building timer is active
+     * @return True if timer is running, false otherwise
+     */
+    public boolean isTimerActive() {
+        return timerStage == BuildingTimer.TimerStage.FIRST_TIMER || 
+               timerStage == BuildingTimer.TimerStage.SECOND_TIMER;
+    }
+    
+    /**
+     * Checks if the building timer has expired
+     * @return True if timer has expired, false otherwise
+     */
+    public boolean isTimerExpired() {
+        return timerStage == BuildingTimer.TimerStage.FIRST_EXPIRED || 
+               timerStage == BuildingTimer.TimerStage.SECOND_EXPIRED;
     }
     
 }

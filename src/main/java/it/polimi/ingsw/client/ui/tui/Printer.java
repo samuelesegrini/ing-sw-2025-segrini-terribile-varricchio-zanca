@@ -1,8 +1,10 @@
 package it.polimi.ingsw.client.ui.tui;
 
 import it.polimi.ingsw.client.core.ClientState;
+import it.polimi.ingsw.client.ui.tui.components.TuiTimerView;
 import it.polimi.ingsw.common.model.GameInfo;
 import it.polimi.ingsw.server.model.domain.adventure.card.AdventureCard;
+import it.polimi.ingsw.server.model.domain.general.BuildingTimer;
 import it.polimi.ingsw.server.model.domain.general.ComponentDeck;
 import it.polimi.ingsw.server.model.domain.player.Player;
 import it.polimi.ingsw.server.model.domain.ship.components.Component;
@@ -250,6 +252,12 @@ public class Printer {
         clearScreen();
         printSectionHeader("SHIP BUILDING");
 
+        // Display building timer if available
+        if (clientState.getTimerStage() != BuildingTimer.TimerStage.NOT_STARTED) {
+            printBuildingTimerDisplay(clientState);
+            print("");
+        }
+
         Component heldComponent = clientState.getLocalPlayer().getHeldComponent();
 
         Ship ship = clientState.getLocalPlayerShip();
@@ -269,6 +277,132 @@ public class Printer {
         print("Building Commands: take | place <row> <col> | rotate | return | validate | flip | refresh | quit | help");
         //printBuildingCommands();
         print("");
+    }
+
+    private void printBuildingTimerDisplay(ClientState clientState) {
+        BuildingTimer.TimerStage stage = clientState.getTimerStage();
+        long timeRemaining = clientState.getTimeRemaining();
+        int totalFlips = clientState.getTotalFlips();
+        
+        // Header
+        print("═══════════════════════════════════════");
+        print("            BUILDING TIMER             ");
+        print("               Flips: " + String.format("%02d", totalFlips) + "               ");
+        print("═══════════════════════════════════════");
+        
+        // Stage progress visualization
+        String stage1 = getStageIndicator(stage.ordinal() >= 1, stage == BuildingTimer.TimerStage.FIRST_TIMER);
+        String stage2 = getStageIndicator(stage.ordinal() >= 3, stage == BuildingTimer.TimerStage.SECOND_TIMER);
+        String end = getStageIndicator(stage == BuildingTimer.TimerStage.BUILDING_ENDED, stage == BuildingTimer.TimerStage.BUILDING_ENDED);
+        
+        print("Progress: " + stage1 + " ──→ " + stage2 + " ──→ " + end);
+        print("         First   Second    End");
+        print("Stage: " + getStageDescription(stage));
+        
+        // Time display
+        print("");
+        if (timeRemaining > 0) {
+            int seconds = (int) (timeRemaining / 1000);
+            int minutes = seconds / 60;
+            seconds = seconds % 60;
+            
+            String timeStr = String.format("%02d:%02d", minutes, seconds);
+            print("Time Remaining: " + timeStr);
+            
+            // Progress bar
+            displayProgressBar(timeRemaining);
+        } else if (timeRemaining == 0) {
+            print("Time: EXPIRED ⏰");
+            displayProgressBar(0);
+        } else {
+            print("Timer: Not Active");
+        }
+        
+        // Instructions
+        print("");
+        String instruction = getInstructionText(stage);
+        print("💡 " + instruction);
+        
+        // Contextual hints
+        switch (stage) {
+            case FIRST_TIMER -> {
+                if (timeRemaining > 30000) {
+                    print("   Keep building! Timer will run for " + (timeRemaining / 1000) + " more seconds.");
+                } else if (timeRemaining > 0) {
+                    print("   ⚠️  Timer running low! Get ready to flip.");
+                }
+            }
+            case SECOND_TIMER -> {
+                if (timeRemaining > 30000) {
+                    print("   Finish your ship! Only finished players can end building.");
+                } else if (timeRemaining > 0) {
+                    print("   🚨 Second timer running low! Finish quickly!");
+                }
+            }
+            case SECOND_EXPIRED -> {
+                print("   ⏰ Building will end automatically in 10 seconds if no one flips!");
+            }
+        }
+        
+        print("═══════════════════════════════════════");
+    }
+    
+    private String getStageIndicator(boolean completed, boolean active) {
+        if (active) {
+            return "◉"; // Active stage - filled circle with dot
+        } else if (completed) {
+            return "●"; // Completed stage - filled circle
+        } else {
+            return "○"; // Not reached - empty circle
+        }
+    }
+    
+    private String getStageDescription(BuildingTimer.TimerStage stage) {
+        return switch (stage) {
+            case NOT_STARTED -> "Ready to Begin";
+            case FIRST_TIMER -> "First Timer Active";
+            case FIRST_EXPIRED -> "First Timer Expired";
+            case SECOND_TIMER -> "Second Timer Active";
+            case SECOND_EXPIRED -> "Second Timer Expired";
+            case BUILDING_ENDED -> "Building Complete";
+        };
+    }
+    
+    private String getInstructionText(BuildingTimer.TimerStage stage) {
+        return switch (stage) {
+            case NOT_STARTED -> "Type 'flip' to start the first timer";
+            case FIRST_TIMER -> "Wait for timer to expire, then type 'flip'";
+            case FIRST_EXPIRED -> "Type 'flip' to start the second timer";
+            case SECOND_TIMER -> "Finish your ship, then type 'flip' when timer expires";
+            case SECOND_EXPIRED -> "Type 'flip' to end building (ship must be finished)";
+            case BUILDING_ENDED -> "Building phase complete! Preparing for flight...";
+        };
+    }
+    
+    private void displayProgressBar(long timeRemaining) {
+        // Calculate progress (assuming 90s stages)
+        double progress;
+        if (timeRemaining <= 0) {
+            progress = 1.0;
+        } else {
+            progress = 1.0 - ((double) timeRemaining / 90000);
+        }
+        
+        int barLength = 30;
+        int filled = (int) (progress * barLength);
+        
+        StringBuilder bar = new StringBuilder("[");
+        for (int i = 0; i < barLength; i++) {
+            if (i < filled) {
+                bar.append("█");
+            } else {
+                bar.append("░");
+            }
+        }
+        bar.append("]");
+        
+        String percentage = String.format("%.1f%%", progress * 100);
+        print(bar.toString() + " " + percentage);
     }
 
     private void printComponentDeck(ComponentDeck deck) {
@@ -693,5 +827,48 @@ public class Printer {
     private String stripAnsi(String str) {
         if (str == null) return "";
         return str.replaceAll("\u001B\\[[0-9;]*m", "");
+    }
+    
+    // Enhanced Building Phase Display Methods
+    
+    public void printBuildingTimer(long timeRemaining, String stage) {
+        if (timeRemaining > 0) {
+            long seconds = timeRemaining / 1000;
+            long minutes = seconds / 60;
+            seconds = seconds % 60;
+            
+            String timeStr = String.format("%02d:%02d", minutes, seconds);
+            printWarning("Building Timer (" + stage + "): " + timeStr);
+        } else {
+            printInfo("Building Timer: " + stage);
+        }
+    }
+    
+    public void printComponentOffer(String componentType, String reason, long expiresInSeconds) {
+        printSectionHeader("COMPONENT OFFER");
+        printInfo("Component: " + componentType);
+        if (reason != null && !reason.isEmpty()) {
+            printInfo("Reason: " + reason);
+        }
+        if (expiresInSeconds > 0) {
+            printWarning("Expires in: " + expiresInSeconds + " seconds");
+        }
+        printInfo("Use 'take [componentId]' to accept or ignore to decline");
+        print("");
+    }
+    
+    public void printValidationResults(boolean isValid, String errorDetails) {
+        printSectionHeader("SHIP VALIDATION");
+        if (isValid) {
+            printSuccess("Ship is structurally sound and ready for flight!");
+            printInfo("All components are properly connected");
+        } else {
+            printError("Ship validation failed!");
+            if (errorDetails != null && !errorDetails.isEmpty()) {
+                printError("Issues: " + errorDetails);
+            }
+            printWarning("Fix these issues before attempting flight");
+        }
+        print("");
     }
 }

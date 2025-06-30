@@ -91,6 +91,15 @@ public class GameSession {
         this.started = false;
         this.ended = false;
         this.propertyChangeSupport = new PropertyChangeSupport(this);
+        
+        // Forward GameModel events to GameSession clients
+        this.gameModel.addPropertyChangeListener(evt -> {
+            if ("eventPublished".equals(evt.getPropertyName())) {
+                // Forward the event from GameModel to clients
+                LOGGER.info("Forwarding GameModel event to clients: " + evt.getNewValue().getClass().getSimpleName());
+                propertyChangeSupport.firePropertyChange("eventPublished", null, evt.getNewValue());
+            }
+        });
 
         // Add creator as first player and mark them as ready
         boolean addedSuccessfully = addPlayer(creatorId);

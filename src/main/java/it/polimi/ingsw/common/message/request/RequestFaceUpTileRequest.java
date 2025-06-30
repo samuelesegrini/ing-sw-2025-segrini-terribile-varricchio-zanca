@@ -58,13 +58,7 @@ public class RequestFaceUpTileRequest extends AbstractRequest {
                 return createErrorResponse("Not in building phase", ErrorResponse.INVALID_STATE);
             }
             
-            // Check if tile is available in face-up pile
-            var component = gameSession.getGameModel().getComponentDeck().takeFaceUpComponentById(tileId);
-            if (component == null) {
-                return createErrorResponse("Tile not available in face-up pile", "TILE_NOT_AVAILABLE");
-            }
-            
-            // Check if player can hold more tiles (max 2 reserved)
+            // Check if player can hold more tiles first
             var player = gameSession.getPlayer(playerId);
             if (player == null) {
                 return createErrorResponse("Player not found", ErrorResponse.INTERNAL_ERROR);
@@ -75,11 +69,35 @@ public class RequestFaceUpTileRequest extends AbstractRequest {
                 return createErrorResponse("Player already holding a component", "MAX_COMPONENTS_REACHED");
             }
             
-            // Reserve the component for the player
-            gameSession.getGameModel().reserveComponent(playerId, tileId);
-
-
-            // Model operation will fire the event automatically
+            // Check if tile is available in face-up pile before taking it
+            var componentDeck = gameSession.getGameModel().getComponentDeck();
+            boolean tileAvailable = componentDeck.getFaceUpComponents().stream()
+                .anyMatch(comp -> comp.getId().equals(tileId));
+            
+            if (!tileAvailable) {
+                return createErrorResponse("Tile not available in face-up pile", "TILE_NOT_AVAILABLE");
+            }
+            
+            // Take the component from face-up pile
+            var component = componentDeck.takeFaceUpComponentById(tileId);
+            if (component == null) {
+                return createErrorResponse("Failed to take tile from face-up pile", "TILE_NOT_AVAILABLE");
+            }
+            
+            // Set the component as the player's held component
+            player.setHeldComponent(component);
+            
+            // Fire the ComponentTakenEvent manually using the same pattern as GameModel.takeComponent()
+            var gameModel = gameSession.getGameModel();
+            if (gameModel.getPropertyChangeSupport() != null) {
+                ComponentTakenEvent event = new ComponentTakenEvent(
+                    gameSession.getGameId(), 
+                    component, 
+                    player, 
+                    componentDeck
+                );
+                gameModel.getPropertyChangeSupport().firePropertyChange("eventPublished", null, event);
+            }
             
             // Return response with tile details
             return new RequestFaceUpTileResponse(getCorrelationId(), 

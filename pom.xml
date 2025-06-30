@@ -135,7 +135,7 @@
                         <id>default-cli</id>
                         <configuration>
                             <mainClass>
-                                it.polimi.ingsw2025segriniterribilevarricchiozanca/it.polimi.ingsw2025segriniterribilevarricchiozanca.HelloApplication
+                                it.polimi.ingsw2025segriniterribilevarricchiozanca/it.polimi.ingsw.client.core.ClientApp
                             </mainClass>
                             <launcher>app</launcher>
                             <jlinkZipName>app</jlinkZipName>

@@ -14,6 +14,7 @@ import it.polimi.ingsw.common.message.PongMessage;
 import it.polimi.ingsw.common.message.event.ClientEventContext;
 import it.polimi.ingsw.common.message.event.Event;
 import it.polimi.ingsw.common.message.request.*;
+import it.polimi.ingsw.common.message.request.flight.*;
 import it.polimi.ingsw.common.message.response.ClientContext;
 import it.polimi.ingsw.common.message.response.ErrorResponse;
 import it.polimi.ingsw.common.message.response.ListGamesResponse;
@@ -841,6 +842,146 @@ public class ClientController {
         // This would typically return the current UI view
         // For now, return null as a placeholder
         return null;
+    }
+
+    // ==================== FLIGHT PHASE METHODS ====================
+
+    /**
+     * Draws the next adventure card during flight phase
+     */
+    public CompletableFuture<Boolean> drawAdventureCard() {
+        if (clientState.getPlayerId() == null) {
+            LOGGER.warning("Cannot draw adventure card: not authenticated");
+            return CompletableFuture.completedFuture(false);
+        }
+
+        LOGGER.info("Drawing adventure card");
+        
+        DrawAdventureCardRequest request = new DrawAdventureCardRequest();
+        return sendRequest(request)
+                .thenApply(response -> {
+                    if (response.isSuccess()) {
+                        LOGGER.info("Adventure card drawn successfully");
+                        return true;
+                    } else {
+                        LOGGER.warning("Failed to draw adventure card: " + response.getErrorMessage());
+                        return false;
+                    }
+                });
+    }
+
+    /**
+     * Declares combat strength with specified number of batteries
+     */
+    public CompletableFuture<Boolean> declareCombatStrength(int batteries) {
+        if (clientState.getPlayerId() == null) {
+            LOGGER.warning("Cannot declare combat strength: not authenticated");
+            return CompletableFuture.completedFuture(false);
+        }
+
+        if (batteries < 0) {
+            LOGGER.warning("Cannot declare combat strength: invalid battery count");
+            return CompletableFuture.completedFuture(false);
+        }
+
+        LOGGER.info("Declaring combat strength with " + batteries + " batteries");
+        
+        CombatStrengthRequest request = new CombatStrengthRequest(batteries);
+        return sendRequest(request)
+                .thenApply(response -> {
+                    if (response.isSuccess()) {
+                        LOGGER.info("Combat strength declared successfully");
+                        return true;
+                    } else {
+                        LOGGER.warning("Failed to declare combat strength: " + response.getErrorMessage());
+                        return false;
+                    }
+                });
+    }
+
+    /**
+     * Declares engine strength with specified number of batteries
+     */
+    public CompletableFuture<Boolean> declareEngineStrength(int batteries) {
+        if (clientState.getPlayerId() == null) {
+            LOGGER.warning("Cannot declare engine strength: not authenticated");
+            return CompletableFuture.completedFuture(false);
+        }
+
+        if (batteries < 0) {
+            LOGGER.warning("Cannot declare engine strength: invalid battery count");
+            return CompletableFuture.completedFuture(false);
+        }
+
+        LOGGER.info("Declaring engine strength with " + batteries + " batteries");
+        
+        // Note: EngineStrengthRequest expects engineStrength and batteriesToUse
+        // We need to calculate the engine strength from the ship's engines
+        // For now, using batteries as placeholder - this may need adjustment based on actual ship state
+        EngineStrengthRequest request = new EngineStrengthRequest(batteries, batteries);
+        return sendRequest(request)
+                .thenApply(response -> {
+                    if (response.isSuccess()) {
+                        LOGGER.info("Engine strength declared successfully");
+                        return true;
+                    } else {
+                        LOGGER.warning("Failed to declare engine strength: " + response.getErrorMessage());
+                        return false;
+                    }
+                });
+    }
+
+    /**
+     * Chooses a planet during planet adventure cards
+     */
+    public CompletableFuture<Boolean> choosePlanet(int index) {
+        if (clientState.getPlayerId() == null) {
+            LOGGER.warning("Cannot choose planet: not authenticated");
+            return CompletableFuture.completedFuture(false);
+        }
+
+        if (index < 0) {
+            LOGGER.warning("Cannot choose planet: invalid planet index");
+            return CompletableFuture.completedFuture(false);
+        }
+
+        LOGGER.info("Choosing planet with index: " + index);
+        
+        PlanetChoiceRequest request = new PlanetChoiceRequest(index);
+        return sendRequest(request)
+                .thenApply(response -> {
+                    if (response.isSuccess()) {
+                        LOGGER.info("Planet choice submitted successfully");
+                        return true;
+                    } else {
+                        LOGGER.warning("Failed to choose planet: " + response.getErrorMessage());
+                        return false;
+                    }
+                });
+    }
+
+    /**
+     * Makes docking decision for abandoned ships/stations
+     */
+    public CompletableFuture<Boolean> dock(boolean decision) {
+        if (clientState.getPlayerId() == null) {
+            LOGGER.warning("Cannot make docking decision: not authenticated");
+            return CompletableFuture.completedFuture(false);
+        }
+
+        LOGGER.info("Making docking decision: " + (decision ? "dock" : "do not dock"));
+        
+        DockRequest request = new DockRequest(decision);
+        return sendRequest(request)
+                .thenApply(response -> {
+                    if (response.isSuccess()) {
+                        LOGGER.info("Docking decision submitted successfully");
+                        return true;
+                    } else {
+                        LOGGER.warning("Failed to submit docking decision: " + response.getErrorMessage());
+                        return false;
+                    }
+                });
     }
     
 }

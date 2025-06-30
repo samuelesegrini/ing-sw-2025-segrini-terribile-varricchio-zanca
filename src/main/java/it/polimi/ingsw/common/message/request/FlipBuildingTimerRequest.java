@@ -2,7 +2,7 @@ package it.polimi.ingsw.common.message.request;
 
 import it.polimi.ingsw.common.message.event.BuildingTimerFlippedEvent;
 import it.polimi.ingsw.common.message.response.ErrorResponse;
-import it.polimi.ingsw.common.message.response.FlipBuildingTimerResponse;
+import it.polimi.ingsw.common.message.response.GenericSuccessResponse;
 import it.polimi.ingsw.common.message.response.Response;
 import it.polimi.ingsw.common.message.validation.ValidationResult;
 import it.polimi.ingsw.server.model.domain.player.PlayerId;
@@ -71,14 +71,7 @@ public class FlipBuildingTimerRequest extends AbstractRequest {
         switch (result) {
             case SUCCESS -> {
                 // Model operation will fire the event automatically
-
-                return new FlipBuildingTimerResponse(
-                    getCorrelationId(),
-                    true,
-                    "Timer flipped successfully",
-                    timer.getCurrentStage(),
-                    timer.getTimeRemaining()
-                );
+                return new GenericSuccessResponse(getCorrelationId());
             }
 
             case TIMER_NOT_EXPIRED -> {
