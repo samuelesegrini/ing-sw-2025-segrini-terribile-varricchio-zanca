@@ -75,15 +75,6 @@ public class DrawAdventureCardRequest extends AbstractRequest {
 
             AdventureCard card = cardOpt.get();
 
-            // Create event-compatible card representation
-            AdventureCardDrawnEvent.AdventureCard eventCard = new AdventureCardDrawnEvent.AdventureCard(
-                card.getId(),
-                card.getClass().getSimpleName(),
-                card.getDescription(),
-                convertToEventCardType(card.getType()),
-                "" // imageUrl - could be derived from card type
-            );
-
             // Start turn-based card resolution using the new controller
             AdventureCardController cardController = session.getAdventureCardController();
             if (cardController != null) {
@@ -93,7 +84,7 @@ public class DrawAdventureCardRequest extends AbstractRequest {
             // Publish event FIRST - this is the single source of truth for state updates
             context.publishEvent(new AdventureCardDrawnEvent(
                 context.getGameId(), 
-                eventCard,
+                card,
                 gameModel.getAdventureDeck().getMainFlightDeckView().size() - gameModel.getAdventureDeck().getRemainingCardsInFlightDeck(),
                 gameModel.getAdventureDeck().getMainFlightDeckView().size()
             ));
@@ -106,18 +97,4 @@ public class DrawAdventureCardRequest extends AbstractRequest {
         }
     }
 
-    /**
-     * Converts domain AdventureType to event AdventureCardType.
-     */
-    private AdventureCardDrawnEvent.AdventureCardType convertToEventCardType(AdventureType type) {
-        return switch (type) {
-            case OPEN_SPACE -> AdventureCardDrawnEvent.AdventureCardType.OPEN_SPACE;
-            case PLANETS -> AdventureCardDrawnEvent.AdventureCardType.PLANETS;
-            case METEOR_SWARM -> AdventureCardDrawnEvent.AdventureCardType.METEORS;
-            case PIRATES, WAR_ZONE -> AdventureCardDrawnEvent.AdventureCardType.COMBAT;
-            case SLAVERS -> AdventureCardDrawnEvent.AdventureCardType.SLAVERS;
-            case ABANDONED_SHIP, ABANDONED_STATION -> AdventureCardDrawnEvent.AdventureCardType.ABANDONED_SHIP;
-            default -> AdventureCardDrawnEvent.AdventureCardType.OPEN_SPACE;
-        };
-    }
 }

@@ -5,6 +5,8 @@ import it.polimi.ingsw.client.ui.NotificationType;
 import it.polimi.ingsw.common.message.event.AbstractEvent;
 import it.polimi.ingsw.common.message.event.ClientEventContext;
 import it.polimi.ingsw.common.message.event.EventType;
+import it.polimi.ingsw.server.model.domain.adventure.card.AdventureCard;
+import it.polimi.ingsw.server.model.enums.adventure.AdventureType;
 
 import java.util.logging.Logger;
 
@@ -101,106 +103,15 @@ public class AdventureCardDrawnEvent extends AbstractEvent {
      * @return the type of the adventure card
      */
 
-    private NotificationType getNotificationTypeForCard(AdventureCardType type) {
+    private NotificationType getNotificationTypeForCard(AdventureType type) {
         return switch (type) {
             case OPEN_SPACE -> NotificationType.INFO;
             case PLANETS -> NotificationType.INFO;
-            case METEORS -> NotificationType.WARNING;
-            case COMBAT -> NotificationType.ERROR;
+            case METEOR_SWARM -> NotificationType.WARNING;
+            case PIRATES, COMBAT_ZONE -> NotificationType.ERROR;
             case SLAVERS -> NotificationType.ERROR;
             default -> NotificationType.INFO;
         };
     }
 
-    /**
-     * Represents an adventure card in the game.
-     */
-    public static class AdventureCard {
-        private static final Logger LOGGER = Logger.getLogger(AdventureCard.class.getName());
-        private final String cardId;
-        private final String name;
-        private final String description;
-        private final AdventureCardType type;
-        private final String imageUrl;
-
-        /**
-         * constructor
-         *
-         * @param cardId the card ID
-         * @param name
-         * @param description
-         * @param type
-         * @param imageUrl  the image url
-         */
-
-        public AdventureCard(String cardId, String name, String description, 
-                           AdventureCardType type, String imageUrl) {
-            this.cardId = cardId;
-            this.name = name;
-            this.description = description;
-            this.type = type;
-            this.imageUrl = imageUrl;
-            LOGGER.fine("AdventureCard instantiated: " + name + " (ID: " + cardId + ", Type: " + type + ")");
-        }
-
-        /**
-         *
-         * @return the card ID
-         */
-
-        public String getCardId() {
-            return cardId;
-        }
-
-        /**
-         *
-         * @return the name of the card
-         */
-
-        public String getName() {
-            return name;
-        }
-
-        /**
-         *
-         * @return the description of the adventure card
-         */
-
-        public String getDescription() {
-            return description;
-        }
-
-        /**
-         *
-         * @return the type of the adventure card
-         */
-
-        public AdventureCardType getType() {
-            return type;
-        }
-
-        /**
-         *
-         * @return the image url
-         */
-
-        public String getImageUrl() {
-            return imageUrl;
-        }
-    }
-
-    /**
-     * Types of adventure cards in Galaxy Trucker.
-     */
-    public enum AdventureCardType {
-        OPEN_SPACE,     // Safe travel, gain resources
-        PLANETS,        // Choose planets to visit for goods
-        METEORS,        // Dangerous obstacles that can damage ships
-        COMBAT,         // Fight pirates or other enemies
-        SLAVERS,        // Special combat encounter with crew consequences
-        ABANDONED_SHIP, // Salvage opportunities
-        ASTEROID_FIELD, // Navigation challenges
-        SABOTAGE,       // Equipment malfunctions
-        ALIEN_ENCOUNTER // Diplomatic or hostile encounters
-    }
 }

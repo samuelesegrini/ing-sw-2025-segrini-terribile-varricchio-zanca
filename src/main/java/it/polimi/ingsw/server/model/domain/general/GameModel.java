@@ -313,7 +313,7 @@ public class GameModel implements Serializable {
     }
 
     /**
-     * Draws an adventure card from the adventure deck.
+     * Draws an adventure card from the adventure deck and fires an AdventureCardDrawnEvent.
      * @return Optional containing the drawn card, or empty if no cards available
      * @throws IllegalStateException if not in flight phase
      */
@@ -321,8 +321,31 @@ public class GameModel implements Serializable {
         if (currentPhase != GamePhase.FLIGHT) {
             throw new IllegalStateException("Can only draw adventure cards during flight phase");
         }
-        return adventureDeck.drawNextCard();
+        
+        Optional<AdventureCard> drawnCardOpt = adventureDeck.drawNextCard();
+        
+        if (drawnCardOpt.isPresent() && propertyChangeSupport != null) {
+            AdventureCard drawnCard = drawnCardOpt.get();
+            
+            // Create the event data needed for the AdventureCardDrawnEvent
+            int cardNumber = adventureDeck.getCardsDrawn();
+            int totalCards = adventureDeck.getTotalCards();
+            
+            // Fire the AdventureCardDrawnEvent using the domain AdventureCard directly
+            it.polimi.ingsw.common.message.event.flight.AdventureCardDrawnEvent event = 
+                new it.polimi.ingsw.common.message.event.flight.AdventureCardDrawnEvent(
+                    gameId, 
+                    drawnCard, 
+                    cardNumber, 
+                    totalCards
+                );
+            
+            propertyChangeSupport.firePropertyChange("eventPublished", null, event);
+        }
+        
+        return drawnCardOpt;
     }
+    
 
     /**
      * Resolves the effects of an adventure card.

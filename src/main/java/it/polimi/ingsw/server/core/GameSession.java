@@ -207,6 +207,11 @@ public class GameSession {
             String playerNickname = playerRegistry.getPlayerNickname(playerId);
             PlayerReadyChangedEvent event = new PlayerReadyChangedEvent(gameId, playerId, playerNickname, ready);
             propertyChangeSupport.firePropertyChange("eventPublished", null, event);
+            
+            // During flight phase, check if all players are ready to proceed to next card
+            if (currentPhase == GamePhase.FLIGHT && ready) {
+                checkFlightProgression();
+            }
         }
     }
 
@@ -390,17 +395,125 @@ public class GameSession {
         // Initialize flight board
         gameModel.getAdventureDeck().startFlightPhase();
 
-//        // Initialize adventure card controller
-//        if (adventureCardController == null) {
-//            if (eventPublisher != null) {
-//                adventureCardController = new AdventureCardController(gameModel, eventPublisher);
-//            } else {
-//                LOGGER.warning("EventPublisher not available - adventure card controller will be created later");
-//            }
-//        }
+        // Initialize adventure card controller
+        if (adventureCardController == null) {
+            adventureCardController = new AdventureCardController(gameModel);
+        }
 
         // Update player order based on ship stats
         updatePlayerOrder();
+        
+        // Start the server-controlled flight progression
+        startFlightProgression();
+    }
+    
+    /**
+     * Starts the server-controlled flight progression.
+     * This method begins the automatic card drawing and resolution cycle.
+     */
+    private void startFlightProgression() {
+        LOGGER.info("Starting server-controlled flight progression for game: " + gameId);
+        
+        // Reset all players to not ready for the first card
+        resetAllPlayersReady();
+        
+        // Process the first card immediately
+        processNextAdventureCard();
+    }
+    
+    /**
+     * Processes the next adventure card in the flight phase.
+     * This is the core of the server-controlled flight progression.
+     */
+    private void processNextAdventureCard() {
+        synchronized (lock) {
+            if (currentPhase != GamePhase.FLIGHT || ended) {
+                return; // Flight phase ended or game ended
+            }
+            
+            LOGGER.info("Processing next adventure card for game: " + gameId);
+            
+            // Step 1: Draw the next adventure card
+            Optional<AdventureCard> cardOpt = gameModel.drawAdventureCard();
+            
+            if (cardOpt.isEmpty()) {
+                // No more cards - end flight phase
+                LOGGER.info("No more adventure cards - ending flight phase for game: " + gameId);
+                transitionToPhase(GamePhase.END);
+                return;
+            }
+            
+            AdventureCard card = cardOpt.get();
+            LOGGER.info("Drew adventure card: " + card.getName() + " for game: " + gameId);
+            
+            // Step 2: Start card resolution using the controller
+            if (adventureCardController != null) {
+                adventureCardController.startCardResolution(card);
+                
+                // Step 3: Begin resolution process (this will handle player input collection if needed)
+                resolveAdventureCard(card);
+            } else {
+                LOGGER.error("Adventure card controller not initialized for game: " + gameId);
+                // Skip this card and continue
+                scheduleNextCard();
+            }
+        }
+    }
+    
+    /**
+     * Resolves an adventure card, handling player input collection if necessary.
+     */
+    private void resolveAdventureCard(AdventureCard card) {
+        LOGGER.info("Resolving adventure card: " + card.getName() + " for game: " + gameId);
+        
+        // Use the visitor pattern to resolve the card
+        // The visitor will handle player input collection via events
+        try {
+            gameModel.resolveAdventureCard(card);
+            
+            // After resolution is complete, reset all players to not ready and wait for acknowledgment
+            resetAllPlayersReady();
+            LOGGER.info("Adventure card " + card.getName() + " resolved. Waiting for all players to acknowledge.");
+            
+        } catch (Exception e) {
+            LOGGER.severe("Error resolving adventure card " + card.getName() + " for game " + gameId + ": " + e.getMessage());
+            // Skip this card and continue to next one
+            resetAllPlayersReady();
+        }
+    }
+    
+    /**
+     * Resets all players' ready status to false.
+     */
+    private void resetAllPlayersReady() {
+        synchronized (lock) {
+            for (Player player : gameModel.getPlayers()) {
+                player.setReady(false);
+            }
+            LOGGER.info("Reset all players to not ready for game: " + gameId);
+        }
+    }
+    
+    /**
+     * Checks if all players are ready to proceed to the next card.
+     * Called when a player sets their ready status during flight phase.
+     */
+    private void checkFlightProgression() {
+        synchronized (lock) {
+            if (currentPhase != GamePhase.FLIGHT || ended) {
+                return;
+            }
+            
+            boolean allReady = gameModel.getPlayers().stream().allMatch(Player::isReady);
+            
+            if (allReady) {
+                LOGGER.info("All players ready - processing next adventure card for game: " + gameId);
+                processNextAdventureCard();
+            } else {
+                int readyCount = (int) gameModel.getPlayers().stream().mapToInt(p -> p.isReady() ? 1 : 0).sum();
+                LOGGER.info("Waiting for more players to be ready: " + readyCount + "/" + gameModel.getPlayers().size() + " for game: " + gameId);
+            }
+        }
     }
 
     /**
