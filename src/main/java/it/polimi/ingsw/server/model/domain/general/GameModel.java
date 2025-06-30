@@ -179,6 +179,10 @@ public class GameModel implements Serializable {
                 .orElse(null);
     }
 
+    public boolean isInitialized(){
+        return isInitialized;
+    }
+
     /**
      * Initializes the game by setting up the flight board, adventure deck, and component deck.
      * @throws IllegalStateException if not enough players or game already initialized

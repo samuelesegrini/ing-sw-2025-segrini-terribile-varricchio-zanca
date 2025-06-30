@@ -9,16 +9,13 @@ import static org.junit.jupiter.api.Assertions.*;
 class MeteorTest {
 
     @Test
-
-            void test() {
-
+    void test() {
         Meteor meteor;
         meteor = new Meteor(ShotIntensity.HEAVY, Direction.RIGHT);
 
         assertEquals(ShotIntensity.HEAVY, meteor.getShotIntensity());
         assertEquals(Direction.RIGHT, meteor.getApproach());
         assertEquals(ShotIntensity.HEAVY, meteor.getType());
-
     }
 
 }

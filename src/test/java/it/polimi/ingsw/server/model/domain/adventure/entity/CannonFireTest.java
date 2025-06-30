@@ -11,38 +11,22 @@ import static org.junit.jupiter.api.Assertions.*;
 class CannonFireTest {
 
     @Test
-
     void setUpBlockable(){
-
         CannonFire cannonF;
         cannonF = new CannonFire(Direction.DOWN, ShotIntensity.LIGHT );
 
-
         assertEquals(Direction.DOWN, cannonF.getApproach());
-
         assertEquals(ShotIntensity.LIGHT, cannonF.getIntensity());
-
         assertTrue(cannonF.isBlockable());
-
-
-
     }
 
     @Test
     void isNotBlockable(){
-
         CannonFire cannonF;
         cannonF = new CannonFire(Direction.DOWN, ShotIntensity.HEAVY );
 
-
         assertEquals(Direction.DOWN, cannonF.getApproach());
-
         assertEquals(ShotIntensity.HEAVY, cannonF.getIntensity());
-
         assertFalse(cannonF.isBlockable());
-
-
-
     }
-
 }

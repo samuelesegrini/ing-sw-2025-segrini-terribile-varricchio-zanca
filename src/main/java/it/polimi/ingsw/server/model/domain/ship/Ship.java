@@ -77,9 +77,7 @@ public class Ship implements Serializable {
         
     }
 
-    // setGameContext method removed - events now fired by GameModel
 
-    // PropertyChangeSupport methods removed - events now fired by GameModel
 
     /**
      * Adds a component to the ship at the specified position on the board.

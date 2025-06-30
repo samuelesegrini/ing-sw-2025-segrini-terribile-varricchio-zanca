@@ -74,6 +74,9 @@ public class AdventureDeck implements Serializable {
      * @return true if the player can view the pile, false otherwise.
      */
     public boolean canPlayerViewPile(PlayerId playerId, PileIdentifier pileId) {
+        if (gameLevel == GameLevel.TEST_FLIGHT && uncoveredPiles.isEmpty()) {
+            return false; // No piles to view in Test Flight
+        }
         if (isFlightPhaseActive || gameLevel == GameLevel.TEST_FLIGHT) {
             return false; // Viewing specific setup piles is not applicable
         }
@@ -100,6 +103,9 @@ public class AdventureDeck implements Serializable {
      * @throws IllegalStateException if another player is already viewing the requested pile.
      */
     public List<AdventureCard> viewPile(PlayerId playerId, PileIdentifier pileId) {
+        if (playerId == null || pileId == null) {
+            return Collections.emptyList(); // Invalid arguments
+        }
         if (!canPlayerViewPile(playerId, pileId)) {
             if (isFlightPhaseActive || gameLevel == GameLevel.TEST_FLIGHT) {
                 System.err.println("Cannot view setup piles during flight phase or for Test Flight level.");
@@ -120,6 +126,9 @@ public class AdventureDeck implements Serializable {
      * @param playerId The ID of the player who was viewing a pile.
      */
     public void stopViewingPile(PlayerId playerId) {
+        if (playerId == null || !playerViewing.containsKey(playerId)) {
+            return; // Invalid player ID or not currently viewing any pile
+        }
         if (isFlightPhaseActive) return; // Not applicable
         playerViewing.remove(playerId);
     }
