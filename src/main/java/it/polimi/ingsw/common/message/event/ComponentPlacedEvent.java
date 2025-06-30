@@ -67,22 +67,26 @@ public class ComponentPlacedEvent extends AbstractEvent {
     }
 
     @Override
+    public void updateClientState(it.polimi.ingsw.client.core.ClientState clientState) {
+        // Event updates client state with complete models
+        clientState.updatePlayer(player);
+        clientState.updateComponentDeck(updatedDeck);
+        clientState.incrementStateVersion();
+    }
+
+    @Override
     public void handleOnClient(ClientEventContext context) {
+        // First update client state
+        updateClientState(context.getClientState());
+        
+        // Then handle UI updates
         context.runOnUIThread(() -> {
-            // SIMPLIFIED: Direct model updates instead of complex conversion
+            // Direct UI notification via newUI
+            context.getNewUI().onComponentPlacedEvent(this);
             
-            // NEW: Simple direct model update via ClientState
-            // Update the player in game model
-            context.getClientState().updatePlayer(player);
-            // Update the component deck state
-            context.getClientState().updateComponentDeck(updatedDeck);
-            // UI refreshes automatically via ClientState.refreshCurrentView()
-
-
-            // Show appropriate notification
+            // Show notification
             if (context.getNotificationService() != null) {
                 if (context.isLocalPlayer(getPlayerId())) {
-                    LOGGER.fine("Displaying 'Component Placed' notification for local player.");
                     context.getNotificationService().showNotification(
                         new it.polimi.ingsw.client.ui.Notification(
                             "Component Placed",
@@ -91,7 +95,6 @@ public class ComponentPlacedEvent extends AbstractEvent {
                         )
                     );
                 } else {
-                    LOGGER.fine("Displaying 'Opponent Move' notification for component placed by " + getPlayerNickname());
                     context.getNotificationService().showNotification(
                         new it.polimi.ingsw.client.ui.Notification(
                             "Opponent Move",
@@ -101,7 +104,6 @@ public class ComponentPlacedEvent extends AbstractEvent {
                     );
                 }
             }
-
         });
     }
 }

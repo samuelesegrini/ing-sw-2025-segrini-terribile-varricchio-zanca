@@ -40,31 +40,35 @@ public class PlayerLeftGameEvent extends AbstractEvent {
     }
 
     @Override
+    public void updateClientState(it.polimi.ingsw.client.core.ClientState clientState) {
+        // Update lobby state by removing the leaving player
+        if (clientState.getCurrentGameLobby() != null) {
+            try {
+                it.polimi.ingsw.server.model.domain.general.GameModel currentGame = clientState.getCurrentGameLobby();
+                // Remove player from the game model
+                boolean removed = currentGame.removePlayer(playerId);
+                if (removed) {
+                    clientState.setCurrentGameLobby(currentGame);
+                    clientState.incrementStateVersion();
+                    LOGGER.fine("Removed player " + playerNickname + " from lobby");
+                }
+            } catch (Exception e) {
+                LOGGER.warning("Failed to remove player from lobby: " + e.getMessage());
+            }
+        }
+    }
+
+    @Override
     public void handleOnClient(ClientEventContext context) {
+        // First update client state
+        updateClientState(context.getClientState());
+        
         context.runOnUIThread(() -> {
             ClientState clientState = context.getClientState();
-            
-            // Update lobby state by removing the leaving player
-            if (clientState != null && clientState.getCurrentGameLobby() != null) {
-                // Remove player from current game lobby
-                try {
-                    it.polimi.ingsw.server.model.domain.general.GameModel currentGame = clientState.getCurrentGameLobby();
-                    PlayerId leavingPlayerId = playerId;
-                    
-                    // Remove player from the game model
-                    boolean removed = currentGame.removePlayer(leavingPlayerId);
-                    if (removed) {
-                        // Trigger UI refresh after player removal
-                        clientState.setCurrentGameLobby(currentGame);
-                        LOGGER.fine("Removed player " + playerNickname + " from lobby");
-                    }
-                } catch (Exception e) {
-                    LOGGER.warning("Failed to remove player from lobby: " + e.getMessage());
-                }
-            }
-            
-            // Handle state updates for ALL players - this is the single source of truth
             boolean isLocalPlayer = context.isLocalPlayer(playerId);
+            
+            // Then handle UI updates
+            context.getController().getUI().onPlayerLeftGameEvent(this);
             
             if (isLocalPlayer) {
                 // Local player left the game - clear state and navigate back to lobby
@@ -118,8 +122,6 @@ public class PlayerLeftGameEvent extends AbstractEvent {
                     )
                 );
             }
-
-            context.getController().getUI().onPlayerLeftGameEvent(this);
         });
     }
 }

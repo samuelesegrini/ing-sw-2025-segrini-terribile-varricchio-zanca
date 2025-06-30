@@ -37,6 +37,14 @@ public interface ClientEventContext {
     void runOnUIThread(Runnable action);
     
     /**
+     * Gets the new UI interface for event handling.
+     * @return The new UI interface
+     */
+    default it.polimi.ingsw.client.ui.newUI getNewUI() {
+        return getController().getUI();
+    }
+    
+    /**
      * Gets the timer view for displaying timer updates.
      * Returns null if no timer view is available.
      */

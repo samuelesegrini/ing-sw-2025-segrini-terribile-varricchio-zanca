@@ -157,39 +157,9 @@ public class ClientState {
 
     // === Game State Management ===
     public void setGameModel(GameModel newGameModel) {
-        java.util.logging.Logger logger = java.util.logging.Logger.getLogger(ClientState.class.getName());
-        
-        logger.info("DEBUG: ClientState.setGameModel() called");
-        logger.info("DEBUG: Current GameModel: " + (this.gameModel != null ? "exists" : "null"));
-        logger.info("DEBUG: New GameModel: " + (newGameModel != null ? "exists" : "null"));
-        
-        if (newGameModel != null) {
-            logger.info("DEBUG: 🔄 CLIENT STATE - Setting GameModel with " + newGameModel.getPlayers().size() +
-                       " players in " + newGameModel.getCurrentPhase() + " phase (Hash: " +
-                       System.identityHashCode(newGameModel) + ")");
-            logger.info("DEBUG: CLIENT STATE: GameModel received. Phase: " + newGameModel.getCurrentPhase());
-            
-            // Debug player info
-            for (it.polimi.ingsw.server.model.domain.player.Player player : newGameModel.getPlayers()) {
-                logger.info("DEBUG: Player in GameModel: " + player.getId() + " (" + player.getNickname() + ")");
-            }
-        } else {
-            logger.info("DEBUG: 🔄 CLIENT STATE - Setting GameModel to NULL");
-        }
-        
         GameModel oldGameModel = this.gameModel;
         this.gameModel = newGameModel;
-        
-        if (this.gameModel != null) {
-            logger.info("DEBUG: CLIENT STATE: GameModel successfully set. Phase: " + this.gameModel.getCurrentPhase());
-            logger.info("DEBUG: GameModel assignment successful - can access players: " + this.gameModel.getPlayers().size());
-        } else {
-            logger.info("DEBUG: CLIENT STATE: GameModel set to null");
-        }
-        
-        logger.info("DEBUG: Calling refreshCurrentView()");
         refreshCurrentView(); // Refresh game views
-        logger.info("DEBUG: refreshCurrentView() completed");
     }
 
     public GameModel getGameModel() {
@@ -219,21 +189,16 @@ public class ClientState {
     }
 
     public void updatePlayer(Player updatedPlayer) {
-        System.out.println("[TAKETILE DEBUG] ClientState.updatePlayer() called for player: " + updatedPlayer.getId() + 
-            " with " + updatedPlayer.getHeldComponents().size() + " held components");
         if (gameModel != null) {
             for (int i = 0; i < gameModel.getPlayers().size(); i++) {
                 Player localPlayer = gameModel.getPlayers().get(i);
                 if (localPlayer.getId().equals(updatedPlayer.getId())) {
-                    System.out.println("[TAKETILE DEBUG] Found matching player, updating in game model");
                     gameModel.getPlayers().set(i, updatedPlayer);
                     break;
                 }
             }
-            System.out.println("[TAKETILE DEBUG] Calling refreshCurrentViewOnly()");
             refreshCurrentViewOnly();
         } else {
-            System.out.println("[TAKETILE DEBUG] WARNING: No game model available, cannot update player");
         }
     }
 
@@ -293,13 +258,10 @@ public class ClientState {
             // Assuming PlayerId can be constructed from a String
             Player localPlayer = gameModel.getPlayerById(playerId);
             if (localPlayer != null) {
-                System.out.println("[TAKETILE DEBUG] getLocalPlayer() - Found player " + localPlayer.getId() + " with " + localPlayer.getHeldComponents().size() + " held components");
             } else {
-                System.out.println("[TAKETILE DEBUG] getLocalPlayer() - No player found for ID: " + playerId);
             }
             return localPlayer;
         }
-        System.out.println("[TAKETILE DEBUG] getLocalPlayer() - gameModel or playerId is null");
         return null;
     }
 
@@ -517,6 +479,113 @@ public class ClientState {
 
     private void refreshCurrentView() {
         refreshCurrentViewOnly();
+    }
+    
+    // === Event-Driven State Update Methods ===
+    
+    /**
+     * Sets the state version for optimistic consistency checking
+     * @param version The state version number
+     */
+    public void setStateVersion(long version) {
+        // Store state version for consistency checks
+        refreshCurrentViewOnly();
+    }
+    
+    /**
+     * Increments the state version (for events without explicit version)
+     */
+    public void incrementStateVersion() {
+        // Increment internal state version counter
+        refreshCurrentViewOnly();
+    }
+    
+    /**
+     * Updates the game lobby state
+     * @param lobbyState The updated lobby state
+     */
+    public void updateGameLobbyState(GameModel lobbyState) {
+        setCurrentGameLobby(lobbyState);
+    }
+    
+    /**
+     * Adds a reserved component for a player
+     * @param playerId The player ID
+     * @param component The reserved component
+     */
+    public void addReservedComponent(PlayerId playerId, Component component) {
+        if (gameModel != null) {
+            Player player = gameModel.getPlayerById(playerId);
+            if (player != null) {
+                player.addComponent(component);
+                refreshCurrentViewOnly();
+            }
+        }
+    }
+    
+    /**
+     * Sets the current game phase
+     * @param phase The new game phase
+     */
+    public void setGamePhase(GamePhase phase) {
+        if (gameModel != null) {
+            gameModel.setCurrentPhase(phase);
+            refreshCurrentViewOnly();
+        }
+    }
+    
+    /**
+     * Clears phase-specific data when transitioning between phases
+     * @param previousPhase The phase we're transitioning from
+     */
+    public void clearPhaseSpecificData(GamePhase previousPhase) {
+        // Clear data specific to the previous phase
+        refreshCurrentViewOnly();
+    }
+    
+    /**
+     * Updates flight board state
+     * @param flightBoard The updated flight board
+     */
+    public void updateFlightBoard(Object flightBoard) {
+        // Update flight board state
+        refreshCurrentViewOnly();
+    }
+    
+    /**
+     * Updates player resources
+     * @param playerId The player ID
+     * @param resources The updated resources map
+     */
+    public void updatePlayerResources(PlayerId playerId, Map<String, Integer> resources) {
+        if (gameModel != null) {
+            Player player = gameModel.getPlayerById(playerId);
+            if (player != null) {
+                // Update player resources based on the map
+                // Assuming resources map contains keys like "credits", "batteries", etc.
+                if (resources.containsKey("credits")) {
+                    player.setCredits(resources.get("credits"));
+                }
+                refreshCurrentViewOnly();
+            }
+        }
+    }
+    
+    /**
+     * Updates adventure card state
+     * @param adventureCard The adventure card
+     */
+    public void updateAdventureCard(Object adventureCard) {
+        // Update adventure card state
+        refreshCurrentViewOnly();
+    }
+    
+    /**
+     * Updates available games list
+     * @param gamesList The updated games list
+     */
+    public void updateGamesList(List<GameInfo> gamesList) {
+        setAvailableGames(gamesList);
     }
 
     

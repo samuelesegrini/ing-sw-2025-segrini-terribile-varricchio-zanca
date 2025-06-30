@@ -74,4 +74,12 @@ public interface newUI {
 
     void onDockResponse(DockResponse response);
 
+    // Building events (TODO: These were already being called but not declared)
+
+    void onComponentPlacedEvent(ComponentPlacedEvent event);
+
+    void onComponentTakenEvent(ComponentTakenEvent event);
+
+    void onComponentReservedEvent(ComponentReservedEvent event);
+
 }

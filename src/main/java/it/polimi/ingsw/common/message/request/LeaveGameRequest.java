@@ -68,10 +68,6 @@ public class LeaveGameRequest extends AbstractRequest {
         // Get player info
         String playerNickname = registry.getPlayerNickname(playerId);
 
-        // Publish player left event
-
-        // Model operation will fire the event automatically
-
         // Check if game should be ended
         //TODO: Use new listeners for event
         // non so se questo è il posto giusto per questa regola (dovremmo essere nella gamelobby)

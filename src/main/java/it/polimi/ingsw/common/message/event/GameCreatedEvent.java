@@ -48,17 +48,45 @@ public class GameCreatedEvent extends AbstractEvent {
     }
 
     @Override
+    public void updateClientState(it.polimi.ingsw.client.core.ClientState clientState) {
+        // Update games list - add new game to available games (for all clients)
+        if (clientState.getAvailableGames() != null) {
+            // Create GameInfo for the new game
+            it.polimi.ingsw.common.model.GameInfo newGameInfo = new it.polimi.ingsw.common.model.GameInfo(
+                gameId, gameName, gameLevel, 1, maxPlayers, 
+                it.polimi.ingsw.server.model.enums.GamePhase.SETUP, false, true);
+            
+            // Add to available games list
+            java.util.List<it.polimi.ingsw.common.model.GameInfo> updatedGames = new java.util.ArrayList<>(clientState.getAvailableGames());
+            updatedGames.add(newGameInfo);
+            clientState.setAvailableGames(updatedGames);
+        }
+        
+        // Only set lobby state if this is the creator's client
+        // (This check will be done in handleOnClient method)
+        
+        clientState.incrementStateVersion();
+    }
+
+    @Override
     public void handleOnClient(ClientEventContext context) {
         LOGGER.info("GameCreatedEvent received on client. Creator ID: " + creatorId + ". Is this the local player? " + context.isLocalPlayer(creatorId));
 
+        // First update client state
+        updateClientState(context.getClientState());
+        
+        // For the creator, also set the full lobby state
+        if (context.isLocalPlayer(creatorId) && gameModel != null) {
+            context.getClientState().setCurrentGameLobby(gameModel);
+            context.getClientState().setPlayersInLobby(gameModel.getPlayers());
+        }
+        
         context.runOnUIThread(() -> {
-            // Update client state with the full GameModel if available (single source of truth)
-            if (context.getClientState() != null && gameModel != null && context.isLocalPlayer(creatorId)) {
-                // For the creator, set the full lobby state and navigate
-                context.getClientState().setCurrentGameLobby(gameModel);
-                context.getClientState().setPlayersInLobby(gameModel.getPlayers());
-                
-                // Navigate to GAME_LOBBY
+            // Then handle UI updates
+            context.getController().getUI().onGameCreatedEvent(this);
+            
+            // Navigate to GAME_LOBBY for creator
+            if (context.isLocalPlayer(creatorId)) {
                 if (context.getController().getUIContext() != null && 
                     context.getController().getUIContext().getViewNavigator() != null) {
                     
@@ -92,8 +120,6 @@ public class GameCreatedEvent extends AbstractEvent {
                     ));
                 }
             }
-
-            context.getController().getUI().onGameCreatedEvent(this);
         });
     }
 

@@ -36,6 +36,13 @@ public interface Event extends Message {
     }
     
     /**
+     * Updates the client state with this event's data.
+     * Each event knows exactly how to update the client state.
+     * @param clientState The client state to update
+     */
+    void updateClientState(it.polimi.ingsw.client.core.ClientState clientState);
+    
+    /**
      * Handles this event on the client side.
      * Each event knows how to update the client state and UI.
      * @param context The client event context

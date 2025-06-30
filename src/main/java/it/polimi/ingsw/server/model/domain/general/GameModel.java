@@ -641,7 +641,7 @@ public class GameModel implements Serializable {
             player.getShip().updateStats();
             player.clearHeldComponent(); // Component is now on ship
             
-            // Fire event
+            // Fire ComponentPlacedEvent
             if (propertyChangeSupport != null) {
                 ComponentPlacedEvent event = new ComponentPlacedEvent(
                     gameId,
@@ -652,6 +652,9 @@ public class GameModel implements Serializable {
                 );
                 propertyChangeSupport.firePropertyChange("eventPublished", null, event);
             }
+            
+            // Fire ShipStatsUpdatedEvent (centralized from Ship.updateStats())
+            fireShipStatsUpdatedEvent(playerId, player.getNickname(), player.getShip());
             
             return true;
         } catch (IllegalArgumentException e) {
@@ -828,6 +831,141 @@ public class GameModel implements Serializable {
         }
         
         return isValid;
+    }
+    
+    /**
+     * Handles component removal from a player's ship and fires appropriate events
+     */
+    public boolean removeComponent(PlayerId playerId, it.polimi.ingsw.server.model.domain.ship.Position position, String reason) {
+        Player player = getPlayerById(playerId);
+        if (player == null || player.getShip() == null) return false;
+        
+        Component removedComponent = player.getShip().getComponentAt(position.getRow(), position.getCol());
+        if (removedComponent == null) return false;
+        
+        // Remove component from ship (without firing event - Ship will be updated to not fire events)
+        player.getShip().removeComponent(position, currentPhase);
+        
+        // Fire ComponentRemovedEvent from GameModel
+        fireComponentRemovedEvent(playerId, player.getNickname(), removedComponent, position, reason);
+        
+        // Fire ShipStatsUpdatedEvent since ship stats changed
+        fireShipStatsUpdatedEvent(playerId, player.getNickname(), player.getShip());
+        
+        return true;
+    }
+    
+    /**
+     * Updates player credits and fires appropriate events
+     */
+    public void updatePlayerCredits(PlayerId playerId, int newCredits) {
+        Player player = getPlayerById(playerId);
+        if (player == null) return;
+        
+        int oldCredits = player.getCredits();
+        player.setCredits(newCredits); // Will be updated to not fire events
+        
+        // Fire PlayerCreditsChangedEvent from GameModel
+        firePlayerCreditsChangedEvent(playerId, player.getNickname(), oldCredits, newCredits);
+    }
+    
+    /**
+     * Updates player held component and fires appropriate events
+     */
+    public void updatePlayerHeldComponent(PlayerId playerId, Component newComponent) {
+        Player player = getPlayerById(playerId);
+        if (player == null) return;
+        
+        Component oldComponent = player.getHeldComponent();
+        player.setHeldComponent(newComponent); // Will be updated to not fire events
+        
+        // Fire PlayerComponentChangedEvent from GameModel
+        firePlayerComponentChangedEvent(playerId, player.getNickname(), oldComponent, newComponent);
+    }
+    
+    /**
+     * Updates player ready status and fires appropriate events
+     */
+    public void updatePlayerReadyStatus(PlayerId playerId, boolean ready) {
+        Player player = getPlayerById(playerId);
+        if (player == null) return;
+        
+        player.setReady(ready); // Will be updated to not fire events
+        
+        // Fire PlayerReadyChangedEvent from GameModel
+        firePlayerReadyChangedEvent(playerId, player.getNickname(), ready);
+    }
+    
+    // === CENTRALIZED EVENT ORCHESTRATION METHODS ===
+    
+    /**
+     * Fires ComponentRemovedEvent when a component is removed from a player's ship
+     */
+    public void fireComponentRemovedEvent(PlayerId playerId, String playerNickname, Component component, 
+                                        it.polimi.ingsw.server.model.domain.ship.Position position, String reason) {
+        if (propertyChangeSupport != null) {
+            ComponentRemovedEvent event = new ComponentRemovedEvent(gameId, playerId, playerNickname, component, position, reason);
+            propertyChangeSupport.firePropertyChange("eventPublished", null, event);
+        }
+    }
+    
+    /**
+     * Fires ShipStatsUpdatedEvent when ship statistics are recalculated
+     */
+    public void fireShipStatsUpdatedEvent(PlayerId playerId, String playerNickname, Ship ship) {
+        if (propertyChangeSupport != null) {
+            ShipStatsUpdatedEvent event = new ShipStatsUpdatedEvent(gameId, playerId, playerNickname, ship);
+            propertyChangeSupport.firePropertyChange("eventPublished", null, event);
+        }
+    }
+    
+    /**
+     * Fires PlayerCreditsChangedEvent when player credits change
+     */
+    public void firePlayerCreditsChangedEvent(PlayerId playerId, String playerNickname, int oldCredits, int newCredits) {
+        if (propertyChangeSupport != null) {
+            PlayerCreditsChangedEvent event = new PlayerCreditsChangedEvent(gameId, playerId, playerNickname, oldCredits, newCredits);
+            propertyChangeSupport.firePropertyChange("eventPublished", null, event);
+        }
+    }
+    
+    /**
+     * Fires PlayerComponentChangedEvent when player held component changes
+     */
+    public void firePlayerComponentChangedEvent(PlayerId playerId, String playerNickname, Component oldComponent, Component newComponent) {
+        if (propertyChangeSupport != null) {
+            PlayerComponentChangedEvent event = new PlayerComponentChangedEvent(gameId, playerId, playerNickname, oldComponent, newComponent);
+            propertyChangeSupport.firePropertyChange("eventPublished", null, event);
+        }
+    }
+    
+    /**
+     * Fires PlayerReadyChangedEvent when player ready status changes
+     */
+    public void firePlayerReadyChangedEvent(PlayerId playerId, String playerNickname, boolean ready) {
+        if (propertyChangeSupport != null) {
+            PlayerReadyChangedEvent event = new PlayerReadyChangedEvent(gameId, playerId, playerNickname, ready);
+            propertyChangeSupport.firePropertyChange("eventPublished", null, event);
+        }
+    }
+    
+    /**
+     * Fires ComponentOfferedEvent when component is returned to face-up pile
+     */
+    public void fireComponentOfferedEvent(Component component, Player player) {
+        if (propertyChangeSupport != null) {
+            ComponentOfferedEvent event = new ComponentOfferedEvent(gameId, component, player, componentDeck);
+            propertyChangeSupport.firePropertyChange("eventPublished", null, event);
+        }
+    }
+    
+    /**
+     * Helper method to fire PropertyChangeSupport events
+     */
+    private void firePropertyChange(String propertyName, Object oldValue, Object newValue) {
+        if (propertyChangeSupport != null) {
+            propertyChangeSupport.firePropertyChange(propertyName, oldValue, newValue);
+        }
     }
 
 

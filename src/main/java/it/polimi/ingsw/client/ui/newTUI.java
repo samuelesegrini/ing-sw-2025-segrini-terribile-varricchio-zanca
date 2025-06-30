@@ -570,9 +570,11 @@ public class newTUI implements newUI {
 
     @Override
     public void onGameCreatedEvent(GameCreatedEvent event) {
-        // TODO: VERIFICA IN QUALE VIEWSTATE SEI QUANDO ARRIVA (GIÀ AGGIORNATO O NO)
+        // Display appropriate view based on current state
         if (clientState.getCurrentView() == ClientState.ViewState.LOBBY) {
             printer.displayLobby(clientState);
+        } else if (clientState.getCurrentView() == ClientState.ViewState.GAME_LOBBY) {
+            printer.displayGameLobby(clientState);
         }
     }
 
@@ -765,6 +767,31 @@ public class newTUI implements newUI {
         }
     }
 
+    // Component events (TODO: These were called but not implemented)
+    
+    @Override
+    public void onComponentPlacedEvent(ComponentPlacedEvent event) {
+        // TODO: Implement component placed event handling
+        if (clientState.getCurrentView() == ClientState.ViewState.BUILDING) {
+            printer.displayBuilding(clientState);
+        }
+    }
+
+    @Override
+    public void onComponentTakenEvent(ComponentTakenEvent event) {
+        // TODO: Implement component taken event handling
+        if (clientState.getCurrentView() == ClientState.ViewState.BUILDING) {
+            printer.displayBuilding(clientState);
+        }
+    }
+
+    @Override
+    public void onComponentReservedEvent(ComponentReservedEvent event) {
+        // TODO: Implement component reserved event handling
+        if (clientState.getCurrentView() == ClientState.ViewState.BUILDING) {
+            printer.displayBuilding(clientState);
+        }
+    }
 
     public void shutdown() {
         printer.shutdown();

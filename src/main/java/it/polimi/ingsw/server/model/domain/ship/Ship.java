@@ -9,16 +9,11 @@ import it.polimi.ingsw.server.model.enums.GameLevel;
 import it.polimi.ingsw.server.model.enums.GamePhase;
 import it.polimi.ingsw.server.model.enums.resource.GoodType;
 import it.polimi.ingsw.server.model.enums.ship.ComponentType;
-import it.polimi.ingsw.common.message.event.*;
-
 import it.polimi.ingsw.server.model.domain.ship.components.Battery;
 import it.polimi.ingsw.server.model.domain.ship.components.Cannon;
 import it.polimi.ingsw.server.model.domain.ship.components.Shield;
 import it.polimi.ingsw.server.model.enums.ship.ConnectorType;
 import it.polimi.ingsw.server.model.enums.ship.Direction;
-
-import java.beans.PropertyChangeListener;
-import java.beans.PropertyChangeSupport;
 import java.io.Serializable;
 import java.util.*;
 
@@ -32,11 +27,7 @@ public class Ship implements Serializable {
     private Set<Component> lostComponents;
     private final int maxReservedComponents; // Max reserved components from configuration
     
-    // PropertyChangeSupport for event firing
-    private transient PropertyChangeSupport propertyChangeSupport;
-    private String gameId; // For event context
-    private PlayerId playerId; // For event context
-    private String playerNickname; // For event context
+    // Event context removed - events now fired by GameModel
 
     // Ship stats
     private double cannons;
@@ -70,11 +61,7 @@ public class Ship implements Serializable {
         // Set maximum reserved components from configuration
         this.maxReservedComponents = shipGridConfig.reservedComponentsPositions().size();
         
-        // Initialize PropertyChangeSupport
-        this.propertyChangeSupport = new PropertyChangeSupport(this);
-        this.gameId = null; // Will be set when associated with game
-        this.playerId = null; // Will be set when associated with player
-        this.playerNickname = null;
+        // PropertyChangeSupport removed - events now fired by GameModel
         
         this.resources = new HashMap<>() {{
             put(GoodType.RED, 0);
@@ -95,42 +82,9 @@ public class Ship implements Serializable {
         
     }
 
-    /**
-     * Sets the game context for event firing.
-     */
-    public void setGameContext(String gameId, PlayerId playerId, String playerNickname) {
-        this.gameId = gameId;
-        this.playerId = playerId;
-        this.playerNickname = playerNickname;
-    }
+    // setGameContext method removed - events now fired by GameModel
 
-    /**
-     * Adds a PropertyChangeListener to this ship.
-     */
-    public void addPropertyChangeListener(PropertyChangeListener listener) {
-        if (propertyChangeSupport == null) {
-            propertyChangeSupport = new PropertyChangeSupport(this);
-        }
-        propertyChangeSupport.addPropertyChangeListener(listener);
-    }
-
-    /**
-     * Removes a PropertyChangeListener from this ship.
-     */
-    public void removePropertyChangeListener(PropertyChangeListener listener) {
-        if (propertyChangeSupport != null) {
-            propertyChangeSupport.removePropertyChangeListener(listener);
-        }
-    }
-
-    /**
-     * Fires a PropertyChangeEvent with the given property name and new event.
-     */
-    private void firePropertyChange(String propertyName, Object oldValue, Object newValue) {
-        if (propertyChangeSupport != null) {
-            propertyChangeSupport.firePropertyChange(propertyName, oldValue, newValue);
-        }
-    }
+    // PropertyChangeSupport methods removed - events now fired by GameModel
 
     /**
      * Adds a component to the ship at the specified position on the board.
@@ -179,10 +133,7 @@ public class Ship implements Serializable {
             componentToRemove.setPosition(null);
             board[row][col] = null;
             
-            // Fire ComponentRemovedEvent when component is removed from ship
-            String reason = (phase == GamePhase.FLIGHT) ? "Combat damage" : "Manual removal";
-            ComponentRemovedEvent event = new ComponentRemovedEvent(gameId, playerId, playerNickname, componentToRemove, position, reason);
-            firePropertyChange("eventPublished", null, event);
+            // ComponentRemovedEvent now fired by GameModel
         }
     }
     
@@ -285,9 +236,7 @@ public class Ship implements Serializable {
             }
         }
         
-        // Fire ShipStatsUpdatedEvent when stats are recalculated
-        ShipStatsUpdatedEvent event = new ShipStatsUpdatedEvent(gameId, playerId, playerNickname, this);
-        firePropertyChange("eventPublished", null, event);
+        // ShipStatsUpdatedEvent now fired by GameModel
     }
     public GameLevel getLevel() { return level; }
 

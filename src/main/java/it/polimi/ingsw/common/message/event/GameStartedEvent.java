@@ -51,72 +51,38 @@ public class GameStartedEvent extends AbstractEvent {
     }
 
     @Override
+    public void updateClientState(ClientState clientState) {
+        // Update client state with game model
+        if (gameModel != null) {
+            clientState.setGameModel(gameModel);
+            clientState.incrementStateVersion();
+        }
+    }
+
+    @Override
     public void handleOnClient(ClientEventContext context) {
-        LOGGER.info("DEBUG: GameStartedEvent.handleOnClient() called for gameId: " + getGameId());
-        LOGGER.info("DEBUG: Context details - playerId: " + (context.getClientState() != null ? context.getClientState().getPlayerId() : "null"));
+        
+        // First update client state
+        updateClientState(context.getClientState());
         
         context.runOnUIThread(() -> {
-            LOGGER.info("DEBUG: Running on UI thread - GameModel has " +
-                       (gameModel != null ? gameModel.getPlayers().size() + " players" : "null GameModel"));
+            // Then handle UI updates
+            context.getController().getUI().onGameStartedEvent(this);
             
-            // Debug: Log each player received on client side
-            if (gameModel != null) {
-                for (it.polimi.ingsw.server.model.domain.player.Player p : gameModel.getPlayers()) {
-                    LOGGER.info("DEBUG: CLIENT RECEIVED PLAYER: " + p.getId() + " - " + p.getNickname());
+            // Handle navigation
+            if (context.getController().getUIContext() != null && 
+                context.getController().getUIContext().getViewNavigator() != null) {
+                
+                boolean success = context.getController().getUIContext().getViewNavigator()
+                    .navigateTo(ClientState.ViewState.BUILDING, "Game started - entering building phase");
+                
+                if (!success) {
+                    LOGGER.warning("Failed to navigate to BUILDING after game started");
                 }
             }
-            
-            // Simple Direct Model Architecture: Update ClientState directly
-            ClientState clientState = context.getClientState();
-            if (clientState != null) {
-                LOGGER.info("DEBUG: ClientState found, current GameModel: " + 
-                           (clientState.getGameModel() != null ? "exists" : "null"));
-                LOGGER.info("DEBUG: About to call clientState.setGameModel() with " +
-                           gameModel.getPlayers().size() + " players in " + gameModel.getCurrentPhase() + " phase");
-                
-                clientState.setGameModel(gameModel);
-                
-                LOGGER.info("DEBUG: After setGameModel() - ClientState GameModel: " + 
-                           (clientState.getGameModel() != null ? "exists with " + clientState.getGameModel().getPlayers().size() + " players" : "null"));
-            } else {
-                LOGGER.severe("DEBUG: ClientState is null! Cannot update GameModel");
-            }
-
-                // Use ViewNavigator for proper navigation instead of direct state manipulation
-                LOGGER.info("DEBUG: Checking navigation components...");
-                LOGGER.info("DEBUG: Controller: " + (context.getController() != null ? "exists" : "null"));
-                
-                if (context.getController() != null) {
-                    LOGGER.info("DEBUG: UIContext: " + (context.getController().getUIContext() != null ? "exists" : "null"));
-                    
-                    if (context.getController().getUIContext() != null) {
-                        LOGGER.info("DEBUG: ViewNavigator: " + (context.getController().getUIContext().getViewNavigator() != null ? "exists" : "null"));
-                    }
-                }
-                
-                if (context.getController().getUIContext() != null && 
-                    context.getController().getUIContext().getViewNavigator() != null) {
-                    
-                    LOGGER.info("DEBUG: Attempting navigation to BUILDING phase...");
-                    boolean success = context.getController().getUIContext().getViewNavigator()
-                        .navigateTo(ClientState.ViewState.BUILDING, "Game started - entering building phase");
-                    
-                    LOGGER.info("DEBUG: Navigation result: " + success);
-                    if (!success) {
-                        LOGGER.severe("DEBUG: Failed to navigate to BUILDING after game started - Reason: " + context.getController().getUIContext().getViewNavigator().getNavigationFailureReason(ClientState.ViewState.BUILDING));
-                    }
-                } else {
-                    LOGGER.severe("DEBUG: ViewNavigator not available - cannot navigate to BUILDING after game started");
-                    LOGGER.severe("DEBUG: Controller null: " + (context.getController() == null));
-                    LOGGER.severe("DEBUG: UIContext null: " + (context.getController() != null && context.getController().getUIContext() == null));
-                    LOGGER.severe("DEBUG: ViewNavigator null: " + (context.getController() != null && context.getController().getUIContext() != null && context.getController().getUIContext().getViewNavigator() == null));
-                }
 
             // Show notification about game start
-            LOGGER.info("DEBUG: Checking notification service...");
-
             if (context.getNotificationService() != null) {
-                LOGGER.info("DEBUG: Showing game started notification");
                 context.getNotificationService().showNotification(
                         new Notification(
                                 "Game Started",
@@ -124,11 +90,7 @@ public class GameStartedEvent extends AbstractEvent {
                                 NotificationType.INFO
                         )
                 );
-            } else {
-                LOGGER.warning("DEBUG: NotificationService is null - cannot show notification");
             }
-
-            context.getController().getUI().onGameStartedEvent(this);
         });
     }
 }

@@ -92,7 +92,7 @@ public class PlaceTileRequest extends AbstractRequest {
             }
         }
 
-        //TODO: va bene(?)
+        //TODO: va bene(?) non dovrei usare direction?
         for (int i = 0; i < rotation; i++) {
             component.rotate();
         }
@@ -102,9 +102,7 @@ public class PlaceTileRequest extends AbstractRequest {
         Position position = new Position(row, col);
 
         try {
-            // ENHANCED: Use comprehensive real-time validation from ShipValidationService
-            //TODO: the fuck (?)
-            ShipValidationService.ValidationResult placementValidation = 
+            ShipValidationService.ValidationResult placementValidation =
                 ShipValidationService.validateComponentPlacement(ship, component, position);
             
             if (!placementValidation.isValid()) {
@@ -121,8 +119,6 @@ public class PlaceTileRequest extends AbstractRequest {
 
             // Update ship stats
             ship.updateStats();
-
-            // Model operation will fire the event automatically
 
             return createSuccessResponse();
 

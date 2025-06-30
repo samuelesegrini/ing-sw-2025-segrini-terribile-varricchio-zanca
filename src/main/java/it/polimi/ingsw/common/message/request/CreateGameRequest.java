@@ -85,11 +85,6 @@ public class CreateGameRequest extends AbstractRequest {
             return createErrorResponse("Failed to create game", ErrorResponse.INTERNAL_ERROR);
         }
 
-        //TODO: the fuckkkkk
-
-        // Get player info
-        String creatorNickname = registry.getPlayerNickname(playerId);
-
         // Return gameId
         CreateGameResponse response = new CreateGameResponse(getCorrelationId(), gameId);
         return response;

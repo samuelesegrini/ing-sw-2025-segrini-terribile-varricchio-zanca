@@ -61,28 +61,33 @@ public class ComponentReservedEvent extends AbstractEvent {
     }
 
     @Override
+    public void updateClientState(it.polimi.ingsw.client.core.ClientState clientState) {
+        // Event updates client state with complete models
+        clientState.updatePlayer(player);
+        clientState.updateComponentDeck(updatedDeck);
+        clientState.addReservedComponent(player.getId(), component);
+        clientState.incrementStateVersion();
+    }
+
+    @Override
     public void handleOnClient(ClientEventContext context) {
+        // First update client state
+        updateClientState(context.getClientState());
+        
+        // Then handle UI updates
         context.runOnUIThread(() -> {
-            // Update state for ALL players - this is the single source of truth
             boolean isLocalPlayer = context.isLocalPlayer(getPlayerId());
             
-            LOGGER.fine("ComponentReservedEvent: Updating state for player: " + getPlayerNickname() + 
-                       " (local: " + isLocalPlayer + ")");
-            context.getClientState().updatePlayer(player);
-            context.getClientState().updateComponentDeck(updatedDeck);
+            // Direct UI notification via newUI
+            context.getNewUI().onComponentReservedEvent(this);
             
-            // Trigger UI refresh to show the updated state
-            context.getClientState().refreshCurrentViewOnly();
-
-            // Show notification for all players
+            // Show notification
             if (context.getNotificationService() != null) {
                 String message;
                 if (isLocalPlayer) {
                     message = String.format("You reserved a %s component", component.getType().name());
-                    LOGGER.fine("Displaying 'Component Reserved' notification for local player: " + message);
                 } else {
                     message = String.format("%s reserved a component", getPlayerNickname());
-                    LOGGER.fine("Displaying 'Component Reserved' notification for other player: " + message);
                 }
                 context.getNotificationService().showNotification(
                     new it.polimi.ingsw.client.ui.Notification(
@@ -92,7 +97,6 @@ public class ComponentReservedEvent extends AbstractEvent {
                     )
                 );
             }
-
         });
     }
 }

@@ -48,21 +48,25 @@ public class PlayerReadyChangedEvent extends AbstractEvent {
     }
 
     @Override
+    public void updateClientState(it.polimi.ingsw.client.core.ClientState clientState) {
+        // Update player ready status in client state
+        clientState.setPlayerReadyStatus(playerId.toString(), ready);
+        clientState.incrementStateVersion();
+    }
+
+    @Override
     public void handleOnClient(ClientEventContext context) {
+        // First update client state
+        updateClientState(context.getClientState());
+        
         context.runOnUIThread(() -> {
             LOGGER.fine("Handling PlayerReadyChangedEvent for game: " + gameId + ", player: " + playerNickname + ", ready: " + ready);
             
-            // Update state for ALL players - this is the single source of truth
-            boolean isLocalPlayer = context.isLocalPlayer(playerId);
-            
-            // Update the player ready status in client state
-            if (context.getClientState() != null) {
-                context.getClientState().setPlayerReadyStatus(playerId.toString(), ready);
-                // Trigger UI refresh to show the updated state
-                context.getClientState().refreshCurrentViewOnly();
-            }
+            // Then handle UI updates
+            context.getController().getUI().onPlayerReadyChangedEvent(this);
             
             // Show notification for all players
+            boolean isLocalPlayer = context.isLocalPlayer(playerId);
             if (context.getNotificationService() != null) {
                 String message;
                 if (isLocalPlayer) {
@@ -83,8 +87,6 @@ public class PlayerReadyChangedEvent extends AbstractEvent {
                     )
                 );
             }
-
-            context.getController().getUI().onPlayerReadyChangedEvent(this);
         });
     }
 }

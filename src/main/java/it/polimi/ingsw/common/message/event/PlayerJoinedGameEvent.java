@@ -57,57 +57,60 @@ public class PlayerJoinedGameEvent extends AbstractEvent {
     }
 
     @Override
+    public void updateClientState(it.polimi.ingsw.client.core.ClientState clientState) {
+        // Event updates client state with complete game lobby model
+        if (gameModel != null) {
+            clientState.updateGameLobbyState(gameModel);
+            clientState.setPlayersInLobby(gameModel.getPlayers());
+            clientState.incrementStateVersion();
+        }
+    }
+
+    @Override
     public void handleOnClient(ClientEventContext context) {
-        ClientState clientState = context.getClientState();
+        // First update client state
+        updateClientState(context.getClientState());
         
+        // Then handle UI updates
         context.runOnUIThread(() -> {
-            // Update client state with the full GameModel if available (single source of truth)
-            if (clientState != null && gameModel != null) {
-                // For the requesting player, set the full lobby state and navigate
-                if (context.isLocalPlayer(playerId)) {
-                    clientState.setCurrentGameLobby(gameModel);
-                    clientState.setPlayersInLobby(gameModel.getPlayers());
+            ClientState clientState = context.getClientState();
+            
+            // Handle navigation for local player
+            if (context.isLocalPlayer(playerId) && gameModel != null) {
+                // Navigate to GAME_LOBBY
+                if (context.getController().getUIContext() != null && 
+                    context.getController().getUIContext().getViewNavigator() != null) {
                     
-                    // Navigate to GAME_LOBBY
-                    if (context.getController().getUIContext() != null && 
-                        context.getController().getUIContext().getViewNavigator() != null) {
-                        
-                        boolean success = context.getController().getUIContext().getViewNavigator()
-                            .navigateTo(ClientState.ViewState.GAME_LOBBY, "Joined game: " + gameModel.getGameName());
-                        
-                        if (!success) {
-                            String reason = context.getController().getUIContext().getViewNavigator()
-                                .getNavigationFailureReason(ClientState.ViewState.GAME_LOBBY);
-                            LOGGER.severe("Failed to navigate to GAME_LOBBY after joining game: " + reason);
-                        }
+                    boolean success = context.getController().getUIContext().getViewNavigator()
+                        .navigateTo(ClientState.ViewState.GAME_LOBBY, "Joined game: " + gameModel.getGameName());
+                    
+                    if (!success) {
+                        String reason = context.getController().getUIContext().getViewNavigator()
+                            .getNavigationFailureReason(ClientState.ViewState.GAME_LOBBY);
+                        LOGGER.severe("Failed to navigate to GAME_LOBBY after joining game: " + reason);
                     }
-                } else if (gameId.equals(clientState.getCurrentGameId())) {
-                    // For other players in the same lobby, update the lobby state
-                    clientState.setCurrentGameLobby(gameModel);
-                    clientState.setPlayersInLobby(gameModel.getPlayers());
                 }
             }
             
+            // Direct UI notification via newUI
+            context.getNewUI().onPlayerJoinedGameEvent(this);
+            
             // Show notifications
-            if (context.isLocalPlayer(playerId)) {
-                // Success notification for joining player
-                if (context.getNotificationService() != null) {
+            if (context.getNotificationService() != null) {
+                if (context.isLocalPlayer(playerId)) {
                     context.getNotificationService().showNotification(new Notification(
                             "Joined Game",
                             "Successfully joined " + (gameModel != null ? gameModel.getGameName() : "game"),
                             NotificationType.SUCCESS
                     ));
+                } else {
+                    context.getNotificationService().showNotification(new Notification(
+                            "Player Joined",
+                            playerNickname + " joined the game (" + currentPlayerCount + " players)",
+                            NotificationType.INFO
+                    ));
                 }
-            } else if (context.getNotificationService() != null) {
-                // Info notification for other players
-                context.getNotificationService().showNotification(new Notification(
-                        "Player Joined",
-                        playerNickname + " joined the game (" + currentPlayerCount + " players)",
-                        NotificationType.INFO
-                ));
             }
-
-            context.getController().getUI().onPlayerJoinedGameEvent(this);
         });
     }
 }

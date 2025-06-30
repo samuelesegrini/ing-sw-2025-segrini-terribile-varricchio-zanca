@@ -5,10 +5,6 @@ import it.polimi.ingsw.server.model.domain.ship.Ship;
 import it.polimi.ingsw.server.model.domain.ship.components.Component;
 import it.polimi.ingsw.server.model.enums.crew.CrewType;
 import it.polimi.ingsw.server.model.enums.player.PlayerColor;
-import it.polimi.ingsw.common.message.event.*;
-
-import java.beans.PropertyChangeListener;
-import java.beans.PropertyChangeSupport;
 import java.io.Serializable;
 import java.util.*;
 
@@ -26,10 +22,7 @@ public class Player implements Serializable {
     private final List<Component> lostComponents; // Components lost during flight phase
     private boolean ready;
     
-    // PropertyChangeSupport for event firing
-    private transient PropertyChangeSupport propertyChangeSupport;
-    private String gameId; // For event context
-    private String playerNickname; // For event context
+    // PropertyChangeSupport removed - events now fired by GameModel
 
     /**
      * Creates a new player with the specified ID
@@ -49,9 +42,7 @@ public class Player implements Serializable {
         this.heldComponent = null;
         this.lostComponents = new ArrayList<>();
         this.ready = false;
-        this.propertyChangeSupport = new PropertyChangeSupport(this);
-        this.gameId = null; // Will be set when added to game
-        this.playerNickname = playerId.getNickname();
+        // PropertyChangeSupport removed - events now fired by GameModel
     }
 
     /**
@@ -69,40 +60,9 @@ public class Player implements Serializable {
         this.color = color;
     }
 
-    /**
-     * Sets the game ID for event context.
-     */
-    public void setGameId(String gameId) {
-        this.gameId = gameId;
-    }
+    // PropertyChangeSupport methods removed - events now fired by GameModel
 
-    /**
-     * Adds a PropertyChangeListener to this player.
-     */
-    public void addPropertyChangeListener(PropertyChangeListener listener) {
-        if (propertyChangeSupport == null) {
-            propertyChangeSupport = new PropertyChangeSupport(this);
-        }
-        propertyChangeSupport.addPropertyChangeListener(listener);
-    }
-
-    /**
-     * Removes a PropertyChangeListener from this player.
-     */
-    public void removePropertyChangeListener(PropertyChangeListener listener) {
-        if (propertyChangeSupport != null) {
-            propertyChangeSupport.removePropertyChangeListener(listener);
-        }
-    }
-
-    /**
-     * Fires a PropertyChangeEvent with the given property name and new event.
-     */
-    private void firePropertyChange(String propertyName, Object oldValue, Object newValue) {
-        if (propertyChangeSupport != null) {
-            propertyChangeSupport.firePropertyChange(propertyName, oldValue, newValue);
-        }
-    }
+    // firePropertyChange method removed - events now fired by GameModel
 
     public PlayerId getId() {
         return this.playerId;
@@ -174,11 +134,7 @@ public class Player implements Serializable {
         int oldCredits = this.credits;
         this.credits = credits;
         
-        // Fire PlayerCreditsChangedEvent when credits change
-        if (oldCredits != credits) {
-            PlayerCreditsChangedEvent event = new PlayerCreditsChangedEvent(gameId, playerId, playerNickname, oldCredits, this.credits);
-            firePropertyChange("eventPublished", null, event);
-        }
+        // PlayerCreditsChangedEvent now fired by GameModel
     }
     /**
      * Adds the specified credits to the player's total.
@@ -193,9 +149,7 @@ public class Player implements Serializable {
         int oldCredits = this.credits;
         this.credits += credits;
         
-        // Fire PlayerCreditsChangedEvent when credits change
-        PlayerCreditsChangedEvent event = new PlayerCreditsChangedEvent(gameId, playerId, playerNickname, oldCredits, this.credits);
-        firePropertyChange("eventPublished", null, event);
+        // PlayerCreditsChangedEvent now fired by GameModel
     }
 
     /**
@@ -214,9 +168,7 @@ public class Player implements Serializable {
         int oldCredits = this.credits;
         this.credits -= credits;
         
-        // Fire PlayerCreditsChangedEvent when credits change
-        PlayerCreditsChangedEvent event = new PlayerCreditsChangedEvent(gameId, playerId, playerNickname, oldCredits, this.credits);
-        firePropertyChange("eventPublished", null, event);
+        // PlayerCreditsChangedEvent now fired by GameModel
     }
     
     /**
@@ -259,9 +211,7 @@ public class Player implements Serializable {
         Component oldComponent = this.heldComponent;
         this.heldComponent = component;
         
-        // Fire PlayerComponentChangedEvent when held component changes
-        PlayerComponentChangedEvent event = new PlayerComponentChangedEvent(gameId, playerId, playerNickname, oldComponent, component);
-        firePropertyChange("eventPublished", null, event);
+        // PlayerComponentChangedEvent now fired by GameModel
     }
     
     /**
@@ -272,9 +222,7 @@ public class Player implements Serializable {
         Component oldComponent = this.heldComponent;
         this.heldComponent = component;
         
-        // Fire PlayerComponentChangedEvent when held component changes
-        PlayerComponentChangedEvent event = new PlayerComponentChangedEvent(gameId, playerId, playerNickname, oldComponent, component);
-        firePropertyChange("eventPublished", null, event);
+        // PlayerComponentChangedEvent now fired by GameModel
     }
     
     /**
@@ -297,11 +245,7 @@ public class Player implements Serializable {
         Component oldComponent = this.heldComponent;
         this.heldComponent = null;
         
-        // Fire PlayerComponentChangedEvent when held component is cleared
-        if (oldComponent != null) {
-            PlayerComponentChangedEvent event = new PlayerComponentChangedEvent(gameId, playerId, playerNickname, oldComponent, null);
-            firePropertyChange("eventPublished", null, event);
-        }
+        // PlayerComponentChangedEvent now fired by GameModel
     }
     
     /**
@@ -345,11 +289,7 @@ public class Player implements Serializable {
         boolean oldReady = this.ready;
         this.ready = ready;
         
-        // Fire PlayerReadyChangedEvent when ready status changes
-        if (oldReady != ready) {
-            PlayerReadyChangedEvent event = new PlayerReadyChangedEvent(gameId, playerId, playerNickname, ready);
-            firePropertyChange("eventPublished", null, event);
-        }
+        // PlayerReadyChangedEvent now fired by GameModel
     }
 
     @Override

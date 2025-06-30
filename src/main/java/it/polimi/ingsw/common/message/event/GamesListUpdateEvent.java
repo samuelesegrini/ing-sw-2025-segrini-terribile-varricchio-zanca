@@ -29,16 +29,25 @@ public class GamesListUpdateEvent extends AbstractEvent {
     }
 
     @Override
+    public void updateClientState(it.polimi.ingsw.client.core.ClientState clientState) {
+        // Event updates client state with complete games list
+        clientState.updateGamesList(availableGames);
+        clientState.incrementStateVersion();
+    }
+
+    @Override
     public void handleOnClient(ClientEventContext context) {
-        // Update the available games list in the client model
+        // First update client state
+        updateClientState(context.getClientState());
+        
+        // Then handle UI updates
         LOGGER.fine("CLIENT UPDATE - Receiving GamesListUpdateEvent with " + availableGames.size() + " games:");
         for (GameInfo game : availableGames) {
             LOGGER.finer("  - Game ID: " + game.getGameId() + ", Name: " + game.getGameName());
         }
-        context.getController().getClientState().setAvailableGames(availableGames);
-        LOGGER.fine("CLIENT STATE UPDATED - Available games set in ClientState");
-
-        context.getController().getUI().onGamesListUpdateEvent(this);
+        
+        // Direct UI notification via newUI
+        context.getNewUI().onGamesListUpdateEvent(this);
     }
 
     @Override

@@ -29,18 +29,23 @@ public class PhaseChangedEvent extends AbstractEvent {
     }
 
     @Override
+    public void updateClientState(it.polimi.ingsw.client.core.ClientState clientState) {
+        // Update game phase in client state
+        if (clientState.getGameModel() != null) {
+            clientState.getGameModel().setCurrentPhase(newPhase);
+            clientState.incrementStateVersion();
+            LOGGER.fine("Updated client state - Phase changed to " + newPhase + " (duration: " + durationInSeconds + "s)");
+        }
+    }
+
+    @Override
     public void handleOnClient(ClientEventContext context) {
+        // First update client state
+        updateClientState(context.getClientState());
+        
         context.runOnUIThread(() -> {
-            // Update model state with new game phase
-            if (context.getClientState() != null && context.getClientState().getGameModel() != null) {
-                // Update the game model's current phase
-                context.getClientState().getGameModel().setCurrentPhase(newPhase);
-                
-                // Trigger UI refresh after phase change
-                context.getClientState().setGameModel(context.getClientState().getGameModel());
-                
-                LOGGER.fine("Phase changed to " + newPhase + " (duration: " + durationInSeconds + "s)");
-            }
+            // Then handle UI updates
+            context.getController().getUI().onPhaseChangedEvent(this);
 
             // Show phase transition notification
             if (context.getNotificationService() != null) {
@@ -52,8 +57,7 @@ public class PhaseChangedEvent extends AbstractEvent {
                 );
             }
 
-            // For END phase, might want to navigate to a results view in the future
-            // For now, just ensure we're in GAME view to see the phase change
+            // Handle phase-specific navigation
             if (newPhase == GamePhase.BUILDING) {
                 if (context.getController().getUIContext() != null &&
                         context.getController().getUIContext().getViewNavigator() != null &&
@@ -66,7 +70,7 @@ public class PhaseChangedEvent extends AbstractEvent {
                     if (!success) {
                         String reason = context.getController().getUIContext().getViewNavigator()
                                 .getNavigationFailureReason(ClientState.ViewState.BUILDING);
-                        LOGGER.warning("Failed to navigate to GAME after phase change - Reason: " + reason);
+                        LOGGER.warning("Failed to navigate to BUILDING after phase change - Reason: " + reason);
                     }
                 }
             } else if (newPhase == GamePhase.FLIGHT) {
@@ -81,13 +85,11 @@ public class PhaseChangedEvent extends AbstractEvent {
                     if (!success) {
                         String reason = context.getController().getUIContext().getViewNavigator()
                                 .getNavigationFailureReason(ClientState.ViewState.FLIGHT);
-                        LOGGER.warning("Failed to navigate to GAME after phase change - Reason: " + reason);
+                        LOGGER.warning("Failed to navigate to FLIGHT after phase change - Reason: " + reason);
                     }
                 }
             }
-            // TODO: Gestisci END phase
-
-            context.getController().getUI().onPhaseChangedEvent(this);
+            // TODO: Handle END phase
         });
     }
 

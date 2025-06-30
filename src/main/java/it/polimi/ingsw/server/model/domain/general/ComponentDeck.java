@@ -3,11 +3,7 @@ package it.polimi.ingsw.server.model.domain.general;
 import it.polimi.ingsw.server.model.domain.player.Player;
 import it.polimi.ingsw.server.model.enums.GameLevel;
 import it.polimi.ingsw.server.model.domain.ship.components.Component;
-import it.polimi.ingsw.common.message.event.*;
 import it.polimi.ingsw.server.model.domain.player.PlayerId;
-
-import java.beans.PropertyChangeListener;
-import java.beans.PropertyChangeSupport;
 import java.io.Serializable;
 import java.util.*;
 
@@ -23,9 +19,7 @@ public class ComponentDeck implements Serializable {
     private final Map<String, Component> reservedComponents; // Components reserved by players
     private final GameLevel gameLevel; // Track level for feature gating
     
-    // PropertyChangeSupport for event firing
-    private transient PropertyChangeSupport propertyChangeSupport;
-    private String gameId; // For event context
+    // PropertyChangeSupport removed - events now fired by GameModel
 
     /**
      * Creates a new component deck with the given list of components
@@ -37,8 +31,7 @@ public class ComponentDeck implements Serializable {
         this.faceUpPile = new ArrayList<>();
         this.reservedComponents = new HashMap<>();
         this.gameLevel = GameLevel.TEST_FLIGHT; // Default level
-        this.propertyChangeSupport = new PropertyChangeSupport(this);
-        this.gameId = null; // Will be set when associated with a game
+        // PropertyChangeSupport removed - events now fired by GameModel
         shuffle();
     }
     
@@ -53,8 +46,7 @@ public class ComponentDeck implements Serializable {
         this.faceUpPile = new ArrayList<>();
         this.reservedComponents = new HashMap<>();
         this.gameLevel = gameLevel;
-        this.propertyChangeSupport = new PropertyChangeSupport(this);
-        this.gameId = null; // Will be set when associated with a game
+        // PropertyChangeSupport removed - events now fired by GameModel
         shuffle();
     }
 
@@ -68,45 +60,14 @@ public class ComponentDeck implements Serializable {
         this.faceUpPile = new ArrayList<>();
         this.reservedComponents = new HashMap<>();
         this.gameLevel = level;
-        this.propertyChangeSupport = new PropertyChangeSupport(this);
-        this.gameId = null; // Will be set when associated with a game
+        // PropertyChangeSupport removed - events now fired by GameModel
         initializeDeckForLevel(level);
     }
 
-    /**
-     * Sets the game ID for event context.
-     */
-    public void setGameId(String gameId) {
-        this.gameId = gameId;
-    }
+    // PropertyChangeSupport methods removed - events now fired by GameModel
 
     /**
-     * Adds a PropertyChangeListener to this deck.
-     */
-    public void addPropertyChangeListener(PropertyChangeListener listener) {
-        if (propertyChangeSupport == null) {
-            propertyChangeSupport = new PropertyChangeSupport(this);
-        }
-        propertyChangeSupport.addPropertyChangeListener(listener);
-    }
-
-    /**
-     * Removes a PropertyChangeListener from this deck.
-     */
-    public void removePropertyChangeListener(PropertyChangeListener listener) {
-        if (propertyChangeSupport != null) {
-            propertyChangeSupport.removePropertyChangeListener(listener);
-        }
-    }
-
-    /**
-     * Fires a PropertyChangeEvent with the given property name and new event.
-     */
-    private void firePropertyChange(String propertyName, Object oldValue, Object newValue) {
-        if (propertyChangeSupport != null) {
-            propertyChangeSupport.firePropertyChange(propertyName, oldValue, newValue);
-        }
-    }
+    // firePropertyChange method removed - events now fired by GameModel
 
     /**
      * Draws a component from the deck
@@ -121,9 +82,7 @@ public class ComponentDeck implements Serializable {
         }
         Component component = drawPile.removeLast();
         
-        // Fire ComponentTakenEvent - use null for player since this is anonymous draw
-        ComponentTakenEvent event = new ComponentTakenEvent(gameId, null, null, this);
-        firePropertyChange("eventPublished", null, event);
+        // ComponentTakenEvent now fired by GameModel
         
         return Optional.of(component);
     }
@@ -205,9 +164,7 @@ public class ComponentDeck implements Serializable {
         if (component != null) {
             faceUpPile.add(component);
             
-            // Fire ComponentOfferedEvent for components returned to face-up pile
-            ComponentOfferedEvent event = new ComponentOfferedEvent(gameId, null, null, this);
-            firePropertyChange("eventPublished", null, event);
+            // ComponentOfferedEvent now fired by GameModel
         }
     }
     
@@ -230,9 +187,7 @@ public class ComponentDeck implements Serializable {
             if (component.getId().equals(componentId)) {
                 faceUpPile.remove(component);
                 
-                // Fire ComponentTakenEvent - use null for player since player context handled at higher level
-                ComponentTakenEvent event = new ComponentTakenEvent(gameId, null, null, this);
-                firePropertyChange("eventPublished", null, event);
+                // ComponentTakenEvent now fired by GameModel
                 
                 return component;
             }
@@ -289,11 +244,7 @@ public class ComponentDeck implements Serializable {
         component.setReservedBy(playerId);
         System.out.println("[ComponentDeck] Component " + component.getId() + " reserved by player " + playerId);
         
-        // Fire ComponentReservedEvent - need Player object, so comment out for now
-        // TODO: Need to get Player object to create ComponentReservedEvent properly
-        // PlayerId playerIdObj = PlayerId.fromString(playerId);
-        // ComponentReservedEvent event = new ComponentReservedEvent(gameId, component, player, this);
-        // firePropertyChange("eventPublished", null, event);
+        // ComponentReservedEvent now fired by GameModel
         
         return true;
     }

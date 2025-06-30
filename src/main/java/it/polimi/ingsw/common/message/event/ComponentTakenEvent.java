@@ -61,28 +61,32 @@ public class ComponentTakenEvent extends AbstractEvent {
     }
 
     @Override
+    public void updateClientState(it.polimi.ingsw.client.core.ClientState clientState) {
+        // Event updates client state with complete models
+        clientState.updatePlayer(player);
+        clientState.updateComponentDeck(updatedDeck);
+        clientState.incrementStateVersion();
+    }
+
+    @Override
     public void handleOnClient(ClientEventContext context) {
+        // First update client state
+        updateClientState(context.getClientState());
+        
+        // Then handle UI updates
         context.runOnUIThread(() -> {
-            // Update state for ALL players - this is the single source of truth
             boolean isLocalPlayer = context.isLocalPlayer(getPlayerId());
             
-            LOGGER.fine("ComponentTakenEvent: Updating state for player: " + getPlayerNickname() + 
-                       " (local: " + isLocalPlayer + ")");
-            context.getClientState().updatePlayer(player);
-            context.getClientState().updateComponentDeck(updatedDeck);
+            // Direct UI notification via newUI
+            context.getNewUI().onComponentTakenEvent(this);
             
-            // Trigger UI refresh to show the updated state
-            context.getClientState().refreshCurrentViewOnly();
-
-            // Show notification for all players
+            // Show notification
             if (context.getNotificationService() != null) {
                 String message;
                 if (isLocalPlayer) {
                     message = String.format("You took a %s tile from the pile", component.getType().name());
-                    LOGGER.fine("Displaying 'Component Taken' notification for local player: " + message);
                 } else {
                     message = String.format("%s took a tile from the pile", getPlayerNickname());
-                    LOGGER.fine("Displaying 'Component Taken' notification for other player: " + message);
                 }
                 context.getNotificationService().showNotification(
                     new it.polimi.ingsw.client.ui.Notification(
@@ -92,7 +96,6 @@ public class ComponentTakenEvent extends AbstractEvent {
                     )
                 );
             }
-
         });
     }
 }

@@ -40,6 +40,21 @@ public abstract class AbstractEvent extends AbstractMessage implements Event {
     }
     
     @Override
+    public void updateClientState(it.polimi.ingsw.client.core.ClientState clientState) {
+        // Default implementation - subclasses should override for specific state updates
+        LOGGER.fine("Default updateClientState for event: " + eventType);
+    }
+    
+    @Override
+    public void handleOnClient(ClientEventContext context) {
+        // Update client state first
+        updateClientState(context.getClientState());
+        
+        // Then trigger UI update - default implementation logs
+        LOGGER.fine("Default handleOnClient for event: " + eventType);
+    }
+    
+    @Override
     public boolean shouldSendTo(String clientId, EventFilterContext context) {
         // Default implementation - send to all clients in the game
         if (gameId != null) {
