@@ -330,7 +330,7 @@ public class newTUI implements newUI {
                 break;
             case "t":
             case "take":
-                elaborateTakeCommand();
+                elaborateTakeCommand(tokens);
                 break;
             case "r":
             case "return":
@@ -377,7 +377,7 @@ public class newTUI implements newUI {
 
             Component heldComponent = clientState.getLocalPlayer().getHeldComponent();
 
-            printer.printLoading("Placing component at (" + row + 5 + "," + col + 4 + ")");
+            printer.printLoading("Placing component at (" + (row + 5) + "," + (col + 4) + ")");
             controller.placeTile(heldComponent.getId(), row, col, 0);
 
         } catch (NumberFormatException e) {
@@ -385,15 +385,20 @@ public class newTUI implements newUI {
         }
     }
 
-    private void elaborateTakeCommand() {
+    private void elaborateTakeCommand(String[] tokens) {
         // TODO: Check if player already has a tile in hand
 //        if (!clientState.canReserveMoreTiles()) {
 //            printer.printError("You already have the maximum number of held components (2).");
 //            return;
 //        }
 
-        printer.printLoading("Taking a random component from the pile");
-        controller.takeTile();
+        if (tokens.length == 2) {
+            // TODO
+            //controller.requestFaceUpTile()
+        } else {
+            printer.printLoading("Taking a random component from the pile");
+            controller.takeTile();
+        }
     }
 
     private void elaborateReturnCommand() {

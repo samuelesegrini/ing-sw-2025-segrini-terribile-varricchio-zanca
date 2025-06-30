@@ -263,14 +263,18 @@ public class Printer {
         printShipBoard(ship);
         print("");
         printHeldComponent(heldComponent);
+//        print("");
+//        printShipStats(ship);
         print("");
-        printShipStats(ship);
+        print("Building Commands: take | place <row> <col> | rotate | return | validate | flip | refresh | quit | help");
+        //printBuildingCommands();
         print("");
-        printBuildingCommands();
     }
 
     private void printComponentDeck(ComponentDeck deck) {
         print("COMPONENT DECK:");
+        print("");
+
         if (deck == null) {
             print("  Deck data not available.");
             return;
@@ -283,10 +287,13 @@ public class Printer {
 
     private void printFaceUpComponents(List<Component> faceUpComponents) {
         print("FACE-UP COMPONENTS:");
+
         if (faceUpComponents.isEmpty()) {
             print("  (none)");
             return;
         }
+
+        // TODO: USA TAB PER TENERE ORDINATO
 
         StringBuilder sb = new StringBuilder();
         int rowFirst = 0;
@@ -294,7 +301,7 @@ public class Printer {
         int size = faceUpComponents.size();
         for (int row = 0; row < Math.ceilDiv(size, 10); row++) {
             for (Component component : faceUpComponents.subList(rowFirst, Math.min(rowEnd, size))) {
-                sb.append("  ");
+                sb.append("    ");
                 sb.append(getConnectorSymbol(component, Direction.UP));
                 sb.append("    ");
             }
@@ -310,7 +317,7 @@ public class Printer {
             sb.append("\n");
 
             for (Component component : faceUpComponents.subList(rowFirst, Math.min(rowEnd, size))) {
-                sb.append("  ");
+                sb.append("    ");
                 sb.append(getConnectorSymbol(component, Direction.DOWN));
                 sb.append("    ");
             }
@@ -319,7 +326,7 @@ public class Printer {
             rowFirst += 10;
             rowEnd += 10;
 
-            sb.append("\n\n");
+            sb.append("\n");
         }
 
         print(sb.toString());
@@ -330,27 +337,28 @@ public class Printer {
         Set<Position> forbiddenPositions = ship.getForbiddenPositions();
 
         printInfo("YOUR SHIP BOARD:");
+        print("");
 
         StringBuilder sb = new StringBuilder();
 
-        sb.append("\t\t4\t\t5\t\t6\t\t7\t\t8\t\t9\t\t10\n");
+        sb.append("\t  4  \t  5  \t  6  \t  7  \t  8  \t  9  \t  10\n");
 
         for (int row = 0; row < shipBoard.length; row++) {
-            sb.append("\t");
+            sb.append("   ");
             for (int col = 0; col < shipBoard[0].length; col++) {
                 Component component = shipBoard[row][col];
                 if (component == null) {
-                    sb.append("\t");
+                    sb.append("     ");
                 } else {
-                    sb.append("\t");
+                    sb.append("  ");
                     sb.append(getConnectorSymbol(component, Direction.UP));
-                    sb.append("\t");
+                    sb.append("  ");
                 }
                 sb.append("\t");
             }
             sb.append("\n");
 
-            sb.append(" ").append(row + 5).append("\t");
+            sb.append(" ").append(row + 5).append(" ").append("\t");
             for (int col = 0; col < shipBoard[0].length; col++) {
                 Component component = shipBoard[row][col];
                 if (component == null) {
@@ -359,7 +367,7 @@ public class Printer {
                     else
                         sb.append("  ⬛️  ");
                 } else {
-                    sb.append(" ");
+                    //sb.append(" ");
                     sb.append(getConnectorSymbol(component, Direction.LEFT));
                     sb.append(getComponentEmoji(component));
                     sb.append(getConnectorSymbol(component, Direction.RIGHT));
@@ -375,7 +383,7 @@ public class Printer {
                 if (component == null) {
                     sb.append("     ");
                 } else {
-                    sb.append("   ");
+                    sb.append("  ");
                     sb.append(getConnectorSymbol(component, Direction.DOWN));
                     sb.append("  ");
                 }
@@ -413,17 +421,19 @@ public class Printer {
             return null;
 
         if (component.getType() == ComponentType.SHIELD && ((Shield) component).getProtectedDirections().contains(direction)) {
-            return switch (direction) {
-                case UP, DOWN -> ansi().bgBrightGreen().a("—").reset().toString();
-                case RIGHT, LEFT -> ansi().bgBrightGreen().a("|").reset().toString();
-            };
+//            return switch (direction) {
+//                case UP, DOWN -> ansi().fgBrightGreen().a("—").reset().toString();
+//                case RIGHT, LEFT -> ansi().fgBrightGreen().a("|").reset().toString();
+//            };
+
+            return "🟢️";
         }
 
         return switch (component.getConnectorAt(direction)) {
             case UNIVERSAL -> "💠️";
             case DOUBLE -> "🔷️";
             case SINGLE -> "🔶️";
-            case PLAIN -> " ";
+            case PLAIN -> "  ";
         };
     }
 
@@ -439,28 +449,31 @@ public class Printer {
 
         StringBuilder sb = new StringBuilder();
 
-        sb.append("   ┌────────┐");
-        sb.append("\n");
+//        sb.append("\t┌────────┐");
+//        sb.append("\n");
 
-        sb.append("   │    ");
+//        sb.append("\t│    ");
+        sb.append("    ");
         sb.append(getConnectorSymbol(heldComponent, Direction.UP));
-        sb.append("\t│");
+//        sb.append("    │");
         sb.append("\n");
 
-        sb.append("   │  ");
+//        sb.append("\t│  ");
+        sb.append("  ");
         sb.append(getConnectorSymbol(heldComponent, Direction.LEFT));
         sb.append(getComponentEmoji(heldComponent));
         sb.append(getConnectorSymbol(heldComponent, Direction.RIGHT));
-        sb.append("\t│");
+//        sb.append("  │");
         sb.append("\n");
 
-        sb.append("   │   ");
+//        sb.append("\t│    ");
+        sb.append("    ");
         sb.append(getConnectorSymbol(heldComponent, Direction.DOWN));
-        sb.append(" \t│");
+//        sb.append("    │");
         sb.append("\n");
 
-        sb.append("   └────────┘");
-        sb.append("\n");
+//        sb.append("\t└────────┘");
+//        sb.append("\n");
 
         print(sb.toString());
     }
@@ -481,6 +494,8 @@ public class Printer {
         print("  return                 - Return held component to deck");
         print("  validate               - Validate ship construction");
         print("  flip                   - Flip building timer");
+        print("  refresh                - Refresh the list of games");
+        print("  quit                   - Quit the game");
         print("  help                   - Show commands again");
         print("");
     }
@@ -519,9 +534,9 @@ public class Printer {
 
     public void printFlightCommands() {
         print("Available Commands:");
-        print("  (h) help                              - Show this help message");
-        print("  (q) quit                              - Quit the game");
-        print("  giveup                                - Give up the game");
+        print("  (h) help   - Show this help message");
+        print("  (q) quit   - Quit the game");
+        print("  giveup     - Give up the game");
         // TODO
 //        if (currentCard != null) {
 //            print("  [number]                              - Make choice for current adventure card");
