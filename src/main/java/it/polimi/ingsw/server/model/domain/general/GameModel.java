@@ -131,15 +131,15 @@ public class GameModel implements Serializable {
         // Assign ship to player
         player.setShip(ship);
         
-        // Place starting cabin at row 3, col 4
+        // Place starting cabin at row 2, col 3
         Component startingCabin = getStartingCabinForPlayer(assignedColor);
         if (startingCabin != null) {
-            Position startingPosition = new Position(3, 4);
+            Position startingPosition = new Position(2, 3);
             try {
                 ship.addComponent(startingCabin, startingPosition);
                 ship.updateStats();
             } catch (IllegalArgumentException e) {
-                // Log error but continue - this shouldn't happen if position 3,4 is valid
+                // Log error but continue - this shouldn't happen if position 2,3 is valid
                 System.err.println("Failed to place starting cabin for player " + playerId + ": " + e.getMessage());
             }
         }
