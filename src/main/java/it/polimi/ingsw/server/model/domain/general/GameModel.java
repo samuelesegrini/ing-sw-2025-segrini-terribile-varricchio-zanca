@@ -984,21 +984,22 @@ public class GameModel implements Serializable {
     }
     
     /**
-     * Finds the starting cabin component for the specified player color.
-     * Starting cabins are removed from the component deck to prevent duplicate placement.
+     * Creates the starting cabin component for the specified player color.
+     * Starting cabins are created directly and are not part of the drawable deck.
      */
     private Component getStartingCabinForPlayer(PlayerColor color) {
-        String cabinIdPattern = "/assets/tiles/starting-cabin-" + color.name().toLowerCase() + ".jpg";
+        // Create starting cabin directly - starting cabins have UNIVERSAL connectors on all sides
+        String cabinId = "/assets/tiles/starting-cabin-" + color.name().toLowerCase() + ".jpg";
         
-        // Find component in deck
-        Component startingCabin = componentDeck.findComponentById(cabinIdPattern);
-        if (startingCabin != null && startingCabin.getType() == ComponentType.CABIN_START) {
-            // Remove from deck to prevent it being drawn again
-            componentDeck.removeStartingCabin(startingCabin);
-            return startingCabin;
-        }
+        // Create connectors map - starting cabins have UNIVERSAL connectors on all sides
+        Map<it.polimi.ingsw.server.model.enums.ship.Direction, it.polimi.ingsw.server.model.enums.ship.ConnectorType> connectors = new HashMap<>();
+        connectors.put(it.polimi.ingsw.server.model.enums.ship.Direction.UP, it.polimi.ingsw.server.model.enums.ship.ConnectorType.UNIVERSAL);
+        connectors.put(it.polimi.ingsw.server.model.enums.ship.Direction.RIGHT, it.polimi.ingsw.server.model.enums.ship.ConnectorType.UNIVERSAL);
+        connectors.put(it.polimi.ingsw.server.model.enums.ship.Direction.DOWN, it.polimi.ingsw.server.model.enums.ship.ConnectorType.UNIVERSAL);
+        connectors.put(it.polimi.ingsw.server.model.enums.ship.Direction.LEFT, it.polimi.ingsw.server.model.enums.ship.ConnectorType.UNIVERSAL);
         
-        return null;
+        // Create and return the starting cabin
+        return new it.polimi.ingsw.server.model.domain.ship.components.Cabin(ComponentType.CABIN_START, connectors, cabinId);
     }
 
 

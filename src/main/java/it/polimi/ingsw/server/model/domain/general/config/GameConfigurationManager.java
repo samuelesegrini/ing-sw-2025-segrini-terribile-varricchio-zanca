@@ -16,6 +16,7 @@ import it.polimi.ingsw.server.model.enums.GameLevel;
 import it.polimi.ingsw.server.model.enums.adventure.CardLevel;
 import it.polimi.ingsw.server.model.enums.player.PlayerOrder;
 import it.polimi.ingsw.server.model.enums.resource.GoodType;
+import it.polimi.ingsw.server.model.enums.ship.ComponentType;
 import it.polimi.ingsw.server.model.enums.ship.Direction;
 
 
@@ -268,7 +269,13 @@ public class GameConfigurationManager {
     }
 
     public ComponentDeck createComponentDeck(GameLevel level) {
-        return new ComponentDeck(new ArrayList<>(allComponents));
+        // Filter out starting cabins - they should not be drawable during the game
+        // Starting cabins are only placed at game start for each player
+        List<Component> drawableComponents = allComponents.stream()
+            .filter(component -> component.getType() != ComponentType.CABIN_START)
+            .collect(Collectors.toList());
+        
+        return new ComponentDeck(drawableComponents, level);
     }
 
     // Helper method within GCM to draw cards for pile formation, respecting L1 including TF
