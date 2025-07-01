@@ -263,13 +263,13 @@ public class AdventureCardController {
             case PIRATES, SLAVERS, COMBAT_ZONE -> true;
             case PLANETS -> true;
             case ABANDONED_SHIP, ABANDONED_STATION -> true;
+            case OPEN_SPACE -> true; // Fixed: Open Space is turn-based sequential
             default -> false;
         };
     }
     
     private boolean requiresPlayerChoices(AdventureCard card) {
         return switch (card.getType()) {
-            case OPEN_SPACE -> true; // Simultaneous engine strength
             case METEOR_SWARM -> false; // Immediate dice rolls
             case STARDUST -> false; // Immediate exposed connector count
             case EPIDEMIC -> false; // Immediate connected cabin analysis
@@ -326,6 +326,10 @@ public class AdventureCardController {
                     data.put("required_crew", 2); // TODO: Get from card
                     data.put("reward", "2 credits"); // TODO: Get from card
                 }
+                case OPEN_SPACE -> {
+                    data.put("max_engine_strength", player.getShip().getEngines());
+                    data.put("base_engines", player.getShip().getEngines()); // TODO: distinguish base vs double engines
+                }
             }
         }
         
@@ -340,6 +344,7 @@ public class AdventureCardController {
             case PLANETS -> "Choose planet to land on or skip";
             case ABANDONED_SHIP -> "Choose to dock or skip";
             case ABANDONED_STATION -> "Choose to dock or skip";
+            case OPEN_SPACE -> "Declare engine strength to move forward";
             default -> "Make your choice";
         };
     }
@@ -380,7 +385,7 @@ public class AdventureCardController {
     private String buildChoicePrompt(PlayerId playerId) {
         return switch (currentCard.getType()) {
             case PIRATES -> "How many batteries do you want to use for combat?";
-            case OPEN_SPACE -> "How many batteries do you want to use for engines?";
+            case OPEN_SPACE -> "How many batteries do you want to use for double engines?";
             case PLANETS -> "Which planet do you want to land on?";
             case ABANDONED_SHIP -> "Do you want to dock at the abandoned ship?";
             default -> "Make your choice";
@@ -414,16 +419,98 @@ public class AdventureCardController {
     }
     
     private Map<PlayerId, Map<String, Object>> applyCardEffectsWithChoices() {
-        // TODO: Implement card-specific effect application with player choices
-        // This would use the enhanced visitor pattern with choice integration
+        Map<PlayerId, Map<String, Object>> results = new HashMap<>();
+        
+        // Apply card-specific effects based on player choices
+        switch (currentCard.getType()) {
+            case OPEN_SPACE -> results = applyOpenSpaceEffects();
+            case PLANETS -> results = applyPlanetsEffects();
+            case PIRATES, SLAVERS -> results = applyCombatEffects();
+            case ABANDONED_SHIP, ABANDONED_STATION -> results = applyDockingEffects();
+            case COMBAT_ZONE -> results = applyCombatZoneEffects();
+            default -> {
+                // Fallback for cards without choices
+                for (PlayerId playerId : turnOrder) {
+                    Map<String, Object> playerResult = new HashMap<>();
+                    playerResult.put("choice_made", playerChoices.getOrDefault(playerId, new HashMap<>()));
+                    results.put(playerId, playerResult);
+                }
+            }
+        }
+        
+        return results;
+    }
+    
+    private Map<PlayerId, Map<String, Object>> applyOpenSpaceEffects() {
         Map<PlayerId, Map<String, Object>> results = new HashMap<>();
         
         for (PlayerId playerId : turnOrder) {
+            Player player = gameModel.getPlayerById(playerId);
+            if (player == null) continue;
+            
+            Map<String, Object> playerChoicesMap = playerChoices.getOrDefault(playerId, new HashMap<>());
+            String batteriesUsedStr = (String) playerChoicesMap.getOrDefault("engine_strength", "0");
+            int batteriesUsed = Integer.parseInt(batteriesUsedStr);
+            
+            // Calculate engine strength (base engines + double engine bonuses)
+            int baseEngines = player.getShip().getEngines();
+            int doubleEngineBonus = Math.min(batteriesUsed, player.getShip().getBatteries());
+            int totalEngineStrength = baseEngines + (doubleEngineBonus * 2); // Each battery gives +2 for double engines
+            
+            // Spend batteries
+            player.getShip().setBatteries(player.getShip().getBatteries() - doubleEngineBonus);
+            
+            // Move player forward
+            if (gameModel.getFlightBoard() != null) {
+                int initialPosition = player.getFlightData().getPosition();
+                gameModel.getFlightBoard().movePlayer(player, totalEngineStrength, true); // true = forward movement
+                int finalPosition = player.getFlightData().getPosition();
+                
+                LOGGER.info("Open Space: Player " + playerId + " used " + doubleEngineBonus + 
+                           " batteries, engine strength " + totalEngineStrength + 
+                           ", moved from " + initialPosition + " to " + finalPosition);
+            }
+            
+            // Record results
             Map<String, Object> playerResult = new HashMap<>();
-            playerResult.put("choice_made", playerChoices.getOrDefault(playerId, new HashMap<>()));
+            playerResult.put("batteries_used", doubleEngineBonus);
+            playerResult.put("engine_strength_declared", totalEngineStrength);
+            playerResult.put("base_engines", baseEngines);
+            playerResult.put("double_engine_bonus", doubleEngineBonus * 2);
+            playerResult.put("choice_made", playerChoicesMap);
             results.put(playerId, playerResult);
         }
         
+        // Update flight order after movement
+        if (gameModel.getFlightBoard() != null) {
+            gameModel.getFlightBoard().updateCurrentOrder();
+        }
+        
+        return results;
+    }
+    
+    // Placeholder methods for other card types - TODO: implement properly
+    private Map<PlayerId, Map<String, Object>> applyPlanetsEffects() {
+        Map<PlayerId, Map<String, Object>> results = new HashMap<>();
+        // TODO: Implement planets choice application
+        return results;
+    }
+    
+    private Map<PlayerId, Map<String, Object>> applyCombatEffects() {
+        Map<PlayerId, Map<String, Object>> results = new HashMap<>();
+        // TODO: Implement combat choice application
+        return results;
+    }
+    
+    private Map<PlayerId, Map<String, Object>> applyDockingEffects() {
+        Map<PlayerId, Map<String, Object>> results = new HashMap<>();
+        // TODO: Implement docking choice application
+        return results;
+    }
+    
+    private Map<PlayerId, Map<String, Object>> applyCombatZoneEffects() {
+        Map<PlayerId, Map<String, Object>> results = new HashMap<>();
+        // TODO: Implement combat zone choice application
         return results;
     }
     
@@ -444,6 +531,59 @@ public class AdventureCardController {
         recordPlayerChoice(playerId, choiceType, String.valueOf(value));
     }
     
+    // === COMPATIBILITY METHODS FOR EXISTING REQUEST CLASSES ===
+    
+    /**
+     * Checks if the controller is currently processing a card
+     */
+    public boolean isProcessingCard() {
+        return cardResolutionInProgress && currentCard != null;
+    }
+    
+    /**
+     * Handles a player choice via the new AdventureCardState system
+     */
+    public boolean handlePlayerChoice(PlayerId playerId, it.polimi.ingsw.server.model.domain.adventure.AdventureCardState.PlayerChoice choice) {
+        if (!cardResolutionInProgress || currentCard == null) {
+            return false;
+        }
+        
+        // Convert AdventureCardState.PlayerChoice to our internal format
+        String choiceType = choice.getChoiceType().toString().toLowerCase();
+        String choiceValue = extractChoiceValue(choice);
+        
+        return recordPlayerChoice(playerId, choiceType, choiceValue);
+    }
+    
+    /**
+     * Extracts the choice value from an AdventureCardState.PlayerChoice
+     */
+    private String extractChoiceValue(it.polimi.ingsw.server.model.domain.adventure.AdventureCardState.PlayerChoice choice) {
+        switch (choice.getChoiceType()) {
+            case ENGINE_STRENGTH -> {
+                Integer engineStrength = (Integer) choice.getParameter("engineStrength");
+                Integer batteriesToUse = (Integer) choice.getParameter("batteriesToUse");
+                // For Open Space, we care about batteries used for double engines
+                return String.valueOf(batteriesToUse != null ? batteriesToUse : 0);
+            }
+            case PLANET_CHOICE -> {
+                String planetChoice = (String) choice.getParameter("planetChoice");
+                return planetChoice != null ? planetChoice : "skip";
+            }
+            case ABANDONED_SHIP_CHOICE, ABANDONED_STATION_CHOICE -> {
+                Boolean dock = (Boolean) choice.getParameter("dock");
+                return dock != null && dock ? "dock" : "skip";
+            }
+            case COMBAT_STRENGTH -> {
+                Integer batteries = (Integer) choice.getParameter("batteries");
+                return String.valueOf(batteries != null ? batteries : 0);
+            }
+            default -> {
+                return "0";
+            }
+        }
+    }
+
     public void cleanup() {
         resetCardState();
         if (executor != null && !executor.isShutdown()) {

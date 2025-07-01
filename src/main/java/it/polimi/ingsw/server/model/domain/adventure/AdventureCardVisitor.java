@@ -335,6 +335,7 @@ public class AdventureCardVisitor {
     
     /**
      * Visits an OpenSpaceCard.
+     * Now uses the AdventureCardController for proper turn-based engine strength declaration.
      *
      * @param card The open space card to process
      * @param state Current game state
@@ -343,22 +344,28 @@ public class AdventureCardVisitor {
     public boolean visitOpenSpaceCard (OpenSpaceCard card, GameModel state){
         System.out.println("Resolving: " + card.getType());
 
+        // Check for players with no engines who must abandon flight
         FlightBoard flightBoard = state.getFlightBoard();
         List<Player> playersOrdered = flightBoard.getCurrentOrder();
         List<Player> defeated = new ArrayList<>();
 
         for(Player player : playersOrdered){
-            flightBoard.movePlayer(player, (int)player.getShip().getEngines(), true);
             if(player.getShip().getEngines() <= 0){
                 defeated.add(player);
+                System.out.println("Player " + player.getId().getNickname() + 
+                                 " has no engines and must abandon flight in Open Space");
             }
         }
+        
         if(!defeated.isEmpty()){
             for(Player player : defeated){
                 flightBoard.abandonPlayer(player);
             }
         }
-        return true;
+        
+        // Return false to indicate this card needs controller processing for choices
+        // The AdventureCardController will handle the turn-based engine strength declarations
+        return false;
     }
     
     /**
