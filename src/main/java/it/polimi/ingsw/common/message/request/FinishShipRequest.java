@@ -61,7 +61,7 @@ public class FinishShipRequest extends AbstractRequest {
         }
 
         // Check if player already finished
-        if (player.isReady()) {
+        if (player.isShipFinished()) {
             return createErrorResponse("Ship already finished", ErrorResponse.INVALID_STATE);
         }
 

@@ -67,6 +67,10 @@ public interface newUI {
 
     void onValidateShipResponse(ValidateShipResponse response);
 
+    void onViewForecastPileResponse(ViewForecastPileResponse response);
+
+    void onFinishShipResponse(FinishShipResponse response);
+
     void onComponentPlacedEvent(ComponentPlacedEvent event);
 
     void onComponentTakenEvent(ComponentTakenEvent event);

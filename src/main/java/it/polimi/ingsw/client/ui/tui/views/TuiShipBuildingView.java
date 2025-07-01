@@ -92,7 +92,10 @@ public class TuiShipBuildingView extends BaseUIView {
         tuiManager.println("  📤 'return' - Return held component to deck");
         tuiManager.println("  🎲 'reserve' - Reserve held component (Level II+)");
         tuiManager.println("  ✅ 'validate' - Validate ship construction");
+        tuiManager.println("  🚀 'finish' - Finish ship building and prepare for flight");
         tuiManager.println("  ⏰ 'flip' - Flip building timer");
+        tuiManager.println("  📚 'forecast <pile>' - View forecast pile (0=left, 1=center, 2=right)");
+        tuiManager.println("  🛑 'stop-view' - Stop viewing current forecast pile");
         tuiManager.println("  🆘 'help' - Show commands again");
         tuiManager.println("  🚪 'quit' - Exit to lobby");
         tuiManager.println("");
@@ -382,9 +385,36 @@ public class TuiShipBuildingView extends BaseUIView {
                 tuiManager.println("✅ Validating ship construction...");
                 return true;
             }
+            case "finish" -> {
+                return processFinishCommand();
+            }
             case "flip" -> {
                 controller.flipBuildingTimer();
                 tuiManager.println("⏰ Flipping building timer...");
+                return true;
+            }
+            case "forecast" -> {
+                if (parts.length != 2) {
+                    tuiManager.println("❌ Usage: forecast <pile> (e.g., 'forecast 0' for left pile)");
+                    tuiManager.println("   📍 0 = Left pile, 1 = Center pile, 2 = Right pile");
+                    return true;
+                }
+                try {
+                    int pileIndex = Integer.parseInt(parts[1]);
+                    if (pileIndex < 0 || pileIndex > 2) {
+                        tuiManager.println("❌ Pile must be 0 (left), 1 (center), or 2 (right)");
+                        return true;
+                    }
+                    controller.viewForecastPile(pileIndex);
+                    tuiManager.println("📚 Requesting forecast pile " + pileIndex + "...");
+                } catch (NumberFormatException e) {
+                    tuiManager.println("❌ Invalid pile number. Use 0, 1, or 2");
+                }
+                return true;
+            }
+            case "stop-view" -> {
+                controller.stopViewingForecastPile();
+                tuiManager.println("🛑 Stopping forecast pile view...");
                 return true;
             }
             case "help" -> {
@@ -445,6 +475,12 @@ public class TuiShipBuildingView extends BaseUIView {
         selectedRow = row;
         selectedCol = col;
         
+        return true;
+    }
+    
+    private boolean processFinishCommand() {
+        tuiManager.println("🚀 Finishing ship building...");
+        controller.finishShip();
         return true;
     }
 

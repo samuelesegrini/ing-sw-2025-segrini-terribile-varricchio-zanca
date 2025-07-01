@@ -49,20 +49,16 @@ public class ClientApp {
             // Set up callbacks BEFORE starting UI
             networkClient.setMessageHandler(controller::handleMessage);
             
-            //uiManager = new UIManager(uiType, controller);
-
-            newUI UI;
-            if (uiType == UIType.GUI) {
-                UI = new newGUI(controller);
+            if (uiType == UIType.TUI) {
+                // Use newTUI for TUI interface
+                newUI UI = new newTUI(controller);
+                controller.setUI(UI);
+                UI.start();
             } else {
-                UI = new newTUI(controller);
+                // Use old UIManager for GUI interface
+                uiManager = new UIManager(uiType, controller);
+                uiManager.start();
             }
-            
-            controller.setUI(UI);
-            UI.start();
-
-            // Start UI
-            //uiManager.start();
 
             // Register shutdown hook
             Runtime.getRuntime().addShutdownHook(new Thread(this::shutdown));

@@ -1,5 +1,6 @@
 package it.polimi.ingsw.common.message.response;
 
+import java.io.Serializable;
 import java.util.List;
 
 /**
@@ -20,14 +21,39 @@ public class FinishShipResponse extends AbstractResponse {
 
     @Override
     public void handleOnClient(ClientContext context) {
-        // Handle ship finish response on client
-        // TODO: Implement specific client handling logic
+        // Route to the UI interface for proper handling
+        var controller = context.getController();
+        if (controller != null && controller instanceof it.polimi.ingsw.client.controller.ClientController) {
+            var clientController = (it.polimi.ingsw.client.controller.ClientController) controller;
+            // Get the UI instance and call the appropriate handler
+            var ui = clientController.getUI();
+            if (ui != null) {
+                ui.onFinishShipResponse(this);
+            } else {
+                // Fallback to basic output if UI not available
+                handleFallbackOutput();
+            }
+        } else {
+            handleFallbackOutput();
+        }
+    }
+    
+    private void handleFallbackOutput() {
+        if (isSuccess()) {
+            System.out.println("Ship finished successfully!");
+            var result = getResult();
+            System.out.println("Starting position: " + result.getStartingPosition());
+            System.out.println("Flight order: " + result.getFlightOrder());
+        } else {
+            System.err.println("Failed to finish ship: " + getErrorMessage());
+        }
     }
 
     /**
      * Result of the ship finishing process.
      */
-    public static class ShipFinishResult {
+    public static class ShipFinishResult implements Serializable {
+        private static final long serialVersionUID = 1L;
         private final boolean success;
         private final boolean shipWasValid;
         private final List<String> validationErrors;

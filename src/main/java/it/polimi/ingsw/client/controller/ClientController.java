@@ -680,6 +680,88 @@ public class ClientController {
                 });
     }
 
+    /**
+     * Requests to view a specific forecast pile during building phase.
+     * @param pileIndex The index of the pile to view (0, 1, or 2)
+     * @return CompletableFuture that resolves to true if successful
+     */
+    public CompletableFuture<Boolean> viewForecastPile(int pileIndex) {
+        if (clientState.getPlayerId() == null) {
+            LOGGER.warning("Cannot view forecast pile: not authenticated");
+            return CompletableFuture.completedFuture(false);
+        }
+
+        if (pileIndex < 0 || pileIndex > 2) {
+            LOGGER.warning("Invalid pile index: " + pileIndex + ". Must be 0, 1, or 2.");
+            return CompletableFuture.completedFuture(false);
+        }
+
+        LOGGER.info("Requesting to view forecast pile " + pileIndex);
+
+        ViewForecastPileRequest request = new ViewForecastPileRequest(pileIndex);
+        return sendRequest(request)
+                .thenApply(response -> {
+                    if (response.isSuccess()) {
+                        LOGGER.info("Forecast pile " + pileIndex + " viewed successfully");
+                        return true;
+                    } else {
+                        LOGGER.warning("Failed to view forecast pile " + pileIndex + ": " + response.getErrorMessage());
+                        return false;
+                    }
+                });
+    }
+
+    /**
+     * Requests to stop viewing the current forecast pile, making it available for other players.
+     * @return CompletableFuture that resolves to true if successful
+     */
+    public CompletableFuture<Boolean> stopViewingForecastPile() {
+        if (clientState.getPlayerId() == null) {
+            LOGGER.warning("Cannot stop viewing forecast pile: not authenticated");
+            return CompletableFuture.completedFuture(false);
+        }
+
+        LOGGER.info("Requesting to stop viewing forecast pile");
+
+        StopViewingPileRequest request = new StopViewingPileRequest();
+        return sendRequest(request)
+                .thenApply(response -> {
+                    if (response.isSuccess()) {
+                        LOGGER.info("Stopped viewing forecast pile successfully");
+                        return true;
+                    } else {
+                        LOGGER.warning("Failed to stop viewing forecast pile: " + response.getErrorMessage());
+                        return false;
+                    }
+                });
+    }
+
+    /**
+     * Requests to finish ship building. This validates the ship, assigns starting position,
+     * and prepares the player for the flight phase.
+     * @return CompletableFuture that resolves to true if successful
+     */
+    public CompletableFuture<Boolean> finishShip() {
+        if (clientState.getPlayerId() == null) {
+            LOGGER.warning("Cannot finish ship: not authenticated");
+            return CompletableFuture.completedFuture(false);
+        }
+
+        LOGGER.info("Requesting to finish ship building");
+
+        FinishShipRequest request = new FinishShipRequest();
+        return sendRequest(request)
+                .thenApply(response -> {
+                    if (response.isSuccess()) {
+                        LOGGER.info("Ship finished successfully");
+                        return true;
+                    } else {
+                        LOGGER.warning("Failed to finish ship: " + response.getErrorMessage());
+                        return false;
+                    }
+                });
+    }
+
     // Message handling
     public void handleMessage(Message message) {
         if (message == null) {

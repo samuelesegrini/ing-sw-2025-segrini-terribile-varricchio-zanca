@@ -356,6 +356,9 @@ public class newTUI implements newUI {
             case "flip":
                 elaborateFlipTimerCommand();
                 break;
+            case "finish":
+                elaborateFinishCommand();
+                break;
             case "q":
             case "quit":
                 elaborateQuitCommand();
@@ -454,6 +457,11 @@ public class newTUI implements newUI {
     private void elaborateFlipTimerCommand() {
         printer.printLoading("Flipping the building timer");
         controller.flipBuildingTimer();
+    }
+
+    private void elaborateFinishCommand() {
+        printer.printLoading("Finishing ship building");
+        controller.finishShip();
     }
 
     private void elaborateQuitCommand() {
@@ -877,6 +885,72 @@ public class newTUI implements newUI {
             printer.printSuccess("Ship is valid and ready for flight!");
         } else {
             printer.printError("Ship validation failed: " + response.getErrorMessage());
+        }
+    }
+
+    @Override
+    public void onViewForecastPileResponse(ViewForecastPileResponse response) {
+        if (response.isSuccess()) {
+            var cards = response.getCards();
+            printer.printSuccess("📚 Forecast Pile Contents (" + cards.size() + " cards):");
+            printer.print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
+            
+            for (int i = 0; i < cards.size(); i++) {
+                var card = cards.get(i);
+                String levelColor = switch (card.getLevel().toString()) {
+                    case "LEVEL_I" -> "🟢";
+                    case "LEVEL_II" -> "🟡"; 
+                    case "LEVEL_III" -> "🔴";
+                    default -> "⚪";
+                };
+                
+                printer.print(String.format("%2d. %s %s [%s]\n", 
+                    i + 1, 
+                    levelColor, 
+                    card.getId(),
+                    card.getType()));
+                printer.print("    " + card.getDescription() + "\n");
+                if (i < cards.size() - 1) {
+                    printer.print("    ────────────────────────────────────────────────────────────\n");
+                }
+            }
+            
+            printer.print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
+            printer.printInfo("💡 Use 'stop-view' to stop viewing this pile and allow others to view it");
+            printer.printInfo("💡 You can continue building while viewing this information");
+        } else {
+            printer.printError("Failed to view forecast pile: " + response.getErrorMessage());
+        }
+    }
+
+    @Override
+    public void onFinishShipResponse(FinishShipResponse response) {
+        if (response.isSuccess()) {
+            var result = response.getResult();
+            
+            printer.printSuccess("🚀 Ship building completed successfully!");
+            printer.print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
+            
+            if (result.wasShipValid()) {
+                printer.printInfo("✅ Ship validation: PASSED");
+            } else {
+                printer.printWarning("⚠️ Ship validation: FAILED - Components were automatically corrected");
+                if (result.hadComponentsRemoved()) {
+                    printer.printWarning("🗑️ Removed components: " + String.join(", ", result.getRemovedComponents()));
+                }
+            }
+            
+            printer.printInfo("🏁 Starting position: " + result.getStartingPosition());
+            printer.printInfo("🎯 Flight order: " + result.getFlightOrder());
+            
+            printer.print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
+            printer.printSuccess("🌌 Ready for flight phase! Waiting for other players...");
+            
+        } else {
+            printer.printError("Failed to finish ship: " + response.getErrorMessage());
+            if (response.getErrorCode() != null) {
+                printer.printError("Error code: " + response.getErrorCode());
+            }
         }
     }
 
