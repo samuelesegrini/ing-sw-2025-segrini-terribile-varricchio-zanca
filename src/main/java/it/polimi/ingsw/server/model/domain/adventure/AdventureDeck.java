@@ -287,4 +287,20 @@ public class AdventureDeck implements Serializable {
         }
         return ids;
     }
+    
+    /**
+     * Gets the number of cards drawn from the deck.
+     * @return The number of cards drawn
+     */
+    public int getCardsDrawn() {
+        return currentFlightDeckIndex;
+    }
+    
+    /**
+     * Gets the total number of cards in the deck.
+     * @return The total number of cards
+     */
+    public int getTotalCards() {
+        return mainFlightDeck.size();
+    }
 }

@@ -71,10 +71,10 @@ public class FinishShipRequest extends AbstractRequest {
             
             if (result.isSuccess()) {
                 LOGGER.info("Player " + playerId.getNickname() + " successfully finished ship building");
-                return new FinishShipResponse(true, result);
+                return new FinishShipResponse(getCorrelationId(), true, result);
             } else {
                 LOGGER.warning("Failed to finish ship for player " + playerId.getNickname() + ": " + result.getErrorMessage());
-                return new FinishShipResponse(false, result);
+                return new FinishShipResponse(getCorrelationId(), false, result);
             }
 
         } catch (Exception e) {

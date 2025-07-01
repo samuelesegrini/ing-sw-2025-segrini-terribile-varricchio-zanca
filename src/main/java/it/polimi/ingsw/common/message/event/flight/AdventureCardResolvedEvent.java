@@ -40,18 +40,18 @@ public class AdventureCardResolvedEvent extends AbstractEvent {
         this.globalEffects = globalEffects;
         this.cardCompleted = cardCompleted;
         
-        LOGGER.info("AdventureCardResolvedEvent created: " + card.getName() + 
+        LOGGER.info("AdventureCardResolvedEvent created: " + card.getType() + 
                    " for game " + gameId + " (completed: " + cardCompleted + ")");
     }
     
     @Override
     public void handleOnClient(ClientEventContext context) {
         context.runOnUIThread(() -> {
-            LOGGER.info("Processing adventure card resolution: " + card.getName());
+            LOGGER.info("Processing adventure card resolution: " + card.getType());
             
             // Update client state with resolution results
             if (context.getClientState() != null) {
-                PlayerId clientPlayerId = context.getClientState().getPlayerId();
+                PlayerId clientPlayerId = context.getClientState().getPlayerIdObject();
                 
                 // Get results specific to this client
                 Map<String, Object> clientResults = playerResults.get(clientPlayerId);
@@ -135,7 +135,7 @@ public class AdventureCardResolvedEvent extends AbstractEvent {
     
     private String buildResolutionSummary() {
         StringBuilder summary = new StringBuilder();
-        summary.append(card.getName()).append(" resolved");
+        summary.append(card.getType()).append(" resolved");
         
         if (!cardCompleted) {
             summary.append(" (skipped)");

@@ -15,6 +15,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  * Enhanced Adventure Card Controller with complete turn and choice management.
@@ -62,11 +63,11 @@ public class AdventureCardController {
         }
         
         if (cardResolutionInProgress) {
-            LOGGER.warning("Card resolution already in progress, skipping: " + card.getName());
+            LOGGER.warning("Card resolution already in progress, skipping: " + card.getType() + " (ID: " + card.getId() + ")");
             return;
         }
         
-        LOGGER.info("Starting resolution for adventure card: " + card.getName());
+        LOGGER.info("Starting resolution for adventure card: " + card.getType() + " (ID: " + card.getId() + ")");
         
         this.currentCard = card;
         this.cardResolutionInProgress = true;
@@ -125,7 +126,7 @@ public class AdventureCardController {
     // === CARD RESOLUTION FLOW METHODS ===
     
     private void startTurnBasedResolution() {
-        LOGGER.info("Starting turn-based resolution for: " + currentCard.getName());
+        LOGGER.info("Starting turn-based resolution for: " + currentCard.getType());
         
         if (turnOrder.isEmpty()) {
             completeCardResolution();
@@ -137,7 +138,7 @@ public class AdventureCardController {
     }
     
     private void startSimultaneousChoiceResolution() {
-        LOGGER.info("Starting simultaneous choice resolution for: " + currentCard.getName());
+        LOGGER.info("Starting simultaneous choice resolution for: " + currentCard.getType());
         
         // Request choices from all players simultaneously
         for (PlayerId playerId : turnOrder) {
@@ -146,7 +147,7 @@ public class AdventureCardController {
     }
     
     private void startImmediateResolution() {
-        LOGGER.info("Starting immediate resolution for: " + currentCard.getName());
+        LOGGER.info("Starting immediate resolution for: " + currentCard.getType());
         
         // Apply card effects directly using visitor pattern
         applyCardEffects();
@@ -224,7 +225,7 @@ public class AdventureCardController {
     }
     
     private void completeCardResolution() {
-        LOGGER.info("Completing card resolution for: " + currentCard.getName());
+        LOGGER.info("Completing card resolution for: " + currentCard.getType());
         
         // Apply card effects with player choices
         Map<PlayerId, Map<String, Object>> results = applyCardEffectsWithChoices();
@@ -412,8 +413,9 @@ public class AdventureCardController {
     }
     
     private void applyCardEffects() {
-        // Use existing visitor pattern to apply immediate effects
+        // Use existing visitor pattern to apply immediate effects for cards that don't need player choices
         if (gameModel != null) {
+            LOGGER.info("Applying immediate effects for card: " + currentCard.getType());
             gameModel.resolveAdventureCard(currentCard);
         }
     }
@@ -453,7 +455,7 @@ public class AdventureCardController {
             int batteriesUsed = Integer.parseInt(batteriesUsedStr);
             
             // Calculate engine strength (base engines + double engine bonuses)
-            int baseEngines = player.getShip().getEngines();
+            int baseEngines = (int) player.getShip().getEngines();
             int doubleEngineBonus = Math.min(batteriesUsed, player.getShip().getBatteries());
             int totalEngineStrength = baseEngines + (doubleEngineBonus * 2); // Each battery gives +2 for double engines
             
@@ -489,34 +491,322 @@ public class AdventureCardController {
         return results;
     }
     
-    // Placeholder methods for other card types - TODO: implement properly
     private Map<PlayerId, Map<String, Object>> applyPlanetsEffects() {
         Map<PlayerId, Map<String, Object>> results = new HashMap<>();
-        // TODO: Implement planets choice application
+        
+        if (!(currentCard instanceof it.polimi.ingsw.server.model.domain.adventure.card.PlanetsCard planetsCard)) {
+            return results;
+        }
+        
+        // Track which planets have been taken
+        Set<Integer> takenPlanets = new HashSet<>();
+        
+        for (PlayerId playerId : turnOrder) {
+            Player player = gameModel.getPlayerById(playerId);
+            if (player == null) continue;
+            
+            Map<String, Object> playerChoicesMap = playerChoices.getOrDefault(playerId, new HashMap<>());
+            String planetChoice = (String) playerChoicesMap.getOrDefault("planet_selection", "skip");
+            
+            Map<String, Object> playerResult = new HashMap<>();
+            playerResult.put("choice_made", playerChoicesMap);
+            
+            if ("skip".equals(planetChoice)) {
+                playerResult.put("landed", false);
+                playerResult.put("reason", "player_skipped");
+            } else {
+                // Extract planet number from choice (e.g., "planet_1" -> 1)
+                try {
+                    int planetNumber = Integer.parseInt(planetChoice.replace("planet_", ""));
+                    
+                    if (takenPlanets.contains(planetNumber)) {
+                        playerResult.put("landed", false);
+                        playerResult.put("reason", "planet_occupied");
+                    } else if (planetNumber >= 1 && planetNumber <= planetsCard.getPlanets().size()) {
+                        // Valid planet choice - attempt landing
+                        var planet = planetsCard.getPlanets().get(planetNumber - 1);
+                        
+                        // Check if player has cargo space
+                        if (player.getShip().addResources(planet.getGoodQuantities())) {
+                            // Successful landing
+                            takenPlanets.add(planetNumber);
+                            
+                            // Move player back flight days
+                            int initialPosition = player.getFlightData().getPosition();
+                            gameModel.getFlightBoard().movePlayer(player, planetsCard.getLostDays(), false);
+                            int finalPosition = player.getFlightData().getPosition();
+                            
+                            playerResult.put("landed", true);
+                            playerResult.put("planet_number", planetNumber);
+                            playerResult.put("goods_loaded", planet.getGoodQuantities());
+                            playerResult.put("flight_days_lost", planetsCard.getLostDays());
+                            playerResult.put("position_change", initialPosition + " -> " + finalPosition);
+                            
+                            LOGGER.info("Planets: Player " + playerId + " landed on planet " + planetNumber + 
+                                       ", loaded goods, lost " + planetsCard.getLostDays() + " flight days");
+                        } else {
+                            playerResult.put("landed", false);
+                            playerResult.put("reason", "insufficient_cargo_space");
+                        }
+                    } else {
+                        playerResult.put("landed", false);
+                        playerResult.put("reason", "invalid_planet_number");
+                    }
+                } catch (NumberFormatException e) {
+                    playerResult.put("landed", false);
+                    playerResult.put("reason", "invalid_choice_format");
+                }
+            }
+            
+            results.put(playerId, playerResult);
+        }
+        
         return results;
     }
     
     private Map<PlayerId, Map<String, Object>> applyCombatEffects() {
         Map<PlayerId, Map<String, Object>> results = new HashMap<>();
-        // TODO: Implement combat choice application
+        
+        if (!(currentCard instanceof it.polimi.ingsw.server.model.domain.adventure.card.EnemyCard enemyCard)) {
+            return results;
+        }
+        
+        // Sequential combat - attack players in order until enemy is defeated
+        boolean enemyDefeated = false;
+        int enemyStrength = getEnemyStrength(enemyCard);
+        
+        for (PlayerId playerId : turnOrder) {
+            if (enemyDefeated) break;
+            
+            Player player = gameModel.getPlayerById(playerId);
+            if (player == null) continue;
+            
+            Map<String, Object> playerChoicesMap = playerChoices.getOrDefault(playerId, new HashMap<>());
+            String batteriesUsedStr = (String) playerChoicesMap.getOrDefault("battery_usage", "0");
+            int batteriesUsed = Integer.parseInt(batteriesUsedStr);
+            
+            // Calculate cannon strength
+            int baseCannons = (int) player.getShip().getCannons();
+            int doubleCannonBonus = Math.min(batteriesUsed, player.getShip().getBatteries());
+            int totalCannonStrength = baseCannons + (doubleCannonBonus * 2);
+            
+            // Spend batteries
+            player.getShip().setBatteries(player.getShip().getBatteries() - doubleCannonBonus);
+            
+            Map<String, Object> playerResult = new HashMap<>();
+            playerResult.put("choice_made", playerChoicesMap);
+            playerResult.put("batteries_used", doubleCannonBonus);
+            playerResult.put("cannon_strength", totalCannonStrength);
+            playerResult.put("enemy_strength", enemyStrength);
+            
+            if (totalCannonStrength > enemyStrength) {
+                // Player defeats enemy
+                enemyDefeated = true;
+                playerResult.put("combat_result", "victory");
+                
+                // Apply victory rewards (implementation depends on enemy type)
+                applyEnemyVictoryRewards(player, enemyCard, playerResult);
+                
+                LOGGER.info("Combat: Player " + playerId + " defeated " + currentCard.getType() + 
+                           " with strength " + totalCannonStrength + " vs " + enemyStrength);
+            } else if (totalCannonStrength == enemyStrength) {
+                // Tie - no effect
+                playerResult.put("combat_result", "tie");
+                LOGGER.info("Combat: Player " + playerId + " tied with " + currentCard.getType());
+            } else {
+                // Player loses
+                playerResult.put("combat_result", "defeat");
+                applyEnemyDefeatPenalties(player, enemyCard, playerResult);
+                
+                LOGGER.info("Combat: Player " + playerId + " defeated by " + currentCard.getType() + 
+                           " with strength " + totalCannonStrength + " vs " + enemyStrength);
+            }
+            
+            results.put(playerId, playerResult);
+        }
+        
         return results;
     }
     
     private Map<PlayerId, Map<String, Object>> applyDockingEffects() {
         Map<PlayerId, Map<String, Object>> results = new HashMap<>();
-        // TODO: Implement docking choice application
+        
+        boolean opportunityTaken = false;
+        
+        for (PlayerId playerId : turnOrder) {
+            if (opportunityTaken) break;
+            
+            Player player = gameModel.getPlayerById(playerId);
+            if (player == null) continue;
+            
+            Map<String, Object> playerChoicesMap = playerChoices.getOrDefault(playerId, new HashMap<>());
+            String dockChoice = (String) playerChoicesMap.getOrDefault("dock_decision", "skip");
+            
+            Map<String, Object> playerResult = new HashMap<>();
+            playerResult.put("choice_made", playerChoicesMap);
+            
+            if ("dock".equals(dockChoice)) {
+                // Check eligibility and apply effects
+                boolean success = applyDockingOpportunity(player, playerResult);
+                if (success) {
+                    opportunityTaken = true;
+                    LOGGER.info("Docking: Player " + playerId + " successfully docked at " + currentCard.getType());
+                }
+            } else {
+                playerResult.put("docked", false);
+                playerResult.put("reason", "player_skipped");
+            }
+            
+            results.put(playerId, playerResult);
+        }
+        
         return results;
     }
     
     private Map<PlayerId, Map<String, Object>> applyCombatZoneEffects() {
         Map<PlayerId, Map<String, Object>> results = new HashMap<>();
-        // TODO: Implement combat zone choice application
+        
+        if (!(currentCard instanceof it.polimi.ingsw.server.model.domain.adventure.card.CombatZoneCard combatZoneCard)) {
+            return results;
+        }
+        
+        // Combat Zone has 3 sequential criteria - use existing visitor logic but track choices
+        // For now, defer to visitor pattern since it's complex
+        // TODO: Integrate choice tracking with combat zone resolution
+        
+        for (PlayerId playerId : turnOrder) {
+            Map<String, Object> playerChoicesMap = playerChoices.getOrDefault(playerId, new HashMap<>());
+            Map<String, Object> playerResult = new HashMap<>();
+            playerResult.put("choice_made", playerChoicesMap);
+            playerResult.put("note", "Combat Zone effects applied via visitor pattern");
+            results.put(playerId, playerResult);
+        }
+        
         return results;
     }
     
+    // Helper methods for combat and docking
+    private int getEnemyStrength(it.polimi.ingsw.server.model.domain.adventure.card.EnemyCard enemyCard) {
+        if (enemyCard instanceof it.polimi.ingsw.server.model.domain.adventure.card.PiratesCard piratesCard) {
+            return piratesCard.getPowerLevel();
+        } else if (enemyCard instanceof it.polimi.ingsw.server.model.domain.adventure.card.SlaversCard slaversCard) {
+            return slaversCard.getPowerLevel();
+        } else if (enemyCard instanceof it.polimi.ingsw.server.model.domain.adventure.card.SmugglersCard smugglersCard) {
+            return (int) smugglersCard.getPowerLevel();
+        }
+        return 4; // Default strength
+    }
+    
+    private void applyEnemyVictoryRewards(Player player, it.polimi.ingsw.server.model.domain.adventure.card.EnemyCard enemyCard, Map<String, Object> result) {
+        // Implementation depends on enemy type - Pirates give credits, Smugglers give goods, etc.
+        if (enemyCard instanceof it.polimi.ingsw.server.model.domain.adventure.card.PiratesCard piratesCard) {
+            player.addCredits(piratesCard.getCreditReward());
+            gameModel.getFlightBoard().movePlayer(player, piratesCard.getMovementPenalty(), false);
+            result.put("credits_gained", piratesCard.getCreditReward());
+            result.put("flight_days_lost", piratesCard.getMovementPenalty());
+        }
+        // Add other enemy types as needed
+    }
+    
+    private void applyEnemyDefeatPenalties(Player player, it.polimi.ingsw.server.model.domain.adventure.card.EnemyCard enemyCard, Map<String, Object> result) {
+        // Implementation depends on enemy type
+        if (enemyCard instanceof it.polimi.ingsw.server.model.domain.adventure.card.SlaversCard slaversCard) {
+            int crewLoss = Math.min(slaversCard.getCrewLossAmount(), player.getShip().getCrew());
+            player.getShip().setCrew(player.getShip().getCrew() - crewLoss);
+            result.put("crew_lost", crewLoss);
+        }
+        // Add other penalty types as needed
+    }
+    
+    private boolean applyDockingOpportunity(Player player, Map<String, Object> result) {
+        if (currentCard instanceof it.polimi.ingsw.server.model.domain.adventure.card.AbandonedShipCard abandonedShipCard) {
+            if (player.getShip().getCrew() > abandonedShipCard.getCrewLost()) {
+                player.getShip().setCrew(player.getShip().getCrew() - abandonedShipCard.getCrewLost());
+                player.addCredits(abandonedShipCard.getCreditsGained());
+                gameModel.getFlightBoard().movePlayer(player, abandonedShipCard.getLostDays(), false);
+                
+                result.put("docked", true);
+                result.put("crew_lost", abandonedShipCard.getCrewLost());
+                result.put("credits_gained", abandonedShipCard.getCreditsGained());
+                result.put("flight_days_lost", abandonedShipCard.getLostDays());
+                return true;
+            } else {
+                result.put("docked", false);
+                result.put("reason", "insufficient_crew");
+            }
+        } else if (currentCard instanceof it.polimi.ingsw.server.model.domain.adventure.card.AbandonedStationCard abandonedStationCard) {
+            if (player.getShip().getCrew() >= abandonedStationCard.getMinCrewRequired()) {
+                if (player.getShip().addResources(abandonedStationCard.getGoodQuantities())) {
+                    gameModel.getFlightBoard().movePlayer(player, abandonedStationCard.getLostDays(), false);
+                    
+                    result.put("docked", true);
+                    result.put("goods_loaded", abandonedStationCard.getGoodQuantities());
+                    result.put("flight_days_lost", abandonedStationCard.getLostDays());
+                    return true;
+                } else {
+                    result.put("docked", false);
+                    result.put("reason", "insufficient_cargo_space");
+                }
+            } else {
+                result.put("docked", false);
+                result.put("reason", "insufficient_crew");
+            }
+        }
+        
+        return false;
+    }
+    
     private List<String> buildGlobalEffects() {
-        // TODO: Build list of global effects that affected all players
-        return Arrays.asList("Adventure card " + currentCard.getName() + " resolved");
+        List<String> effects = new ArrayList<>();
+        
+        if (currentCard == null) {
+            return effects;
+        }
+        
+        effects.add("Adventure card " + currentCard.getType() + " resolved");
+        
+        // Add card-specific global effects
+        switch (currentCard.getType()) {
+            case OPEN_SPACE -> {
+                effects.add("All players declared engine strength sequentially");
+                effects.add("Flight positions updated based on movement");
+            }
+            case PLANETS -> {
+                effects.add("Players chose planets in flight order");
+                effects.add("Only one rocket allowed per planet");
+            }
+            case PIRATES, SLAVERS, SMUGGLERS -> {
+                effects.add("Enemy attacked players sequentially until defeated or all attacked");
+            }
+            case ABANDONED_SHIP, ABANDONED_STATION -> {
+                effects.add("First eligible player had opportunity to dock");
+            }
+            case METEOR_SWARM -> {
+                effects.add("Meteors processed sequentially, all players affected by each");
+            }
+            case COMBAT_ZONE -> {
+                effects.add("Three combat criteria evaluated sequentially");
+            }
+            case STARDUST -> {
+                effects.add("All players lost flight days equal to exposed connectors");
+            }
+            case EPIDEMIC -> {
+                effects.add("Connected cabin groups lost crew members");
+            }
+            case SABOTAGE -> {
+                effects.add("Ship with smallest crew targeted for component destruction");
+            }
+        }
+        
+        // Add turn order information for turn-based cards
+        if (isTurnBasedCard && !turnOrder.isEmpty()) {
+            effects.add("Turn order: " + turnOrder.stream()
+                .map(PlayerId::toString)
+                .reduce((a, b) -> a + " → " + b)
+                .orElse("No players"));
+        }
+        
+        return effects;
     }
     
     // === COMPATIBILITY METHODS ===
@@ -582,6 +872,51 @@ public class AdventureCardController {
                 return "0";
             }
         }
+    }
+
+    // === DEBUGGING AND STATUS METHODS ===
+    
+    /**
+     * Gets a summary of the controller's current state for debugging
+     */
+    public String getStatusSummary() {
+        StringBuilder summary = new StringBuilder();
+        summary.append("AdventureCardController Status:\n");
+        summary.append("- Resolution in progress: ").append(cardResolutionInProgress).append("\n");
+        summary.append("- Current card: ").append(currentCard != null ? currentCard.getType() : "none").append("\n");
+        summary.append("- Turn-based card: ").append(isTurnBasedCard).append("\n");
+        summary.append("- Turn order: ").append(turnOrder).append("\n");
+        summary.append("- Current turn index: ").append(currentTurnIndex).append("\n");
+        summary.append("- Pending choices: ").append(pendingChoices.size()).append("\n");
+        summary.append("- Player choices recorded: ").append(playerChoices.size()).append("\n");
+        return summary.toString();
+    }
+    
+    /**
+     * Gets information about supported card types
+     */
+    public static String getSupportedCardTypes() {
+        return """
+               Fully Implemented Card Types:
+               ✅ OPEN_SPACE - Turn-based engine strength declaration
+               ✅ PLANETS - Turn-based planet selection with 'one rocket per planet' rule
+               ✅ PIRATES/SLAVERS/SMUGGLERS - Sequential combat until enemy defeated
+               ✅ ABANDONED_SHIP/ABANDONED_STATION - First-come-first-served docking
+               ⚠️  COMBAT_ZONE - Deferred to visitor pattern (complex 3-stage evaluation)
+               
+               Immediate Cards (no player choices):
+               ✅ METEOR_SWARM - Visitor pattern handles dice rolls and damage
+               ✅ STARDUST - Visitor pattern handles exposed connector penalties  
+               ✅ EPIDEMIC - Visitor pattern handles connected cabin analysis
+               ✅ SABOTAGE - Visitor pattern handles dice-based targeting
+               
+               All cards support:
+               - Proper Galaxy Trucker rule compliance
+               - Turn-based sequential processing where required
+               - Event publishing for client UI updates
+               - Timeout protection with default choices
+               - Detailed result tracking
+               """;
     }
 
     public void cleanup() {

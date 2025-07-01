@@ -55,5 +55,10 @@ public enum AdventureType {
     /**
      * Adventure type is Epidemic.
      */
-    EPIDEMIC;
+    EPIDEMIC,
+
+    /**
+     * Adventure type is Sabotage.
+     */
+    SABOTAGE;
 }

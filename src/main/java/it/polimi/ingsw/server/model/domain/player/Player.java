@@ -21,6 +21,7 @@ public class Player implements Serializable {
     private Component heldComponent;
     private final List<Component> lostComponents; // Components lost during flight phase
     private boolean ready;
+    private boolean shipFinished;
     
     // PropertyChangeSupport removed - events now fired by GameModel
 
@@ -42,6 +43,7 @@ public class Player implements Serializable {
         this.heldComponent = null;
         this.lostComponents = new ArrayList<>();
         this.ready = false;
+        this.shipFinished = false;
         // PropertyChangeSupport removed - events now fired by GameModel
     }
 
@@ -290,6 +292,22 @@ public class Player implements Serializable {
         this.ready = ready;
         
         // PlayerReadyChangedEvent now fired by GameModel
+    }
+    
+    /**
+     * Gets the ship finished status of the player
+     * @return true if the player has finished building their ship
+     */
+    public boolean isShipFinished() {
+        return shipFinished;
+    }
+    
+    /**
+     * Sets the ship finished status of the player
+     * @param shipFinished true if the player has finished building their ship
+     */
+    public void setShipFinished(boolean shipFinished) {
+        this.shipFinished = shipFinished;
     }
 
     @Override

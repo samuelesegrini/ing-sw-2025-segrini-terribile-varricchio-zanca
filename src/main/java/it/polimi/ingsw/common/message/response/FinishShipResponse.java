@@ -6,16 +6,22 @@ import java.util.List;
  * Response to a FinishShipRequest.
  * Contains the result of ship validation, component corrections, and starting position assignment.
  */
-public class FinishShipResponse extends Response {
+public class FinishShipResponse extends AbstractResponse {
     private final ShipFinishResult result;
 
-    public FinishShipResponse(boolean success, ShipFinishResult result) {
-        super(success, success ? "Ship finished successfully" : result.getErrorMessage());
+    public FinishShipResponse(java.util.UUID correlationId, boolean success, ShipFinishResult result) {
+        super(correlationId, success, success ? "Ship finished successfully" : result.getErrorMessage());
         this.result = result;
     }
 
     public ShipFinishResult getResult() {
         return result;
+    }
+
+    @Override
+    public void handleOnClient(ClientContext context) {
+        // Handle ship finish response on client
+        // TODO: Implement specific client handling logic
     }
 
     /**

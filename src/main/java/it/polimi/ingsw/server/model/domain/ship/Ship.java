@@ -385,6 +385,10 @@ public class Ship implements Serializable {
         return crew;
     }
 
+    public int getCrewCount() {
+        return crew;
+    }
+
     public void setCrew(int crew) {
         this.crew = crew;
     }

@@ -7,12 +7,18 @@ import java.util.List;
 public class ViewForecastPileResponse extends AbstractResponse {
     private final List<AdventureCardInfo> cards;
 
-    public ViewForecastPileResponse(String gameId, List<AdventureCardInfo> cards) {
-        super(gameId);
+    public ViewForecastPileResponse(java.util.UUID correlationId, List<AdventureCardInfo> cards) {
+        super(correlationId);
         this.cards = cards;
     }
 
     public List<AdventureCardInfo> getCards() {
         return cards;
+    }
+
+    @Override
+    public void handleOnClient(ClientContext context) {
+        // Handle view forecast pile response on client
+        // TODO: Implement specific client handling logic
     }
 }

@@ -21,6 +21,7 @@ import it.polimi.ingsw.server.model.enums.ship.Direction;
 import it.polimi.ingsw.server.model.enums.resource.GoodType;
 
 import java.util.*;
+import java.util.Objects;
 
 /**
  * Visitor interface for processing different types of adventure cards.
@@ -34,52 +35,74 @@ import java.util.*;
 public class AdventureCardVisitor {
 
     /**
-     * Visits an AbandonedShipCard.
-     * Now supports player choice mechanics - players can choose whether to dock.
+     * Visits an AbandonedShipCard following exact Galaxy Trucker rules:
+     * - First-come-first-served opportunity
+     * - Only one player can use the opportunity
+     * - Requires sufficient crew to attempt salvage
+     * - Costs crew members, gains credits, loses flight days
      *
      * @param card The abandoned ship card to process
      * @param state Current game state
      * @return Result of processing the card
      */
     public boolean visitAbandonedShipCard(AbandonedShipCard card, GameModel state){
-        System.out.println("Resolving "+card.getType());
+        System.out.println("Resolving: " + card.getType());
+        System.out.println("  Opportunity: Lose " + card.getCrewLost() + " crew, gain " + 
+                         card.getCreditsGained() + " credits, lose " + card.getLostDays() + " flight days");
 
         FlightBoard flightBoard = state.getFlightBoard();
         List<Player> playersOrdered = flightBoard.getCurrentOrder();
 
-        // Check if card is already visited
-        if (card.isVisited()) {
-            System.out.println("Abandoned ship has already been salvaged");
-            return true;
-        }
-
-        // Process each player in flight order
-        for(Player player : playersOrdered ) {
+        // First-come-first-served: check players in flight order
+        for(Player player : playersOrdered) {
+            System.out.println("\nPlayer " + player.getId().getNickname() + " - Crew: " + player.getShip().getCrew());
+            
             // Check if player has enough crew to attempt salvage
             if (player.getShip().getCrew() > card.getCrewLost()) {
-                // Player is eligible - they can choose to dock via DockRequest
-                // The actual docking logic is now handled by DockRequest
-                System.out.println("Player " + player.getId().getNickname() + 
-                    " can choose to salvage abandoned ship (cost: " + card.getCrewLost() + 
-                    " crew, gain: " + card.getCreditsGained() + " credits, " + 
-                    card.getLostDays() + " flight days)");
+                System.out.println("  ELIGIBLE - Attempting salvage...");
                 
-                // In the new system, the first eligible player gets the choice
-                // The card remains active until a choice is made via DockRequest
-                return false; // Card not yet resolved, waiting for player choice
+                // Player automatically takes the opportunity (in Galaxy Trucker, this is usually automatic)
+                // Remove crew members
+                int originalCrew = player.getShip().getCrew();
+                player.getShip().setCrew(originalCrew - card.getCrewLost());
+                
+                // Add credits
+                player.addCredits(card.getCreditsGained());
+                
+                // Lose flight days
+                int originalPosition = player.getFlightData().getPosition();
+                flightBoard.movePlayer(player, card.getLostDays(), false);
+                int newPosition = player.getFlightData().getPosition();
+                
+                System.out.println("  SUCCESS! Crew: " + originalCrew + " -> " + player.getShip().getCrew() + 
+                                 ", Credits: +" + card.getCreditsGained() + 
+                                 ", Position: " + originalPosition + " -> " + newPosition);
+                
+                // Opportunity taken - remaining players miss out
+                for (int i = playersOrdered.indexOf(player) + 1; i < playersOrdered.size(); i++) {
+                    Player remainingPlayer = playersOrdered.get(i);
+                    System.out.println("Player " + remainingPlayer.getId().getNickname() + " - Too late, opportunity taken");
+                }
+                
+                return true; // Opportunity used, card resolved
+                
             } else {
-                System.out.println("Player " + player.getId().getNickname() + 
-                    " has insufficient crew to salvage ship (needs > " + card.getCrewLost() + ")");
+                System.out.println("  INELIGIBLE - Insufficient crew (needs > " + card.getCrewLost() + ")");
             }
         }
         
-        // No eligible players - card is skipped
-        System.out.println("No players eligible to salvage abandoned ship");
+        // No eligible players found
+        System.out.println("\nNo players eligible to salvage abandoned ship - opportunity lost");
         return true;
     }
 
     /**
-     * Visits a MeteorSwarmCard with improved defense calculations.
+     * Visits a MeteorSwarmCard following exact Galaxy Trucker rules:
+     * - Handle meteors sequentially (top to bottom on card)
+     * - Leader rolls 2 dice for each meteor impact location
+     * - All players affected simultaneously by same dice roll
+     * - Small meteors bounce off smooth sides, can be blocked by shields
+     * - Large meteors must be shot by cannons pointing at them
      *
      * @param card The meteor swarm card to process
      * @param state Current game state
@@ -96,88 +119,96 @@ public class AdventureCardVisitor {
             return true;
         }
 
+        Player leader = playersOrdered.get(0);
+        System.out.println("Meteor Swarm: Leader " + leader.getId().getNickname() + " will roll dice for all meteors");
+
         int meteorIndex = 0;
         for(Meteor meteor: card.getMeteorPattern()){
             meteorIndex++;
             
-            // Roll dice for meteor impact position (1-6, convert to 0-5 for array indexing)
+            // Leader rolls 2 dice for meteor impact position (Galaxy Trucker rule)
             Random dice = new Random();
-            int diceRoll = dice.nextInt(6) + 1; // 1-6
-            int index = diceRoll - 1; // Convert to 0-5 for array indexing
+            int die1 = dice.nextInt(6) + 1; // 1-6
+            int die2 = dice.nextInt(6) + 1; // 1-6
+            int diceTotal = die1 + die2;
+            int index = Math.min(diceTotal - 2, 10); // Convert 2-12 to 0-10 for board indexing
             
-            System.out.println("Meteor " + meteorIndex + " - Direction: " + meteor.getApproach() + 
-                             ", Dice Roll: " + diceRoll + ", Intensity: " + meteor.getShotIntensity());
+            System.out.println("Meteor " + meteorIndex + " (" + meteor.getShotIntensity() + ") from " + 
+                             meteor.getApproach() + " - Leader rolls: " + die1 + "+" + die2 + "=" + 
+                             diceTotal + " (index " + index + ")");
 
+            // Apply this meteor to ALL players simultaneously using the same dice roll
             for(Player player : playersOrdered){
                 Ship ship = player.getShip();
                 Position impactPosition = ship.findFirstComponent(meteor.getApproach(), index);
                 
                 if(impactPosition == null){
-                    System.out.println("Meteor " + meteorIndex + " missed " + player.getId().getNickname() + "'s ship");
-                    continue; // Continue to next player, don't break meteor entirely
+                    System.out.println("  " + player.getId().getNickname() + ": Meteor missed (no component at impact zone)");
+                    continue;
                 }
 
                 Component impactComponent = ship.getBoard()[impactPosition.getRow()][impactPosition.getCol()];
-                System.out.println("Meteor " + meteorIndex + " targeting " + player.getId().getNickname() + 
-                                 " at position (" + impactPosition.getRow() + "," + impactPosition.getCol() + ")");
+                System.out.println("  " + player.getId().getNickname() + ": Meteor targeting " + 
+                                 impactComponent.getType() + " at (" + impactPosition.getRow() + 
+                                 "," + impactPosition.getCol() + ")");
 
-                // Check defenses based on meteor intensity
+                // Apply Galaxy Trucker defense rules
+                boolean defended = false;
+                
                 if(meteor.getShotIntensity() == ShotIntensity.LIGHT){
-                    // Light meteors: can be deflected by plain connectors OR blocked by shields
-                    if(impactComponent.getConnectorAt(meteor.getApproach()) == ConnectorType.PLAIN){
-                        System.out.println(player.getId().getNickname() + " deflected meteor " + meteorIndex + 
-                                         " with plain connector");
-                        continue; // Deflected, continue to next player
-                    }
+                    // Small meteors: bounce off smooth sides OR can be blocked by shields
                     
-                    if(ship.protectedByShield(meteor.getApproach())){
-                        // Check if shield has battery power
-                        if(ship.getBatteries() > 0){
-                            ship.setBatteries(ship.getBatteries() - 1);
-                            System.out.println(player.getId().getNickname() + " blocked meteor " + meteorIndex + 
-                                             " with shield (battery used)");
-                            continue; // Blocked, continue to next player
-                        } else {
-                            System.out.println(player.getId().getNickname() + " has shield but no battery power");
-                        }
+                    // Check if meteor hits a smooth side (bounces off harmlessly)
+                    ConnectorType hitConnector = impactComponent.getConnectorAt(meteor.getApproach());
+                    if(hitConnector == ConnectorType.PLAIN){
+                        System.out.println("    Deflected by smooth side - no damage");
+                        defended = true;
+                    }
+                    // Check if exposed connector (vulnerable) can be protected by shield
+                    else if(ship.protectedByShield(meteor.getApproach()) && ship.getBatteries() > 0){
+                        ship.setBatteries(ship.getBatteries() - 1);
+                        System.out.println("    Blocked by shield (1 battery spent)");
+                        defended = true;
+                    }
+                    else if(ship.protectedByShield(meteor.getApproach())){
+                        System.out.println("    Shield available but no battery power");
                     }
                 } else {
-                    // Heavy meteors: can only be shot down by cannons
-                    if(ship.protectedByCannon(meteor.getApproach(), index)){
-                        // Check if cannon has battery power for double cannons
-                        Component cannon = findProtectingCannon(ship, meteor.getApproach(), index);
-                        if(cannon != null && cannon.getType() == ComponentType.CANNON_DOUBLE){
+                    // Large meteors: must be shot down by cannons
+                    Component protectingCannon = findProtectingCannon(ship, meteor.getApproach(), index);
+                    if(protectingCannon != null){
+                        if(protectingCannon.getType() == ComponentType.CANNON_DOUBLE){
                             if(ship.getBatteries() > 0){
                                 ship.setBatteries(ship.getBatteries() - 1);
-                                System.out.println(player.getId().getNickname() + " shot down meteor " + meteorIndex + 
-                                                 " with double cannon (battery used)");
-                                continue; // Shot down, continue to next player
+                                System.out.println("    Shot down by double cannon (1 battery spent)");
+                                defended = true;
                             } else {
-                                System.out.println(player.getId().getNickname() + " has double cannon but no battery power");
+                                System.out.println("    Double cannon available but no battery power");
                             }
-                        } else if(cannon != null && cannon.getType() == ComponentType.CANNON_SINGLE){
-                            System.out.println(player.getId().getNickname() + " shot down meteor " + meteorIndex + 
-                                             " with single cannon");
-                            continue; // Shot down, continue to next player
+                        } else if(protectingCannon.getType() == ComponentType.CANNON_SINGLE){
+                            System.out.println("    Shot down by single cannon");
+                            defended = true;
                         }
                     }
                 }
 
-                // No defense worked - meteor hits
-                System.out.println(player.getId().getNickname() + " has no effective defense against meteor " + 
-                                 meteorIndex + " - component destroyed!");
-                ship.removeComponent(impactPosition, GamePhase.FLIGHT);
-                ship.getLostComponents().add(impactComponent);
-                
-                // Update ship stats after component loss
-                ship.updateStats();
-                
-                // Check if ship is still viable (has at least one engine and crew quarters)
-                if(ship.getEngines() <= 0){
-                    System.out.println(player.getId().getNickname() + "'s ship lost all engines!");
-                    // Could add logic to abandon player here
+                if(!defended){
+                    // Meteor hits - destroy component
+                    System.out.println("    IMPACT! " + impactComponent.getType() + " destroyed");
+                    ship.removeComponent(impactPosition, GamePhase.FLIGHT);
+                    ship.getLostComponents().add(impactComponent);
+                    ship.updateStats();
+                    
+                    // Check for ship viability
+                    if(ship.getEngines() <= 0){
+                        System.out.println("    WARNING: " + player.getId().getNickname() + " lost all engines!");
+                    }
+                } else {
+                    System.out.println("    Successfully defended - no damage");
                 }
             }
+            
+            System.out.println(); // Blank line between meteors for readability
         }
         return true;
     }
@@ -228,108 +259,190 @@ public class AdventureCardVisitor {
     }
     
     /**
-     * Visits a PiratesCard.
+     * Visits a PiratesCard following exact Galaxy Trucker rules:
+     * - Attack players in flight order until defeated or all attacked
+     * - Win: Player gets reward and can choose to take flight day penalty
+     * - Lose: Player receives cannon fire
+     * - Tie: No effect, enemy continues to next player
      *
      * @param card The pirates card to process
      * @param state Current game state
      * @return Result of processing the card
-     *
      */
     public boolean visitPiratesCard(PiratesCard card, GameModel state){
-        System.out.println("Resolving: " + card.getType());
+        System.out.println("Resolving: " + card.getType() + " (Strength: " + card.getPowerLevel() + ")");
         FlightBoard flightBoard = state.getFlightBoard();
         List<Player> playersOrdered = flightBoard.getCurrentOrder();
-        List<Player> defeated = new ArrayList<>();
 
-        for(Player player : playersOrdered ) {
-            if(player.getShip().getCannons()>card.getPowerLevel()){
+        boolean enemyDefeated = false;
+        List<Player> defeatedPlayers = new ArrayList<>();
+
+        // Attack players sequentially until enemy is defeated
+        for(Player player : playersOrdered) {
+            if (enemyDefeated) {
+                System.out.println("Player " + player.getId().getNickname() + " avoids combat (Pirates already defeated)");
+                break;
+            }
+
+            int playerCannonStrength = (int) player.getShip().getCannons();
+            System.out.println("Player " + player.getId().getNickname() + " - Cannon Strength: " + 
+                             playerCannonStrength + " vs Pirates: " + card.getPowerLevel());
+
+            if (playerCannonStrength > card.getPowerLevel()) {
+                // Player defeats Pirates
+                enemyDefeated = true;
+                System.out.println("  VICTORY! " + player.getId().getNickname() + " defeats the Pirates!");
+                
+                // Player can choose to take reward (credits) and lose flight days
+                // For now, automatically take the reward (could be made into a choice later)
                 player.addCredits(card.getCreditReward());
                 flightBoard.movePlayer(player, card.getMovementPenalty(), false);
-                System.out.println("Player " + player.getId().getNickname() +
-                        " has defeated the pirates and received a reward of " + card.getCreditReward());
-            }
-            else if(player.getShip().getCannons()==card.getPowerLevel()){
-                continue;
-            }
-            else if(player.getShip().getCannons()<card.getPowerLevel()){
-                defeated.add(player);
+                
+                System.out.println("  Reward: " + card.getCreditReward() + " credits, " + 
+                                 card.getMovementPenalty() + " flight days lost");
+                
+            } else if (playerCannonStrength == card.getPowerLevel()) {
+                // Tie - no effect, Pirates continue to next player
+                System.out.println("  TIE - No effect, Pirates continue attacking");
+                
+            } else {
+                // Player loses - receives cannon fire
+                System.out.println("  DEFEAT - " + player.getId().getNickname() + " receives cannon fire");
+                defeatedPlayers.add(player);
             }
         }
-        if(!defeated.isEmpty()){
-            for(Player player : defeated) {
-                for(CannonFire cannonFire : card.getAttackPattern()){
 
-                    Random dice1 = new Random();
-                    Random dice2 = new Random();
-                    int index1 = dice1.nextInt(6) + 1;
-                    int index2 = dice2.nextInt(6) + 1;
-                    int index = index1 + index2;
+        // Apply cannon fire to all defeated players
+        if (!defeatedPlayers.isEmpty() && !enemyDefeated) {
+            System.out.println("\nApplying Pirate cannon fire to defeated players:");
+            
+            for (Player player : defeatedPlayers) {
+                System.out.println("Attacking " + player.getId().getNickname() + ":");
+                
+                for (CannonFire cannonFire : card.getAttackPattern()) {
+                    // Roll 2 dice for impact location
+                    Random dice = new Random();
+                    int die1 = dice.nextInt(6) + 1;
+                    int die2 = dice.nextInt(6) + 1;
+                    int diceTotal = die1 + die2;
+                    int index = Math.min(diceTotal - 2, 10); // Convert 2-12 to 0-10 indexing
 
-                    Component[][] board = player.getShip().getBoard();
-                    if ( cannonFire.getApproach() == Direction.UP || cannonFire.getApproach() == Direction.DOWN) {
-                        // For UP and DOWN directions, fixedIndex represents a column
-                        if (index < 0 || index >= board[0].length) {
-                            System.out.println("Column index out of bounds: " + index);
-                            continue;
-                        }
-                    } else {
-                        // For LEFT and RIGHT directions, fixedIndex represents a row
-                        if (index < 0 || index >= board.length) {
-                            System.out.println("Row index out of bounds: " + index);
-                            continue;
-                        }
-                    }
+                    System.out.println("  " + cannonFire.getIntensity() + " cannon fire from " + 
+                                     cannonFire.getApproach() + " - Dice: " + die1 + "+" + die2 + 
+                                     "=" + diceTotal + " (index " + index + ")");
 
-                    System.out.println("Direction: " + cannonFire.getApproach()+ " index: " + index);
                     Position impactPosition = player.getShip().findFirstComponent(cannonFire.getApproach(), index);
-                    if(impactPosition==null){
-                        System.out.println("Player " + player.getId().getNickname() + " has no component in the impact position");
+                    if (impactPosition == null) {
+                        System.out.println("    Miss - no component at impact location");
                         continue;
                     }
-                    Component impactComponent = player.getShip().getBoard()[impactPosition.getRow()][impactPosition.getCol()];
 
-                    if(cannonFire.isBlockable() && player.getShip().protectedByShield(cannonFire.getApproach())){
-                        System.out.println(player.getId().getNickname()+ " has activated a shield against cannon fire number "
-                        +card.getAttackPattern().indexOf(cannonFire));
-                    } else {
-                        System.out.println(player.getId().getNickname()+ " has no protection against cannon fire number "
-                                +card.getAttackPattern().indexOf(cannonFire));
+                    Component impactComponent = player.getShip().getBoard()[impactPosition.getRow()][impactPosition.getCol()];
+                    System.out.println("    Target: " + impactComponent.getType() + " at (" + 
+                                     impactPosition.getRow() + "," + impactPosition.getCol() + ")");
+
+                    // Check shield defense (only for light cannon fire)
+                    boolean defended = false;
+                    if (cannonFire.isBlockable() && player.getShip().protectedByShield(cannonFire.getApproach())) {
+                        if (player.getShip().getBatteries() > 0) {
+                            player.getShip().setBatteries(player.getShip().getBatteries() - 1);
+                            System.out.println("    Blocked by shield (1 battery spent)");
+                            defended = true;
+                        } else {
+                            System.out.println("    Shield available but no battery power");
+                        }
+                    }
+
+                    if (!defended) {
+                        // Component destroyed
+                        System.out.println("    IMPACT! " + impactComponent.getType() + " destroyed");
                         player.getShip().removeComponent(impactPosition, GamePhase.FLIGHT);
                         player.getShip().getLostComponents().add(impactComponent);
-                        System.out.println("Player " + player.getId().getNickname() + " has lost the component in position ("
-                                + impactPosition.getRow()+ "," + impactPosition.getCol() + ")");
+                        player.getShip().updateStats();
                     }
                 }
             }
         }
+
         return true;
     }
 
     
     /**
-     * Visits a PlanetsCard.
+     * Visits a PlanetsCard following exact Galaxy Trucker rules:
+     * - Players choose planets in flight order (leader first)
+     * - Only one rocket allowed per planet
+     * - Players can choose to skip
+     * - Landing costs flight days
      *
      * @param card The planets card to process
      * @param state Current game state
-     * @return Returns {code @true} if at least one player has landed on a planet, {code @false} otherwise.
+     * @return Returns true when planet resolution is complete
      */
     public boolean visitPlanetsCard(PlanetsCard card, GameModel state){
-        System.out.println("Resolving planet: " + card.getType());
+        System.out.println("Resolving: " + card.getType() + " (" + card.getPlanets().size() + " planets available)");
 
         FlightBoard flightBoard = state.getFlightBoard();
         List<Player> playersOrdered = flightBoard.getCurrentOrder();
 
-        for(Player player : playersOrdered ){
-            for(Planet planet : card.getPlanets()){
-                //the planet must be unvisited and the player must have enough space to gather resources
-                if((!planet.isVisited()) && (player.getShip().addResources(planet.getGoodQuantities()))){
+        // Track which planets have been taken (Galaxy Trucker rule: only one rocket per planet)
+        Set<Integer> takenPlanets = new HashSet<>();
+        
+        // Display available planets
+        for (int i = 0; i < card.getPlanets().size(); i++) {
+            Planet planet = card.getPlanets().get(i);
+            System.out.println("  Planet " + (i + 1) + ": " + planet.getGoodQuantities() + 
+                             " (cost: " + card.getLostDays() + " flight days)");
+        }
+
+        // Players choose in flight order
+        for(Player player : playersOrdered) {
+            System.out.println("\nPlayer " + player.getId().getNickname() + "'s turn to choose:");
+            
+            // Find first available planet that player can use
+            boolean playerLanded = false;
+            
+            for (int i = 0; i < card.getPlanets().size(); i++) {
+                Planet planet = card.getPlanets().get(i);
+                int planetNumber = i + 1;
+                
+                // Check if planet is available (not taken by previous player)
+                if (takenPlanets.contains(planetNumber)) {
+                    System.out.println("  Planet " + planetNumber + " already taken");
+                    continue;
+                }
+                
+                // Check if player has cargo space for planet's goods
+                if (player.getShip().addResources(planet.getGoodQuantities())) {
+                    // Player successfully lands
+                    takenPlanets.add(planetNumber);
                     flightBoard.movePlayer(player, card.getLostDays(), false);
-                    planet.setVisited();
-                    System.out.println(player.getId().getNickname() + " è atterrato su " + planet.getNumber());
-                    break;  // passa al giocatore successivo
+                    
+                    System.out.println("  LANDED on Planet " + planetNumber + 
+                                     " - Loaded: " + planet.getGoodQuantities() + 
+                                     ", Lost: " + card.getLostDays() + " flight days");
+                    
+                    playerLanded = true;
+                    break; // Player can only land on one planet
+                    
+                } else {
+                    System.out.println("  Planet " + planetNumber + " - insufficient cargo space");
                 }
             }
+            
+            if (!playerLanded) {
+                System.out.println("  SKIPPED - No available planets with sufficient cargo space");
+            }
         }
+        
+        // Summary
+        if (takenPlanets.isEmpty()) {
+            System.out.println("\nNo players landed on any planets");
+        } else {
+            System.out.println("\nPlanets taken: " + takenPlanets + 
+                             ", Planets remaining: " + (card.getPlanets().size() - takenPlanets.size()));
+        }
+        
         return true;
     }
     
@@ -479,74 +592,140 @@ public class AdventureCardVisitor {
     }
     
     /**
-     * Visits a SlaversCard.
+     * Visits a SlaversCard following exact Galaxy Trucker rules:
+     * - Attack players in flight order until defeated or all attacked
+     * - Win: Player gets reward and can choose to take flight day penalty
+     * - Lose: Player loses crew members
+     * - Tie: No effect, enemy continues to next player
      *
      * @param card The slavers card to process
      * @param state Current game state
      * @return Result of processing the card
      */
     public boolean visitSlaversCard(SlaversCard card, GameModel state){
-        System.out.println("Resolving: " + card.getType());
-
+        System.out.println("Resolving: " + card.getType() + " (Strength: " + card.getPowerLevel() + ")");
         FlightBoard flightBoard = state.getFlightBoard();
         List<Player> playersOrdered = flightBoard.getCurrentOrder();
 
+        boolean enemyDefeated = false;
+
+        // Attack players sequentially until enemy is defeated
         for(Player player: playersOrdered){
-            if(player.getShip().getCannons() == card.getPowerLevel()){
-                continue;
-            }
-            else if(player.getShip().getCannons() < card.getPowerLevel()){
-                player.getShip().setCrew(player.getShip().getCrew()- card.getCrewLossAmount());
-            }
-            else if(player.getShip().getCannons() > card.getPowerLevel()){
-                card.setDefeated();
-                //The player CAN claim the reward losing flying days
-                player.addCredits(card.getCreditReward());
-                flightBoard.movePlayer(player, card.getMovementPenalty(), false);
+            if (enemyDefeated) {
+                System.out.println("Player " + player.getId().getNickname() + " avoids combat (Slavers already defeated)");
                 break;
             }
+
+            int playerCannonStrength = (int) player.getShip().getCannons();
+            System.out.println("Player " + player.getId().getNickname() + " - Cannon Strength: " + 
+                             playerCannonStrength + " vs Slavers: " + card.getPowerLevel());
+
+            if (playerCannonStrength > card.getPowerLevel()) {
+                // Player defeats Slavers
+                enemyDefeated = true;
+                System.out.println("  VICTORY! " + player.getId().getNickname() + " defeats the Slavers!");
+                
+                // Player can choose to take reward (credits) and lose flight days
+                player.addCredits(card.getCreditReward());
+                flightBoard.movePlayer(player, card.getMovementPenalty(), false);
+                
+                System.out.println("  Reward: " + card.getCreditReward() + " credits, " + 
+                                 card.getMovementPenalty() + " flight days lost");
+                
+            } else if (playerCannonStrength == card.getPowerLevel()) {
+                // Tie - no effect, Slavers continue to next player
+                System.out.println("  TIE - No effect, Slavers continue attacking");
+                
+            } else {
+                // Player loses - loses crew members
+                int crewLoss = Math.min(card.getCrewLossAmount(), player.getShip().getCrew());
+                int originalCrew = player.getShip().getCrew();
+                player.getShip().setCrew(originalCrew - crewLoss);
+                
+                System.out.println("  DEFEAT - " + player.getId().getNickname() + " loses " + crewLoss + 
+                                 " crew members (" + originalCrew + " -> " + player.getShip().getCrew() + ")");
+                
+                // Check if player should be abandoned due to no crew
+                if (player.getShip().getCrew() <= 0) {
+                    System.out.println("  " + player.getId().getNickname() + " lost all crew - ship abandoned!");
+                    flightBoard.abandonPlayer(player);
+                }
+            }
         }
+
         return true;
     }
     
     /**
-     * Visits a SmugglersCard.
+     * Visits a SmugglersCard following exact Galaxy Trucker rules:
+     * - Attack players in flight order until defeated or all attacked
+     * - Win: Player gets goods reward and can choose to lose flight days
+     * - Lose: Player loses most valuable goods
+     * - Tie: No effect, enemy continues to next player
      *
      * @param card The smugglers card to process
      * @param state Current game state
      * @return Result of processing the card
      */
     public boolean visitSmugglersCard(SmugglersCard card, GameModel state){
-        System.out.println("Resolving: " + card.getType());
-
+        System.out.println("Resolving: " + card.getType() + " (Strength: " + card.getPowerLevel() + ")");
         FlightBoard flightBoard = state.getFlightBoard();
         List<Player> playersOrdered = flightBoard.getCurrentOrder();
 
-        double powerLevel = card.getPowerLevel();
+        boolean enemyDefeated = false;
+
+        // Attack players sequentially until enemy is defeated
         for(Player player: playersOrdered){
-            double cannonStrength = player.getShip().getCannons();
-            if(powerLevel == cannonStrength){
-                continue;
-            }
-            else if (powerLevel < cannonStrength){
-                card.setDefeated();
-                //The player CAN claim the reward losing flying days
-                player.getShip().addResources(card.getAvailableGoods());
-                flightBoard.movePlayer(player, card.getMovementPenalty(), false);
+            if (enemyDefeated) {
+                System.out.println("Player " + player.getId().getNickname() + " avoids combat (Smugglers already defeated)");
                 break;
             }
-            else if(powerLevel > cannonStrength){
-                System.out.println("Power level: " + powerLevel+ " cannon strength: " + cannonStrength);
-                if(!(player.getShip().removeValuableResources(card.getGoodsLostIfDefeated()))){
-                    throw new IllegalArgumentException("Not enough resources available!");
+
+            double playerCannonStrength = player.getShip().getCannons();
+            System.out.println("Player " + player.getId().getNickname() + " - Cannon Strength: " + 
+                             playerCannonStrength + " vs Smugglers: " + card.getPowerLevel());
+
+            if (playerCannonStrength > card.getPowerLevel()) {
+                // Player defeats Smugglers
+                enemyDefeated = true;
+                System.out.println("  VICTORY! " + player.getId().getNickname() + " defeats the Smugglers!");
+                
+                // Player can choose to take reward (goods) and lose flight days
+                boolean goodsAdded = player.getShip().addResources(card.getAvailableGoods());
+                if (goodsAdded) {
+                    flightBoard.movePlayer(player, card.getMovementPenalty(), false);
+                    System.out.println("  Reward: " + card.getAvailableGoods() + " goods, " + 
+                                     card.getMovementPenalty() + " flight days lost");
+                } else {
+                    System.out.println("  No cargo space for goods reward - no flight days lost");
+                }
+                
+            } else if (playerCannonStrength == card.getPowerLevel()) {
+                // Tie - no effect, Smugglers continue to next player
+                System.out.println("  TIE - No effect, Smugglers continue attacking");
+                
+            } else {
+                // Player loses - loses most valuable goods
+                System.out.println("  DEFEAT - " + player.getId().getNickname() + " loses valuable goods");
+                
+                boolean goodsRemoved = player.getShip().removeValuableResources(card.getGoodsLostIfDefeated());
+                if (goodsRemoved) {
+                    System.out.println("    Lost " + card.getGoodsLostIfDefeated() + " most valuable goods");
+                } else {
+                    System.out.println("    Not enough goods to lose - player escapes with minimal loss");
                 }
             }
         }
+
         return true;
     }
     
     /**
-     * Visits a CombatZoneCard with enhanced multi-attribute comparison analysis.
+     * Visits a CombatZoneCard following exact Galaxy Trucker rules:
+     * - Evaluates 3 sequential criteria (crew, engines, cannons)
+     * - For each criterion, weakest player(s) face penalty
+     * - If tied, the player farthest ahead (leader) faces penalty
+     * - Players declare strengths in order for engine/cannon comparisons
      *
      * @param card The combat zone card to process
      * @param state Current game state
@@ -843,8 +1022,11 @@ public class AdventureCardVisitor {
         
     
     /**
-     * Visits an AbandonedStationCard.
-     * Now supports player choice mechanics - players can choose whether to dock.
+     * Visits an AbandonedStationCard following exact Galaxy Trucker rules:
+     * - First-come-first-served opportunity
+     * - Only one player can use the opportunity
+     * - Requires minimum crew to dock
+     * - Gains goods, loses flight days, no crew loss
      *
      * @param card The abandoned station card to process
      * @param state Current game state
@@ -852,43 +1034,54 @@ public class AdventureCardVisitor {
      */
     public boolean visitAbandonedStationCard(AbandonedStationCard card, GameModel state){
         System.out.println("Resolving: " + card.getType());
+        System.out.println("  Opportunity: Gain " + card.getGoodQuantities() + 
+                         " goods, lose " + card.getLostDays() + 
+                         " flight days (req: " + card.getMinCrewRequired() + " crew)");
+
         FlightBoard flightBoard = state.getFlightBoard();
         List<Player> playersOrdered = flightBoard.getCurrentOrder();
 
-        // Check if card is already visited
-        if (card.isVisited()) {
-            System.out.println("Abandoned station has already been looted");
-            return true;
-        }
-
-        // Process each player in flight order
+        // First-come-first-served: check players in flight order
         for (Player player : playersOrdered) {
-            // Check if player meets crew requirement and has cargo space
+            System.out.println("\nPlayer " + player.getId().getNickname() + 
+                             " - Crew: " + player.getShip().getCrew() + 
+                             " (needs " + card.getMinCrewRequired() + ")");
+            
+            // Check crew requirement
             if (player.getShip().getCrew() >= card.getMinCrewRequired()) {
-                // Check if player has enough cargo space (temporarily test add resources)
-                Map<GoodType, Integer> stationGoods = card.getGoodQuantities();
-                if (canShipAddResources(player.getShip(), stationGoods)) {
-                    // Player is eligible - they can choose to dock via DockRequest
-                    System.out.println("Player " + player.getId().getNickname() + 
-                        " can choose to dock at abandoned station (cost: " + card.getLostDays() + 
-                        " flight days, crew req: " + card.getMinCrewRequired() + 
-                        ", goods available: " + stationGoods + ")");
+                System.out.println("  CREW OK - Checking cargo space...");
+                
+                // Check if player has cargo space for the goods
+                if (player.getShip().addResources(card.getGoodQuantities())) {
+                    System.out.println("  CARGO OK - Docking...");
                     
-                    // In the new system, the first eligible player gets the choice
-                    // The card remains active until a choice is made via DockRequest
-                    return false; // Card not yet resolved, waiting for player choice
+                    // Lose flight days
+                    int originalPosition = player.getFlightData().getPosition();
+                    flightBoard.movePlayer(player, card.getLostDays(), false);
+                    int newPosition = player.getFlightData().getPosition();
+                    
+                    System.out.println("  SUCCESS! Goods: +" + card.getGoodQuantities() + 
+                                     ", Position: " + originalPosition + " -> " + newPosition);
+                    
+                    // Opportunity taken - remaining players miss out
+                    for (int i = playersOrdered.indexOf(player) + 1; i < playersOrdered.size(); i++) {
+                        Player remainingPlayer = playersOrdered.get(i);
+                        System.out.println("Player " + remainingPlayer.getId().getNickname() + 
+                                         " - Too late, station already looted");
+                    }
+                    
+                    return true; // Opportunity used, card resolved
+                    
                 } else {
-                    System.out.println("Player " + player.getId().getNickname() + 
-                        " has insufficient cargo space for station goods");
+                    System.out.println("  INSUFFICIENT CARGO SPACE - Cannot dock");
                 }
             } else {
-                System.out.println("Player " + player.getId().getNickname() + 
-                    " has insufficient crew to dock at station (needs " + card.getMinCrewRequired() + ")");
+                System.out.println("  INSUFFICIENT CREW - Cannot dock");
             }
         }
         
-        // No eligible players - card is skipped
-        System.out.println("No players eligible to dock at abandoned station");
+        // No eligible players found
+        System.out.println("\nNo players eligible to dock at abandoned station - opportunity lost");
         return true;
     }
     
@@ -904,6 +1097,36 @@ public class AdventureCardVisitor {
         return resources.values().stream().mapToInt(Integer::intValue).sum();
     }
     
+    /**
+     * Visits a SabotageCard following exact Galaxy Trucker rules.
+     *
+     * @param card The sabotage card to process
+     * @param state Current game state
+     * @return Result of processing the card
+     */
+    public boolean visitSabotageCard(SabotageCard card, GameModel state) {
+        System.out.println("Resolving: " + card.getType());
+
+        FlightBoard flightBoard = state.getFlightBoard();
+        List<Player> playersOrdered = flightBoard.getCurrentOrder();
+
+        if (flightBoard.getPlayerCount() == 1) {
+            System.out.println("Skipping " + card.getType() + " card - single player game");
+            return true;
+        }
+
+        // Extract ships in flight order for sabotage targeting
+        List<Ship> ships = playersOrdered.stream()
+                .map(Player::getShip)
+                .filter(Objects::nonNull)
+                .toList();
+
+        // Apply sabotage using the card's exact Galaxy Trucker implementation
+        card.applySabotage(ships);
+
+        return true;
+    }
+
     /**
      * Helper method to check if a ship can add resources (simplified version).
      *

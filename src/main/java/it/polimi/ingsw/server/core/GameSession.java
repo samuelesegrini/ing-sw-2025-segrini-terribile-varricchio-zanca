@@ -444,7 +444,7 @@ public class GameSession {
             }
             
             AdventureCard card = cardOpt.get();
-            LOGGER.info("Drew adventure card: " + card.getName() + " for game: " + gameId);
+            LOGGER.info("Drew adventure card: " + card.getId() + " for game: " + gameId);
             
             // Step 2: Start card resolution using the controller
             if (adventureCardController != null) {
@@ -453,7 +453,7 @@ public class GameSession {
                 // Step 3: Begin resolution process (this will handle player input collection if needed)
                 resolveAdventureCard(card);
             } else {
-                LOGGER.error("Adventure card controller not initialized for game: " + gameId);
+                LOGGER.severe("Adventure card controller not initialized for game: " + gameId);
                 // Skip this card and continue
                 scheduleNextCard();
             }
@@ -464,7 +464,7 @@ public class GameSession {
      * Resolves an adventure card, handling player input collection if necessary.
      */
     private void resolveAdventureCard(AdventureCard card) {
-        LOGGER.info("Resolving adventure card: " + card.getName() + " for game: " + gameId);
+        LOGGER.info("Resolving adventure card: " + card.getId() + " for game: " + gameId);
         
         // Use the visitor pattern to resolve the card
         // The visitor will handle player input collection via events
@@ -473,10 +473,10 @@ public class GameSession {
             
             // After resolution is complete, reset all players to not ready and wait for acknowledgment
             resetAllPlayersReady();
-            LOGGER.info("Adventure card " + card.getName() + " resolved. Waiting for all players to acknowledge.");
+            LOGGER.info("Adventure card " + card.getId() + " resolved. Waiting for all players to acknowledge.");
             
         } catch (Exception e) {
-            LOGGER.severe("Error resolving adventure card " + card.getName() + " for game " + gameId + ": " + e.getMessage());
+            LOGGER.severe("Error resolving adventure card " + card.getId() + " for game " + gameId + ": " + e.getMessage());
             // Skip this card and continue to next one
             resetAllPlayersReady();
         }
@@ -492,6 +492,14 @@ public class GameSession {
             }
             LOGGER.info("Reset all players to not ready for game: " + gameId);
         }
+    }
+    
+    /**
+     * Schedules processing of the next adventure card.
+     */
+    private void scheduleNextCard() {
+        // Schedule the next card processing
+        processNextAdventureCard();
     }
     
     /**
@@ -679,6 +687,38 @@ public class GameSession {
                 System.out.println("[DEBUG]   - Player: " + p.getId() + ", Nickname: " + p.getId().getNickname()));
         }
         return result;
+    }
+    
+    /**
+     * Finishes a player's ship, validating it and assigning flight order if successful.
+     * @param playerId The player finishing their ship
+     * @return Result of the ship finishing process
+     */
+    public it.polimi.ingsw.common.message.response.FinishShipResponse.ShipFinishResult finishPlayerShip(PlayerId playerId) {
+        Player player = getPlayer(playerId);
+        if (player == null) {
+            return new it.polimi.ingsw.common.message.response.FinishShipResponse.ShipFinishResult(
+                "Player not found", java.util.List.of());
+        }
+        
+        // Validate ship
+        java.util.List<String> feedback = new java.util.ArrayList<>();
+        boolean isValid = gameModel.validateShip(playerId, player.getId().getNickname(), feedback);
+        if (!isValid) {
+            return new it.polimi.ingsw.common.message.response.FinishShipResponse.ShipFinishResult(
+                "Ship validation failed", feedback);
+        }
+        
+        // Mark player as finished
+        player.setShipFinished(true);
+        
+        // Assign starting position and flight order (simplified logic)
+        int finishedCount = (int) gameModel.getPlayers().stream().filter(p -> p.isShipFinished()).count();
+        int startingPosition = finishedCount;
+        int flightOrder = finishedCount;
+        
+        return new it.polimi.ingsw.common.message.response.FinishShipResponse.ShipFinishResult(
+            true, java.util.List.of(), startingPosition, flightOrder);
     }
 
     public GamePhase getCurrentPhase() {
