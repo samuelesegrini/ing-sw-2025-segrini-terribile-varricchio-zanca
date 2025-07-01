@@ -655,11 +655,20 @@ public class Printer {
             print("");
         }
 
+        printFlightBoard(clientState);
+        print("");
         printShipBoard(ship);
         print("");
         printShipStats(ship);
         print("");
         printFlightCommands();
+    }
+
+    private void printFlightBoard(ClientState clientState) {
+        print("FLIGHT BOARD:");
+        print("");
+
+
     }
 
     public void printAdventureCard(AdventureCard card) {

@@ -256,7 +256,7 @@ class AdventureCardFactoryTest {
         Map<String, Object> props = new HashMap<>();
         props.put("level", "LEVEL_II");
         props.put("combatChecks", combatChecksData);
-        CardConfig config = new CardConfig("cz-01", AdventureType.WAR_ZONE.toString(), "Combat Zone Desc", props);
+        CardConfig config = new CardConfig("cz-01", AdventureType.COMBAT_ZONE.toString(), "Combat Zone Desc", props);
         rawCardConfigs.put(config.id(), config);
 
         AdventureCard card = factory.createCard(config);

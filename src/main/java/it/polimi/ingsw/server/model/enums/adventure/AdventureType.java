@@ -40,7 +40,7 @@ public enum AdventureType {
     /**
      * Adventure type is War Zone.
      */
-    WAR_ZONE,
+    COMBAT_ZONE,
 
     /**
      * Adventure type is Abandoned Station.

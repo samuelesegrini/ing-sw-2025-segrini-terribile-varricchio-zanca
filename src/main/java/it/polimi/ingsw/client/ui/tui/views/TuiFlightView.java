@@ -427,7 +427,7 @@ public class TuiFlightView extends BaseUIView {
                 case ABANDONED_STATION -> handleAbandonedStationChoice(input);
                 case OPEN_SPACE -> handleEngineChoice(Integer.parseInt(input));
                 case METEOR_SWARM -> handleMeteorSwarmChoice(input);
-                case WAR_ZONE -> handleWarZoneChoice(input);
+                case COMBAT_ZONE -> handleWarZoneChoice(input);
                 case STARDUST, EPIDEMIC -> handleSpecialEventChoice(input);
                 default -> console.printError("This card type doesn't require input.");
             }
@@ -640,7 +640,7 @@ public class TuiFlightView extends BaseUIView {
             case ABANDONED_STATION -> showAbandonedStationOptions((AbandonedStationCard) card);
             case OPEN_SPACE -> showEngineOptions();
             case METEOR_SWARM -> showMeteorSwarmOptions((MeteorSwarmCard) card);
-            case WAR_ZONE -> showWarZoneOptions();
+            case COMBAT_ZONE -> showWarZoneOptions();
             case STARDUST, EPIDEMIC -> showSpecialEventOptions(card);
             default -> console.println("Card will be processed automatically.");
         }

@@ -7,6 +7,7 @@ import it.polimi.ingsw.client.ui.tui.Printer;
 import it.polimi.ingsw.common.message.event.*;
 import it.polimi.ingsw.common.message.event.flight.*;
 import it.polimi.ingsw.common.message.response.*;
+import it.polimi.ingsw.server.model.domain.adventure.card.AdventureCard;
 import it.polimi.ingsw.server.model.domain.general.BuildingTimer;
 
 import it.polimi.ingsw.server.model.domain.player.Player;
@@ -32,6 +33,11 @@ public class newTUI implements newUI {
     private final ClientController controller;
     private final ClientState clientState;
     private final NetworkClient networkClient;
+
+    // AIUT
+    private AdventureCard currentCard;
+    private boolean isOn;
+    private long remainingTime;
 
     public newTUI(ClientController controller) throws IOException {
         terminal = TerminalBuilder.builder().system(true).build();
@@ -1051,21 +1057,12 @@ public class newTUI implements newUI {
     }
     
     public void onAdventureCardDrawnEvent(AdventureCardDrawnEvent event) {
-        var card = event.getCard();
+        AdventureCard card = event.getCard();
         if (card != null) {
-            String cardType = card.getType().toString().toLowerCase().replace("_", " ");
-            printer.printInfo("🎴 Adventure card drawn: " + cardType);
-            printer.printInfo("Card " + event.getCardNumber() + " of " + event.getTotalCards());
-            
-            // Display card-specific information
-            switch (card.getType().toString()) {
-                case "COMBAT" -> printer.printWarning("⚔️ Combat encounter ahead!");
-                case "PLANET" -> printer.printInfo("🪐 Planets available for exploration!");
-                case "METEOR" -> printer.printWarning("☄️ Meteor swarm incoming!");
-                case "OPEN_SPACE" -> printer.printInfo("🌌 Open space - time to fly!");
-                case "ABANDONED" -> printer.printInfo("🏗️ Abandoned structure discovered!");
-                default -> printer.printInfo("📜 Special event card");
-            }
+            this.currentCard = card;
+
+            String cardType = card.getType().toString().replace("_", " ");
+            printer.printInfo("Adventure card drawn: " + cardType);
         }
         
         if (clientState.getCurrentView() == ClientState.ViewState.FLIGHT) {
@@ -1074,9 +1071,13 @@ public class newTUI implements newUI {
     }
     
     public void onAdventureCardPlayerTurnEvent(AdventureCardPlayerTurnEvent event) {
-        long remainingTime = event.getRemainingTime();
+        if (event.getSourcePlayerId().toString().equals(clientState.getPlayerId())) {
+            this.isOn = true;
+        }
+
+        //this.remainingTime = event.getRemainingTime();
         
-        printer.printInfo("⏰ Your turn! Make your choice...");
+        printer.printInfo("Your turn!");
         if (remainingTime > 0) {
             printer.printInfo("Time remaining: " + (remainingTime / 1000) + " seconds");
         }

@@ -102,7 +102,7 @@ public class AdventureCardFactory {
         // otherwise, use the exact strings from JSON `type` field.
         registerCreator(AdventureType.ABANDONED_SHIP.toString(), this::createAbandonedShipCard);
         registerCreator(AdventureType.ABANDONED_STATION.toString(), this::createAbandonedStationCard);
-        registerCreator(AdventureType.WAR_ZONE.toString(), this::createCombatZoneCard); // JSON type is "WAR_ZONE"
+        registerCreator(AdventureType.COMBAT_ZONE.toString(), this::createCombatZoneCard); // JSON type is "WAR_ZONE"
         registerCreator(AdventureType.EPIDEMIC.toString(), this::createEpidemicCard);
         registerCreator(AdventureType.METEOR_SWARM.toString(), this::createMeteorSwarmCard);
         registerCreator(AdventureType.OPEN_SPACE.toString(), this::createOpenSpaceCard);

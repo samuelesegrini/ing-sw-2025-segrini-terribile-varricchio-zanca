@@ -34,7 +34,7 @@ public class AdventureCardDrawnEvent extends AbstractEvent {
         this.card = card;
         this.cardNumber = cardNumber;
         this.totalCards = totalCards;
-        LOGGER.fine("AdventureCardDrawnEvent instantiated for game: " + gameId + ", card: " + card.getName() + " (" + cardNumber + "/" + totalCards + ")");
+        LOGGER.fine("AdventureCardDrawnEvent instantiated for game: " + gameId + ", card: " + card.toString() + " (" + cardNumber + "/" + totalCards + ")");
     }
 
     /**
@@ -80,10 +80,10 @@ public class AdventureCardDrawnEvent extends AbstractEvent {
 
             // Show adventure card notification
             if (context.getNotificationService() != null) {
-                LOGGER.fine("Displaying notification for drawn adventure card: " + card.getName());
+                LOGGER.fine("Displaying notification for drawn adventure card: " + card.toString());
                 context.getNotificationService().showNotification(new Notification(
                         "Adventure Card " + cardNumber + "/" + totalCards,
-                        card.getName() + " - " + card.getDescription(),
+                        card.toString() + " - " + card.getDescription(),
                         getNotificationTypeForCard(card.getType())
                 ));
             }

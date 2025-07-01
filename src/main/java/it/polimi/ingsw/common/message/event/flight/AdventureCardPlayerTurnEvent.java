@@ -41,7 +41,7 @@ public class AdventureCardPlayerTurnEvent extends AbstractEvent {
                                       List<PlayerId> turnOrder, int currentTurnIndex, 
                                       String turnContext, Map<String, Object> turnData,
                                       long turnTimeoutMs) {
-        super(EventType.ADVENTURE_CARD_PLAYER_TURN, gameId, currentPlayer.toString());
+        super(EventType.ADVENTURE_CARD_PLAYER_TURN, gameId, currentPlayer);
         this.card = card;
         this.currentPlayer = currentPlayer;
         this.turnOrder = turnOrder;
@@ -50,7 +50,7 @@ public class AdventureCardPlayerTurnEvent extends AbstractEvent {
         this.turnData = turnData;
         this.turnTimeoutMs = turnTimeoutMs;
         
-        LOGGER.info("AdventureCardPlayerTurnEvent created: " + card.getName() + 
+        LOGGER.info("AdventureCardPlayerTurnEvent created: " + card.toString() +
                    " - Player " + currentPlayer + "'s turn (" + (currentTurnIndex + 1) + "/" + turnOrder.size() + ")");
     }
     
@@ -58,7 +58,7 @@ public class AdventureCardPlayerTurnEvent extends AbstractEvent {
     public void handleOnClient(ClientEventContext context) {
         context.runOnUIThread(() -> {
             if (context.getClientState() != null) {
-                PlayerId clientPlayerId = context.getClientState().getPlayerId();
+                PlayerId clientPlayerId = PlayerId.fromString(context.getClientState().getPlayerId()); // TODO 00: NON SO SE FUNZIONI
                 
                 if (currentPlayer.equals(clientPlayerId)) {
                     // It's this client's turn
@@ -75,7 +75,7 @@ public class AdventureCardPlayerTurnEvent extends AbstractEvent {
     }
     
     private void handleMyTurn(ClientEventContext context) {
-        LOGGER.info("It's my turn for " + card.getName() + ": " + turnContext);
+        LOGGER.info("It's my turn for " + card.toString() + ": " + turnContext);
         
         // Show turn-specific UI based on card type and context
         switch (card.getType()) {

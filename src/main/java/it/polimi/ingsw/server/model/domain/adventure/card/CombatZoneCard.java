@@ -22,7 +22,7 @@ public class CombatZoneCard extends AdventureCard {
      * @param description A brief description of the card.
      */
     public CombatZoneCard(String id, CardLevel level, String description) {
-        super(id, level, description, AdventureType.WAR_ZONE);
+        super(id, level, description, AdventureType.COMBAT_ZONE);
         this.combatChecks = new ArrayList<>();
     }
 
