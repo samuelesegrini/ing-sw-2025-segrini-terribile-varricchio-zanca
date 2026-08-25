@@ -13,7 +13,7 @@ found in a unit test are free.
 | M0 | Foundations | Clean build, CI, specifications, verified game data | `v0.1.0` |
 | M1 | Ship and building phase | Components, grid, validation, building rules | `v0.2.0` |
 | M2 | Flight core | Route, attributes, damage, giving up, scoring | `v0.3.0` |
-| M3 | Adventure cards | All 13 card types, level II and test flight | `v0.4.0` |
+| M3 | Adventure cards | All 11 card types, level II and test flight | `v0.4.0` |
 | M4 | Protocol and networking | Commands, events, Socket, RMI, lobby | `v0.5.0` |
 | M5 | TUI | Full playability from the terminal | `v0.6.0` |
 | M6 | GUI | Full playability from JavaFX | `v0.7.0` |
@@ -35,7 +35,7 @@ has to be verified before rules are written against it.
 - Game data moved to `src/main/resources/data/`, loaded through immutable records,
   and **validated against the artwork by tests** — tile counts per kind, 8 test
   flight cards, deck composition, board geometry, reward tables.
-- Two known data defects fixed (B1, B2 in the rules spec).
+- Four data defects found and fixed (B1 to B4 in the rules spec).
 
 Exit criterion: `./mvnw verify` green, data tests asserting every count in § 1 and
 § 3 of the rules spec.
@@ -67,8 +67,11 @@ sequence.
 
 One issue per card type, each closed by tests derived from § 8 of the rules spec.
 Planets, Abandoned Ship, Abandoned Station, Smugglers, Pirates, Slavers, Open
-Space, Meteor Swarm, Combat Zone, Stardust, Epidemic, Sabotage — plus goods
-shortage, which cuts across several of them.
+Space, Meteor Swarm, Combat Zone, Stardust and Epidemic — plus goods shortage,
+which cuts across several of them.
+
+Sabotage is not in the list: it is a level III card and out of scope with level III
+(`requirements.pdf` § 2.1).
 
 Exit criterion: complete level II rules, headless, fully tested. This is the point
 at which the project satisfies "regole complete".
@@ -108,5 +111,8 @@ final jars in `deliverables/`, README rewritten against reality.
 
 - One issue, one branch, one PR (`CONTRIBUTING.md`).
 - No milestone is closed while any issue in it is open.
-- Each milestone ends with a tag and a GitHub release listing its issues.
-- `develop` is always green; `main` only ever receives release merges.
+- Each milestone ends with a `v0.x.0` tag on `develop` and a GitHub release listing
+  its issues.
+- `develop` is always green.
+- `main` keeps the previous submission untouched until the rebuild is deliverable;
+  `v1.0.0` is the one release that merges into it.
