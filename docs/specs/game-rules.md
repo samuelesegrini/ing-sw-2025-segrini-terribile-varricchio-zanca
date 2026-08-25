@@ -359,6 +359,16 @@ route order** — the last player moves first `[p.10]`.
 If the leader is more than a full lap ahead of a player, that player is forced to
 give up (§ 9) `[p.20]`.
 
+"More than" is exact, and the distinction is free: a gap of *precisely* one lap
+would put both markers on the same space, and two markers never share one. So the
+smallest gap that counts as lapped is a lap plus one space, and the largest that
+does not is a lap minus one.
+
+This is why a player's position has to be tracked as **total distance travelled**
+rather than as a space on the loop. A ship a lap behind can be standing right next
+to the leader; modular positions would make it indistinguishable from one that is
+merely trailing.
+
 ### 7.3 Ship attributes
 
 **Engine power** `[p.11]`
