@@ -129,8 +129,8 @@ violation, provided the new tile is legally connected on at least one other side
 
 A connector is **exposed** when the neighbouring cell in that direction is empty or
 outside the grid. Exposed connectors are legal, but they cost flight days on
-Stardust (§ 8.10), invite small-meteor damage (§ 8.6) and lose the prettiest-ship
-reward (§ 10.2). A side counts **once** regardless of whether it carries one, two or
+Stardust (§ 8.8), invite small-meteor damage (§ 8.6) and lose the prettiest-ship
+reward (§ 10). A side counts **once** regardless of whether it carries one, two or
 three pipes `[p.8]`. `PLAIN` sides are never exposed connectors.
 
 ---
@@ -176,7 +176,7 @@ illegal (§ 5).
 
 Two components are *interconnected* when they are adjacent **and** the two facing
 sides form a legal connection. Adjacency alone is not enough. This distinction
-matters for aliens (§ 6.2) and for Epidemic (§ 8.11).
+matters for aliens (§ 6.2) and for Epidemic (§ 8.9).
 
 ---
 
@@ -364,7 +364,7 @@ them `[p.19]`.
 
 ### 7.4 Dice and targeting
 
-Threats (meteors, cannon fire, sabotage) address a **printed row or column** by the
+Threats (meteors and cannon fire) address a **printed row or column** by the
 sum of two dice, so values range 2…12. Only 4…10 name a real column and only 5…9
 name a real row; any other sum is an automatic miss.
 
@@ -543,17 +543,16 @@ Remove 1 crew member (human or alien) from **every occupied cabin that is
 interconnected to another occupied cabin** `[p.19]`. Interconnection means a legal
 connector joint, not mere adjacency (§ 3.2).
 
-### 8.10 Sabotage — level II only
+### 8.10 Sabotage — out of scope
 
-The player with the **fewest crew** is sabotaged; on a tie, only the tied player
-furthest ahead `[p.19]`.
+Sabotage is a **level III** card. Level III is excluded by `requirements.pdf` § 2.1,
+so no level II deck can contain it and it is not implemented. It is described on
+manual p.19 alongside Epidemic, which is why the two are easy to conflate; only
+Epidemic belongs to a level II deck.
 
-1. That player rolls 2 dice for the column, then 2 dice for the row.
-2. If a component sits at those coordinates it is destroyed.
-3. If not, roll both again — up to **3 attempts** in total. If all three miss,
-   nothing happens.
-
-Ignored if every other player has given up `[p.20]`.
+The consequence for the rest of this document: wherever the manual pairs Combat
+Zone with Sabotage — the "last player standing" clause of § 9.4 — only Combat Zone
+applies here.
 
 ### 8.11 Card summary
 
@@ -570,7 +569,6 @@ Ignored if every other player has given up `[p.20]`.
 | Combat Zone | ✔ | ✔ | route order, per line |
 | Stardust | ✔ | ✔ | reverse route order |
 | Epidemic | — | ✔ | simultaneous |
-| Sabotage | — | ✔ | single player |
 
 ---
 
@@ -603,7 +601,8 @@ is revealed they must see it through `[p.20]`.
 
 ### 9.4 Last player standing
 
-If only one player is left, **Combat Zone** and **Sabotage** are skipped `[p.20]`.
+If only one player is left, **Combat Zone** is skipped `[p.20]`. The manual pairs
+it with Sabotage, which is a level III card and out of scope (§ 8.10).
 
 ---
 
@@ -631,15 +630,38 @@ full ranking.
 
 ## 11. Decisions and data defects
 
-Points where the manual leaves room, or where the shipped data is wrong. Each is a
-tracked issue.
+Points where the manual leaves room, and every place the shipped data disagreed with
+it. Defects marked *fixed* were corrected in the data and are now guarded by tests.
+
+### Decisions
 
 | # | Item | Decision |
 |:--|:--|:--|
-| D1 | Test flight timer | **No timer.** `[p.8]` states the test flight is untimed and the level I board has a single hourglass circle with no *Stop* space. |
-| D2 | Test flight card level | The 8 **L** cards are level-I cards that additionally bear the L mark `[p.9]`. Model as `level = LEVEL_I` plus a `testFlight` flag, **not** as a third exclusive level. |
-| B1 | `adventure_cards.json` marks test flight as an exclusive level | Level I is left with 13 cards instead of 20, so the level II deck draws from a truncated pool. Data bug. |
-| B2 | Only 7 test flight cards exist in the data | `smugglers_lvl1.jpg` carries the **L** mark on the artwork but is tagged `LEVEL_I`. The test flight deck must hold 8 cards `[p.9]`. Data bug. |
-| D3 | Firepower representation | Half-integers are exact. Store as an integer count of halves, never as a rounded value or a float `[p.11]`. |
+| D1 | Test flight timer | **No timer.** `[p.8]` states the test flight is untimed, and the level I board carries a single hourglass circle with no *Stop* space, against three on the level II board. |
+| D2 | Test flight card level | The 8 **L** cards are level I cards that additionally bear the mark `[p.9]`. Modelled as `level = LEVEL_I` plus a `testFlight` flag, **not** as a third exclusive level. |
+| D3 | Firepower representation | Half-integers are exact. Stored as an integer count of halves, never rounded and never a float `[p.11]`. |
 | D4 | Placement checks | Cell-level legality is enforced immediately; connector, clearance and connectivity checks run at the end of building, mirroring the physical *controllo visuale* `[p.8]`. |
-| D5 | Component data not yet verified | The 156 tiles in `components.json` have not been checked side-by-side against the artwork. Until they are, treat the connector data as unverified. |
+| D5 | Sabotage | **Out of scope.** A level III card, excluded with level III by `requirements.pdf` § 2.1. See § 8.10. |
+| D6 | Component orientation | Not stored per tile. All 30 engines are printed exhausting south, all 36 cannons facing north, and all 8 shields covering north and east, verified against every image. A placed component's facing is its kind plus its rotation. |
+
+### Data defects found and fixed
+
+Each was found by checking the shipped JSON against the artwork and the manual.
+
+| # | Defect | Fix |
+|:--|:--|:--|
+| B1 | The test flight was modelled as an exclusive level, leaving the level I pool with 13 cards instead of 20 — so a level II deck, which draws one level I card per pile, drew from a truncated pool. | Level plus a separate mark. Both pools now hold 20 cards. |
+| B2 | Only 7 cards carried the test flight mark. `smugglers_lvl1.jpg` shows the **L** badge in its bottom-left corner but was tagged level I only, leaving the deck one card short of the 8 the manual requires. | Marked. The deck now holds 8 cards covering the 8 printed types. |
+| B3 | Battery capacities split 12 two-charge to 5 three-charge. Manual p.3 prints 11 and 6, and the artwork of `battery_UD-SD` shows three cells. | Corrected to 3. The split is now 11 / 6. |
+| B4 | `double-engine_U-S` carried its single connector on the east side in the data; both its file name and its artwork put it on the north side. | Connectors are now derived from the tile file names, which encode sides and connector types and agree with the artwork on all 152 tiles. |
+
+### Verified against the source material
+
+| What | How |
+|:--|:--|
+| Tile counts per kind | All 13 counts match the component overview on manual p.3. |
+| Connectors | All 152 drawable tiles agree with their encoded file names. |
+| Cargo and battery capacities | Match the printed slot counts. |
+| Board geometry, rewards, price lists | Read off `assets/cardboard`; 18 and 27 usable cells, routes of 18 and 24, rewards 4/3/2/1 and 8/6/4/2. |
+| Deck composition | The level II flight board prints `II II I` beneath the route: two level II cards and one level I card per pile. |
+| Card pools | 20 level I and 20 level II cards, 8 of them marked. |
