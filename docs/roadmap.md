@@ -108,5 +108,8 @@ final jars in `deliverables/`, README rewritten against reality.
 
 - One issue, one branch, one PR (`CONTRIBUTING.md`).
 - No milestone is closed while any issue in it is open.
-- Each milestone ends with a tag and a GitHub release listing its issues.
-- `develop` is always green; `main` only ever receives release merges.
+- Each milestone ends with a `v0.x.0` tag on `develop` and a GitHub release listing
+  its issues.
+- `develop` is always green.
+- `main` keeps the previous submission untouched until the rebuild is deliverable;
+  `v1.0.0` is the one release that merges into it.

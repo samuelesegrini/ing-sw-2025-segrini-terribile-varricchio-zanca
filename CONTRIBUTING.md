@@ -16,9 +16,14 @@ Italian, and this project keeps them English too for consistency.
 
 | Branch | Purpose | Who merges into it |
 |:--|:--|:--|
-| `main` | Stable, always releasable. Every commit is tagged. | Release PRs from `develop` only |
-| `develop` | Integration branch. Always compiles, tests always green. | Feature PRs |
+| `main` | The submission. Receives the rebuild once it is deliverable, and nothing before that. | The `v1.0.0` release PR |
+| `develop` | Where the project is built. Always compiles, tests always green, every milestone tagged here. | Feature PRs |
 | `<type>/<issue>-<slug>` | One issue, one branch. | — |
+
+`main` still holds the previous implementation, which does not compile. It is left
+alone deliberately: replacing it before the rebuild is deliverable would trade a
+broken submission for an incomplete one, and the history is what makes the old code
+recoverable either way. It is also on the remote branch `goback`.
 
 Feature branch names mirror the commit types below, e.g.
 
@@ -85,13 +90,15 @@ tell whether it is done.
 
 ## Versioning
 
-[Semantic versioning](https://semver.org/), tagged on `main`:
+[Semantic versioning](https://semver.org/):
 
-- `v0.x.0` — milestone completed on the way to the deliverable;
-- `v1.0.0` — submission: complete rules, TUI, GUI, RMI, Socket, all four advanced
-  features, Javadoc, protocol documentation, jars in `deliverables/`.
+- `v0.x.0` — a milestone completed. Tagged on `develop`, where the work happens.
+- `v1.0.0` — the submission: complete rules, TUI, GUI, RMI, Socket, all four advanced
+  features, Javadoc, protocol documentation, jars in `deliverables/`. This one is
+  merged into `main` and tagged there.
 
-Each tag gets a GitHub release listing the issues it closes.
+Each tag gets a GitHub release listing the issues it closes, so that every milestone
+is traceable from the repository alone.
 
 ## Definition of done
 
