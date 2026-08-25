@@ -5,14 +5,19 @@ import it.polimi.ingsw.server.model.component.BatteryComponent;
 import it.polimi.ingsw.server.model.component.CabinComponent;
 import it.polimi.ingsw.server.model.component.CannonComponent;
 import it.polimi.ingsw.server.model.component.EngineComponent;
+import it.polimi.ingsw.server.model.component.CargoHoldComponent;
+import it.polimi.ingsw.server.model.component.ShieldComponent;
 import it.polimi.ingsw.server.model.component.ShipComponent;
 import it.polimi.ingsw.server.model.component.StartingCabinTile;
 import it.polimi.ingsw.server.model.component.Tile;
 import it.polimi.ingsw.server.model.crew.AlienColor;
 
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.Set;
 
 /**
@@ -172,6 +177,214 @@ public final class Ship {
      */
     public int exposedConnectors() {
         return grid.exposedConnectors();
+    }
+
+
+    // ---------------------------------------------------------------- damage
+
+    /**
+     * Returns the component a threat would strike.
+     *
+     * <p>The dice name a line, the direction says which end it comes from, and the threat
+     * meets the first component it finds. A roll that names no line on this board, or a
+     * line with nothing on it, misses the ship entirely — a real and reasonably common
+     * outcome, not an error.
+     *
+     * @param hit the incoming threat
+     * @return the cell it would strike, or empty when it misses
+     */
+    public Optional<Position> targetOf(Hit hit) {
+        OptionalInt line = hit.from().addressesColumn()
+                ? board().columnForDiceSum(hit.diceSum())
+                : board().rowForDiceSum(hit.diceSum());
+        return line.isEmpty() ? Optional.empty() : grid.firstInLine(hit.from(), line.getAsInt());
+    }
+
+    /**
+     * Returns the components that could stop a threat.
+     *
+     * <p>Shields turn aside small meteors and light fire, and only from the sides they
+     * cover. Cannons shoot big meteors, and only from the right place: one coming at the
+     * bow can be hit only by a forward cannon in its own column, while one coming from a
+     * side or the stern can be hit by a cannon pointing at it in the same row or column or
+     * either neighbouring one (manual p.19).
+     *
+     * <p>Heavy fire returns nothing, because nothing stops it.
+     *
+     * @param hit the incoming threat
+     * @return the cells whose components could be used against it
+     */
+    public Set<Position> defencesAgainst(Hit hit) {
+        if (hit.kind().stoppableByShield()) {
+            return components().entrySet().stream()
+                    .filter(entry -> entry.getValue() instanceof ShieldComponent shield
+                            && shield.covers(hit.from()))
+                    .map(Map.Entry::getKey)
+                    .collect(java.util.stream.Collectors.toUnmodifiableSet());
+        }
+        if (hit.kind().stoppableByCannon()) {
+            return targetOf(hit)
+                    .map(target -> cannonsBearingOn(hit, target))
+                    .orElseGet(Set::of);
+        }
+        return Set.of();
+    }
+
+    private Set<Position> cannonsBearingOn(Hit hit, Position target) {
+        int line = hit.from().addressesColumn() ? target.column() : target.row();
+        boolean fromTheBow = hit.from() == Direction.NORTH;
+        return components().entrySet().stream()
+                .filter(entry -> entry.getValue() instanceof CannonComponent cannon
+                        && cannon.muzzleDirection() == hit.from()
+                        && bears(entry.getKey(), hit, line, fromTheBow))
+                .map(Map.Entry::getKey)
+                .collect(java.util.stream.Collectors.toUnmodifiableSet());
+    }
+
+    private boolean bears(Position cannon, Hit hit, int line, boolean fromTheBow) {
+        int cannonLine = hit.from().addressesColumn() ? cannon.column() : cannon.row();
+        // A meteor at the bow can only be shot down the column it is coming along; from
+        // anywhere else, a neighbouring line will do.
+        return fromTheBow ? cannonLine == line : Math.abs(cannonLine - line) <= 1;
+    }
+
+    /**
+     * Resolves one threat against this ship.
+     *
+     * <p>Order matters. A small meteor that meets a smooth side bounces for nothing, so
+     * that is checked before any defence is spent — a player who offers a shield against a
+     * meteor that was going to bounce keeps their battery.
+     *
+     * <p>If the threat gets through, the component is destroyed, whatever it was carrying
+     * goes back to the bank, and any alien left without its life support leaves with it
+     * (manual p.10, p.18). The ship may end up in several pieces, in which case the report
+     * says so and {@link #keepFragment} settles which one flies on.
+     *
+     * @param hit     the incoming threat
+     * @param defence what the player is putting in its way, if anything
+     * @return what happened
+     * @throws IllegalArgumentException if the defence is not one this ship can mount
+     * @throws IllegalStateException    if the ship is still in pieces from an earlier hit,
+     *                                  with the choice of which to keep unmade
+     */
+    public DamageReport applyHit(Hit hit, Defence defence) {
+        requireNoPendingChoice();
+        Optional<Position> target = targetOf(hit);
+        if (target.isEmpty()) {
+            return report(target, DamageReport.Outcome.MISSED, Optional.empty());
+        }
+
+        ShipComponent struck = grid.at(target.get()).orElseThrow();
+        if (hit.kind().bouncesOffSmoothSides() && !struck.connectorFacing(hit.from()).isConnector()) {
+            return report(target, DamageReport.Outcome.BOUNCED, Optional.empty());
+        }
+
+        if (defence.component().isPresent()) {
+            spendOnDefence(hit, defence.component().get());
+            return report(target, DamageReport.Outcome.DEFENDED, Optional.empty());
+        }
+
+        destroy(target.get());
+        return report(target, DamageReport.Outcome.DESTROYED, target);
+    }
+
+    private void spendOnDefence(Hit hit, Position component) {
+        if (!defencesAgainst(hit).contains(component)) {
+            throw new IllegalArgumentException(
+                    componentAt(component).map(ShipComponent::id).orElse("nothing at " + component)
+                            + " cannot stop a " + hit.kind() + " arriving from the " + hit.from());
+        }
+        boolean costsACharge = grid.at(component)
+                .map(used -> used.kind().consumesCharge())
+                .orElse(false);
+        if (costsACharge) {
+            spend(BatteryPlan.powering(component));
+        }
+    }
+
+    private DamageReport report(Optional<Position> target, DamageReport.Outcome outcome,
+                                Optional<Position> destroyed) {
+        return new DamageReport(target, outcome, destroyed, pieces());
+    }
+
+    /**
+     * Keeps one piece of a broken ship and lets the rest fly away.
+     *
+     * <p>The choice the manual gives a player whose ship has come apart (p.10). Everything
+     * outside the chosen piece is lost along the route, and whatever those components were
+     * carrying goes straight back to the bank.
+     *
+     * @param fragment the piece to carry on with
+     * @return the cells that flew away
+     * @throws IllegalArgumentException if that is not one of the pieces the ship is in
+     */
+    public Set<Position> keepFragment(Set<Position> fragment) {
+        if (!pieces().contains(fragment)) {
+            throw new IllegalArgumentException(fragment + " is not one of this ship's pieces");
+        }
+        Set<Position> lost = new HashSet<>(components().keySet());
+        lost.removeAll(fragment);
+        lost.forEach(this::destroy);
+        return Set.copyOf(lost);
+    }
+
+    private void requireNoPendingChoice() {
+        if (!isWhole()) {
+            throw new IllegalStateException("this ship is in pieces: choose one before anything else happens");
+        }
+    }
+
+    private void destroy(Position cell) {
+        grid.remove(cell).ifPresent(Ship::returnTokensToBank);
+        removeStrandedAliens();
+    }
+
+    private static void returnTokensToBank(ShipComponent component) {
+        switch (component) {
+            case BatteryComponent battery -> battery.drain();
+            case CargoHoldComponent hold -> hold.jettisonAll();
+            case CabinComponent cabin -> cabin.evacuate();
+            default -> {
+                // Nothing else carries anything the bank wants back.
+            }
+        }
+    }
+
+    // ---------------------------------------------------------------- life support
+
+    /**
+     * Tells whether a cabin is joined to a life support module of the right colour.
+     *
+     * <p>Joined, not merely next door: the two have to be welded together for the module
+     * to keep anything alive (manual p.18).
+     *
+     * @param cabin the cabin to check
+     * @param color the species that would live there
+     * @return {@code true} when a matching module is welded to that cabin
+     */
+    public boolean isLifeSupported(Position cabin, AlienColor color) {
+        return grid.jointNeighbours(cabin).stream()
+                .map(grid::at)
+                .flatMap(Optional::stream)
+                .anyMatch(neighbour -> neighbour.kind() == color.lifeSupport());
+    }
+
+    /**
+     * Sends home any alien whose life support has been destroyed.
+     *
+     * <p>Losing the module loses the alien with it — it leaves in an escape pod, the
+     * manual says (p.18).
+     */
+    private void removeStrandedAliens() {
+        List<Position> stranded = new ArrayList<>();
+        components().forEach((cell, component) -> {
+            if (component instanceof CabinComponent cabin) {
+                cabin.alien()
+                        .filter(color -> !isLifeSupported(cell, color))
+                        .ifPresent(color -> stranded.add(cell));
+            }
+        });
+        stranded.forEach(cell -> ((CabinComponent) grid.at(cell).orElseThrow()).evacuate());
     }
 
     // ---------------------------------------------------------------- crew
