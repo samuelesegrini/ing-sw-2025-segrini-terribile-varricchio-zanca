@@ -1,21 +1,11 @@
 package it.polimi.ingsw.server.model.building;
 
-import it.polimi.ingsw.server.model.board.ShipBoardSpec;
-import it.polimi.ingsw.server.model.component.ComponentKind;
 import it.polimi.ingsw.server.model.component.ComponentTile;
-import it.polimi.ingsw.server.model.component.Tiles;
-import it.polimi.ingsw.server.model.player.PlayerColor;
-import it.polimi.ingsw.server.model.ship.Connector;
-import it.polimi.ingsw.server.model.ship.Position;
 import it.polimi.ingsw.server.model.ship.Rotation;
-import it.polimi.ingsw.server.model.ship.Ship;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
-import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -35,26 +25,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 class ReservationTest {
 
-    private static final Position CABIN = new Position(2, 2);
-
-    private static List<ComponentTile> tiles() {
-        List<ComponentTile> tiles = new ArrayList<>();
-        for (int i = 0; i < 8; i++) {
-            tiles.add(new ComponentTile("tile-" + i, ComponentKind.STRUCTURAL_MODULE,
-                    Tiles.allSides(Connector.UNIVERSAL), 0));
-        }
-        return tiles;
-    }
-
     /**
      * Returns a builder on a board with the given number of reservation slots.
      *
      * @param slots two for a level II board, none for a test flight board
      */
     private static ShipBuilder builderWith(int slots) {
-        Ship ship = new Ship(new ShipBoardSpec(5, 5, 5, 4, CABIN, slots, Set.of()),
-                Tiles.startingCabin(PlayerColor.YELLOW));
-        return new ShipBuilder(ship, new ComponentPool(tiles(), new Random(20250825L)));
+        return BuildingFixtures.site(slots).builder();
     }
 
     @Test
@@ -109,11 +86,11 @@ class ReservationTest {
         builder.reserve();
 
         builder.takeReserved(first.id());
-        builder.attach(new Position(1, 2), Rotation.NONE);
+        builder.attach(BuildingFixtures.AHEAD, Rotation.NONE);
 
         assertEquals(1, builder.reserved().size());
         assertTrue(builder.canReserve());
-        assertTrue(builder.ship().componentAt(new Position(1, 2)).isPresent());
+        assertTrue(builder.ship().componentAt(BuildingFixtures.AHEAD).isPresent());
     }
 
     @Test
@@ -149,7 +126,7 @@ class ReservationTest {
         ComponentTile spare = builder.drawFaceDown();
         builder.reserve();
         builder.drawFaceDown();
-        builder.attach(new Position(1, 2), Rotation.NONE);
+        builder.attach(BuildingFixtures.AHEAD, Rotation.NONE);
 
         builder.takeReserved(spare.id());
 
@@ -176,7 +153,7 @@ class ReservationTest {
         builder.reserve();
 
         builder.drawFaceDown();
-        builder.attach(new Position(1, 2), Rotation.NONE);
+        builder.attach(BuildingFixtures.AHEAD, Rotation.NONE);
         builder.weld();
 
         assertEquals(List.of(abandoned), builder.reserved());
