@@ -674,6 +674,7 @@ it. Defects marked *fixed* were corrected in the data and are now guarded by tes
 | D4 | Placement checks | Cell-level legality is enforced immediately; connector, clearance and connectivity checks run at the end of building, mirroring the physical *controllo visuale* `[p.8]`. |
 | D5 | Sabotage | **Out of scope.** A level III card, excluded with level III by `requirements.pdf` § 2.1. See § 8.10. |
 | D6 | Component orientation | Not stored per tile. All 30 engines are printed exhausting south, all 36 cannons facing north, and all 8 shields covering north and east, verified against every image. A placed component's facing is its kind plus its rotation. |
+| D8 | Goods bank stock | **Red 8, yellow 12, green 16, blue 20 — an assumption, not a sourced fact.** Neither rulebook states how many cubes the game ships with, and the shortage rule of § 7.6 only exists because the bank is finite. The numbers are data rather than constants, chosen scarcest where most valuable; issue 80 tracks verifying them against a physical copy. |
 | D7 | Hourglass duration | **90 seconds** per period. The manual gives no number — it ships a physical hourglass — so this is a project choice: long enough to place several tiles under pressure, short enough that three periods do not outlast anyone's patience. Configurable, not hard-coded. |
 
 ### Data defects found and fixed

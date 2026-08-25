@@ -36,12 +36,11 @@ class CrewPlacementTest {
     private static final Position CABIN = new Position(2, 2);
 
     private static Ship ship() {
-        return new Ship(new ShipBoardSpec(5, 5, 5, 4, CABIN, 0, Set.of()),
-                Tiles.startingCabin(PlayerColor.BLUE));
+        return Ships.openShip();
     }
 
     private static void put(Ship ship, Position cell, ComponentKind kind) {
-        ship.place(cell, Tiles.of(kind, kind.hasCapacity() ? 2 : 0), Rotation.NONE);
+        Ships.put(ship, cell, kind);
     }
 
     /**

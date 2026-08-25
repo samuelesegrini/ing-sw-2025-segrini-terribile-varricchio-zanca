@@ -37,12 +37,11 @@ class ShipAttributesTest {
     private static final Position CABIN = new Position(2, 2);
 
     private Ship ship() {
-        ShipBoardSpec board = new ShipBoardSpec(5, 5, 5, 4, CABIN, 0, Set.of());
-        return new Ship(board, Tiles.startingCabin(PlayerColor.BLUE));
+        return Ships.openShip();
     }
 
     private static void put(Ship ship, Position cell, ComponentKind kind, Rotation rotation) {
-        ship.place(cell, Tiles.of(kind, kind.hasCapacity() ? 2 : 0), rotation);
+        Ships.put(ship, cell, kind, rotation);
     }
 
     @Nested

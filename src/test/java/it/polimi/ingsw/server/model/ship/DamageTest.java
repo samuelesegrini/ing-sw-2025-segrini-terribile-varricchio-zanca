@@ -40,12 +40,11 @@ class DamageTest {
 
     /** A five by five board, so printed columns run 4 to 8 and rows 5 to 9. */
     private static Ship ship() {
-        return new Ship(new ShipBoardSpec(5, 5, 5, 4, CABIN, 0, Set.of()),
-                Tiles.startingCabin(PlayerColor.BLUE));
+        return Ships.openShip();
     }
 
     private static void put(Ship ship, Position cell, ComponentKind kind, Rotation rotation) {
-        ship.place(cell, Tiles.of(kind, kind.hasCapacity() ? 2 : 0), rotation);
+        Ships.put(ship, cell, kind, rotation);
     }
 
     /** Puts a structural module with a smooth north side where a meteor can bounce off it. */
