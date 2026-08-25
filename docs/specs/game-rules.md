@@ -243,7 +243,9 @@ The level II board has **3 hourglass spaces**, so the timer runs three times
    still building must take a start space at once.
 
 If nobody flips the timer, building continues until someone does or until all
-players have finished `[p.17]`.
+players have finished `[p.17]`. The sand running out is therefore **permission to
+flip, not an event**: a player still building has every reason to leave the glass
+alone, and the rules let them.
 
 The test flight has no timer `[p.8]`.
 
@@ -652,6 +654,7 @@ it. Defects marked *fixed* were corrected in the data and are now guarded by tes
 | D4 | Placement checks | Cell-level legality is enforced immediately; connector, clearance and connectivity checks run at the end of building, mirroring the physical *controllo visuale* `[p.8]`. |
 | D5 | Sabotage | **Out of scope.** A level III card, excluded with level III by `requirements.pdf` § 2.1. See § 8.10. |
 | D6 | Component orientation | Not stored per tile. All 30 engines are printed exhausting south, all 36 cannons facing north, and all 8 shields covering north and east, verified against every image. A placed component's facing is its kind plus its rotation. |
+| D7 | Hourglass duration | **90 seconds** per period. The manual gives no number — it ships a physical hourglass — so this is a project choice: long enough to place several tiles under pressure, short enough that three periods do not outlast anyone's patience. Configurable, not hard-coded. |
 
 ### Data defects found and fixed
 
