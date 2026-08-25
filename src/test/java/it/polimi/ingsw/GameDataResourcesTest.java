@@ -22,7 +22,8 @@ class GameDataResourcesTest {
     @ValueSource(strings = {
             "/data/adventure-cards.json",
             "/data/components.json",
-            "/data/boards.json"
+            "/data/boards.json",
+            "/data/assets.json"
     })
     void gameDataFile_isOnTheClasspath(String resourcePath) {
         try (InputStream stream = GameDataResourcesTest.class.getResourceAsStream(resourcePath)) {
