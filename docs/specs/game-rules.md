@@ -271,6 +271,15 @@ of the following holds:
 6. A component lies outside the usable area.
 7. The ship is not a single connected piece.
 
+Rule 6 is enforced **at placement**, not at validation: the server refuses a cell
+outside the outline the moment it is chosen (§ D4), so no such component can exist
+by the time a ship is checked. The other six are what the validator reports.
+
+Rules 1 and 2 are two halves of one question — do these touching sides weld? Two
+`PLAIN` sides touching answer it with "there is no joint here", which is legal. Any
+other pair that fails to weld is a violation, reported as rule 1 when both sides
+carry pipes and rule 2 when one of them is smooth.
+
 The owning player removes components of their own choosing until the ship is legal.
 Removed components — and components that fly off because removal disconnected
 them — go to the **discard pile** and count as lost components.
