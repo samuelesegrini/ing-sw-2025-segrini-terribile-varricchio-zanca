@@ -6,7 +6,6 @@ import it.polimi.ingsw.server.model.ship.Rotation;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.util.EnumMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -24,12 +23,7 @@ class ComponentTileTest {
 
     private static Map<Direction, Connector> sides(Connector north, Connector east,
                                                    Connector south, Connector west) {
-        Map<Direction, Connector> connectors = new EnumMap<>(Direction.class);
-        connectors.put(Direction.NORTH, north);
-        connectors.put(Direction.EAST, east);
-        connectors.put(Direction.SOUTH, south);
-        connectors.put(Direction.WEST, west);
-        return connectors;
+        return Tiles.sides(north, east, south, west);
     }
 
     private static ComponentTile structural(Connector north, Connector east,

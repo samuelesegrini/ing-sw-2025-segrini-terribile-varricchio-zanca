@@ -8,7 +8,7 @@ import it.polimi.ingsw.server.model.adventure.CardLevel;
 import it.polimi.ingsw.server.model.board.DeckComposition;
 import it.polimi.ingsw.server.model.board.FlightBoardSpec;
 import it.polimi.ingsw.server.model.board.GameLevel;
-import it.polimi.ingsw.server.model.board.GoodColor;
+import it.polimi.ingsw.server.model.goods.GoodColor;
 import it.polimi.ingsw.server.model.board.LevelRules;
 import it.polimi.ingsw.server.model.board.LevelSpec;
 import it.polimi.ingsw.server.model.board.RewardTable;

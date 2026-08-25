@@ -18,7 +18,8 @@ import java.util.Map;
  * @param playerColor the colour this cabin belongs to
  * @param connectors  what each of the four printed sides carries
  */
-public record StartingCabinTile(String id, PlayerColor playerColor, Map<Direction, Connector> connectors) {
+public record StartingCabinTile(String id, PlayerColor playerColor, Map<Direction, Connector> connectors)
+        implements Tile {
 
     /**
      * Validates the cabin and takes a defensive copy of its connectors.
@@ -41,7 +42,21 @@ public record StartingCabinTile(String id, PlayerColor playerColor, Map<Directio
      *
      * @return always {@link ComponentKind#STARTING_CABIN}
      */
+    @Override
     public ComponentKind kind() {
         return ComponentKind.STARTING_CABIN;
+    }
+
+    /**
+     * Returns the capacity printed on this piece.
+     *
+     * <p>A cabin holds crew rather than slots or charges, so it has none. How many
+     * people fit is a rule, not a printed number.
+     *
+     * @return always zero
+     */
+    @Override
+    public int capacity() {
+        return 0;
     }
 }

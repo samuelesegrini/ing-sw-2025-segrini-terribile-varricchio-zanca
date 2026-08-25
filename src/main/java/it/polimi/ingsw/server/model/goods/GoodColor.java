@@ -1,4 +1,4 @@
-package it.polimi.ingsw.server.model.board;
+package it.polimi.ingsw.server.model.goods;
 
 /**
  * The four colours of trade goods, ordered from most to least valuable.

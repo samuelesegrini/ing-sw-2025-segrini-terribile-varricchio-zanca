@@ -2,7 +2,7 @@ package it.polimi.ingsw.server.data;
 
 import it.polimi.ingsw.server.model.adventure.CardLevel;
 import it.polimi.ingsw.server.model.board.GameLevel;
-import it.polimi.ingsw.server.model.board.GoodColor;
+import it.polimi.ingsw.server.model.goods.GoodColor;
 import it.polimi.ingsw.server.model.board.LevelSpec;
 import it.polimi.ingsw.server.model.ship.Position;
 import org.junit.jupiter.api.BeforeAll;
