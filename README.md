@@ -1,56 +1,83 @@
-# Galaxy Trucker - Software Engineering Project - Academic Year 2024 - 2025  
-Galaxy Trucker is the Java implementation of the omonimus board game by Cranio Creations. It is the final project of the Software Engineering course of Computer Science Engineering held at Politecnico di Milano.
+# Galaxy Trucker — Software Engineering Project, A.Y. 2024/2025
 
-*Professor*: Gianpaolo Saverio Cugola
+Java implementation of the board game *Galaxy Trucker* by Cranio Creations, final
+project for the Software Engineering course of the Computer Science Engineering
+degree at Politecnico di Milano.
 
-*Group ID*: GC26
+*Professor*: Gianpaolo Saverio Cugola — *Group ID*: GC26
 
 ## The Team
+
 * [Samuele Segrini](https://github.com/samuelesegrini)
 * [Manuela Terribile](https://github.com/manuelater)
 * [Alessandra Varricchio](https://github.com/alessandravarricchio)
 * [Diego Zanca](https://github.com/diego-zanca)
 
-## The Project  
+![logo](src/main/resources/assets/images/logo.png)
 
-This project is a Java-based software adaptation of the board game Galaxy Trucker, developed as the final project for the Software Engineering course. It features a distributed client-server architecture and follows the Model-View-Controller design pattern.  
+## Status
 
-![image](src/main/resources/assets/images/logo.png)
- 
+The project is being rebuilt from the rules and the requirements on the `develop`
+branch. The previous implementation remains on `main` for reference; note that
+`main` does not currently compile.
 
-Game rules: [here](https://github.com/samuelesegrini/ing-sw-2025-segrini-terribile-varricchio-zanca/blob/main/documentation/rules-requirements/galaxy-trucker-rules-en.pdf);
+Progress is tracked in [docs/roadmap.md](docs/roadmap.md) and in the repository's
+milestones. The table below reflects what is **implemented and tested**, not what is
+planned.
 
-Project requirements: [here](https://github.com/samuelesegrini/ing-sw-2025-segrini-terribile-varricchio-zanca/blob/main/documentation/rules-requirements/requirements.pdf);
+### Core requirements
 
-## Implemented Features 
+| Functionality | Status |
+|:--|:--:|
+| Complete rules (level II) | 🚧 |
+| Socket | 🚧 |
+| RMI | 🚧 |
+| TUI | 🚧 |
+| GUI (JavaFX) | 🚧 |
 
-### Game-Specific Requirements
-* Faithful reproduction of the physical board game
-* Automatic validation of ship construction
-* Real-time visibility of all players' ships
-* Full ruleset implemented
+### Advanced features
 
-### Main functionalities
-| Functionality                    | Status |
-|:---------------------------------|:------:|
-| Complete rules                   |   ✅    |
-| RMI                              |   ✅    |
-| Socket                           |   ✅    |
-| TUI _(Textual User Interface)_   |   ✅    |
-| GUI _(Graphical User Interface)_ |   ✅    |
+| Functionality | Status |
+|:--|:--:|
+| Test flight | 🚧 |
+| Multiple concurrent games | 🚧 |
+| Disconnection resilience | 🚧 |
+| Persistence | 🚧 |
 
+✅ done and tested · 🚧 in progress · ⬜ not started
 
-### Advanced functionalities
-| Functionality                | Status |
-|:-----------------------------|:------:|
-| Test Flight                  |   ✅    |
-| Simultaneous games           |   ✅    |
+## Documentation
 
+| Document | What it is |
+|:--|:--|
+| [docs/specs/game-rules.md](docs/specs/game-rules.md) | Normative game specification. Single source of truth for behaviour, traceable to the manual page by page. |
+| [docs/specs/requirements.md](docs/specs/requirements.md) | Every project requirement restated as a checkable statement, with what verifies it. |
+| [docs/architecture/overview.md](docs/architecture/overview.md) | Target architecture, design decisions and the reasoning behind them. |
+| [docs/roadmap.md](docs/roadmap.md) | Milestones and their exit criteria. |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Branch model, commit convention, definition of done. |
 
-✅ Implemented  
+Original sources: [game rules](docs/rules/galaxy-trucker-rules-it.pdf) ·
+[quick reference](docs/rules/galaxy-trucker-summary-it.pdf) ·
+[project requirements](docs/rules/requirements.pdf).
 
+## Building
 
+Requires JDK 23 or later. Maven is provided through the wrapper.
 
+```bash
+./mvnw clean verify
+```
 
+## Running
 
+Server:
 
+```bash
+java -jar deliverables/server.jar
+```
+
+Client — interface and transport are chosen at startup:
+
+```bash
+java -jar deliverables/client.jar
+```
