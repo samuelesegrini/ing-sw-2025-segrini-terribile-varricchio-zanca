@@ -73,11 +73,11 @@ Requires JDK 23 or later. Maven is provided through the wrapper.
 Server:
 
 ```bash
-java -jar deliverables/server.jar
+java -jar target/server.jar
 ```
 
 Client — interface and transport are chosen at startup:
 
 ```bash
-java -jar deliverables/client.jar
+java -jar target/client.jar
 ```
