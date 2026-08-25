@@ -26,23 +26,32 @@ jobs:
           distribution: temurin
           cache: maven
 
-      - name: Compile
-        run: ./mvnw -B -ntp clean compile
+      # verify runs compile, the test suite and the JaCoCo report in one pass.
+      - name: Build, test and measure coverage
+        run: ./mvnw -B -ntp clean verify
 
-      - name: Run unit tests
-        run: ./mvnw -B -ntp test
-
-      - name: Coverage report
+      # Printed rather than uploaded: artifact storage is a shared account quota,
+      # and a number in the log is what a reviewer actually reads.
+      - name: Coverage summary
         if: always()
-        run: ./mvnw -B -ntp jacoco:report
-
-      - name: Upload coverage artifact
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: jacoco-report
-          path: target/site/jacoco/
-          if-no-files-found: ignore
+        run: |
+          CSV=target/site/jacoco/jacoco.csv
+          if [ ! -f "$CSV" ]; then
+            echo "No coverage report was produced."
+            exit 0
+          fi
+          awk -F, 'NR > 1 {
+            missed += $4; covered += $5;
+            branchMissed += $6; branchCovered += $7
+          }
+          END {
+            total = missed + covered
+            branchTotal = branchMissed + branchCovered
+            printf "Instruction coverage: %.1f%% (%d/%d)\n",
+                   total ? covered * 100 / total : 0, covered, total
+            printf "Branch coverage:      %.1f%% (%d/%d)\n",
+                   branchTotal ? branchCovered * 100 / branchTotal : 0, branchCovered, branchTotal
+          }' "$CSV" | tee -a "$GITHUB_STEP_SUMMARY"
 
   javadoc:
     name: Javadoc
@@ -54,5 +63,6 @@ jobs:
           java-version: '23'
           distribution: temurin
           cache: maven
+      # doclint is fatal, so this fails on missing or malformed documentation.
       - name: Generate Javadoc
         run: ./mvnw -B -ntp javadoc:javadoc
