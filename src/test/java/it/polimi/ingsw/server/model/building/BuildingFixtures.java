@@ -13,6 +13,7 @@ import it.polimi.ingsw.server.model.player.PlayerColor;
 import it.polimi.ingsw.server.model.ship.Connector;
 import it.polimi.ingsw.server.model.ship.Position;
 import it.polimi.ingsw.server.model.ship.Ship;
+import it.polimi.ingsw.server.model.ship.Ships;
 
 import java.util.ArrayList;
 import java.util.EnumMap;
@@ -98,7 +99,7 @@ final class BuildingFixtures {
     static Site site(int reservationSlots, AdventureDeck deck) {
         ComponentPool pool = new ComponentPool(plainTiles(8), new Random(SEED));
         Ship ship = new Ship(new ShipBoardSpec(5, 5, 5, 4, CABIN, reservationSlots, Set.of()),
-                Tiles.startingCabin(PlayerColor.GREEN));
+                Tiles.startingCabin(PlayerColor.GREEN), Ships.deepBank());
         return new Site(new ShipBuilder(ship, pool, deck), pool);
     }
 }

@@ -7,6 +7,7 @@ import it.polimi.ingsw.server.model.board.LevelSpec;
 import it.polimi.ingsw.server.model.component.ComponentKind;
 import it.polimi.ingsw.server.model.component.ComponentTile;
 import it.polimi.ingsw.server.model.component.StartingCabinTile;
+import it.polimi.ingsw.server.model.goods.GoodColor;
 import it.polimi.ingsw.server.model.player.PlayerColor;
 
 import java.util.EnumMap;
@@ -25,11 +26,13 @@ import java.util.Set;
  * @param tiles          the 152 tiles that go into the shared pool
  * @param startingCabins the four cabins handed out at setup, by player colour
  * @param cards          the identity of every adventure card
+ * @param bankStock      how many cubes of each colour the game ships with
  */
 public record GameData(Map<GameLevel, LevelSpec> levels,
                        List<ComponentTile> tiles,
                        Map<PlayerColor, StartingCabinTile> startingCabins,
-                       List<AdventureCardIdentity> cards) {
+                       List<AdventureCardIdentity> cards,
+                       Map<GoodColor, Integer> bankStock) {
 
     /**
      * Validates the catalogue and takes defensive copies.
@@ -61,6 +64,15 @@ public record GameData(Map<GameLevel, LevelSpec> levels,
 
         cards = List.copyOf(cards);
         requireDistinctIds(cards.stream().map(AdventureCardIdentity::id).toList(), "adventure card");
+
+        Map<GoodColor, Integer> bank = new EnumMap<>(GoodColor.class);
+        bank.putAll(bankStock);
+        for (GoodColor color : GoodColor.values()) {
+            if (!bank.containsKey(color)) {
+                throw new GameDataException("no bank stock given for " + color + " cubes");
+            }
+        }
+        bankStock = Map.copyOf(bank);
     }
 
     private static void requireDistinctIds(List<String> ids, String what) {

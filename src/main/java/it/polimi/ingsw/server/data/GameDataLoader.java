@@ -76,7 +76,7 @@ public final class GameDataLoader {
         List<ComponentTile> tiles = new ArrayList<>();
         Map<PlayerColor, StartingCabinTile> startingCabins = new EnumMap<>(PlayerColor.class);
         readTiles(tiles, startingCabins);
-        return new GameData(readLevels(), tiles, startingCabins, readCards());
+        return new GameData(readLevels(), tiles, startingCabins, readCards(), readBankStock());
     }
 
     // ---------------------------------------------------------------- components
@@ -136,6 +136,16 @@ public final class GameDataLoader {
     }
 
     // ---------------------------------------------------------------- boards
+
+    private Map<GoodColor, Integer> readBankStock() {
+        String where = BOARDS_FILE + " bank";
+        JsonNode goods = required(required(read(BOARDS_FILE), "bank", BOARDS_FILE), "goods", where);
+        Map<GoodColor, Integer> stock = new EnumMap<>(GoodColor.class);
+        for (GoodColor color : GoodColor.values()) {
+            stock.put(color, integer(goods, color.name(), where));
+        }
+        return stock;
+    }
 
     private Map<GameLevel, LevelSpec> readLevels() {
         JsonNode levels = required(read(BOARDS_FILE), "levels", BOARDS_FILE);

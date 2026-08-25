@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.OptionalInt;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -146,6 +147,14 @@ class BoardDataTest {
             assertEquals(2, rewards.priceOf(GoodColor.GREEN), level.toString());
             assertEquals(1, rewards.priceOf(GoodColor.BLUE), level.toString());
             assertEquals(1, rewards.lostComponentPenalty(), level.toString());
+        }
+    }
+
+    @Test
+    @DisplayName("the bank holds some of every colour, since a shortage of everything is not a game")
+    void bankStock_holdsSomeOfEveryColour() {
+        for (GoodColor color : GoodColor.values()) {
+            assertTrue(data.bankStock().get(color) > 0, color + " cubes are missing from the bank");
         }
     }
 

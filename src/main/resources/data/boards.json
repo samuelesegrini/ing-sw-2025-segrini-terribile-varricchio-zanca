@@ -1,4 +1,12 @@
 {
+  "bank": {
+    "goods": {
+      "RED": 8,
+      "YELLOW": 12,
+      "GREEN": 16,
+      "BLUE": 20
+    }
+  },
   "levels": {
     "TEST_FLIGHT": {
       "flightBoard": {

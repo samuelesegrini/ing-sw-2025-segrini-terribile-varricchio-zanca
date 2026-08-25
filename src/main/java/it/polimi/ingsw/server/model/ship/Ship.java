@@ -11,6 +11,9 @@ import it.polimi.ingsw.server.model.component.ShipComponent;
 import it.polimi.ingsw.server.model.component.StartingCabinTile;
 import it.polimi.ingsw.server.model.component.Tile;
 import it.polimi.ingsw.server.model.crew.AlienColor;
+import it.polimi.ingsw.server.model.goods.Forfeit;
+import it.polimi.ingsw.server.model.goods.GoodColor;
+import it.polimi.ingsw.server.model.goods.GoodsBank;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -40,17 +43,28 @@ public final class Ship {
 
     private final ShipGrid grid;
     private final ShipValidator validator;
+    private final GoodsBank bank;
+
+    private boolean cargoOperationsOpen;
 
     /**
      * Builds a ship around its starting cabin.
      *
+     * <p>The bank is a collaborator rather than a caller's responsibility, so that cubes
+     * are conserved by construction: everything a ship loads comes out of it, and
+     * everything it sells, jettisons or has taken from it goes straight back. Leaving that
+     * to callers means one of them eventually forgets, and cubes quietly appear from
+     * nowhere.
+     *
      * @param spec          the board this ship is built on
      * @param startingCabin the cabin the player was given
-     * @throws NullPointerException if either argument is {@code null}
+     * @param bank          the goods every ship in the game draws from
+     * @throws NullPointerException if any argument is {@code null}
      */
-    public Ship(ShipBoardSpec spec, StartingCabinTile startingCabin) {
+    public Ship(ShipBoardSpec spec, StartingCabinTile startingCabin, GoodsBank bank) {
         this.grid = new ShipGrid(spec);
         this.validator = new ShipValidator(grid);
+        this.bank = bank;
         grid.put(spec.startingCabin(), ShipComponent.place(startingCabin, Rotation.NONE));
     }
 
@@ -335,14 +349,17 @@ public final class Ship {
     }
 
     private void destroy(Position cell) {
-        grid.remove(cell).ifPresent(Ship::returnTokensToBank);
+        grid.remove(cell).ifPresent(this::returnTokensToBank);
         removeStrandedAliens();
     }
 
-    private static void returnTokensToBank(ShipComponent component) {
+    private void returnTokensToBank(ShipComponent component) {
         switch (component) {
             case BatteryComponent battery -> battery.drain();
-            case CargoHoldComponent hold -> hold.jettisonAll();
+            case CargoHoldComponent hold -> {
+                bank.giveBackAll(hold.contents());
+                hold.jettisonAll();
+            }
             case CabinComponent cabin -> cabin.evacuate();
             default -> {
                 // Nothing else carries anything the bank wants back.
@@ -426,6 +443,221 @@ public final class Ship {
                 .collect(java.util.stream.Collectors.toUnmodifiableSet());
     }
 
+
+
+    // ---------------------------------------------------------------- cargo
+
+    /**
+     * Returns what is in each hold.
+     *
+     * @return an immutable view, hold by hold, each list most valuable first
+     */
+    public Map<Position, List<GoodColor>> cargo() {
+        Map<Position, List<GoodColor>> manifest = new java.util.LinkedHashMap<>();
+        components().forEach((cell, component) -> {
+            if (component instanceof CargoHoldComponent hold) {
+                manifest.put(cell, hold.contents());
+            }
+        });
+        return java.util.Collections.unmodifiableMap(manifest);
+    }
+
+    /**
+     * Returns every cube aboard, most valuable first.
+     *
+     * <p>The order cards take them in, and the order they are sold in at journey's end.
+     *
+     * @return the whole manifest
+     */
+    public List<GoodColor> manifest() {
+        return holds()
+                .flatMap(hold -> hold.contents().stream())
+                .sorted()
+                .toList();
+    }
+
+    /**
+     * Returns how many cubes are aboard.
+     *
+     * @return the total cargo
+     */
+    public int cargoCount() {
+        return holds().mapToInt(CargoHoldComponent::load).sum();
+    }
+
+    /**
+     * Returns the holds that could take a cube of the given colour right now.
+     *
+     * <p>Red goods are hazardous and only a reinforced hold will carry them (manual p.7),
+     * so this is often shorter than a player expects.
+     *
+     * @param color the colour to place
+     * @return the cells whose holds have room and the right rating
+     */
+    public Set<Position> holdsAccepting(GoodColor color) {
+        return components().entrySet().stream()
+                .filter(entry -> entry.getValue() instanceof CargoHoldComponent hold && hold.accepts(color))
+                .map(Map.Entry::getKey)
+                .collect(java.util.stream.Collectors.toUnmodifiableSet());
+    }
+
+    /**
+     * Opens the one window in which cubes may be moved.
+     *
+     * <p>Loading is the only moment cargo can be redistributed or thrown overboard
+     * (quick reference). Outside it a ship's holds are sealed, which is what stops a
+     * player shuffling their cargo the instant before a smuggler takes the most valuable
+     * cube.
+     */
+    public void beginCargoOperations() {
+        cargoOperationsOpen = true;
+    }
+
+    /**
+     * Closes the window.
+     */
+    public void endCargoOperations() {
+        cargoOperationsOpen = false;
+    }
+
+    /**
+     * Tells whether cubes may be moved at the moment.
+     *
+     * @return {@code true} while a card is letting this ship load
+     */
+    public boolean cargoOperationsOpen() {
+        return cargoOperationsOpen;
+    }
+
+    /**
+     * Takes a cube from the bank and puts it in a hold.
+     *
+     * <p>Returns whether it worked rather than failing when the bank is empty. Running
+     * out is a rule, not an error: a player who finds nothing left to load still pays the
+     * flight days (manual p.19).
+     *
+     * @param hold  the hold to fill
+     * @param color the colour wanted
+     * @return {@code true} when a cube was actually loaded
+     * @throws IllegalStateException    if no card is letting this ship load
+     * @throws IllegalArgumentException if there is no hold there
+     */
+    public boolean load(Position hold, GoodColor color) {
+        requireCargoOperationsOpen();
+        CargoHoldComponent target = holdAt(hold);
+        if (!target.accepts(color)) {
+            throw new IllegalArgumentException(target.id() + " will not take a " + color + " cube");
+        }
+        if (!bank.take(color)) {
+            return false;
+        }
+        target.store(color);
+        return true;
+    }
+
+    /**
+     * Throws a cube overboard, back into the bank.
+     *
+     * <p>Which is how it becomes available to a ship further back in the route order
+     * (manual p.19) — jettisoning is a decision that affects other people.
+     *
+     * @param hold  the hold to empty
+     * @param color the colour to discard
+     * @throws IllegalStateException if no card is letting this ship load
+     */
+    public void jettison(Position hold, GoodColor color) {
+        requireCargoOperationsOpen();
+        holdAt(hold).remove(color);
+        bank.giveBack(color);
+    }
+
+    /**
+     * Moves a cube from one hold to another.
+     *
+     * @param from  the hold to take it out of
+     * @param to    the hold to put it into
+     * @param color the colour to move
+     * @throws IllegalStateException    if no card is letting this ship load
+     * @throws IllegalArgumentException if the destination will not take it
+     */
+    public void moveCargo(Position from, Position to, GoodColor color) {
+        requireCargoOperationsOpen();
+        CargoHoldComponent source = holdAt(from);
+        CargoHoldComponent destination = holdAt(to);
+        if (!destination.accepts(color)) {
+            throw new IllegalArgumentException(destination.id() + " will not take a " + color + " cube");
+        }
+        source.remove(color);
+        destination.store(color);
+    }
+
+    /**
+     * Hands over valuables when a card demands them.
+     *
+     * <p>The manual's cascade (p.11): the most valuable goods first, then battery charges
+     * once the holds are empty, and then nothing — a ship with neither cannot be taken
+     * from. No cargo window is needed, because this is not a choice the player is making.
+     *
+     * @param count how much is demanded
+     * @return what was actually given up
+     * @throws IllegalArgumentException if the demand is negative
+     */
+    public Forfeit surrender(int count) {
+        if (count < 0) {
+            throw new IllegalArgumentException("a card cannot demand " + count + " goods");
+        }
+        List<GoodColor> given = new ArrayList<>();
+        int remaining = count;
+        while (remaining > 0) {
+            Optional<CargoHoldComponent> richest = holds()
+                    .filter(hold -> hold.mostValuable().isPresent())
+                    .min(java.util.Comparator.comparing(hold -> hold.mostValuable().orElseThrow()));
+            if (richest.isEmpty()) {
+                break;
+            }
+            GoodColor taken = richest.get().mostValuable().orElseThrow();
+            richest.get().remove(taken);
+            bank.giveBack(taken);
+            given.add(taken);
+            remaining--;
+        }
+        int charges = drawCharges(remaining);
+        return new Forfeit(given, charges, remaining - charges);
+    }
+
+    /**
+     * Sells everything aboard and hands the cubes back.
+     *
+     * <p>Journey's end: the whole manifest goes back to the bank and the player is paid
+     * for it (manual p.15).
+     *
+     * @return what was sold, most valuable first
+     */
+    public List<GoodColor> sellAllCargo() {
+        List<GoodColor> sold = manifest();
+        holds().forEach(CargoHoldComponent::jettisonAll);
+        bank.giveBackAll(sold);
+        return sold;
+    }
+
+    private void requireCargoOperationsOpen() {
+        if (!cargoOperationsOpen) {
+            throw new IllegalStateException("cargo can only be moved while a card is letting this ship load");
+        }
+    }
+
+    private CargoHoldComponent holdAt(Position cell) {
+        return grid.at(cell)
+                .filter(CargoHoldComponent.class::isInstance)
+                .map(CargoHoldComponent.class::cast)
+                .orElseThrow(() -> new IllegalArgumentException("there is no cargo hold at " + cell));
+    }
+
+    private java.util.stream.Stream<CargoHoldComponent> holds() {
+        return components().values().stream()
+                .filter(CargoHoldComponent.class::isInstance)
+                .map(CargoHoldComponent.class::cast);
+    }
 
     // ---------------------------------------------------------------- crew placement
 
@@ -598,13 +830,24 @@ public final class Ship {
      */
     public void spend(BatteryPlan plan) {
         checkPlan(plan);
-        int remaining = plan.cost();
+        drawCharges(plan.cost());
+    }
+
+    /**
+     * Takes charges off whichever compartments still have them.
+     *
+     * @param wanted how many to draw
+     * @return how many were actually available
+     */
+    private int drawCharges(int wanted) {
+        int drawn = 0;
         for (BatteryComponent battery : batteries().toList()) {
-            while (remaining > 0 && !battery.isEmpty()) {
+            while (drawn < wanted && !battery.isEmpty()) {
                 battery.spend();
-                remaining--;
+                drawn++;
             }
         }
+        return drawn;
     }
 
     /**
