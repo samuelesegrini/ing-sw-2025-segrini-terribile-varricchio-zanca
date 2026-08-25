@@ -36,3 +36,16 @@ build/
 
 ### Mac OS ###
 .DS_Store
+### Build output ###
+*.class
+out/
+bin/
+
+### Logs / runtime state ###
+*.log
+logs/
+saves/
+*.hprof
+
+### Local tooling ###
+.claude/
