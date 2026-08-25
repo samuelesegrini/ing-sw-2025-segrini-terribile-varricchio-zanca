@@ -28,5 +28,9 @@ public record LevelSpec(GameLevel level, FlightBoardSpec flightBoard, ShipBoardS
             throw new IllegalArgumentException(
                     level + ": the reservation rule and the printed reservation slots disagree");
         }
+        if (rules.cardPilePeeking() != (flightBoard.deck().peekablePiles() > 0)) {
+            throw new IllegalArgumentException(
+                    level + ": the peeking rule and the number of lower card piles disagree");
+        }
     }
 }

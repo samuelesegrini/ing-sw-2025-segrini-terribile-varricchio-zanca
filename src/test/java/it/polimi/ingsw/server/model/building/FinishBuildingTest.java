@@ -1,21 +1,12 @@
 package it.polimi.ingsw.server.model.building;
 
-import it.polimi.ingsw.server.model.board.ShipBoardSpec;
-import it.polimi.ingsw.server.model.component.ComponentKind;
 import it.polimi.ingsw.server.model.component.ComponentTile;
-import it.polimi.ingsw.server.model.component.Tiles;
-import it.polimi.ingsw.server.model.player.PlayerColor;
-import it.polimi.ingsw.server.model.ship.Connector;
 import it.polimi.ingsw.server.model.ship.Position;
 import it.polimi.ingsw.server.model.ship.Rotation;
-import it.polimi.ingsw.server.model.ship.Ship;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
-import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -35,21 +26,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 class FinishBuildingTest {
 
-    private static final Position CABIN = new Position(2, 2);
-    private static final Position NORTH_OF_CABIN = new Position(1, 2);
+    private static final Position NORTH_OF_CABIN = BuildingFixtures.AHEAD;
 
     private ComponentPool pool;
 
     private ShipBuilder builder(int reservationSlots) {
-        List<ComponentTile> tiles = new ArrayList<>();
-        for (int i = 0; i < 8; i++) {
-            tiles.add(new ComponentTile("tile-" + i, ComponentKind.STRUCTURAL_MODULE,
-                    Tiles.allSides(Connector.UNIVERSAL), 0));
-        }
-        pool = new ComponentPool(tiles, new Random(20250825L));
-        Ship ship = new Ship(new ShipBoardSpec(5, 5, 5, 4, CABIN, reservationSlots, Set.of()),
-                Tiles.startingCabin(PlayerColor.GREEN));
-        return new ShipBuilder(ship, pool);
+        BuildingFixtures.Site site = BuildingFixtures.site(reservationSlots);
+        pool = site.pool();
+        return site.builder();
     }
 
     @Test

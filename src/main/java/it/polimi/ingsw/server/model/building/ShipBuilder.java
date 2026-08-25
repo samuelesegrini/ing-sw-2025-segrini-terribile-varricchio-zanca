@@ -1,5 +1,7 @@
 package it.polimi.ingsw.server.model.building;
 
+import it.polimi.ingsw.server.model.adventure.AdventureCardIdentity;
+import it.polimi.ingsw.server.model.adventure.AdventureDeck;
 import it.polimi.ingsw.server.model.component.ComponentTile;
 import it.polimi.ingsw.server.model.component.ShipComponent;
 import it.polimi.ingsw.server.model.ship.Position;
@@ -28,6 +30,7 @@ public final class ShipBuilder {
 
     private final Ship ship;
     private final ComponentPool pool;
+    private final AdventureDeck deck;
 
     private final List<ComponentTile> reserved = new ArrayList<>();
 
@@ -35,16 +38,19 @@ public final class ShipBuilder {
     private boolean heldTileWasReserved;
     private Position unwelded;
     private boolean finished;
+    private Integer pileInHand;
 
     /**
      * Starts building a ship from a shared pool.
      *
      * @param ship the ship being built, already holding its starting cabin
      * @param pool the heap every player draws from
+     * @param deck the adventure cards dealt for this flight, some piles of which may be scouted
      */
-    public ShipBuilder(Ship ship, ComponentPool pool) {
+    public ShipBuilder(Ship ship, ComponentPool pool, AdventureDeck deck) {
         this.ship = ship;
         this.pool = pool;
+        this.deck = deck;
     }
 
     /**
@@ -129,6 +135,7 @@ public final class ShipBuilder {
      */
     public ComponentTile drawFaceDown() {
         requireStillBuilding();
+        requireNotScouting();
         requireEmptyHand();
         weld();
         inHand = pool.drawFaceDown();
@@ -147,6 +154,7 @@ public final class ShipBuilder {
      */
     public ComponentTile takeFaceUp(String tileId) {
         requireStillBuilding();
+        requireNotScouting();
         requireEmptyHand();
         weld();
         inHand = pool.takeFaceUp(tileId);
@@ -164,6 +172,7 @@ public final class ShipBuilder {
      */
     public void returnToPool() {
         requireStillBuilding();
+        requireNotScouting();
         ComponentTile returned = requireHeldTile();
         if (heldTileWasReserved) {
             throw new IllegalStateException(
@@ -188,6 +197,7 @@ public final class ShipBuilder {
      */
     public void reserve() {
         requireStillBuilding();
+        requireNotScouting();
         ComponentTile tile = requireHeldTile();
         if (!reservationAllowed()) {
             throw new IllegalStateException("this level has no reservation area");
@@ -214,6 +224,7 @@ public final class ShipBuilder {
      */
     public void takeReserved(String tileId) {
         requireStillBuilding();
+        requireNotScouting();
         requireEmptyHand();
         ComponentTile tile = reserved.stream()
                 .filter(candidate -> candidate.id().equals(tileId))
@@ -240,6 +251,7 @@ public final class ShipBuilder {
      */
     public void attach(Position cell, Rotation rotation) {
         requireStillBuilding();
+        requireNotScouting();
         ComponentTile tile = requireHeldTile();
         ship.place(cell, tile, rotation);
         inHand = null;
@@ -261,6 +273,7 @@ public final class ShipBuilder {
      */
     public void adjust(Position cell, Rotation rotation) {
         requireStillBuilding();
+        requireNotScouting();
         if (unwelded == null) {
             throw new IllegalStateException("nothing is loose to move: the last tile is already welded");
         }
@@ -301,6 +314,7 @@ public final class ShipBuilder {
      */
     public void finish() {
         requireStillBuilding();
+        pileInHand = null;
         weld();
         if (inHand != null) {
             ComponentTile stillHeld = inHand;
@@ -313,6 +327,83 @@ public final class ShipBuilder {
             heldTileWasReserved = false;
         }
         finished = true;
+    }
+
+    // ---------------------------------------------------------------- scouting
+
+    /**
+     * Tells whether this flight lets players scout the adventure cards at all.
+     *
+     * <p>Falls out of the deck rather than being configured separately: scouting exists
+     * because a level II board deals its cards into four piles and leaves three of them
+     * within reach. A test flight deals one pile, which is the unknown one, so there is
+     * nothing to look at.
+     *
+     * @return {@code true} when at least one pile may be scouted
+     */
+    public boolean scoutingAllowed() {
+        return deck.isPeekable(0);
+    }
+
+    /**
+     * Returns the pile the player currently has in their hands.
+     *
+     * @return the pile index, or empty when they are building rather than reading
+     */
+    public Optional<Integer> pileInHand() {
+        return Optional.ofNullable(pileInHand);
+    }
+
+    /**
+     * Picks up a pile of adventure cards and reads it.
+     *
+     * <p>Three things happen at once, and all three come from manual p.16. The last tile
+     * placed is welded, exactly as if the player had reached for a new one — scouting
+     * costs the same commitment that drawing does. Building stops while the cards are in
+     * hand. And only the lower piles may be picked up at all; the one at the top of the
+     * board stays unknown.
+     *
+     * <p>A player may do this as often as they like until they finish their ship.
+     *
+     * @param pile the pile to read, counting from zero
+     * @return the cards it holds
+     * @throws IllegalStateException    if the ship is finished, another pile is already in
+     *                                  hand, a tile is in hand, or nothing has been
+     *                                  attached to the ship yet
+     * @throws IllegalArgumentException if that pile may not be scouted
+     */
+    public List<AdventureCardIdentity> scout(int pile) {
+        requireStillBuilding();
+        requireNotScouting();
+        requireEmptyHand();
+        if (ship.components().size() < 2) {
+            throw new IllegalStateException("attach something to the ship before reading the flight forecast");
+        }
+        if (!deck.isPeekable(pile)) {
+            throw new IllegalArgumentException("pile " + pile + " is not one of the predictable ones");
+        }
+        weld();
+        pileInHand = pile;
+        return deck.pile(pile);
+    }
+
+    /**
+     * Puts the pile back and returns to building.
+     *
+     * @throws IllegalStateException if no pile is in hand
+     */
+    public void putPileBack() {
+        if (pileInHand == null) {
+            throw new IllegalStateException("no pile of cards is in hand");
+        }
+        pileInHand = null;
+    }
+
+    private void requireNotScouting() {
+        if (pileInHand != null) {
+            throw new IllegalStateException(
+                    "pile " + pileInHand + " is still in hand: put it back before building");
+        }
     }
 
     private void requireStillBuilding() {
