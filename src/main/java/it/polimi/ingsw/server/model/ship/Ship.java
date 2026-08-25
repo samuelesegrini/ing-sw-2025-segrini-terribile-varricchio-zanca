@@ -426,6 +426,129 @@ public final class Ship {
                 .collect(java.util.stream.Collectors.toUnmodifiableSet());
     }
 
+
+    // ---------------------------------------------------------------- crew placement
+
+    /**
+     * Returns the alien species this cabin could take right now.
+     *
+     * <p>Three things have to line up. The cabin must be able to host an alien at all —
+     * the starting cabin never can. A life support module of that colour must be welded
+     * to it, not merely sitting next door. And the ship must not already be carrying an
+     * alien of that colour, since one of each is the limit (manual p.18).
+     *
+     * <p>A cabin joined to both colours of module offers a genuine choice between them,
+     * which is the one place the rule gets interesting.
+     *
+     * @param cabin the cabin to ask about
+     * @return the species that could move in, possibly none
+     * @throws IllegalArgumentException if there is no cabin there
+     */
+    public Set<AlienColor> aliensAllowedIn(Position cabin) {
+        CabinComponent component = cabinAt(cabin);
+        if (!component.canHostAlien()) {
+            return Set.of();
+        }
+        Set<AlienColor> aboard = aliens();
+        return java.util.Arrays.stream(AlienColor.values())
+                .filter(color -> !aboard.contains(color))
+                .filter(color -> isLifeSupported(cabin, color))
+                .collect(java.util.stream.Collectors.toUnmodifiableSet());
+    }
+
+    /**
+     * Moves two humans into a cabin.
+     *
+     * <p>Always available: a human in a space suit can live anywhere, including a cabin
+     * fitted out for aliens (manual p.18).
+     *
+     * @param cabin the cabin to fill
+     * @throws IllegalArgumentException if there is no cabin there
+     * @throws IllegalStateException    if it already has crew aboard
+     */
+    public void boardHumansIn(Position cabin) {
+        cabinAt(cabin).boardHumans();
+    }
+
+    /**
+     * Moves an alien into a cabin, in place of the two humans it displaces.
+     *
+     * @param cabin the cabin to fill
+     * @param color the species moving in
+     * @throws IllegalArgumentException if there is no cabin there, or that species cannot live there
+     * @throws IllegalStateException    if the cabin already has crew aboard
+     */
+    public void boardAlienIn(Position cabin, AlienColor color) {
+        CabinComponent component = cabinAt(cabin);
+        if (!aliensAllowedIn(cabin).contains(color)) {
+            throw new IllegalArgumentException(
+                    "a " + color + " alien cannot live in " + component.id()
+                            + ": " + whyNot(cabin, color));
+        }
+        component.boardAlien(color);
+    }
+
+    private String whyNot(Position cabin, AlienColor color) {
+        if (!cabinAt(cabin).canHostAlien()) {
+            return "the starting cabin never takes an alien";
+        }
+        if (aliens().contains(color)) {
+            return "the ship already carries a " + color + " alien";
+        }
+        return "no " + color + " life support module is welded to it";
+    }
+
+    /**
+     * Fills every empty cabin with humans.
+     *
+     * <p>The rest of launch preparation, once a player has decided where their aliens go.
+     * Every cabin ends up occupied, because the manual leaves no room for an empty one
+     * (p.18).
+     *
+     * @return how many cabins were filled
+     */
+    public int fillRemainingCabinsWithHumans() {
+        List<CabinComponent> empty = cabins().filter(CabinComponent::isEmpty).toList();
+        empty.forEach(CabinComponent::boardHumans);
+        return empty.size();
+    }
+
+    /**
+     * Tells whether every cabin has somebody in it.
+     *
+     * @return {@code true} when no cabin is empty
+     */
+    public boolean crewIsAboard() {
+        return cabins().noneMatch(CabinComponent::isEmpty);
+    }
+
+    /**
+     * Returns the cabins that could still take an alien.
+     *
+     * <p>What a client offers the player during launch preparation.
+     *
+     * @return the empty cabins with at least one species available, and which species
+     */
+    public Map<Position, Set<AlienColor>> alienBerths() {
+        Map<Position, Set<AlienColor>> berths = new java.util.LinkedHashMap<>();
+        components().forEach((cell, component) -> {
+            if (component instanceof CabinComponent cabin && cabin.isEmpty()) {
+                Set<AlienColor> allowed = aliensAllowedIn(cell);
+                if (!allowed.isEmpty()) {
+                    berths.put(cell, allowed);
+                }
+            }
+        });
+        return java.util.Collections.unmodifiableMap(berths);
+    }
+
+    private CabinComponent cabinAt(Position cell) {
+        return grid.at(cell)
+                .filter(CabinComponent.class::isInstance)
+                .map(CabinComponent.class::cast)
+                .orElseThrow(() -> new IllegalArgumentException("there is no cabin at " + cell));
+    }
+
     // ---------------------------------------------------------------- attributes
 
     /**
