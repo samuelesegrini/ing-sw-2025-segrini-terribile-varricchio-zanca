@@ -34,6 +34,7 @@ public final class ShipBuilder {
     private ComponentTile inHand;
     private boolean heldTileWasReserved;
     private Position unwelded;
+    private boolean finished;
 
     /**
      * Starts building a ship from a shared pool.
@@ -71,6 +72,18 @@ public final class ShipBuilder {
      */
     public Optional<Position> unweldedCell() {
         return Optional.ofNullable(unwelded);
+    }
+
+    /**
+     * Tells whether this player has declared their ship done.
+     *
+     * <p>Also the answer to whether they may turn the hourglass onto its final space
+     * (manual p.17).
+     *
+     * @return {@code true} once they have taken a start space
+     */
+    public boolean hasFinished() {
+        return finished;
     }
 
     /**
@@ -115,6 +128,7 @@ public final class ShipBuilder {
      * @throws IllegalStateException if the player is already holding a tile, or the heap is empty
      */
     public ComponentTile drawFaceDown() {
+        requireStillBuilding();
         requireEmptyHand();
         weld();
         inHand = pool.drawFaceDown();
@@ -132,6 +146,7 @@ public final class ShipBuilder {
      * @throws IllegalStateException if the player is already holding a tile, or no such tile is on show
      */
     public ComponentTile takeFaceUp(String tileId) {
+        requireStillBuilding();
         requireEmptyHand();
         weld();
         inHand = pool.takeFaceUp(tileId);
@@ -148,6 +163,7 @@ public final class ShipBuilder {
      * @throws IllegalStateException if the player is holding nothing
      */
     public void returnToPool() {
+        requireStillBuilding();
         ComponentTile returned = requireHeldTile();
         if (heldTileWasReserved) {
             throw new IllegalStateException(
@@ -171,6 +187,7 @@ public final class ShipBuilder {
      *                               allow reserving, or both slots are taken
      */
     public void reserve() {
+        requireStillBuilding();
         ComponentTile tile = requireHeldTile();
         if (!reservationAllowed()) {
             throw new IllegalStateException("this level has no reservation area");
@@ -196,6 +213,7 @@ public final class ShipBuilder {
      *                               tile is reserved
      */
     public void takeReserved(String tileId) {
+        requireStillBuilding();
         requireEmptyHand();
         ComponentTile tile = reserved.stream()
                 .filter(candidate -> candidate.id().equals(tileId))
@@ -221,6 +239,7 @@ public final class ShipBuilder {
      * @throws IllegalArgumentException if the cell is taken, off the ship, or touching nothing
      */
     public void attach(Position cell, Rotation rotation) {
+        requireStillBuilding();
         ComponentTile tile = requireHeldTile();
         ship.place(cell, tile, rotation);
         inHand = null;
@@ -241,6 +260,7 @@ public final class ShipBuilder {
      * @throws IllegalArgumentException if the new cell will not take it
      */
     public void adjust(Position cell, Rotation rotation) {
+        requireStillBuilding();
         if (unwelded == null) {
             throw new IllegalStateException("nothing is loose to move: the last tile is already welded");
         }
@@ -265,6 +285,40 @@ public final class ShipBuilder {
      */
     public void weld() {
         unwelded = null;
+    }
+
+    /**
+     * Declares the ship done.
+     *
+     * <p>Welds whatever was still loose, and puts down whatever was still in hand: a tile
+     * drawn from the table goes back face up, while a tile picked up from the reservation
+     * corner goes back into the corner, since a reserved tile never returns to the table.
+     * Handling both here matters because finishing is not always voluntary — when the last
+     * hourglass period runs out, everyone still building has to stop where they stand
+     * (manual p.17).
+     *
+     * @throws IllegalStateException if the player has already finished
+     */
+    public void finish() {
+        requireStillBuilding();
+        weld();
+        if (inHand != null) {
+            ComponentTile stillHeld = inHand;
+            inHand = null;
+            if (heldTileWasReserved) {
+                reserved.add(stillHeld);
+            } else {
+                pool.returnFaceUp(stillHeld);
+            }
+            heldTileWasReserved = false;
+        }
+        finished = true;
+    }
+
+    private void requireStillBuilding() {
+        if (finished) {
+            throw new IllegalStateException("this ship is finished: no more building");
+        }
     }
 
     private void requireEmptyHand() {

@@ -251,10 +251,20 @@ The test flight has no timer `[p.8]`.
 
 ### 4.6 Finishing
 
-A player finishes by claiming a free **start space** on the route. Start spaces are
-claimed in finishing order: the first player to finish takes the furthest-ahead
-space `[p.8]`. A player may not claim a start space numbered higher than the number
-of players in the game `[p.17]`.
+A player finishes by claiming a free **start space** on the route. The two levels
+differ, and the difference is easy to miss because each is stated only once:
+
+**Test flight** — spaces are assigned in finishing order. "The first player to finish
+occupies space 1, the second occupies space 2, and so on" `[p.8]`. There is no choice.
+
+**Level II** — the player **chooses** any free start space, except those numbered
+higher than the number of players in the game `[p.17]`. With two players only spaces
+1 and 2 are on offer, whoever finishes first. Most players will want to start as far
+forward as possible, but the choice is theirs.
+
+In both levels, a player forced to stop because the last hourglass period ran out
+takes the best free space rather than choosing — "the quickest will take the best
+free space" `[p.17]`.
 
 Once finished, a player may no longer attach components or look at card piles `[QR]`.
 
