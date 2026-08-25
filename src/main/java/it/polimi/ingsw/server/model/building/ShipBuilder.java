@@ -6,6 +6,8 @@ import it.polimi.ingsw.server.model.ship.Position;
 import it.polimi.ingsw.server.model.ship.Rotation;
 import it.polimi.ingsw.server.model.ship.Ship;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -27,7 +29,10 @@ public final class ShipBuilder {
     private final Ship ship;
     private final ComponentPool pool;
 
+    private final List<ComponentTile> reserved = new ArrayList<>();
+
     private ComponentTile inHand;
+    private boolean heldTileWasReserved;
     private Position unwelded;
 
     /**
@@ -68,6 +73,36 @@ public final class ShipBuilder {
         return Optional.ofNullable(unwelded);
     }
 
+    /**
+     * Returns the tiles set aside in the corner of the board.
+     *
+     * @return an unmodifiable view of the reserved tiles
+     */
+    public List<ComponentTile> reserved() {
+        return List.copyOf(reserved);
+    }
+
+    /**
+     * Tells whether this level lets a player set tiles aside at all.
+     *
+     * <p>Reserving arrives with the complete game (manual p.17); a test flight has no
+     * reservation area in play.
+     *
+     * @return {@code true} when the board allows reservations
+     */
+    public boolean reservationAllowed() {
+        return ship.board().allowsReservation();
+    }
+
+    /**
+     * Tells whether there is room to set another tile aside.
+     *
+     * @return {@code true} when a reservation slot is free
+     */
+    public boolean canReserve() {
+        return reservationAllowed() && reserved.size() < ship.board().reservationSlots();
+    }
+
     // ---------------------------------------------------------------- taking
 
     /**
@@ -83,6 +118,7 @@ public final class ShipBuilder {
         requireEmptyHand();
         weld();
         inHand = pool.drawFaceDown();
+        heldTileWasReserved = false;
         return inHand;
     }
 
@@ -99,6 +135,7 @@ public final class ShipBuilder {
         requireEmptyHand();
         weld();
         inHand = pool.takeFaceUp(tileId);
+        heldTileWasReserved = false;
         return inHand;
     }
 
@@ -112,8 +149,62 @@ public final class ShipBuilder {
      */
     public void returnToPool() {
         ComponentTile returned = requireHeldTile();
+        if (heldTileWasReserved) {
+            throw new IllegalStateException(
+                    returned.id() + " was reserved: a reserved tile never goes back on the table");
+        }
         inHand = null;
         pool.returnFaceUp(returned);
+    }
+
+    // ---------------------------------------------------------------- reserving
+
+    /**
+     * Sets the held tile aside in the corner of the board.
+     *
+     * <p>A reserved tile is out of everyone's reach, this player's included, until they
+     * attach it. What it is not is an escape route: once reserved, a tile can never go
+     * back on the table, and one still sitting in the corner when building ends is a
+     * component lost along the route, worth a credit off the final score (manual p.17).
+     *
+     * @throws IllegalStateException if the player is holding nothing, the level does not
+     *                               allow reserving, or both slots are taken
+     */
+    public void reserve() {
+        ComponentTile tile = requireHeldTile();
+        if (!reservationAllowed()) {
+            throw new IllegalStateException("this level has no reservation area");
+        }
+        if (!canReserve()) {
+            throw new IllegalStateException(
+                    "both reservation slots are taken: " + reserved.stream().map(ComponentTile::id).toList());
+        }
+        inHand = null;
+        heldTileWasReserved = false;
+        reserved.add(tile);
+    }
+
+    /**
+     * Picks a reserved tile back up.
+     *
+     * <p>Counts as taking a tile, so it welds whatever was still loose. The tile comes
+     * back marked, because it may be attached but never returned to the table — the only
+     * two things that can happen to it are being welded on or being written off.
+     *
+     * @param tileId the reserved tile to pick up
+     * @throws IllegalStateException if the player is already holding a tile, or no such
+     *                               tile is reserved
+     */
+    public void takeReserved(String tileId) {
+        requireEmptyHand();
+        ComponentTile tile = reserved.stream()
+                .filter(candidate -> candidate.id().equals(tileId))
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("no tile named " + tileId + " is reserved"));
+        weld();
+        reserved.remove(tile);
+        inHand = tile;
+        heldTileWasReserved = true;
     }
 
     // ---------------------------------------------------------------- placing
@@ -133,6 +224,7 @@ public final class ShipBuilder {
         ComponentTile tile = requireHeldTile();
         ship.place(cell, tile, rotation);
         inHand = null;
+        heldTileWasReserved = false;
         unwelded = cell;
     }
 
