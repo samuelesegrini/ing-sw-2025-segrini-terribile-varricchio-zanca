@@ -14,14 +14,17 @@ import java.util.Map;
  * and nothing about the other three. Spelling out four connectors at every call site
  * buries the property under test in noise, so this fills in a universal-on-every-side
  * default and lets a test override only what it is about.
+ *
+ * <p>Public because the ship tests build ships out of tiles too, and two copies of this
+ * would drift apart.
  */
-final class Tiles {
+public final class Tiles {
 
     private Tiles() {
     }
 
     /** Returns a map with the same connector on all four sides. */
-    static Map<Direction, Connector> allSides(Connector connector) {
+    public static Map<Direction, Connector> allSides(Connector connector) {
         Map<Direction, Connector> sides = new EnumMap<>(Direction.class);
         for (Direction direction : Direction.values()) {
             sides.put(direction, connector);
@@ -30,7 +33,7 @@ final class Tiles {
     }
 
     /** Returns the four sides in north, east, south, west order. */
-    static Map<Direction, Connector> sides(Connector north, Connector east, Connector south, Connector west) {
+    public static Map<Direction, Connector> sides(Connector north, Connector east, Connector south, Connector west) {
         Map<Direction, Connector> connectors = new EnumMap<>(Direction.class);
         connectors.put(Direction.NORTH, north);
         connectors.put(Direction.EAST, east);
@@ -40,17 +43,17 @@ final class Tiles {
     }
 
     /** Returns a tile of the given kind, universal on every side, with no capacity. */
-    static ComponentTile of(ComponentKind kind) {
+    public static ComponentTile of(ComponentKind kind) {
         return new ComponentTile(kind.name().toLowerCase() + "-tile", kind, allSides(Connector.UNIVERSAL), 0);
     }
 
     /** Returns a tile of the given kind and capacity, universal on every side. */
-    static ComponentTile of(ComponentKind kind, int capacity) {
+    public static ComponentTile of(ComponentKind kind, int capacity) {
         return new ComponentTile(kind.name().toLowerCase() + "-tile", kind, allSides(Connector.UNIVERSAL), capacity);
     }
 
     /** Returns a starting cabin for the given player. */
-    static StartingCabinTile startingCabin(PlayerColor color) {
+    public static StartingCabinTile startingCabin(PlayerColor color) {
         return new StartingCabinTile("starting-cabin-" + color.name().toLowerCase(),
                 color, allSides(Connector.UNIVERSAL));
     }
