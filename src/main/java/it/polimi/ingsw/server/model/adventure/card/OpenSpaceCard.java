@@ -11,15 +11,11 @@ import it.polimi.ingsw.server.model.component.ComponentKind;
 import it.polimi.ingsw.server.model.flight.Flight;
 import it.polimi.ingsw.server.model.player.PlayerColor;
 import it.polimi.ingsw.server.model.ship.BatteryPlan;
-import it.polimi.ingsw.server.model.ship.Position;
 import it.polimi.ingsw.server.model.ship.Ship;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * Open Space: the stretch of motorway where engines finally earn their keep.
@@ -61,7 +57,8 @@ public record OpenSpaceCard(AdventureCardIdentity identity) implements Adventure
         protected Optional<PlayerPrompt> promptFor(PlayerColor player) {
             Ship ship = flight.shipOf(player);
             return Optional.of(new PlayerPrompt.DeclarePower(
-                    player, ShipAttribute.ENGINE_POWER, doubleEnginesOf(ship), ship.availableCharges()));
+                    player, ShipAttribute.ENGINE_POWER,
+                    ship.componentsOfKind(ComponentKind.DOUBLE_ENGINE), ship.availableCharges()));
         }
 
         @Override
@@ -96,13 +93,6 @@ public record OpenSpaceCard(AdventureCardIdentity identity) implements Adventure
         @Override
         protected void afterEveryone() {
             stranded.forEach(flight::giveUp);
-        }
-
-        private static Set<Position> doubleEnginesOf(Ship ship) {
-            return ship.components().entrySet().stream()
-                    .filter(entry -> entry.getValue().kind() == ComponentKind.DOUBLE_ENGINE)
-                    .map(Map.Entry::getKey)
-                    .collect(Collectors.toUnmodifiableSet());
         }
     }
 }
