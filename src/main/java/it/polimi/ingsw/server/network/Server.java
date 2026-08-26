@@ -1,5 +1,6 @@
 package it.polimi.ingsw.server.network;
 
+import it.polimi.ingsw.common.transport.DefaultPorts;
 import it.polimi.ingsw.common.transport.Liveness;
 import it.polimi.ingsw.common.transport.TransportException;
 import it.polimi.ingsw.common.transport.rmi.RmiServer;
@@ -27,12 +28,6 @@ import java.util.random.RandomGenerator;
  */
 public final class Server implements AutoCloseable {
 
-    /** Where a socket client connects unless told otherwise. */
-    public static final int DEFAULT_SOCKET_PORT = 4321;
-
-    /** Where an RMI client looks for the registry unless told otherwise. */
-    public static final int DEFAULT_RMI_PORT = 4322;
-
     private final Lobby lobby;
     private final SocketServer sockets;
     private final RmiServer rmi;
@@ -50,7 +45,7 @@ public final class Server implements AutoCloseable {
      * @throws TransportException if either port is already in use
      */
     public static Server start() {
-        return start(DEFAULT_SOCKET_PORT, DEFAULT_RMI_PORT);
+        return start(DefaultPorts.SOCKET, DefaultPorts.RMI);
     }
 
     /**
