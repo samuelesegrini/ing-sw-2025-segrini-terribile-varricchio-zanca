@@ -194,14 +194,31 @@ class PlayingAWholeGameTest {
         ServerLink link = ServerLink.connect(
                 Transport.SOCKET, "localhost", server.socketPort(), mine);
         ByteArrayOutputStream screen = new ByteArrayOutputStream();
-        new TextInterface(mine, link,
-                new BufferedReader(new StringReader("name samuele\njoin game-1\nscores\nquit\n")),
-                new PrintStream(screen, true, StandardCharsets.UTF_8)).run();
+
+        // Sit down, then wait for the game to actually be there before asking it anything. The
+        // client stops waiting once the server has been quiet for a moment, and joining is
+        // answered in two goes — a seat, then the board once the table is full — so a script
+        // typed straight through can ask for the ledger while it is still in the lobby.
+        type(mine, link, screen, "name samuele\njoin game-1\n");
+        waitUntil(() -> mine.game().isPresent());
+        type(mine, link, screen, "scores\nquit\n");
         link.close();
 
         String printed = screen.toString(StandardCharsets.UTF_8);
         assertTrue(printed.contains("nothing has been settled yet"));
         assertFalse(printed.contains("Final ledger"));
+    }
+
+    /**
+     * Types a script at a client, leaving the connection open for the next one.
+     *
+     * <p>The end of the input is the end of the sitting, not the end of the client: a script
+     * without a {@code quit} returns from the loop with everything still connected.
+     */
+    private static void type(ClientState state, ServerLink link, ByteArrayOutputStream screen,
+                             String script) {
+        new TextInterface(state, link, new BufferedReader(new StringReader(script)),
+                new PrintStream(screen, true, StandardCharsets.UTF_8)).run();
     }
 
     private static String tail(String screen) {
