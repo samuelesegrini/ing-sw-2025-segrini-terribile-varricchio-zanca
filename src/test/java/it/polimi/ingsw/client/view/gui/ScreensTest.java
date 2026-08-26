@@ -64,12 +64,16 @@ class ScreensTest {
      */
     private static <T> T onTheToolkit(java.util.function.Supplier<T> work) {
         AtomicReference<T> result = new AtomicReference<>();
-        AtomicReference<RuntimeException> failed = new AtomicReference<>();
+        // Throwable, not RuntimeException. A failed assertion is an Error, and catching only
+        // runtime exceptions here meant every assertion inside this block was swallowed by the
+        // JavaFX thread and printed to stderr while the test reported success. Found by
+        // mutating the code under test and watching nothing fail.
+        AtomicReference<Throwable> failed = new AtomicReference<>();
         CountDownLatch done = new CountDownLatch(1);
         Platform.runLater(() -> {
             try {
                 result.set(work.get());
-            } catch (RuntimeException broken) {
+            } catch (Throwable broken) {
                 failed.set(broken);
             } finally {
                 done.countDown();
@@ -81,14 +85,20 @@ class ScreensTest {
             Thread.currentThread().interrupt();
             throw new AssertionError("interrupted waiting for the toolkit");
         }
+        if (failed.get() instanceof RuntimeException runtime) {
+            throw runtime;
+        }
+        if (failed.get() instanceof Error error) {
+            throw error;
+        }
         if (failed.get() != null) {
-            throw failed.get();
+            throw new AssertionError(failed.get());
         }
         return result.get();
     }
 
     private static Screens screens() {
-        return new Screens(new ClientState(), null);
+        return new Screens(new ClientState(), sent -> { });
     }
 
     private static List<Node> everythingIn(Parent root) {
@@ -169,7 +179,8 @@ class ScreensTest {
         assumeTrue(toolkitStarted, "no display on this machine, so no windows to build");
 
         onTheToolkit(() -> {
-            Screens screens = screens();
+            List<it.polimi.ingsw.common.protocol.Command> sent = new java.util.ArrayList<>();
+            Screens screens = new Screens(new ClientState(), sent::add);
             Parent login = screens.rootFor(Screen.LOGIN);
             List<Node> parts = everythingIn(login);
             Button play = (Button) parts.stream()
@@ -177,14 +188,34 @@ class ScreensTest {
                     .findFirst()
                     .orElseThrow();
 
-            // The server link is null in this test, so a command being sent would throw here.
-            // That is the assertion: an empty name must not reach it.
             play.fire();
 
+            assertTrue(sent.isEmpty(), "an empty name was sent to the server: " + sent);
             assertTrue(parts.stream()
                     .anyMatch(node -> node instanceof javafx.scene.control.Label label
                             && !label.getText().isBlank()),
-                    "an empty name should be answered on the screen");
+                    "and it should be answered on the screen");
+            return null;
+        });
+    }
+
+    @Test
+    @DisplayName("a name somebody actually typed is sent")
+    void aRealName() {
+        assumeTrue(toolkitStarted, "no display on this machine, so no windows to build");
+
+        onTheToolkit(() -> {
+            List<it.polimi.ingsw.common.protocol.Command> sent = new java.util.ArrayList<>();
+            Screens screens = new Screens(new ClientState(), sent::add);
+            List<Node> parts = everythingIn(screens.rootFor(Screen.LOGIN));
+            ((TextField) parts.stream().filter(node -> node instanceof TextField)
+                    .findFirst().orElseThrow()).setText("  samuele  ");
+            ((Button) parts.stream().filter(node -> node instanceof Button)
+                    .findFirst().orElseThrow()).fire();
+
+            assertEquals(1, sent.size(), "expected one login, got " + sent);
+            assertEquals(new it.polimi.ingsw.common.protocol.LobbyCommand.Login("samuele"),
+                    sent.get(0), "and the spaces around it are not part of anybody's name");
             return null;
         });
     }

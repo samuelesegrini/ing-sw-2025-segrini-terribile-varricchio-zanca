@@ -1,7 +1,7 @@
 package it.polimi.ingsw.client.view.gui;
 
-import it.polimi.ingsw.client.network.ServerLink;
 import it.polimi.ingsw.client.state.ClientState;
+import it.polimi.ingsw.common.protocol.Command;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
@@ -29,17 +29,26 @@ import java.util.Map;
 final class Screens {
 
     private final ClientState state;
-    private final ServerLink server;
+    private final java.util.function.Consumer<Command> outbox;
     private final Map<Screen, Parent> built = new EnumMap<>(Screen.class);
 
+    private final TileImages images = new TileImages(Artwork.bundled());
+    private ShipyardPane shipyard;
     private TextField nickname;
     private Label loginTrouble;
     private ListView<String> tables;
     private Label lobbyTrouble;
 
-    Screens(ClientState state, ServerLink server) {
+    /**
+     * Prepares the windows.
+     *
+     * @param state  what the client knows
+     * @param outbox where commands go — a consumer rather than the connection, because that is
+     *               all any of these need and because a test can then watch what they send
+     */
+    Screens(ClientState state, java.util.function.Consumer<Command> outbox) {
         this.state = state;
-        this.server = server;
+        this.outbox = outbox;
     }
 
     /**
@@ -61,6 +70,7 @@ final class Screens {
         switch (screen) {
             case LOGIN -> loginTrouble.setText(state.lastRefusal().orElse(""));
             case LOBBY -> updateLobby();
+            case SHIPYARD -> shipyard.redraw();
             default -> {
                 // The playing screens arrive with #51 and #52. Until then their placeholder
                 // says which one is missing rather than showing an empty window.
@@ -72,6 +82,7 @@ final class Screens {
         return switch (screen) {
             case LOGIN -> login();
             case LOBBY -> lobby();
+            case SHIPYARD -> shipyard();
             default -> notBuiltYet(screen);
         };
     }
@@ -100,7 +111,7 @@ final class Screens {
             loginTrouble.setText("a name would help");
             return;
         }
-        server.send(new it.polimi.ingsw.common.protocol.LobbyCommand.Login(wanted));
+        outbox.accept(new it.polimi.ingsw.common.protocol.LobbyCommand.Login(wanted));
     }
 
     // ------------------------------------------------------------------ choosing a table
@@ -150,16 +161,23 @@ final class Screens {
             lobbyTrouble.setText("choose a table first, or open one");
             return;
         }
-        server.send(new it.polimi.ingsw.common.protocol.LobbyCommand.JoinGame(
+        outbox.accept(new it.polimi.ingsw.common.protocol.LobbyCommand.JoinGame(
                 chosen.split("\\s+")[0]));
     }
 
     private void open(int players, boolean testFlight) {
-        server.send(new it.polimi.ingsw.common.protocol.LobbyCommand.CreateGame(
+        outbox.accept(new it.polimi.ingsw.common.protocol.LobbyCommand.CreateGame(
                 testFlight
                         ? it.polimi.ingsw.common.game.GameLevel.TEST_FLIGHT
                         : it.polimi.ingsw.common.game.GameLevel.LEVEL_II,
                 players));
+    }
+
+    // ------------------------------------------------------------------ building a ship
+
+    private Parent shipyard() {
+        shipyard = new ShipyardPane(state, outbox, images);
+        return shipyard;
     }
 
     // ------------------------------------------------------------------ not built yet
