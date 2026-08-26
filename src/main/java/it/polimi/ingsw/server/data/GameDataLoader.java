@@ -11,13 +11,16 @@ import it.polimi.ingsw.server.model.adventure.card.AbandonedShipCard;
 import it.polimi.ingsw.server.model.adventure.card.AbandonedStationCard;
 import it.polimi.ingsw.server.model.adventure.card.SlaversCard;
 import it.polimi.ingsw.server.model.adventure.card.CombatLine;
+import it.polimi.ingsw.server.model.adventure.card.EpidemicCard;
 import it.polimi.ingsw.server.model.adventure.card.CombatPenalty;
 import it.polimi.ingsw.server.model.adventure.card.CombatZoneCard;
 import it.polimi.ingsw.server.model.adventure.card.MeteorSwarmCard;
 import it.polimi.ingsw.server.model.adventure.card.PiratesCard;
+import it.polimi.ingsw.server.model.adventure.card.OpenSpaceCard;
 import it.polimi.ingsw.server.model.adventure.card.PlanetsCard;
 import it.polimi.ingsw.server.model.adventure.card.ThreatPattern;
 import it.polimi.ingsw.server.model.adventure.card.SmugglersCard;
+import it.polimi.ingsw.server.model.adventure.card.StardustCard;
 import it.polimi.ingsw.server.model.board.DeckComposition;
 import it.polimi.ingsw.server.model.board.FlightBoardSpec;
 import it.polimi.ingsw.server.model.board.GameLevel;
@@ -146,7 +149,7 @@ public final class GameDataLoader {
                         enumValue(CardLevel.class, text(entry, "level", where), where),
                         required(entry, "testFlight", where).asBoolean());
                 cards.add(identity);
-                buildCard(identity, entry, where).ifPresent(card -> playable.put(id, card));
+                playable.put(id, buildCard(identity, entry, where));
             } catch (IllegalArgumentException | NullPointerException e) {
                 throw new GameDataException(where + ": " + e.getMessage(), e);
             }
@@ -157,53 +160,57 @@ public final class GameDataLoader {
     /**
      * Builds a card's rules from its printed values.
      *
-     * <p>Returns empty for a type whose rules are still being written, so that the rest of
-     * the catalogue keeps loading. Every type is expected to be here by the end of
-     * milestone M3, and a test says so.
+     * <p>Every card type has rules, and a test asserts it: a card in the data with no
+     * implementation would quietly do nothing when it was turned over. The switch is
+     * exhaustive over {@code AdventureCardType} with no default, so adding a type to the
+     * enum stops this compiling until somebody writes its card.
      *
      * @param identity the card's identity
      * @param entry    its data
      * @param where    where to say the fault is
-     * @return the playable card, or empty while its type is unimplemented
+     * @return the card's rules
      */
-    private Optional<AdventureCard> buildCard(AdventureCardIdentity identity, JsonNode entry, String where) {
+    private AdventureCard buildCard(AdventureCardIdentity identity, JsonNode entry, String where) {
         return switch (identity.type()) {
-            case ABANDONED_SHIP -> Optional.of(new AbandonedShipCard(
+            case ABANDONED_SHIP -> new AbandonedShipCard(
                     identity,
                     integer(entry, "crewCost", where),
                     integer(entry, "credits", where),
-                    integer(entry, "flightDays", where)));
-            case ABANDONED_STATION -> Optional.of(new AbandonedStationCard(
+                    integer(entry, "flightDays", where));
+            case ABANDONED_STATION -> new AbandonedStationCard(
                     identity,
                     integer(entry, "minimumCrew", where),
                     readGoods(required(entry, "goods", where), where),
-                    integer(entry, "flightDays", where)));
-            case SLAVERS -> Optional.of(new SlaversCard(
+                    integer(entry, "flightDays", where));
+            case SLAVERS -> new SlaversCard(
                     identity,
                     integer(entry, "firepower", where),
                     integer(entry, "credits", where),
                     integer(entry, "crewPenalty", where),
-                    integer(entry, "flightDays", where)));
-            case SMUGGLERS -> Optional.of(new SmugglersCard(
+                    integer(entry, "flightDays", where));
+            case SMUGGLERS -> new SmugglersCard(
                     identity,
                     integer(entry, "firepower", where),
                     readGoods(required(entry, "goods", where), where),
                     integer(entry, "goodsPenalty", where),
-                    integer(entry, "flightDays", where)));
-            case PIRATES -> Optional.of(new PiratesCard(
+                    integer(entry, "flightDays", where));
+            case PIRATES -> new PiratesCard(
                     identity,
                     integer(entry, "firepower", where),
                     integer(entry, "credits", where),
                     readThreats(array(entry, "shots", where), where),
-                    integer(entry, "flightDays", where)));
-            case METEOR_SWARM -> Optional.of(new MeteorSwarmCard(
-                    identity, readThreats(array(entry, "meteors", where), where)));
-            case PLANETS -> Optional.of(new PlanetsCard(
+                    integer(entry, "flightDays", where));
+            case METEOR_SWARM -> new MeteorSwarmCard(
+                    identity, readThreats(array(entry, "meteors", where), where));
+            case PLANETS -> new PlanetsCard(
                     identity, readPlanets(array(entry, "planets", where), where),
-                    integer(entry, "flightDays", where)));
-            case COMBAT_ZONE -> Optional.of(new CombatZoneCard(
-                    identity, readCombatLines(array(entry, "lines", where), where)));
-            default -> Optional.empty();
+                    integer(entry, "flightDays", where));
+            case COMBAT_ZONE -> new CombatZoneCard(
+                    identity, readCombatLines(array(entry, "lines", where), where));
+            // Three cards carry no printed values at all: what they do is the same every time.
+            case OPEN_SPACE -> new OpenSpaceCard(identity);
+            case STARDUST -> new StardustCard(identity);
+            case EPIDEMIC -> new EpidemicCard(identity);
         };
     }
 
