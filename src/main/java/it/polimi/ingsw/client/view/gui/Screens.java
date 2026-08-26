@@ -34,6 +34,8 @@ final class Screens {
 
     private final TileImages images = new TileImages(Artwork.bundled());
     private ShipyardPane shipyard;
+    private FlightPane flight;
+    private LedgerPane ledger;
     private TextField nickname;
     private Label loginTrouble;
     private ListView<String> tables;
@@ -70,11 +72,9 @@ final class Screens {
         switch (screen) {
             case LOGIN -> loginTrouble.setText(state.lastRefusal().orElse(""));
             case LOBBY -> updateLobby();
-            case SHIPYARD -> shipyard.redraw();
-            default -> {
-                // The playing screens arrive with #51 and #52. Until then their placeholder
-                // says which one is missing rather than showing an empty window.
-            }
+            case SHIPYARD, REPAIRS, CREW -> shipyard.redraw();
+            case FLIGHT -> flight.redraw();
+            case LEDGER -> ledger.redraw();
         }
     }
 
@@ -82,8 +82,9 @@ final class Screens {
         return switch (screen) {
             case LOGIN -> login();
             case LOBBY -> lobby();
-            case SHIPYARD -> shipyard();
-            default -> notBuiltYet(screen);
+            case SHIPYARD, REPAIRS, CREW -> shipyard();
+            case FLIGHT -> flight();
+            case LEDGER -> ledger();
         };
     }
 
@@ -175,25 +176,28 @@ final class Screens {
 
     // ------------------------------------------------------------------ building a ship
 
+    /**
+     * The board a player builds, repairs and crews.
+     *
+     * <p>One pane for all three screens, not one each. They are the same board with different
+     * things to do to it, and three panes would mean the one being redrawn was not always the
+     * one on screen.
+     */
     private Parent shipyard() {
-        shipyard = new ShipyardPane(state, outbox, images);
+        if (shipyard == null) {
+            shipyard = new ShipyardPane(state, outbox, images);
+        }
         return shipyard;
     }
 
-    // ------------------------------------------------------------------ not built yet
+    private Parent flight() {
+        flight = new FlightPane(state, outbox, images);
+        return flight;
+    }
 
-    /**
-     * A screen that says which part of the game is still missing.
-     *
-     * <p>Better than an empty window: somebody running this before #51 and #52 land should be
-     * told what they are looking at rather than left to guess whether it has crashed.
-     */
-    private Parent notBuiltYet(Screen screen) {
-        VBox box = column(new Label(SceneRouter.titleOf(screen)),
-                new Label("This screen is not built yet. The game itself is running — "
-                        + "the text interface can play it."));
-        box.setAlignment(Pos.CENTER);
-        return box;
+    private Parent ledger() {
+        ledger = new LedgerPane(state);
+        return ledger;
     }
 
     // ------------------------------------------------------------------ bits and pieces

@@ -163,7 +163,7 @@ public final class Messages {
                 new PlayerPrompt.ChooseDefence(PlayerColor.RED, hit(), null, Set.of()),
                 new PlayerPrompt.ChooseFragment(PlayerColor.RED, List.of(Set.of(CABIN), Set.of(HOLD))),
                 new PlayerPrompt.ChoosePlanet(
-                        PlayerColor.RED, Map.of(0, Map.of(GoodColor.GREEN, 2)), 2));
+                        PlayerColor.RED, Map.of(1, Map.of(GoodColor.GREEN, 2)), 2));
     }
 
     /**

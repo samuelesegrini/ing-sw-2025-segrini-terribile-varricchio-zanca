@@ -239,7 +239,8 @@ public sealed interface PlayerPrompt extends Serializable {
         /**
          * Validates the call and takes a defensive copy.
          *
-         * @throws IllegalArgumentException if nothing is on offer or the cost is negative
+         * @throws IllegalArgumentException if nothing is on offer, the cost is negative, or a
+         *                                  planet is numbered below one
          * @throws NullPointerException     if the player is {@code null}
          */
         public ChoosePlanet {
@@ -249,6 +250,15 @@ public sealed interface PlayerPrompt extends Serializable {
             if (flightDays < 0) {
                 throw new IllegalArgumentException("landing cannot pay flight days");
             }
+            // Planets are numbered from one, and so is the answer. A prompt able to offer a
+            // planet that no legal PlanetChosen could name would be the two sides of the same
+            // conversation disagreeing about what a planet is called.
+            planets.keySet().forEach(number -> {
+                if (number < 1) {
+                    throw new IllegalArgumentException(
+                            "planets are numbered from one, got " + number);
+                }
+            });
             planets = planets.entrySet().stream().collect(java.util.stream.Collectors.toUnmodifiableMap(
                     Map.Entry::getKey, entry -> Map.copyOf(entry.getValue())));
             if (planets.isEmpty()) {
