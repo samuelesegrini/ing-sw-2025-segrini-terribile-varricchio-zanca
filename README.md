@@ -25,11 +25,14 @@ Progress is tracked in [docs/roadmap.md](docs/roadmap.md) and in the repository'
 milestones. The table below reflects what is **implemented and tested**, not what is
 planned.
 
+The complete level II ruleset is done and covered by tests, but headless: there is no
+way to sit down and play yet. That arrives with the protocol and the interfaces.
+
 ### Core requirements
 
 | Functionality | Status |
 |:--|:--:|
-| Complete rules (level II) | 🚧 |
+| Complete rules (level II) | ✅ |
 | Socket | 🚧 |
 | RMI | 🚧 |
 | TUI | 🚧 |
