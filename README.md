@@ -25,10 +25,9 @@ Progress is tracked in [docs/roadmap.md](docs/roadmap.md) and in the repository'
 milestones. The table below reflects what is **implemented and tested**, not what is
 planned.
 
-The server plays a complete game over both transports at once, and there is a test in which
-four players — two on a socket, two on RMI — do exactly that from the first tile to the last
-credit. What is missing is somebody to look at it: there is no interface yet, so the only
-clients that exist are in the test suite.
+The game is playable. A person opens a terminal, claims a name, builds a ship tile by tile,
+launches, flies the cards and reads the final ledger — over a socket or over RMI, at a table
+with people who chose the other one. What is missing is the graphical interface.
 
 ### Core requirements
 
@@ -37,7 +36,7 @@ clients that exist are in the test suite.
 | Complete rules (level II) | ✅ |
 | Socket | ✅ |
 | RMI | ✅ |
-| TUI | 🚧 |
+| TUI | ✅ |
 | GUI (JavaFX) | 🚧 |
 
 ### Advanced features
@@ -49,9 +48,9 @@ clients that exist are in the test suite.
 | Disconnection resilience | ✅ |
 | Persistence | 🚧 |
 
-The three advanced features marked done are done **on the server**. A player cannot yet choose
-a test flight or reconnect to a game, because a player cannot yet do anything: those are
-commands nothing sends until there is an interface.
+All three marked done are reachable by a player, not just by the server. `new 2 test` opens a
+test flight, and logging back in with the name of a seat somebody dropped out of puts them
+back in it, mid-card, with the question they left unanswered still waiting.
 
 ✅ done and tested · 🚧 in progress · ⬜ not started
 
@@ -93,9 +92,14 @@ is how the tests run several servers at once without picking numbers and hoping.
 java -jar target/server.jar 4321 4322
 ```
 
-Client — interface and transport are chosen at startup. Not yet implemented: there is no
-interface to choose between, and until there is, the only clients are in the test suite.
+Client — the interface and the transport are chosen at startup, and nothing after that can
+tell which was picked.
 
 ```bash
-java -jar target/client.jar
+java -jar target/client.jar --tui --socket --host localhost --port 4321
 ```
+
+Both choices default: `--tui` over `--socket`, on localhost, on the port that matches the
+transport. `--gui` is not built yet and says so, rather than starting something you did not
+ask for. Type `help` at any point — it lists what is legal in the phase the game is actually
+in, which is shorter and more useful than everything the game can do.
