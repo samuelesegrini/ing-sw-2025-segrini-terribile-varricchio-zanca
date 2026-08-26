@@ -106,6 +106,22 @@ public abstract class TurnByTurnResolution implements AdventureResolution {
     }
 
     /**
+     * Starts another pass down a fresh list of players.
+     *
+     * <p>Called from {@link #afterEveryone}, for cards that work through more than one
+     * round. The Pirates fight down the route and then fire on everybody they beat;
+     * Combat Zone evaluates three lines, each its own pass with the route order read
+     * again. {@link #afterEveryone} runs again when the new pass is exhausted, so a card
+     * that re-queues has to know which round it is on.
+     *
+     * @param players the players to work through next, in order
+     */
+    protected final void queueAgain(List<PlayerColor> players) {
+        queue.addAll(players);
+        finished = false;
+    }
+
+    /**
      * Asks the same player a second question before moving on.
      *
      * <p>Several cards need two answers from one player. An abandoned station is claimed
@@ -137,11 +153,22 @@ public abstract class TurnByTurnResolution implements AdventureResolution {
         }
     }
 
+    /**
+     * Works down the queue to the next question.
+     *
+     * <p>Loops rather than falling through, because {@link #afterEveryone} may start
+     * another pass: the Pirates fire on everybody they beat only once the fight is over,
+     * and Combat Zone reads the route order again for each of its lines. A single pass
+     * would queue the new round and then return without ever asking it anything.
+     */
     private void advance() {
-        while (current == null && !queue.isEmpty()) {
-            current = promptFor(queue.poll()).orElse(null);
-        }
-        if (current == null && !finished) {
+        while (true) {
+            while (current == null && !queue.isEmpty()) {
+                current = promptFor(queue.poll()).orElse(null);
+            }
+            if (current != null || finished) {
+                return;
+            }
             finished = true;
             afterEveryone();
         }
