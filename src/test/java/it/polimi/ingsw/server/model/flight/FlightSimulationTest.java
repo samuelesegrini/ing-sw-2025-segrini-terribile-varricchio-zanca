@@ -70,7 +70,7 @@ class FlightSimulationTest {
 
         // Card one, Planets: green lands and loads, then pays for it in flight days.
         Ship greenShip = flight.shipOf(PlayerColor.GREEN);
-        greenShip.beginCargoOperations();
+        greenShip.beginCargoOperations(Map.of(GoodColor.RED, 1, GoodColor.GREEN, 1));
         assertTrue(greenShip.load(HOLD, GoodColor.RED));
         assertTrue(greenShip.load(HOLD, GoodColor.GREEN));
         greenShip.endCargoOperations();

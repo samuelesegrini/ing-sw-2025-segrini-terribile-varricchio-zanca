@@ -35,6 +35,7 @@ public abstract class TurnByTurnResolution implements AdventureResolution {
     private boolean started;
     private boolean finished;
     private PlayerPrompt current;
+    private PlayerPrompt followUp;
 
     /**
      * Creates a resolution that will work down the given order.
@@ -96,7 +97,27 @@ public abstract class TurnByTurnResolution implements AdventureResolution {
         if (apply(choice)) {
             queue.clear();
         }
-        advance();
+        if (followUp != null) {
+            current = followUp;
+            followUp = null;
+        } else {
+            advance();
+        }
+    }
+
+    /**
+     * Asks the same player a second question before moving on.
+     *
+     * <p>Several cards need two answers from one player. An abandoned station is claimed
+     * and then loaded; an enemy is fought and then, if beaten, its reward is taken or left.
+     * Calling this from {@link #apply} keeps the follow-up with the player who earned it,
+     * and it composes with returning {@code true}: the queue is emptied and the follow-up
+     * is still asked, which is exactly what happens when somebody wins a fight.
+     *
+     * @param prompt the second question
+     */
+    protected final void askAgain(PlayerPrompt prompt) {
+        followUp = prompt;
     }
 
     /**

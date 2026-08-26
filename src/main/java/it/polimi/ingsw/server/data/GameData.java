@@ -1,6 +1,8 @@
 package it.polimi.ingsw.server.data;
 
+import it.polimi.ingsw.server.model.adventure.AdventureCard;
 import it.polimi.ingsw.server.model.adventure.AdventureCardIdentity;
+import it.polimi.ingsw.server.model.adventure.AdventureCardType;
 import it.polimi.ingsw.server.model.adventure.CardLevel;
 import it.polimi.ingsw.server.model.board.GameLevel;
 import it.polimi.ingsw.server.model.board.LevelSpec;
@@ -27,12 +29,14 @@ import java.util.Set;
  * @param startingCabins the four cabins handed out at setup, by player colour
  * @param cards          the identity of every adventure card
  * @param bankStock      how many cubes of each colour the game ships with
+ * @param playableCards  the cards whose rules are implemented, by identifier
  */
 public record GameData(Map<GameLevel, LevelSpec> levels,
                        List<ComponentTile> tiles,
                        Map<PlayerColor, StartingCabinTile> startingCabins,
                        List<AdventureCardIdentity> cards,
-                       Map<GoodColor, Integer> bankStock) {
+                       Map<GoodColor, Integer> bankStock,
+                       Map<String, AdventureCard> playableCards) {
 
     /**
      * Validates the catalogue and takes defensive copies.
@@ -73,6 +77,31 @@ public record GameData(Map<GameLevel, LevelSpec> levels,
             }
         }
         bankStock = Map.copyOf(bank);
+        playableCards = Map.copyOf(playableCards);
+    }
+
+    /**
+     * Returns a card's rules.
+     *
+     * @param id the card's identifier
+     * @return the playable card, or empty while its type is still being written
+     */
+    public java.util.Optional<AdventureCard> playableCard(String id) {
+        return java.util.Optional.ofNullable(playableCards.get(id));
+    }
+
+    /**
+     * Returns the card types whose rules are implemented.
+     *
+     * <p>Grows through milestone M3, one type per card. A test asserts it covers every
+     * type in the data once the milestone is done.
+     *
+     * @return the implemented types
+     */
+    public Set<AdventureCardType> implementedCardTypes() {
+        return playableCards.values().stream()
+                .map(AdventureCard::type)
+                .collect(java.util.stream.Collectors.toUnmodifiableSet());
     }
 
     private static void requireDistinctIds(List<String> ids, String what) {

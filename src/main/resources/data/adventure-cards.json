@@ -5,122 +5,128 @@
       "type": "ABANDONED_SHIP",
       "level": "LEVEL_I",
       "testFlight": false,
-      "crewLost": 2,
-      "creditsGained": 3,
-      "lostDays": 1
+      "crewCost": 2,
+      "credits": 3,
+      "flightDays": 1
     },
     {
       "id": "abandoned-ship_lvl1_02",
       "type": "ABANDONED_SHIP",
       "level": "LEVEL_I",
       "testFlight": true,
-      "crewLost": 3,
-      "creditsGained": 4,
-      "lostDays": 1
+      "crewCost": 3,
+      "credits": 4,
+      "flightDays": 1
     },
     {
       "id": "abandoned-ship_lvl2_01",
       "type": "ABANDONED_SHIP",
       "level": "LEVEL_II",
       "testFlight": false,
-      "crewLost": 4,
-      "creditsGained": 6,
-      "lostDays": 1
+      "crewCost": 4,
+      "credits": 6,
+      "flightDays": 1
     },
     {
       "id": "abandoned-ship_lvl2_02",
       "type": "ABANDONED_SHIP",
       "level": "LEVEL_II",
       "testFlight": false,
-      "crewLost": 5,
-      "creditsGained": 8,
-      "lostDays": 2
+      "crewCost": 5,
+      "credits": 8,
+      "flightDays": 2
     },
     {
       "id": "abandoned-station_lvl1_01",
       "type": "ABANDONED_STATION",
       "level": "LEVEL_I",
       "testFlight": true,
-      "goodQuantities": {
+      "minimumCrew": 5,
+      "goods": {
         "RED": 0,
-        "BLUE": 0,
+        "YELLOW": 1,
         "GREEN": 1,
-        "YELLOW": 1
+        "BLUE": 0
       },
-      "minCrewRequired": 5,
-      "lostDays": 1
+      "flightDays": 1
     },
     {
       "id": "abandoned-station_lvl1_02",
       "type": "ABANDONED_STATION",
       "level": "LEVEL_I",
       "testFlight": false,
-      "goodQuantities": {
+      "minimumCrew": 6,
+      "goods": {
         "RED": 2,
-        "BLUE": 0,
+        "YELLOW": 0,
         "GREEN": 0,
-        "YELLOW": 0
+        "BLUE": 0
       },
-      "minCrewRequired": 6,
-      "lostDays": 1
+      "flightDays": 1
     },
     {
       "id": "abandoned-station_lvl2_01",
       "type": "ABANDONED_STATION",
       "level": "LEVEL_II",
       "testFlight": false,
-      "goodQuantities": {
+      "minimumCrew": 7,
+      "goods": {
         "RED": 1,
-        "BLUE": 0,
+        "YELLOW": 1,
         "GREEN": 0,
-        "YELLOW": 1
+        "BLUE": 0
       },
-      "minCrewRequired": 7,
-      "lostDays": 1
+      "flightDays": 1
     },
     {
       "id": "abandoned-station_lvl2_02",
       "type": "ABANDONED_STATION",
       "level": "LEVEL_II",
       "testFlight": false,
-      "goodQuantities": {
+      "minimumCrew": 8,
+      "goods": {
         "RED": 0,
-        "BLUE": 0,
+        "YELLOW": 3,
         "GREEN": 1,
-        "YELLOW": 3
+        "BLUE": 0
       },
-      "minCrewRequired": 8,
-      "lostDays": 2
+      "flightDays": 2
     },
     {
       "id": "combat-zone_lvl1",
       "type": "COMBAT_ZONE",
       "level": "LEVEL_I",
       "testFlight": true,
-      "combatChecks": [
+      "lines": [
         {
-          "attribute": "CREW_COUNT",
-          "penaltyType": "FLIGHT_DAYS_LOSS",
-          "penaltyValue": 3
+          "attribute": "CREW",
+          "penalty": {
+            "kind": "FLIGHT_DAYS",
+            "value": 3
+          }
         },
         {
           "attribute": "ENGINE_POWER",
-          "penaltyType": "CREW_LOSS",
-          "penaltyValue": 2
+          "penalty": {
+            "kind": "CREW",
+            "value": 2
+          }
         },
         {
-          "attribute": "CANNON_STRENGTH",
-          "penaltyType": "CANNON_FIRE",
-          "cannonFires": [
-            {
-              "approach": "DOWN",
-              "intensity": "LIGHT"
-            },
-            {
-              "approach": "DOWN",
-              "intensity": "HEAVY"
-            }
-          ]
+          "attribute": "FIREPOWER",
+          "penalty": {
+            "kind": "CANNON_FIRE",
+            "shots": [
+              {
+                "kind": "LIGHT_FIRE",
+                "from": "SOUTH"
+              },
+              {
+                "kind": "HEAVY_FIRE",
+                "from": "SOUTH"
+              }
+            ]
+          }
         }
       ]
     },
@@ -129,38 +135,44 @@
       "type": "COMBAT_ZONE",
       "level": "LEVEL_II",
       "testFlight": false,
-      "combatChecks": [
+      "lines": [
         {
-          "attribute": "CANNON_STRENGTH",
-          "penaltyType": "FLIGHT_DAYS_LOSS",
-          "penaltyValue": 4
+          "attribute": "FIREPOWER",
+          "penalty": {
+            "kind": "FLIGHT_DAYS",
+            "value": 4
+          }
         },
         {
           "attribute": "ENGINE_POWER",
-          "penaltyType": "GOODS_LOSS",
-          "penaltyValue": 3
+          "penalty": {
+            "kind": "GOODS",
+            "value": 3
+          }
         },
         {
-          "attribute": "CREW_COUNT",
-          "penaltyType": "CANNON_FIRE",
-          "cannonFires": [
-            {
-              "approach": "UP",
-              "intensity": "LIGHT"
-            },
-            {
-              "approach": "LEFT",
-              "intensity": "LIGHT"
-            },
-            {
-              "approach": "RIGHT",
-              "intensity": "LIGHT"
-            },
-            {
-              "approach": "DOWN",
-              "intensity": "HEAVY"
-            }
-          ]
+          "attribute": "CREW",
+          "penalty": {
+            "kind": "CANNON_FIRE",
+            "shots": [
+              {
+                "kind": "LIGHT_FIRE",
+                "from": "NORTH"
+              },
+              {
+                "kind": "LIGHT_FIRE",
+                "from": "WEST"
+              },
+              {
+                "kind": "LIGHT_FIRE",
+                "from": "EAST"
+              },
+              {
+                "kind": "HEAVY_FIRE",
+                "from": "SOUTH"
+              }
+            ]
+          }
         }
       ]
     },
@@ -175,18 +187,18 @@
       "type": "METEOR_SWARM",
       "level": "LEVEL_I",
       "testFlight": true,
-      "meteorPattern": [
+      "meteors": [
         {
-          "intensity": "HEAVY",
-          "approach": "UP"
+          "kind": "BIG_METEOR",
+          "from": "NORTH"
         },
         {
-          "intensity": "LIGHT",
-          "approach": "LEFT"
+          "kind": "SMALL_METEOR",
+          "from": "WEST"
         },
         {
-          "intensity": "LIGHT",
-          "approach": "RIGHT"
+          "kind": "SMALL_METEOR",
+          "from": "EAST"
         }
       ]
     },
@@ -195,26 +207,26 @@
       "type": "METEOR_SWARM",
       "level": "LEVEL_I",
       "testFlight": false,
-      "meteorPattern": [
+      "meteors": [
         {
-          "intensity": "LIGHT",
-          "approach": "UP"
+          "kind": "SMALL_METEOR",
+          "from": "NORTH"
         },
         {
-          "intensity": "LIGHT",
-          "approach": "UP"
+          "kind": "SMALL_METEOR",
+          "from": "NORTH"
         },
         {
-          "intensity": "LIGHT",
-          "approach": "LEFT"
+          "kind": "SMALL_METEOR",
+          "from": "WEST"
         },
         {
-          "intensity": "LIGHT",
-          "approach": "RIGHT"
+          "kind": "SMALL_METEOR",
+          "from": "EAST"
         },
         {
-          "intensity": "LIGHT",
-          "approach": "DOWN"
+          "kind": "SMALL_METEOR",
+          "from": "SOUTH"
         }
       ]
     },
@@ -223,18 +235,18 @@
       "type": "METEOR_SWARM",
       "level": "LEVEL_I",
       "testFlight": false,
-      "meteorPattern": [
+      "meteors": [
         {
-          "intensity": "HEAVY",
-          "approach": "UP"
+          "kind": "BIG_METEOR",
+          "from": "NORTH"
         },
         {
-          "intensity": "LIGHT",
-          "approach": "UP"
+          "kind": "SMALL_METEOR",
+          "from": "NORTH"
         },
         {
-          "intensity": "HEAVY",
-          "approach": "UP"
+          "kind": "BIG_METEOR",
+          "from": "NORTH"
         }
       ]
     },
@@ -243,26 +255,26 @@
       "type": "METEOR_SWARM",
       "level": "LEVEL_II",
       "testFlight": false,
-      "meteorPattern": [
+      "meteors": [
         {
-          "intensity": "LIGHT",
-          "approach": "UP"
+          "kind": "SMALL_METEOR",
+          "from": "NORTH"
         },
         {
-          "intensity": "LIGHT",
-          "approach": "UP"
+          "kind": "SMALL_METEOR",
+          "from": "NORTH"
         },
         {
-          "intensity": "HEAVY",
-          "approach": "LEFT"
+          "kind": "BIG_METEOR",
+          "from": "WEST"
         },
         {
-          "intensity": "LIGHT",
-          "approach": "LEFT"
+          "kind": "SMALL_METEOR",
+          "from": "WEST"
         },
         {
-          "intensity": "LIGHT",
-          "approach": "LEFT"
+          "kind": "SMALL_METEOR",
+          "from": "WEST"
         }
       ]
     },
@@ -271,22 +283,22 @@
       "type": "METEOR_SWARM",
       "level": "LEVEL_II",
       "testFlight": false,
-      "meteorPattern": [
+      "meteors": [
         {
-          "intensity": "HEAVY",
-          "approach": "UP"
+          "kind": "BIG_METEOR",
+          "from": "NORTH"
         },
         {
-          "intensity": "HEAVY",
-          "approach": "UP"
+          "kind": "BIG_METEOR",
+          "from": "NORTH"
         },
         {
-          "intensity": "LIGHT",
-          "approach": "DOWN"
+          "kind": "SMALL_METEOR",
+          "from": "SOUTH"
         },
         {
-          "intensity": "LIGHT",
-          "approach": "DOWN"
+          "kind": "SMALL_METEOR",
+          "from": "SOUTH"
         }
       ]
     },
@@ -295,26 +307,26 @@
       "type": "METEOR_SWARM",
       "level": "LEVEL_II",
       "testFlight": false,
-      "meteorPattern": [
+      "meteors": [
         {
-          "intensity": "LIGHT",
-          "approach": "UP"
+          "kind": "SMALL_METEOR",
+          "from": "NORTH"
         },
         {
-          "intensity": "LIGHT",
-          "approach": "UP"
+          "kind": "SMALL_METEOR",
+          "from": "NORTH"
         },
         {
-          "intensity": "HEAVY",
-          "approach": "RIGHT"
+          "kind": "BIG_METEOR",
+          "from": "EAST"
         },
         {
-          "intensity": "LIGHT",
-          "approach": "RIGHT"
+          "kind": "SMALL_METEOR",
+          "from": "EAST"
         },
         {
-          "intensity": "LIGHT",
-          "approach": "RIGHT"
+          "kind": "SMALL_METEOR",
+          "from": "EAST"
         }
       ]
     },
@@ -365,22 +377,21 @@
       "type": "PIRATES",
       "level": "LEVEL_I",
       "testFlight": false,
-      "powerLevel": 5,
-      "movementPenalty": 1,
-      "defeated": false,
-      "creditReward": 4,
-      "attackPattern": [
+      "firepower": 5,
+      "credits": 4,
+      "flightDays": 1,
+      "shots": [
         {
-          "approach": "UP",
-          "intensity": "LIGHT"
+          "kind": "LIGHT_FIRE",
+          "from": "NORTH"
         },
         {
-          "approach": "UP",
-          "intensity": "HEAVY"
+          "kind": "HEAVY_FIRE",
+          "from": "NORTH"
         },
         {
-          "approach": "UP",
-          "intensity": "LIGHT"
+          "kind": "LIGHT_FIRE",
+          "from": "NORTH"
         }
       ]
     },
@@ -389,22 +400,21 @@
       "type": "PIRATES",
       "level": "LEVEL_II",
       "testFlight": false,
-      "powerLevel": 6,
-      "movementPenalty": 2,
-      "defeated": false,
-      "creditReward": 7,
-      "attackPattern": [
+      "firepower": 6,
+      "credits": 7,
+      "flightDays": 2,
+      "shots": [
         {
-          "approach": "UP",
-          "intensity": "HEAVY"
+          "kind": "HEAVY_FIRE",
+          "from": "NORTH"
         },
         {
-          "approach": "UP",
-          "intensity": "LIGHT"
+          "kind": "LIGHT_FIRE",
+          "from": "NORTH"
         },
         {
-          "approach": "UP",
-          "intensity": "HEAVY"
+          "kind": "HEAVY_FIRE",
+          "from": "NORTH"
         }
       ]
     },
@@ -413,366 +423,314 @@
       "type": "PLANETS",
       "level": "LEVEL_I",
       "testFlight": false,
+      "flightDays": 3,
       "planets": [
         {
-          "number": 1,
-          "goodQuantities": {
+          "goods": {
             "RED": 1,
-            "BLUE": 3,
+            "YELLOW": 0,
             "GREEN": 1,
-            "YELLOW": 0
-          },
-          "visited": false
+            "BLUE": 3
+          }
         },
         {
-          "number": 2,
-          "goodQuantities": {
+          "goods": {
             "RED": 1,
-            "BLUE": 1,
+            "YELLOW": 1,
             "GREEN": 0,
-            "YELLOW": 1
-          },
-          "visited": false
+            "BLUE": 1
+          }
         },
         {
-          "number": 3,
-          "goodQuantities": {
+          "goods": {
             "RED": 1,
-            "BLUE": 3,
+            "YELLOW": 0,
             "GREEN": 0,
-            "YELLOW": 0
-          },
-          "visited": false
+            "BLUE": 3
+          }
         },
         {
-          "number": 4,
-          "goodQuantities": {
+          "goods": {
             "RED": 1,
-            "BLUE": 0,
+            "YELLOW": 0,
             "GREEN": 1,
-            "YELLOW": 0
-          },
-          "visited": false
+            "BLUE": 0
+          }
         }
-      ],
-      "lostDays": 3
+      ]
     },
     {
       "id": "planets_lvl1_02",
       "type": "PLANETS",
       "level": "LEVEL_I",
       "testFlight": true,
+      "flightDays": 2,
       "planets": [
         {
-          "number": 1,
-          "goodQuantities": {
+          "goods": {
             "RED": 2,
-            "BLUE": 0,
+            "YELLOW": 0,
             "GREEN": 0,
-            "YELLOW": 0
-          },
-          "visited": false
+            "BLUE": 0
+          }
         },
         {
-          "number": 2,
-          "goodQuantities": {
+          "goods": {
             "RED": 1,
-            "BLUE": 2,
+            "YELLOW": 0,
             "GREEN": 0,
-            "YELLOW": 0
-          },
-          "visited": false
+            "BLUE": 2
+          }
         },
         {
-          "number": 3,
-          "goodQuantities": {
+          "goods": {
             "RED": 0,
-            "BLUE": 0,
+            "YELLOW": 1,
             "GREEN": 0,
-            "YELLOW": 1
-          },
-          "visited": false
+            "BLUE": 0
+          }
         }
-      ],
-      "lostDays": 2
+      ]
     },
     {
       "id": "planets_lvl1_03",
       "type": "PLANETS",
       "level": "LEVEL_I",
       "testFlight": false,
+      "flightDays": 3,
       "planets": [
         {
-          "number": 1,
-          "goodQuantities": {
+          "goods": {
             "RED": 0,
-            "BLUE": 2,
+            "YELLOW": 1,
             "GREEN": 1,
-            "YELLOW": 1
-          },
-          "visited": false
+            "BLUE": 2
+          }
         },
         {
-          "number": 2,
-          "goodQuantities": {
+          "goods": {
             "RED": 0,
-            "BLUE": 0,
+            "YELLOW": 2,
             "GREEN": 0,
-            "YELLOW": 2
-          },
-          "visited": false
+            "BLUE": 0
+          }
         }
-      ],
-      "lostDays": 3
+      ]
     },
     {
       "id": "planets_lvl1_04",
       "type": "PLANETS",
       "level": "LEVEL_I",
       "testFlight": false,
+      "flightDays": 1,
       "planets": [
         {
-          "number": 1,
-          "goodQuantities": {
+          "goods": {
             "RED": 0,
-            "BLUE": 0,
+            "YELLOW": 0,
             "GREEN": 2,
-            "YELLOW": 0
-          },
-          "visited": false
+            "BLUE": 0
+          }
         },
         {
-          "number": 2,
-          "goodQuantities": {
+          "goods": {
             "RED": 0,
-            "BLUE": 0,
+            "YELLOW": 1,
             "GREEN": 0,
-            "YELLOW": 1
-          },
-          "visited": false
+            "BLUE": 0
+          }
         },
         {
-          "number": 3,
-          "goodQuantities": {
+          "goods": {
             "RED": 0,
-            "BLUE": 3,
+            "YELLOW": 0,
             "GREEN": 0,
-            "YELLOW": 0
-          },
-          "visited": false
+            "BLUE": 3
+          }
         }
-      ],
-      "lostDays": 1
+      ]
     },
     {
       "id": "planets_lvl2_01",
       "type": "PLANETS",
       "level": "LEVEL_II",
       "testFlight": false,
+      "flightDays": 4,
       "planets": [
         {
-          "number": 1,
-          "goodQuantities": {
+          "goods": {
             "RED": 3,
-            "BLUE": 0,
+            "YELLOW": 1,
             "GREEN": 0,
-            "YELLOW": 1
-          },
-          "visited": false
+            "BLUE": 0
+          }
         },
         {
-          "number": 2,
-          "goodQuantities": {
+          "goods": {
             "RED": 2,
-            "BLUE": 0,
+            "YELLOW": 0,
             "GREEN": 2,
-            "YELLOW": 0
-          },
-          "visited": false
+            "BLUE": 0
+          }
         },
         {
-          "number": 3,
-          "goodQuantities": {
+          "goods": {
             "RED": 1,
-            "BLUE": 4,
+            "YELLOW": 0,
             "GREEN": 0,
-            "YELLOW": 0
-          },
-          "visited": false
+            "BLUE": 4
+          }
         }
-      ],
-      "lostDays": 4
+      ]
     },
     {
       "id": "planets_lvl2_02",
       "type": "PLANETS",
       "level": "LEVEL_II",
       "testFlight": false,
+      "flightDays": 3,
       "planets": [
         {
-          "number": 1,
-          "goodQuantities": {
+          "goods": {
             "RED": 2,
-            "BLUE": 0,
+            "YELLOW": 0,
             "GREEN": 0,
-            "YELLOW": 0
-          },
-          "visited": false
+            "BLUE": 0
+          }
         },
         {
-          "number": 2,
-          "goodQuantities": {
+          "goods": {
             "RED": 0,
-            "BLUE": 0,
+            "YELLOW": 0,
             "GREEN": 4,
-            "YELLOW": 0
-          },
-          "visited": false
+            "BLUE": 0
+          }
         }
-      ],
-      "lostDays": 3
+      ]
     },
     {
       "id": "planets_lvl2_03",
       "type": "PLANETS",
       "level": "LEVEL_II",
       "testFlight": false,
+      "flightDays": 2,
       "planets": [
         {
-          "number": 1,
-          "goodQuantities": {
+          "goods": {
             "RED": 1,
-            "BLUE": 0,
+            "YELLOW": 1,
             "GREEN": 0,
-            "YELLOW": 1
-          },
-          "visited": false
+            "BLUE": 0
+          }
         },
         {
-          "number": 2,
-          "goodQuantities": {
+          "goods": {
             "RED": 0,
-            "BLUE": 1,
+            "YELLOW": 1,
             "GREEN": 1,
-            "YELLOW": 1
-          },
-          "visited": false
+            "BLUE": 1
+          }
         },
         {
-          "number": 3,
-          "goodQuantities": {
+          "goods": {
             "RED": 0,
-            "BLUE": 0,
+            "YELLOW": 0,
             "GREEN": 2,
-            "YELLOW": 0
-          },
-          "visited": false
+            "BLUE": 0
+          }
         },
         {
-          "number": 4,
-          "goodQuantities": {
+          "goods": {
             "RED": 0,
-            "BLUE": 0,
+            "YELLOW": 1,
             "GREEN": 0,
-            "YELLOW": 1
-          },
-          "visited": false
+            "BLUE": 0
+          }
         }
-      ],
-      "lostDays": 2
+      ]
     },
     {
       "id": "planets_lvl2_04",
       "type": "PLANETS",
       "level": "LEVEL_II",
       "testFlight": false,
+      "flightDays": 3,
       "planets": [
         {
-          "number": 1,
-          "goodQuantities": {
+          "goods": {
             "RED": 0,
-            "BLUE": 0,
+            "YELLOW": 0,
             "GREEN": 4,
-            "YELLOW": 0
-          },
-          "visited": false
+            "BLUE": 0
+          }
         },
         {
-          "number": 2,
-          "goodQuantities": {
+          "goods": {
             "RED": 0,
-            "BLUE": 0,
+            "YELLOW": 2,
             "GREEN": 0,
-            "YELLOW": 2
-          },
-          "visited": false
+            "BLUE": 0
+          }
         },
         {
-          "number": 3,
-          "goodQuantities": {
+          "goods": {
             "RED": 0,
-            "BLUE": 4,
+            "YELLOW": 0,
             "GREEN": 0,
-            "YELLOW": 0
-          },
-          "visited": false
+            "BLUE": 4
+          }
         }
-      ],
-      "lostDays": 3
+      ]
     },
     {
       "id": "slavers_lvl1",
       "type": "SLAVERS",
       "level": "LEVEL_I",
       "testFlight": false,
-      "powerLevel": 6,
-      "movementPenalty": 1,
-      "defeated": false,
-      "creditReward": 5,
-      "crewLossAmount": 3
+      "firepower": 6,
+      "credits": 5,
+      "crewPenalty": 3,
+      "flightDays": 1
     },
     {
       "id": "slavers_lvl2",
       "type": "SLAVERS",
       "level": "LEVEL_II",
       "testFlight": false,
-      "powerLevel": 7,
-      "movementPenalty": 2,
-      "defeated": false,
-      "creditReward": 8,
-      "crewLossAmount": 4
+      "firepower": 7,
+      "credits": 8,
+      "crewPenalty": 4,
+      "flightDays": 2
     },
     {
       "id": "smugglers_lvl1",
       "type": "SMUGGLERS",
       "level": "LEVEL_I",
       "testFlight": true,
-      "powerLevel": 4,
-      "movementPenalty": 1,
-      "defeated": false,
-      "availableGoods": {
+      "firepower": 4,
+      "goods": {
         "RED": 0,
-        "BLUE": 1,
+        "YELLOW": 1,
         "GREEN": 1,
-        "YELLOW": 1
+        "BLUE": 1
       },
-      "goodsLostIfDefeated": 2
+      "goodsPenalty": 2,
+      "flightDays": 1
     },
     {
       "id": "smugglers_lvl2",
       "type": "SMUGGLERS",
       "level": "LEVEL_II",
       "testFlight": false,
-      "powerLevel": 8,
-      "movementPenalty": 1,
-      "defeated": false,
-      "availableGoods": {
+      "firepower": 8,
+      "goods": {
         "RED": 1,
-        "BLUE": 0,
+        "YELLOW": 2,
         "GREEN": 0,
-        "YELLOW": 2
+        "BLUE": 0
       },
-      "goodsLostIfDefeated": 3
+      "goodsPenalty": 3,
+      "flightDays": 1
     },
     {
       "id": "stardust_lvl1",

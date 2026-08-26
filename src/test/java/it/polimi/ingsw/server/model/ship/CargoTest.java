@@ -37,6 +37,10 @@ class CargoTest {
     private static final Position SPECIAL_HOLD = new Position(2, 1);
     private static final Position BATTERY = new Position(2, 3);
 
+    /** An offer generous enough that a test only fails on the rule it is about. */
+    private static final Map<GoodColor, Integer> EVERYTHING = Map.of(
+            GoodColor.RED, 9, GoodColor.YELLOW, 9, GoodColor.GREEN, 9, GoodColor.BLUE, 9);
+
     /** A ship with one standard hold, one special hold and a battery, drawing on a deep bank. */
     private static Ship loadedShip() {
         return loadedShip(Ships.deepBank());
@@ -73,7 +77,7 @@ class CargoTest {
             GoodsBank bank = Ships.bankOf(Map.of(GoodColor.BLUE, 3, GoodColor.RED, 1,
                     GoodColor.GREEN, 0, GoodColor.YELLOW, 0));
             Ship ship = loadedShip(bank);
-            ship.beginCargoOperations();
+            ship.beginCargoOperations(EVERYTHING);
 
             assertTrue(ship.load(STANDARD_HOLD, GoodColor.BLUE));
 
@@ -87,7 +91,7 @@ class CargoTest {
             GoodsBank bank = Ships.bankOf(Map.of(GoodColor.RED, 2, GoodColor.BLUE, 0,
                     GoodColor.GREEN, 0, GoodColor.YELLOW, 0));
             Ship ship = loadedShip(bank);
-            ship.beginCargoOperations();
+            ship.beginCargoOperations(EVERYTHING);
 
             assertThrows(IllegalArgumentException.class, () -> ship.load(STANDARD_HOLD, GoodColor.RED));
             assertEquals(2, bank.available(GoodColor.RED), "a refused load costs the bank nothing");
@@ -102,7 +106,7 @@ class CargoTest {
             GoodsBank bank = Ships.bankOf(Map.of(GoodColor.BLUE, 0, GoodColor.RED, 0,
                     GoodColor.GREEN, 0, GoodColor.YELLOW, 0));
             Ship ship = loadedShip(bank);
-            ship.beginCargoOperations();
+            ship.beginCargoOperations(EVERYTHING);
 
             assertFalse(ship.load(STANDARD_HOLD, GoodColor.BLUE));
             assertEquals(0, ship.cargoCount());
@@ -114,7 +118,7 @@ class CargoTest {
             GoodsBank bank = Ships.bankOf(Map.of(GoodColor.BLUE, 1, GoodColor.RED, 0,
                     GoodColor.GREEN, 0, GoodColor.YELLOW, 0));
             Ship ship = loadedShip(bank);
-            ship.beginCargoOperations();
+            ship.beginCargoOperations(EVERYTHING);
             ship.load(STANDARD_HOLD, GoodColor.BLUE);
 
             assertEquals(0, bank.available(GoodColor.BLUE));
@@ -129,7 +133,7 @@ class CargoTest {
         @DisplayName("cargo can be redistributed between holds while the window is open")
         void cargoCanBeRedistributed() {
             Ship ship = loadedShip();
-            ship.beginCargoOperations();
+            ship.beginCargoOperations(EVERYTHING);
             ship.load(STANDARD_HOLD, GoodColor.GREEN);
 
             ship.moveCargo(STANDARD_HOLD, SPECIAL_HOLD, GoodColor.GREEN);
@@ -142,7 +146,7 @@ class CargoTest {
         @DisplayName("a red cube cannot be moved into a standard hold, however open the window is")
         void redCubesStayInSpecialHolds() {
             Ship ship = loadedShip();
-            ship.beginCargoOperations();
+            ship.beginCargoOperations(EVERYTHING);
             ship.load(SPECIAL_HOLD, GoodColor.RED);
 
             assertThrows(IllegalArgumentException.class,
@@ -153,7 +157,7 @@ class CargoTest {
         @DisplayName("closing the window seals the holds again")
         void closingTheWindowSealsTheHolds() {
             Ship ship = loadedShip();
-            ship.beginCargoOperations();
+            ship.beginCargoOperations(EVERYTHING);
             ship.load(STANDARD_HOLD, GoodColor.BLUE);
             ship.endCargoOperations();
 
@@ -167,7 +171,7 @@ class CargoTest {
 
         private Ship shipCarrying(GoodColor... cubes) {
             Ship ship = loadedShip();
-            ship.beginCargoOperations();
+            ship.beginCargoOperations(EVERYTHING);
             for (GoodColor cube : cubes) {
                 ship.load(cube.requiresSpecialHold() ? SPECIAL_HOLD : STANDARD_HOLD, cube);
             }
@@ -219,7 +223,7 @@ class CargoTest {
             GoodsBank bank = Ships.bankOf(Map.of(GoodColor.BLUE, 2, GoodColor.RED, 0,
                     GoodColor.GREEN, 0, GoodColor.YELLOW, 0));
             Ship ship = loadedShip(bank);
-            ship.beginCargoOperations();
+            ship.beginCargoOperations(EVERYTHING);
             ship.load(STANDARD_HOLD, GoodColor.BLUE);
             ship.endCargoOperations();
 
@@ -254,7 +258,7 @@ class CargoTest {
             GoodsBank bank = Ships.bankOf(Map.of(GoodColor.BLUE, 1, GoodColor.RED, 1,
                     GoodColor.GREEN, 1, GoodColor.YELLOW, 0));
             Ship ship = loadedShip(bank);
-            ship.beginCargoOperations();
+            ship.beginCargoOperations(EVERYTHING);
             ship.load(STANDARD_HOLD, GoodColor.BLUE);
             ship.load(STANDARD_HOLD, GoodColor.GREEN);
             ship.load(SPECIAL_HOLD, GoodColor.RED);
@@ -274,7 +278,7 @@ class CargoTest {
             GoodsBank bank = Ships.bankOf(Map.of(GoodColor.BLUE, 2, GoodColor.RED, 0,
                     GoodColor.GREEN, 0, GoodColor.YELLOW, 0));
             Ship ship = loadedShip(bank);
-            ship.beginCargoOperations();
+            ship.beginCargoOperations(EVERYTHING);
             ship.load(STANDARD_HOLD, GoodColor.BLUE);
             ship.endCargoOperations();
 
