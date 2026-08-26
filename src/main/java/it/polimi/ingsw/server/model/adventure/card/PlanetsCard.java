@@ -128,6 +128,11 @@ public record PlanetsCard(AdventureCardIdentity identity, List<Map<GoodColor, In
                     land(chosen.player(), chosen.planet());
                     yield false;
                 }
+                case PlayerChoice.CargoStowed stowing -> {
+                    // Ask again: stowing is several decisions and Done is the one that ends it.
+                    askAgain(CargoHandling.apply(flight.shipOf(stowing.player()), stowing));
+                    yield false;
+                }
                 case PlayerChoice.Done done -> {
                     flight.shipOf(done.player()).endCargoOperations();
                     yield false;
@@ -145,7 +150,7 @@ public record PlanetsCard(AdventureCardIdentity identity, List<Map<GoodColor, In
 
             Ship ship = flight.shipOf(player);
             ship.beginCargoOperations(card.planet(number));
-            askAgain(new PlayerPrompt.ArrangeCargo(player, card.planet(number), ship.cargo().keySet()));
+            askAgain(CargoHandling.offer(ship, player));
         }
 
         /**

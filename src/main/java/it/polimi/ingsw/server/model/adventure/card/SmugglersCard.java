@@ -98,7 +98,7 @@ public record SmugglersCard(AdventureCardIdentity identity, int firepower,
         protected boolean claimReward(PlayerColor player) {
             Ship ship = flight().shipOf(player);
             ship.beginCargoOperations(card.goods());
-            askAgain(new PlayerPrompt.ArrangeCargo(player, card.goods(), ship.cargo().keySet()));
+            askAgain(CargoHandling.offer(ship, player));
             // The days are not paid until the player is finished stowing.
             return false;
         }
@@ -112,6 +112,11 @@ public record SmugglersCard(AdventureCardIdentity identity, int firepower,
 
         @Override
         protected boolean applyExtra(PlayerChoice choice) {
+            if (choice instanceof PlayerChoice.CargoStowed stowing) {
+                // Ask again: stowing is several decisions and Done is the one that ends it.
+                askAgain(CargoHandling.apply(flight().shipOf(stowing.player()), stowing));
+                return true;
+            }
             if (!(choice instanceof PlayerChoice.Done done)) {
                 return super.applyExtra(choice);
             }

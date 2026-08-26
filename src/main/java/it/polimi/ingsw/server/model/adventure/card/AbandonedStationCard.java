@@ -109,6 +109,10 @@ public record AbandonedStationCard(AdventureCardIdentity identity, int minimumCr
                     // Nobody behind is asked, and the docking player still has to stow.
                     yield true;
                 }
+                case PlayerChoice.CargoStowed stowing -> {
+                    askAgain(CargoHandling.apply(flight.shipOf(stowing.player()), stowing));
+                    yield true;
+                }
                 case PlayerChoice.Done done -> {
                     castOff(done.player());
                     yield true;
@@ -121,7 +125,7 @@ public record AbandonedStationCard(AdventureCardIdentity identity, int minimumCr
         private void dock(PlayerColor player) {
             Ship ship = flight.shipOf(player);
             ship.beginCargoOperations(card.goods());
-            askAgain(new PlayerPrompt.ArrangeCargo(player, card.goods(), holdsOf(ship)));
+            askAgain(CargoHandling.offer(ship, player));
         }
 
         private void castOff(PlayerColor player) {
