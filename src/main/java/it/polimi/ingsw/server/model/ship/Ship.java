@@ -828,6 +828,49 @@ public final class Ship {
         return java.util.Collections.unmodifiableMap(berths);
     }
 
+    /**
+     * Returns the cells welded directly to this one.
+     *
+     * <p>Welded, not merely touching. Two components sitting side by side with smooth
+     * sides facing each other are neighbours and are not joined, and several rules turn on
+     * exactly that difference — whether a life support module keeps an alien alive,
+     * whether a ship holds together, and how far an epidemic spreads.
+     *
+     * @param cell the cell to look around
+     * @return its interconnected neighbours
+     */
+    public Set<Position> joinedTo(Position cell) {
+        return grid.jointNeighbours(cell);
+    }
+
+    /**
+     * Returns the cabins with somebody aboard.
+     *
+     * @return the occupied cabin cells, in placement order
+     */
+    public Set<Position> occupiedCabins() {
+        return components().entrySet().stream()
+                .filter(entry -> entry.getValue() instanceof CabinComponent cabin && !cabin.isEmpty())
+                .map(Map.Entry::getKey)
+                .collect(java.util.stream.Collectors.toCollection(java.util.LinkedHashSet::new));
+    }
+
+    /**
+     * Takes one crew member out of a cabin.
+     *
+     * <p>No choice is involved: a cabin holds either humans or a single alien, so which
+     * one leaves is decided by who is in there. Where the player does get a choice — the
+     * Slavers taking crew, for instance — the choice is which cabin, not which occupant.
+     *
+     * @param cabin the cabin to empty a bunk in
+     * @throws IllegalArgumentException if there is no cabin there
+     * @throws IllegalStateException    if the cabin is already empty
+     */
+    public void loseOneCrewFrom(Position cabin) {
+        CabinComponent component = cabinAt(cabin);
+        component.removeOne(component.alien().isPresent());
+    }
+
     private CabinComponent cabinAt(Position cell) {
         return grid.at(cell)
                 .filter(CabinComponent.class::isInstance)
