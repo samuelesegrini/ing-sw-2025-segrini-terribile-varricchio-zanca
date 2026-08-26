@@ -57,19 +57,19 @@ class PiratesCardTest {
     private static final Position BATTERY = new Position(3, 2);
 
     private static PiratesCard pirates(int firepower, int credits, int flightDays,
-                                       List<PiratesCard.ShotPattern> shots) {
+                                       List<ThreatPattern> shots) {
         return new PiratesCard(
                 new AdventureCardIdentity("pirates_lvl1", AdventureCardType.PIRATES,
                         CardLevel.LEVEL_I, false),
                 firepower, credits, shots, flightDays);
     }
 
-    private static PiratesCard.ShotPattern heavyFromTheBow() {
-        return new PiratesCard.ShotPattern(HitKind.HEAVY_FIRE, Direction.NORTH);
+    private static ThreatPattern heavyFromTheBow() {
+        return new ThreatPattern(HitKind.HEAVY_FIRE, Direction.NORTH);
     }
 
-    private static PiratesCard.ShotPattern lightFromTheBow() {
-        return new PiratesCard.ShotPattern(HitKind.LIGHT_FIRE, Direction.NORTH);
+    private static ThreatPattern lightFromTheBow() {
+        return new ThreatPattern(HitKind.LIGHT_FIRE, Direction.NORTH);
     }
 
     /** Cells a cannon fits into, in an order where each one touches the ship. */
@@ -324,7 +324,7 @@ class PiratesCardTest {
         @DisplayName("a meteor is not a cannon shot, and a card carrying one is refused")
         void aMeteorIsNotAShot() {
             assertThrows(IllegalArgumentException.class,
-                    () -> new PiratesCard.ShotPattern(HitKind.BIG_METEOR, Direction.NORTH));
+                    () -> pirates(5, 4, 1, List.of(new ThreatPattern(HitKind.BIG_METEOR, Direction.NORTH))));
         }
 
         @Test
@@ -337,9 +337,9 @@ class PiratesCardTest {
             assertEquals(4, card.credits());
             assertEquals(1, card.flightDays());
             assertEquals(List.of(
-                            new PiratesCard.ShotPattern(HitKind.LIGHT_FIRE, Direction.NORTH),
-                            new PiratesCard.ShotPattern(HitKind.HEAVY_FIRE, Direction.NORTH),
-                            new PiratesCard.ShotPattern(HitKind.LIGHT_FIRE, Direction.NORTH)),
+                            new ThreatPattern(HitKind.LIGHT_FIRE, Direction.NORTH),
+                            new ThreatPattern(HitKind.HEAVY_FIRE, Direction.NORTH),
+                            new ThreatPattern(HitKind.LIGHT_FIRE, Direction.NORTH)),
                     card.shots());
         }
 
