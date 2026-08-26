@@ -182,13 +182,15 @@ class PlayingAWholeGameTest {
                 Transport.SOCKET, "localhost", server.socketPort(), mine);
         ByteArrayOutputStream screen = new ByteArrayOutputStream();
 
-        // Two sittings, with a wait between them, which is what a person does: get the ship out
-        // of the shipyard, wait for everybody else, then look at the route. One script typed
-        // straight through is a race against the other player, and a slower machine loses it.
-        type(mine, link, screen, "name samuele\njoin game-1\ndone\ndone\n");
-        waitUntil(() -> mine.game()
-                .map(game -> game.phase() == GamePhase.FLIGHT)
-                .orElse(false));
+        // One sitting per thing a player waits for, which is what a person does anyway: finish
+        // the ship, wait for everybody else to finish theirs, declare the crew, wait for the
+        // launch, then look at the route. Typed straight through it is a race with the other
+        // player, and a slower machine loses it — the second 'done' arrives while the game is
+        // still in the shipyard, is refused, and nothing ever declares the crew.
+        type(mine, link, screen, "name samuele\njoin game-1\ndone\n");
+        waitUntil(() -> phaseOf(mine) == GamePhase.CREW_PLACEMENT);
+        type(mine, link, screen, "done\n");
+        waitUntil(() -> phaseOf(mine) == GamePhase.FLIGHT);
         type(mine, link, screen, "route\nquit\n");
         link.close();
 
@@ -260,6 +262,10 @@ class PlayingAWholeGameTest {
      * long takes a core to itself — which on a two-core build machine is half the machine, and
      * turns a one-second test into one that never finishes.
      */
+    private static GamePhase phaseOf(ClientState state) {
+        return state.game().map(GameView::phase).orElse(GamePhase.LOBBY);
+    }
+
     private static void pause() {
         try {
             Thread.sleep(1);
