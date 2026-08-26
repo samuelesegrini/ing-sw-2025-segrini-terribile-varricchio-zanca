@@ -20,8 +20,14 @@ import java.util.Set;
  * <p>The outline is sent because a view cannot otherwise tell an empty buildable square
  * from a hole in the printed board, and the difference decides where a tile may go.
  *
+ * <p>The printed offsets are here because the board's own edges are numbered — rows 5 to 9,
+ * columns 4 to 10 — and those printed numbers are what the dice address. A view that only knew
+ * the indices could draw a grid nobody could read a meteor roll against.
+ *
  * @param rows            how tall the board is
  * @param columns         how wide
+ * @param firstPrintedRow what the top row is called along the edge of the board
+ * @param firstPrintedColumn what the leftmost column is called
  * @param outline         the cells that may hold a component; everything else is off the board
  * @param cells           what is welded where
  * @param reserved        tiles set aside and not welded, which count as lost at the end (p.7)
@@ -29,9 +35,9 @@ import java.util.Set;
  * @param attributes      firepower, engine power and crew with no double component powered
  * @param validation      what is wrong with the ship, empty when nothing is
  */
-public record ShipView(int rows, int columns, Set<Position> outline,
-                       Map<Position, CellView> cells, List<TileView> reserved,
-                       int lostComponents, ShipAttributes attributes,
+public record ShipView(int rows, int columns, int firstPrintedRow, int firstPrintedColumn,
+                       Set<Position> outline, Map<Position, CellView> cells,
+                       List<TileView> reserved, int lostComponents, ShipAttributes attributes,
                        ValidationReport validation) implements Serializable {
 
     /**
@@ -56,5 +62,25 @@ public record ShipView(int rows, int columns, Set<Position> outline,
         if (!outline.containsAll(cells.keySet())) {
             throw new IllegalArgumentException("this ship has components welded outside its own outline");
         }
+    }
+
+    /**
+     * Returns what a row is called along the edge of the board.
+     *
+     * @param row the row index, 0 at the top
+     * @return the printed number
+     */
+    public int printedRow(int row) {
+        return firstPrintedRow + row;
+    }
+
+    /**
+     * Returns what a column is called along the edge of the board.
+     *
+     * @param column the column index, 0 at the left
+     * @return the printed number
+     */
+    public int printedColumn(int column) {
+        return firstPrintedColumn + column;
     }
 }

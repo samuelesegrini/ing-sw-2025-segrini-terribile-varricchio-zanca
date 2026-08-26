@@ -186,7 +186,7 @@ public final class Messages {
     }
 
     private static ShipView ship() {
-        return new ShipView(5, 7, Set.of(CABIN, HOLD),
+        return new ShipView(5, 7, 5, 4, Set.of(CABIN, HOLD),
                 Map.of(CABIN, new CellView(tile(ComponentKind.CABIN), 0, List.of(), 2, null),
                         HOLD, new CellView(tile(ComponentKind.CARGO_HOLD), 0,
                                 List.of(GoodColor.BLUE), 0, null)),
