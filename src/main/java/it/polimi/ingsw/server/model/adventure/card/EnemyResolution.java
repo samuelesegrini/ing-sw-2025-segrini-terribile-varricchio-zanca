@@ -2,11 +2,11 @@ package it.polimi.ingsw.server.model.adventure.card;
 
 import it.polimi.ingsw.server.model.adventure.resolution.PlayerChoice;
 import it.polimi.ingsw.server.model.adventure.resolution.PlayerPrompt;
-import it.polimi.ingsw.server.model.adventure.resolution.ShipAttribute;
+import it.polimi.ingsw.common.game.ShipAttribute;
 import it.polimi.ingsw.server.model.adventure.resolution.TurnByTurnResolution;
-import it.polimi.ingsw.server.model.component.ComponentKind;
+import it.polimi.ingsw.common.game.ComponentKind;
 import it.polimi.ingsw.server.model.flight.Flight;
-import it.polimi.ingsw.server.model.player.PlayerColor;
+import it.polimi.ingsw.common.game.PlayerColor;
 import it.polimi.ingsw.server.model.ship.Ship;
 
 import java.util.Optional;

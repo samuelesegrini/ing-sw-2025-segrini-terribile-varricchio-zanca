@@ -1,4 +1,4 @@
-package it.polimi.ingsw.server.model.adventure.resolution;
+package it.polimi.ingsw.common.game;
 
 /**
  * An attribute a card can ask a ship to declare.

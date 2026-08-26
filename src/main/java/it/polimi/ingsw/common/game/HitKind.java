@@ -1,4 +1,4 @@
-package it.polimi.ingsw.server.model.ship;
+package it.polimi.ingsw.common.game;
 
 /**
  * The four things that can come at a ship, and what can be done about each.

@@ -1,4 +1,4 @@
-package it.polimi.ingsw.server.model.ship;
+package it.polimi.ingsw.common.game;
 
 /**
  * The ways a ship can break the assembly rules.

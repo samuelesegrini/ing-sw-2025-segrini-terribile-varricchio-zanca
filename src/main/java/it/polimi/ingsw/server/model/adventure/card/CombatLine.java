@@ -1,6 +1,6 @@
 package it.polimi.ingsw.server.model.adventure.card;
 
-import it.polimi.ingsw.server.model.adventure.resolution.ShipAttribute;
+import it.polimi.ingsw.common.game.ShipAttribute;
 
 /**
  * One line of a combat zone: an attribute to compare and what the weakest ship suffers.

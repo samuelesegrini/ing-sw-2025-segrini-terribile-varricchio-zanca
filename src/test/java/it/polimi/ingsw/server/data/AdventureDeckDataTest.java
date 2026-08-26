@@ -3,7 +3,7 @@ package it.polimi.ingsw.server.data;
 import it.polimi.ingsw.server.model.adventure.AdventureCardIdentity;
 import it.polimi.ingsw.server.model.adventure.AdventureCardType;
 import it.polimi.ingsw.server.model.adventure.CardLevel;
-import it.polimi.ingsw.server.model.board.GameLevel;
+import it.polimi.ingsw.common.game.GameLevel;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

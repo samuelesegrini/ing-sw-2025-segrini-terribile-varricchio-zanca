@@ -1,4 +1,4 @@
-package it.polimi.ingsw.server.model.ship;
+package it.polimi.ingsw.common.game;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -10,10 +10,10 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Checks {@link Direction} and {@link Position}: the arithmetic every placement,
- * connection check and threat resolution goes through.
+ * Checks {@link Direction}, {@link Rotation} and {@link Position}: the arithmetic every
+ * placement, connection check and threat resolution goes through.
  */
-class DirectionTest {
+class GeometryTest {
 
     @DisplayName("a direction is its own opposite twice over")
     @ParameterizedTest(name = "{0}")

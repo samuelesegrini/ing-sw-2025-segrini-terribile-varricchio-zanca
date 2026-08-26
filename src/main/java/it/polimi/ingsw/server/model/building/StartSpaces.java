@@ -1,7 +1,7 @@
 package it.polimi.ingsw.server.model.building;
 
 import it.polimi.ingsw.server.model.board.FlightBoardSpec;
-import it.polimi.ingsw.server.model.player.PlayerColor;
+import it.polimi.ingsw.common.game.PlayerColor;
 
 import java.util.LinkedHashMap;
 import java.util.List;

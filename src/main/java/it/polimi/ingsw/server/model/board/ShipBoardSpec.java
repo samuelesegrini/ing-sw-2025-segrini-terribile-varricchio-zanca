@@ -1,6 +1,6 @@
 package it.polimi.ingsw.server.model.board;
 
-import it.polimi.ingsw.server.model.ship.Position;
+import it.polimi.ingsw.common.game.Position;
 
 import java.util.LinkedHashSet;
 import java.util.List;

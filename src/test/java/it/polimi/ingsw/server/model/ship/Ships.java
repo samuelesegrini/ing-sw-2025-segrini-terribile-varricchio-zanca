@@ -1,11 +1,13 @@
 package it.polimi.ingsw.server.model.ship;
 
+import it.polimi.ingsw.common.game.ComponentKind;
+import it.polimi.ingsw.common.game.GoodColor;
+import it.polimi.ingsw.common.game.PlayerColor;
+import it.polimi.ingsw.common.game.Position;
+import it.polimi.ingsw.common.game.Rotation;
 import it.polimi.ingsw.server.model.board.ShipBoardSpec;
-import it.polimi.ingsw.server.model.component.ComponentKind;
 import it.polimi.ingsw.server.model.component.Tiles;
-import it.polimi.ingsw.server.model.goods.GoodColor;
 import it.polimi.ingsw.server.model.goods.GoodsBank;
-import it.polimi.ingsw.server.model.player.PlayerColor;
 
 import java.util.Map;
 import java.util.Set;

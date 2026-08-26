@@ -1,7 +1,7 @@
 package it.polimi.ingsw.server.model.adventure.card;
 
-import it.polimi.ingsw.server.model.ship.Direction;
-import it.polimi.ingsw.server.model.ship.HitKind;
+import it.polimi.ingsw.common.game.Direction;
+import it.polimi.ingsw.common.game.HitKind;
 
 /**
  * One threat printed on a card: what it is and which side it comes from.

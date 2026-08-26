@@ -7,7 +7,7 @@ import it.polimi.ingsw.server.model.adventure.resolution.PlayerChoice;
 import it.polimi.ingsw.server.model.adventure.resolution.PlayerPrompt;
 import it.polimi.ingsw.server.model.adventure.resolution.TurnByTurnResolution;
 import it.polimi.ingsw.server.model.flight.Flight;
-import it.polimi.ingsw.server.model.player.PlayerColor;
+import it.polimi.ingsw.common.game.PlayerColor;
 import it.polimi.ingsw.server.model.ship.Hit;
 
 import java.util.HashMap;

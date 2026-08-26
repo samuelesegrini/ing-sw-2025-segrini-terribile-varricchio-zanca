@@ -3,7 +3,7 @@ package it.polimi.ingsw.server.model.building;
 import it.polimi.ingsw.server.model.adventure.AdventureCardIdentity;
 import it.polimi.ingsw.server.model.adventure.AdventureDeck;
 import it.polimi.ingsw.server.model.adventure.CardLevel;
-import it.polimi.ingsw.server.model.ship.Rotation;
+import it.polimi.ingsw.common.game.Rotation;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

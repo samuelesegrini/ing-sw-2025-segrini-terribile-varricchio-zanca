@@ -1,4 +1,4 @@
-package it.polimi.ingsw.server.model.component;
+package it.polimi.ingsw.common.game;
 
 /**
  * What a component tile does once it is welded to a ship.

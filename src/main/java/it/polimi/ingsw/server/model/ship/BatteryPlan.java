@@ -1,5 +1,6 @@
 package it.polimi.ingsw.server.model.ship;
 
+import it.polimi.ingsw.common.game.Position;
 import java.util.Set;
 
 /**

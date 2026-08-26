@@ -1,6 +1,6 @@
 package it.polimi.ingsw.server.model.board;
 
-import it.polimi.ingsw.server.model.goods.GoodColor;
+import it.polimi.ingsw.common.game.GoodColor;
 
 import java.util.EnumMap;
 import java.util.List;

@@ -1,8 +1,9 @@
 package it.polimi.ingsw.server.model.component;
 
-import it.polimi.ingsw.server.model.ship.Connector;
-import it.polimi.ingsw.server.model.ship.Direction;
-import it.polimi.ingsw.server.model.ship.Rotation;
+import it.polimi.ingsw.common.game.ComponentKind;
+import it.polimi.ingsw.common.game.Connector;
+import it.polimi.ingsw.common.game.Direction;
+import it.polimi.ingsw.common.game.Rotation;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 

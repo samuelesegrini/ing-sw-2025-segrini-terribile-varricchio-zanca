@@ -6,12 +6,12 @@ import it.polimi.ingsw.server.model.adventure.AdventureDeck;
 import it.polimi.ingsw.server.model.adventure.CardLevel;
 import it.polimi.ingsw.server.model.board.DeckComposition;
 import it.polimi.ingsw.server.model.board.ShipBoardSpec;
-import it.polimi.ingsw.server.model.component.ComponentKind;
+import it.polimi.ingsw.common.game.ComponentKind;
 import it.polimi.ingsw.server.model.component.ComponentTile;
 import it.polimi.ingsw.server.model.component.Tiles;
-import it.polimi.ingsw.server.model.player.PlayerColor;
-import it.polimi.ingsw.server.model.ship.Connector;
-import it.polimi.ingsw.server.model.ship.Position;
+import it.polimi.ingsw.common.game.PlayerColor;
+import it.polimi.ingsw.common.game.Connector;
+import it.polimi.ingsw.common.game.Position;
 import it.polimi.ingsw.server.model.ship.Ship;
 import it.polimi.ingsw.server.model.ship.Ships;
 

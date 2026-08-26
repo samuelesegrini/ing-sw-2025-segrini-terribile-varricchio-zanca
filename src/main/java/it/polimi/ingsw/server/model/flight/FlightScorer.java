@@ -1,8 +1,8 @@
 package it.polimi.ingsw.server.model.flight;
 
 import it.polimi.ingsw.server.model.board.RewardTable;
-import it.polimi.ingsw.server.model.goods.GoodColor;
-import it.polimi.ingsw.server.model.player.PlayerColor;
+import it.polimi.ingsw.common.game.GoodColor;
+import it.polimi.ingsw.common.game.PlayerColor;
 import it.polimi.ingsw.server.model.ship.Ship;
 
 import java.util.ArrayList;

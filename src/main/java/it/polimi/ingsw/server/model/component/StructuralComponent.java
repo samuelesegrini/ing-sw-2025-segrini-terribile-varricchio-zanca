@@ -1,6 +1,8 @@
 package it.polimi.ingsw.server.model.component;
 
-import it.polimi.ingsw.server.model.ship.Rotation;
+import it.polimi.ingsw.common.game.ComponentKind;
+import it.polimi.ingsw.common.game.Rotation;
+
 
 /**
  * A component that does nothing but hold the ship together.

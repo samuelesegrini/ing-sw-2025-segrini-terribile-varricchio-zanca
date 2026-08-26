@@ -1,5 +1,6 @@
 package it.polimi.ingsw.server.model.component;
 
+import it.polimi.ingsw.common.game.ComponentKind;
 import java.util.Arrays;
 
 /**

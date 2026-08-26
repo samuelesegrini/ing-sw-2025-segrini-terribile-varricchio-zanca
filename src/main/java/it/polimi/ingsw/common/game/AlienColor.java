@@ -1,6 +1,5 @@
-package it.polimi.ingsw.server.model.crew;
+package it.polimi.ingsw.common.game;
 
-import it.polimi.ingsw.server.model.component.ComponentKind;
 
 /**
  * The two alien species a ship can carry.

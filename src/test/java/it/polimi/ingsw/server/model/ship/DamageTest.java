@@ -1,12 +1,18 @@
 package it.polimi.ingsw.server.model.ship;
 
+import it.polimi.ingsw.common.game.AlienColor;
+import it.polimi.ingsw.common.game.ComponentKind;
+import it.polimi.ingsw.common.game.Connector;
+import it.polimi.ingsw.common.game.Direction;
+import it.polimi.ingsw.common.game.GoodColor;
+import it.polimi.ingsw.common.game.HitKind;
+import it.polimi.ingsw.common.game.PlayerColor;
+import it.polimi.ingsw.common.game.Position;
+import it.polimi.ingsw.common.game.Rotation;
 import it.polimi.ingsw.server.model.board.ShipBoardSpec;
 import it.polimi.ingsw.server.model.component.CabinComponent;
-import it.polimi.ingsw.server.model.component.ComponentKind;
 import it.polimi.ingsw.server.model.component.ComponentTile;
 import it.polimi.ingsw.server.model.component.Tiles;
-import it.polimi.ingsw.server.model.crew.AlienColor;
-import it.polimi.ingsw.server.model.player.PlayerColor;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -344,7 +350,7 @@ class DamageTest {
             put(ship, new Position(1, 2), ComponentKind.CARGO_HOLD, Rotation.NONE);
             var hold = (it.polimi.ingsw.server.model.component.CargoHoldComponent)
                     ship.componentAt(new Position(1, 2)).orElseThrow();
-            hold.store(it.polimi.ingsw.server.model.goods.GoodColor.BLUE);
+            hold.store(GoodColor.BLUE);
 
             ship.applyHit(new Hit(HitKind.HEAVY_FIRE, Direction.NORTH, DICE_FOR_CABIN_COLUMN), Defence.none());
 

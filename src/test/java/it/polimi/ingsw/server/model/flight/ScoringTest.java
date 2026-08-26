@@ -1,9 +1,9 @@
 package it.polimi.ingsw.server.model.flight;
 
-import it.polimi.ingsw.server.model.component.ComponentKind;
-import it.polimi.ingsw.server.model.goods.GoodColor;
-import it.polimi.ingsw.server.model.player.PlayerColor;
-import it.polimi.ingsw.server.model.ship.Position;
+import it.polimi.ingsw.common.game.ComponentKind;
+import it.polimi.ingsw.common.game.GoodColor;
+import it.polimi.ingsw.common.game.PlayerColor;
+import it.polimi.ingsw.common.game.Position;
 import it.polimi.ingsw.server.model.ship.Ship;
 import it.polimi.ingsw.server.model.ship.Ships;
 import org.junit.jupiter.api.DisplayName;
