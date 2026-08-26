@@ -6,10 +6,14 @@ import it.polimi.ingsw.client.view.UserInterface;
 import it.polimi.ingsw.common.game.GameLevel;
 import it.polimi.ingsw.common.game.GamePhase;
 import it.polimi.ingsw.common.game.PlayerColor;
+import it.polimi.ingsw.common.game.Position;
+import it.polimi.ingsw.common.game.Rotation;
+import it.polimi.ingsw.common.protocol.BuildingCommand;
 import it.polimi.ingsw.common.protocol.Command;
 import it.polimi.ingsw.common.protocol.LobbyCommand;
 import it.polimi.ingsw.common.protocol.view.GameView;
 import it.polimi.ingsw.common.protocol.view.PlayerView;
+import it.polimi.ingsw.common.protocol.view.ShipView;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -160,11 +164,142 @@ public final class TextInterface implements UserInterface {
             inTheLobby(typed);
             return;
         }
-        // Everything else belongs to a phase, and the phases arrive with #48 and #49. Until
-        // then a player is told plainly rather than left typing into silence.
+        GameView game = state.game().orElseThrow();
+        if (typed.is("yard", "pool", "shipyard")) {
+            game.buildingIfAny().ifPresentOrElse(
+                    yard -> print(ShipyardRenderer.render(yard)),
+                    () -> print(List.of("  the shipyard closed a while ago")));
+            return;
+        }
+        if (game.phase() == GamePhase.BUILDING) {
+            inTheShipyard(typed, game);
+            return;
+        }
+        // The remaining phases arrive with #49. Until then a player is told plainly rather than
+        // left typing into silence.
         print(List.of("  not yet: '" + typed.verb() + "' belongs to the "
-                + state.game().orElseThrow().phase().name().toLowerCase().replace('_', ' ')
-                + " phase"));
+                + game.phase().name().toLowerCase().replace('_', ' ') + " phase"));
+    }
+
+    // ------------------------------------------------------------------ the shipyard
+
+    private void inTheShipyard(Typed typed, GameView game) {
+        if (typed.is("draw")) {
+            sendThenShowHand(new BuildingCommand.DrawFromPool());
+        } else if (typed.is("take")) {
+            requireArgument(typed.word(0).orElse(""), "a tile to take",
+                    tile -> sendThenShowHand(new BuildingCommand.TakeFaceUp(tile)));
+        } else if (typed.is("back")) {
+            requireArgument(typed.word(0).orElse(""), "one of the tiles you set aside",
+                    tile -> sendThenShowHand(new BuildingCommand.TakeReserved(tile)));
+        } else if (typed.is("pile", "return")) {
+            send(new BuildingCommand.ReturnToPool());
+        } else if (typed.is("keep", "reserve")) {
+            send(new BuildingCommand.Reserve());
+        } else if (typed.is("put", "place")) {
+            place(typed, game);
+        } else if (typed.is("turn", "move")) {
+            adjust(typed, game);
+        } else if (typed.is("weld")) {
+            sendThenShowShip(new BuildingCommand.Weld());
+        } else if (typed.is("peek", "scout")) {
+            peek(typed);
+        } else if (typed.is("drop")) {
+            send(new BuildingCommand.PutPileBack());
+        } else if (typed.is("flip")) {
+            send(new BuildingCommand.FlipTimer());
+        } else if (typed.is("done", "finish")) {
+            send(new BuildingCommand.FinishBuilding(
+                    typed.number(0).isPresent() ? typed.number(0).getAsInt() : null));
+        } else {
+            print(List.of("  ? '" + typed.verb() + "' is not something you can do in the "
+                    + "shipyard; type 'help'"));
+        }
+    }
+
+    private void place(Typed typed, GameView game) {
+        cellFrom(typed, game).ifPresent(cell ->
+                sendThenShowShip(new BuildingCommand.PlaceInHand(cell, turnsFrom(typed))));
+    }
+
+    private void adjust(Typed typed, GameView game) {
+        cellFrom(typed, game).ifPresent(cell ->
+                sendThenShowShip(new BuildingCommand.AdjustPlacement(cell, turnsFrom(typed))));
+    }
+
+    private void peek(Typed typed) {
+        if (typed.number(0).isEmpty()) {
+            print(List.of("  ? which pile? 'peek 0', 'peek 1', 'peek 2'"));
+            return;
+        }
+        send(new BuildingCommand.ScoutPile(typed.number(0).getAsInt()));
+        state.game().flatMap(GameView::buildingIfAny)
+                .ifPresent(yard -> print(ShipyardRenderer.render(yard)));
+    }
+
+    /**
+     * Reads a square from what somebody typed, in the numbers printed on their board.
+     *
+     * <p>Wrong coordinates are the expensive mistake in this phase: a tile welded three squares
+     * from where it was meant is discovered during validation and paid for with a component. So
+     * a pair that is not on the board is refused here, with the range that would have worked,
+     * rather than sent to a server that would refuse it less helpfully.
+     */
+    private Optional<Position> cellFrom(Typed typed, GameView game) {
+        ShipView ship = myShip(game);
+        Optional<Position> cell = Coordinates.on(ship, typed.number(0), typed.number(1));
+        if (cell.isEmpty()) {
+            print(List.of("  ? which square? give a row and a column — "
+                    + Coordinates.range(ship)));
+        }
+        return cell;
+    }
+
+    /**
+     * Reads how far to turn a tile, in quarter turns.
+     *
+     * <p>Nothing given means upright, which is what somebody who did not mention turning meant.
+     * Anything outside nought to three wraps, because a player who typed five quarter turns
+     * meant one and should not be told off for it.
+     */
+    private static Rotation turnsFrom(Typed typed) {
+        int quarters = typed.number(2).orElse(0);
+        return Rotation.values()[Math.floorMod(quarters, Rotation.values().length)];
+    }
+
+    private ShipView myShip(GameView game) {
+        return game.players().stream()
+                .filter(player -> player.colour() == game.you())
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("this game has no seat for us"))
+                .ship();
+    }
+
+    private void sendThenShowHand(Command command) {
+        send(command);
+        state.game().flatMap(GameView::buildingIfAny)
+                .map(ShipyardRenderer::hand)
+                .filter(lines -> !lines.isEmpty())
+                .ifPresent(this::print);
+    }
+
+    /**
+     * Sends something that changes the ship, then draws it.
+     *
+     * <p>With the loose-tile note if there is one, which is what makes putting a tile down and
+     * welding it look different on screen: after a placement the note says where it is and that
+     * it can still be moved, and after a weld the note is gone.
+     */
+    private void sendThenShowShip(Command command) {
+        send(command);
+        state.game().ifPresent(after -> {
+            ShipView ship = myShip(after);
+            print(ShipRenderer.render(ship));
+            after.buildingIfAny()
+                    .map(yard -> ShipyardRenderer.loose(yard, ship))
+                    .filter(lines -> !lines.isEmpty())
+                    .ifPresent(this::print);
+        });
     }
 
     private void inTheLobby(Typed typed) {

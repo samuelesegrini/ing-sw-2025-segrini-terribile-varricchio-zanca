@@ -2,6 +2,7 @@ package it.polimi.ingsw.common.protocol.view;
 
 import it.polimi.ingsw.common.game.AdventureCardIdentity;
 import it.polimi.ingsw.common.game.PlayerColor;
+import it.polimi.ingsw.common.game.Position;
 
 import java.io.Serializable;
 import java.util.List;
@@ -20,6 +21,7 @@ import java.util.Set;
  * @param faceDownRemaining how many tiles are still face down on the table
  * @param faceUpPile        the tiles lying face up, which anyone may take
  * @param hand              the tile <em>this</em> player is holding, {@code null} when their hands are empty
+ * @param unwelded          the square holding a tile that is down but not yet fixed, {@code null} when there is none
  * @param scouted           the pile <em>this</em> player is looking at, empty unless they are
  * @param hourglassSpace    which space the timer is on, {@code null} when the level has no timer
  * @param hourglassSpaces   how many spaces the timer has, zero when the level has none
@@ -28,8 +30,9 @@ import java.util.Set;
  * @param freeStartSpaces   the start spaces nobody has claimed
  */
 public record BuildingView(int faceDownRemaining, List<TileView> faceUpPile, TileView hand,
-                           List<AdventureCardIdentity> scouted, Integer hourglassSpace,
-                           int hourglassSpaces, long secondsRemaining, Set<PlayerColor> finished,
+                           Position unwelded, List<AdventureCardIdentity> scouted,
+                           Integer hourglassSpace, int hourglassSpaces, long secondsRemaining,
+                           Set<PlayerColor> finished,
                            List<Integer> freeStartSpaces) implements Serializable {
 
     /**
@@ -54,5 +57,18 @@ public record BuildingView(int faceDownRemaining, List<TileView> faceUpPile, Til
      */
     public Optional<TileView> handIfAny() {
         return Optional.ofNullable(hand);
+    }
+
+    /**
+     * Returns the square holding a tile that is down but not yet fixed.
+     *
+     * <p>A board cannot show this on its own: a tile put down and a tile welded look identical
+     * once they are in a square. The difference decides whether it can still be moved for
+     * nothing or only thrown away, so somebody has to say which it is.
+     *
+     * @return the square, or empty when nothing is loose
+     */
+    public Optional<Position> unweldedIfAny() {
+        return Optional.ofNullable(unwelded);
     }
 }

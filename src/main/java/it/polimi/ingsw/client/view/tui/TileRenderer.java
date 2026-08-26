@@ -51,7 +51,7 @@ public final class TileRenderer {
      * @return three lines
      */
     public static List<String> render(TileView tile) {
-        return render(tile, Glyphs.nameOf(tile.kind()).substring(0, 2));
+        return render(tile, Glyphs.of(tile).strip().isEmpty() ? "??" : Glyphs.of(tile).substring(0, 2));
     }
 
     /**

@@ -207,7 +207,7 @@ public final class Messages {
 
     private static BuildingView shipyard() {
         return new BuildingView(96, List.of(tile(ComponentKind.SHIELD)),
-                tile(ComponentKind.BATTERY), List.of(card()), 1, 3, 42,
+                tile(ComponentKind.BATTERY), HOLD, List.of(card()), 1, 3, 42,
                 Set.of(PlayerColor.BLUE), List.of(2, 4));
     }
 

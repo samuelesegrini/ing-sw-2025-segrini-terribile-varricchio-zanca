@@ -160,9 +160,10 @@ class ProtocolContractTest {
         // The other half of rule 2.3. Banning Optional from the wire is only safe if the
         // null it is replaced by never escapes into code that would dereference it, which
         // is what the …IfAny() accessors are for.
-        BuildingView empty = new BuildingView(0, List.of(), null, List.of(), null, 0, 0,
+        BuildingView empty = new BuildingView(0, List.of(), null, null, List.of(), null, 0, 0,
                 Set.of(), List.of());
         assertEquals(Optional.empty(), empty.handIfAny());
+        assertEquals(Optional.empty(), empty.unweldedIfAny());
 
         FlightView between = new FlightView(24, Map.of(), List.of(), null, 0);
         assertEquals(Optional.empty(), between.cardIfAny());
