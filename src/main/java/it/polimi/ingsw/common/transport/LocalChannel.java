@@ -1,6 +1,7 @@
 package it.polimi.ingsw.common.transport;
 
 import java.io.Serializable;
+import java.util.function.Function;
 
 /**
  * A pair of channels wired to each other inside one process.
@@ -45,14 +46,19 @@ public final class LocalChannel<O extends Serializable, I extends Serializable>
     /**
      * Wires two channels together.
      *
+     * <p>The listeners are built from the channels rather than passed in, which is the same
+     * shape both real transports use and for the same reason: a server accepting a connection
+     * wants a listener that can answer on it. Both channels exist before either factory runs,
+     * so a listener may refer to either end.
+     *
      * <p>The class tokens are the same ones any transport needs: they let a message of the
-     * wrong kind be reported as a protocol error rather than surface as a class cast
-     * somewhere inside a handler.
+     * wrong kind be reported as a protocol error rather than surface as a class cast somewhere
+     * inside a handler.
      *
      * @param sent          what the near end sends and the far end receives
      * @param received      what the near end receives and the far end sends
-     * @param nearListener  what the near end does with what arrives
-     * @param farListener   what the far end does with what arrives
+     * @param nearListener  how to build the near end's listener, given the near channel
+     * @param farListener   how to build the far end's listener, given the far channel
      * @param <O>           what the near end sends
      * @param <I>           what the near end receives
      * @return the two ends, already connected
@@ -60,14 +66,15 @@ public final class LocalChannel<O extends Serializable, I extends Serializable>
      */
     public static <O extends Serializable, I extends Serializable> Pair<O, I> connect(
             Class<O> sent, Class<I> received,
-            ChannelListener<I> nearListener, ChannelListener<O> farListener) {
+            Function<Channel<O, I>, ChannelListener<I>> nearListener,
+            Function<Channel<I, O>, ChannelListener<O>> farListener) {
 
         LocalChannel<O, I> near = new LocalChannel<>(received);
         LocalChannel<I, O> far = new LocalChannel<>(sent);
         near.peer = far;
         far.peer = near;
-        near.listenWith(nearListener);
-        far.listenWith(farListener);
+        near.listenWith(nearListener.apply(near));
+        far.listenWith(farListener.apply(far));
         near.start();
         far.start();
         return new Pair<>(near, far);

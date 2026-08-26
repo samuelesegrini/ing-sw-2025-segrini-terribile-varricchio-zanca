@@ -16,8 +16,8 @@ class LocalChannelTest extends ChannelContract {
 
     @Override
     protected Connected connect(Recorder<Event> atClient, Recorder<Command> atServer) {
-        LocalChannel.Pair<Command, Event> pair =
-                LocalChannel.connect(Command.class, Event.class, atClient, atServer);
+        LocalChannel.Pair<Command, Event> pair = LocalChannel.connect(
+                Command.class, Event.class, channel -> atClient, channel -> atServer);
         return new Connected(pair.near(), pair.far(), atClient, atServer);
     }
 }
