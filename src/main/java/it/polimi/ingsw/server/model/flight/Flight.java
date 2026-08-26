@@ -29,6 +29,7 @@ public final class Flight {
 
     private final LevelSpec level;
     private final Route route;
+    private final Dice dice;
     private final Map<PlayerColor, Ship> ships = new LinkedHashMap<>();
     private final Set<PlayerColor> retired = new LinkedHashSet<>();
     private final Map<PlayerColor, Integer> credits = new LinkedHashMap<>();
@@ -39,10 +40,12 @@ public final class Flight {
      * @param level          the flight configuration being played
      * @param ships          each player's ship
      * @param startPositions where each player's marker begins
+     * @param dice           the two dice every card in this flight rolls
      * @throws IllegalArgumentException if a player has a ship but no start space, or the
      *                                  other way round
      */
-    public Flight(LevelSpec level, Map<PlayerColor, Ship> ships, Map<PlayerColor, Integer> startPositions) {
+    public Flight(LevelSpec level, Map<PlayerColor, Ship> ships,
+                  Map<PlayerColor, Integer> startPositions, Dice dice) {
         if (!ships.keySet().equals(startPositions.keySet())) {
             throw new IllegalArgumentException(
                     "every ship needs a start space: ships " + ships.keySet()
@@ -50,6 +53,7 @@ public final class Flight {
         }
         this.level = level;
         this.route = new Route(level.flightBoard().routeLength());
+        this.dice = dice;
         this.ships.putAll(ships);
         startPositions.entrySet().stream()
                 .sorted(Map.Entry.<PlayerColor, Integer>comparingByValue().reversed())
@@ -63,6 +67,19 @@ public final class Flight {
      */
     public LevelSpec level() {
         return level;
+    }
+
+    /**
+     * Returns the dice this flight rolls.
+     *
+     * <p>One source for the whole flight rather than one per card, so that a test can
+     * script an entire game and a real game cannot be nudged by reaching for a fresh
+     * source at a convenient moment.
+     *
+     * @return the dice
+     */
+    public Dice dice() {
+        return dice;
     }
 
     /**

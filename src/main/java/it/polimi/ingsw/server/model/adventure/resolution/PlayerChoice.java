@@ -5,6 +5,7 @@ import it.polimi.ingsw.server.model.ship.BatteryPlan;
 import it.polimi.ingsw.server.model.ship.Position;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * A player's answer to a {@link PlayerPrompt}.
@@ -95,6 +96,68 @@ public sealed interface PlayerChoice {
                 throw new NullPointerException("a crew answer needs a player");
             }
             cabins = List.copyOf(cabins);
+        }
+    }
+
+    /**
+     * What a player is putting in front of an incoming shot, if anything.
+     *
+     * @param player    whose ship is in the way
+     * @param component the shield or cannon to use, or empty to take the hit
+     */
+    record DefenceChosen(PlayerColor player, java.util.Optional<Position> component) implements PlayerChoice {
+
+        /**
+         * Validates the answer.
+         *
+         * @throws NullPointerException if the player or the optional is {@code null}
+         */
+        public DefenceChosen {
+            if (player == null || component == null) {
+                throw new NullPointerException("a defence answer needs a player and an optional component");
+            }
+        }
+
+        /**
+         * Returns the answer to take the hit.
+         *
+         * @param player who is taking it
+         * @return a defence that does nothing
+         */
+        public static DefenceChosen none(PlayerColor player) {
+            return new DefenceChosen(player, java.util.Optional.empty());
+        }
+
+        /**
+         * Returns the answer to use one component.
+         *
+         * @param player    who is defending
+         * @param component the shield or cannon
+         * @return the answer
+         */
+        public static DefenceChosen using(PlayerColor player, Position component) {
+            return new DefenceChosen(player, java.util.Optional.of(component));
+        }
+    }
+
+    /**
+     * The piece of a broken ship the player is carrying on with.
+     *
+     * @param player whose ship came apart
+     * @param piece  the cells to keep
+     */
+    record FragmentKept(PlayerColor player, Set<Position> piece) implements PlayerChoice {
+
+        /**
+         * Takes a defensive copy of the piece.
+         *
+         * @throws NullPointerException if the player or the piece is {@code null}
+         */
+        public FragmentKept {
+            if (player == null) {
+                throw new NullPointerException("a fragment answer needs a player");
+            }
+            piece = Set.copyOf(piece);
         }
     }
 }

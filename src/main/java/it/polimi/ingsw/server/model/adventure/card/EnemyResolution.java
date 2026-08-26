@@ -114,16 +114,34 @@ abstract class EnemyResolution extends TurnByTurnResolution {
         flight.route().fallBack(player, flightDays);
     }
 
+    /**
+     * Asks a player to declare firepower.
+     *
+     * <p>Overridable because a card may have a second phase with questions of its own —
+     * the Pirates fire on everybody they beat once the fight is over.
+     *
+     * @param player whose turn it is
+     * @return the call to declare
+     */
     @Override
-    protected final Optional<PlayerPrompt> promptFor(PlayerColor player) {
+    protected Optional<PlayerPrompt> promptFor(PlayerColor player) {
         Ship ship = flight.shipOf(player);
         return Optional.of(new PlayerPrompt.DeclarePower(
                 player, ShipAttribute.FIREPOWER,
                 ship.componentsOfKind(ComponentKind.DOUBLE_CANNON), ship.availableCharges()));
     }
 
+    /**
+     * Applies an answer to the fight.
+     *
+     * <p>Overridable for the same reason as {@link #promptFor}; a subclass with a second
+     * phase should delegate here while the fight is still going on.
+     *
+     * @param choice the answer
+     * @return {@code true} to end the card here
+     */
     @Override
-    protected final boolean apply(PlayerChoice choice) {
+    protected boolean apply(PlayerChoice choice) {
         return switch (choice) {
             case PlayerChoice.Declaration declaration -> fight(declaration);
             case PlayerChoice.Take take -> claimReward(take.player());

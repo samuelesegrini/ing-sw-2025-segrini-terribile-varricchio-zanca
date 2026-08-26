@@ -4,8 +4,11 @@ import it.polimi.ingsw.server.model.player.PlayerColor;
 import it.polimi.ingsw.server.model.ship.Position;
 
 import it.polimi.ingsw.server.model.goods.GoodColor;
+import it.polimi.ingsw.server.model.ship.Hit;
 
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -149,6 +152,65 @@ public sealed interface PlayerPrompt {
                 throw new IllegalArgumentException("a card taking " + count + " crew is taking nothing");
             }
             cabins = Set.copyOf(cabins);
+        }
+    }
+
+    /**
+     * A shot or a meteor on its way in, and what could be put in front of it.
+     *
+     * <p>The options are already filtered to what would actually work: a shield covering
+     * the right side, or a cannon that can reach a big meteor from where it sits. An empty
+     * set means nothing can be done, which is the normal answer to heavy fire.
+     *
+     * <p>The target is named so a player can see what they are about to lose. It is empty
+     * when the roll named a line with nothing on it, and the whole thing is a formality.
+     *
+     * @param player  whose ship is in the way
+     * @param hit     what is coming
+     * @param target  the component it would strike, empty when it misses
+     * @param options the components that could stop it, each costing a charge to use
+     */
+    record ChooseDefence(PlayerColor player, Hit hit, Optional<Position> target,
+                         Set<Position> options) implements PlayerPrompt {
+
+        /**
+         * Validates the call and takes a defensive copy.
+         *
+         * @throws NullPointerException if any part is {@code null}
+         */
+        public ChooseDefence {
+            if (player == null || hit == null || target == null) {
+                throw new NullPointerException("an incoming shot needs a player, a hit and a target");
+            }
+            options = Set.copyOf(options);
+        }
+    }
+
+    /**
+     * A call to choose which piece of a broken ship to carry on with.
+     *
+     * <p>Everything outside the chosen piece flies away and is lost along the route
+     * (manual p.10). The manual offers the choice however lopsided the pieces are.
+     *
+     * @param player whose ship came apart
+     * @param pieces the pieces it is in, largest first
+     */
+    record ChooseFragment(PlayerColor player, List<Set<Position>> pieces) implements PlayerPrompt {
+
+        /**
+         * Validates the call and takes a defensive copy.
+         *
+         * @throws IllegalArgumentException if there is nothing to choose between
+         * @throws NullPointerException     if the player is {@code null}
+         */
+        public ChooseFragment {
+            if (player == null) {
+                throw new NullPointerException("a fragment call needs a player");
+            }
+            pieces = pieces.stream().map(Set::copyOf).toList();
+            if (pieces.size() < 2) {
+                throw new IllegalArgumentException("a ship in one piece needs no choosing");
+            }
         }
     }
 }

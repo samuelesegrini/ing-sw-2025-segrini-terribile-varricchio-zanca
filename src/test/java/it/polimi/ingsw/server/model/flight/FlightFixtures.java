@@ -38,8 +38,25 @@ public final class FlightFixtures {
      *
      * <p>Iteration order decides who leads, so a test can say "red, then blue" and get a
      * route order it can reason about.
+     *
+     * @param ships the ships, in the order they take start spaces
+     * @return the flight, rolling sevens
      */
     public static Flight levelTwoFlight(Map<PlayerColor, Ship> ships) {
+        return levelTwoFlight(ships, Dice.scripted(7));
+    }
+
+    /**
+     * Returns a level II flight rolling the given dice.
+     *
+     * <p>Scripted dice are what make a firing card assertable: a rules test that depends
+     * on chance is a rules test nobody trusts.
+     *
+     * @param ships the ships, in the order they take start spaces
+     * @param dice  the dice every card in this flight rolls
+     * @return the flight
+     */
+    public static Flight levelTwoFlight(Map<PlayerColor, Ship> ships, Dice dice) {
         LevelSpec level = levelSpec(GameLevel.LEVEL_II);
         List<Integer> spaces = level.flightBoard().startingPositions();
         Map<PlayerColor, Integer> starts = new LinkedHashMap<>();
@@ -47,6 +64,6 @@ public final class FlightFixtures {
         for (PlayerColor player : ships.keySet()) {
             starts.put(player, spaces.get(index++));
         }
-        return new Flight(level, ships, starts);
+        return new Flight(level, ships, starts, dice);
     }
 }

@@ -9,6 +9,7 @@ import it.polimi.ingsw.server.model.adventure.CardLevel;
 import it.polimi.ingsw.server.model.adventure.card.AbandonedShipCard;
 import it.polimi.ingsw.server.model.adventure.card.AbandonedStationCard;
 import it.polimi.ingsw.server.model.adventure.card.SlaversCard;
+import it.polimi.ingsw.server.model.adventure.card.PiratesCard;
 import it.polimi.ingsw.server.model.adventure.card.SmugglersCard;
 import it.polimi.ingsw.server.model.board.DeckComposition;
 import it.polimi.ingsw.server.model.board.FlightBoardSpec;
@@ -24,6 +25,7 @@ import it.polimi.ingsw.server.model.goods.GoodColor;
 import it.polimi.ingsw.server.model.player.PlayerColor;
 import it.polimi.ingsw.server.model.ship.Connector;
 import it.polimi.ingsw.server.model.ship.Direction;
+import it.polimi.ingsw.server.model.ship.HitKind;
 import it.polimi.ingsw.server.model.ship.Position;
 
 import java.io.IOException;
@@ -181,8 +183,24 @@ public final class GameDataLoader {
                     readGoods(required(entry, "goods", where), where),
                     integer(entry, "goodsPenalty", where),
                     integer(entry, "flightDays", where)));
+            case PIRATES -> Optional.of(new PiratesCard(
+                    identity,
+                    integer(entry, "firepower", where),
+                    integer(entry, "credits", where),
+                    readShots(array(entry, "shots", where), where),
+                    integer(entry, "flightDays", where)));
             default -> Optional.empty();
         };
+    }
+
+    private static List<PiratesCard.ShotPattern> readShots(JsonNode node, String where) {
+        List<PiratesCard.ShotPattern> shots = new ArrayList<>();
+        for (JsonNode shot : node) {
+            shots.add(new PiratesCard.ShotPattern(
+                    enumValue(HitKind.class, text(shot, "kind", where), where),
+                    enumValue(Direction.class, text(shot, "from", where), where)));
+        }
+        return shots;
     }
 
     private static Map<GoodColor, Integer> readGoods(JsonNode node, String where) {

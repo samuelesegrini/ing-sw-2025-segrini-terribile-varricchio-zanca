@@ -52,7 +52,7 @@ class FlightTest {
             ships.put(players[i], ship);
             starts.put(players[i], spaces.get(i));
         }
-        return new Flight(LEVEL, ships, starts);
+        return new Flight(LEVEL, ships, starts, Dice.scripted(7));
     }
 
     @Nested
@@ -76,7 +76,7 @@ class FlightTest {
             Map<PlayerColor, Ship> ships = Map.of(PlayerColor.RED, Ships.openShip());
 
             assertThrows(IllegalArgumentException.class,
-                    () -> new Flight(LEVEL, ships, Map.of(PlayerColor.BLUE, 0)));
+                    () -> new Flight(LEVEL, ships, Map.of(PlayerColor.BLUE, 0), Dice.scripted(7)));
         }
 
         @Test
