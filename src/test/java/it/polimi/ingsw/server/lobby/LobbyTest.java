@@ -10,6 +10,9 @@ import it.polimi.ingsw.common.protocol.GameEvent;
 import it.polimi.ingsw.common.protocol.LobbyCommand;
 import it.polimi.ingsw.common.protocol.LobbyEvent;
 import it.polimi.ingsw.common.transport.Channel;
+import it.polimi.ingsw.common.game.PlayerPrompt;
+import it.polimi.ingsw.common.protocol.PreparationCommand;
+import it.polimi.ingsw.common.protocol.view.GameView;
 import it.polimi.ingsw.common.transport.ChannelListener;
 import it.polimi.ingsw.common.transport.LocalChannel;
 import it.polimi.ingsw.server.data.GameData;
@@ -23,6 +26,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.InstantSource;
 import java.util.List;
+import java.util.Optional;
 import java.util.Random;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
@@ -410,6 +414,51 @@ class LobbyTest {
             assertEquals("game-1", returning.only(LobbyEvent.JoinedGame.class).get(0).gameId());
             assertFalse(returning.only(GameEvent.StateChanged.class).isEmpty(),
                     "a returning player is sent the state, which is all they need");
+        }
+
+        @Test
+        @DisplayName("a player who left mid-question gets the question back, not just the board")
+        void theQuestionIsStillWaiting() {
+            // The point of reconnection. A board tells a returning player where everything is;
+            // the outstanding prompt tells them the game has been sitting waiting for them, and
+            // what it is waiting for. Without it they would be looking at a flight that appears
+            // to have stopped for no reason.
+            Client host = new Client().login("samuele");
+            settle();
+            host.send(new LobbyCommand.CreateGame(GameLevel.LEVEL_II, 2));
+            settle();
+            Client guest = new Client().login("chiara");
+            settle();
+            guest.send(new LobbyCommand.JoinGame("game-1"));
+            settle();
+            host.send(new BuildingCommand.FinishBuilding(null));
+            guest.send(new BuildingCommand.FinishBuilding(null));
+            settle();
+            host.send(new PreparationCommand.FinishPreparation());
+            guest.send(new PreparationCommand.FinishPreparation());
+            settle();
+
+            PlayerPrompt asked = latestState(host).flatMap(GameView::pendingIfAny)
+                    .or(() -> latestState(guest).flatMap(GameView::pendingIfAny))
+                    .orElseThrow(() -> new AssertionError("no card asked anybody anything"));
+            Client leaving = asked.player() == latestState(host).orElseThrow().you() ? host : guest;
+
+            leaving.hangUp();
+            settle();
+            Client returning = new Client();
+            returning.login(leaving == host ? "samuele" : "chiara");
+            settle();
+
+            assertEquals(Optional.of(asked), latestState(returning).flatMap(GameView::pendingIfAny),
+                    "the same question, still waiting");
+        }
+
+        /** The last board a client was sent, which is the only thing it is expected to keep. */
+        private Optional<GameView> latestState(Client client) {
+            List<GameEvent.StateChanged> states = client.only(GameEvent.StateChanged.class);
+            return states.isEmpty()
+                    ? Optional.empty()
+                    : Optional.of(states.get(states.size() - 1).state());
         }
 
         @Test
