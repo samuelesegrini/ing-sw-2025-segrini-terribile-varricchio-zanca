@@ -45,6 +45,8 @@ public final class Ship {
     private final ShipValidator validator;
     private final GoodsBank bank;
 
+    private final Map<GoodColor, Integer> withinReach = new java.util.EnumMap<>(GoodColor.class);
+
     private boolean cargoOperationsOpen;
     private int lostComponents;
 
@@ -556,22 +558,55 @@ public final class Ship {
     }
 
     /**
-     * Opens the one window in which cubes may be moved.
+     * Opens the one window in which cubes may be moved, with a bounded offer.
      *
      * <p>Loading is the only moment cargo can be redistributed or thrown overboard
      * (quick reference). Outside it a ship's holds are sealed, which is what stops a
      * player shuffling their cargo the instant before a smuggler takes the most valuable
      * cube.
+     *
+     * <p>The offer is what the card put on the table. Bounding the window by it is what
+     * keeps a player from loading a fifth cube from a planet that printed four: the rule
+     * lives with the state it constrains rather than in whichever caller happens to
+     * remember it.
+     *
+     * @param offered how many cubes of each colour this card is offering
      */
-    public void beginCargoOperations() {
+    public void beginCargoOperations(Map<GoodColor, Integer> offered) {
+        withinReach.clear();
+        offered.forEach((color, count) -> {
+            if (count > 0) {
+                withinReach.put(color, count);
+            }
+        });
         cargoOperationsOpen = true;
     }
 
     /**
-     * Closes the window.
+     * Opens the window with nothing new on offer.
+     *
+     * <p>For the cards that let a player rearrange what they already carry without adding
+     * to it.
+     */
+    public void beginCargoOperations() {
+        beginCargoOperations(Map.of());
+    }
+
+    /**
+     * Closes the window and takes back whatever was not loaded.
      */
     public void endCargoOperations() {
         cargoOperationsOpen = false;
+        withinReach.clear();
+    }
+
+    /**
+     * Returns what is still on the table.
+     *
+     * @return the cubes left of the offer, by colour
+     */
+    public Map<GoodColor, Integer> cargoWithinReach() {
+        return Map.copyOf(withinReach);
     }
 
     /**
@@ -594,7 +629,8 @@ public final class Ship {
      * @param color the colour wanted
      * @return {@code true} when a cube was actually loaded
      * @throws IllegalStateException    if no card is letting this ship load
-     * @throws IllegalArgumentException if there is no hold there
+     * @throws IllegalArgumentException if there is no hold there, the hold will not take
+     *                                  that colour, or the card is not offering one
      */
     public boolean load(Position hold, GoodColor color) {
         requireCargoOperationsOpen();
@@ -602,9 +638,13 @@ public final class Ship {
         if (!target.accepts(color)) {
             throw new IllegalArgumentException(target.id() + " will not take a " + color + " cube");
         }
+        if (withinReach.getOrDefault(color, 0) <= 0) {
+            throw new IllegalArgumentException("this card is not offering a " + color + " cube");
+        }
         if (!bank.take(color)) {
             return false;
         }
+        withinReach.merge(color, -1, Integer::sum);
         target.store(color);
         return true;
     }

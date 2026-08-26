@@ -42,7 +42,8 @@ class ScoringTest {
     private static Ship shipCarrying(GoodColor... cubes) {
         Ship ship = Ships.openShip();
         Ships.put(ship, HOLD, ComponentKind.SPECIAL_CARGO_HOLD);
-        ship.beginCargoOperations();
+        ship.beginCargoOperations(Map.of(GoodColor.RED, 9, GoodColor.YELLOW, 9,
+                GoodColor.GREEN, 9, GoodColor.BLUE, 9));
         for (GoodColor cube : cubes) {
             ship.load(HOLD, cube);
         }

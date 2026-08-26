@@ -58,4 +58,15 @@ public sealed interface PlayerChoice {
             }
         }
     }
+
+    /**
+     * Finished with whatever the card was letting them do.
+     *
+     * <p>Ends a cargo window. What is still on the table stays there, and the card moves
+     * on.
+     *
+     * @param player who is done
+     */
+    record Done(PlayerColor player) implements PlayerChoice {
+    }
 }

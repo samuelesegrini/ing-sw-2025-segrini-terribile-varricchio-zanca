@@ -3,6 +3,9 @@ package it.polimi.ingsw.server.model.adventure.resolution;
 import it.polimi.ingsw.server.model.player.PlayerColor;
 import it.polimi.ingsw.server.model.ship.Position;
 
+import it.polimi.ingsw.server.model.goods.GoodColor;
+
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -85,6 +88,37 @@ public sealed interface PlayerPrompt {
                 throw new IllegalArgumentException("a ship cannot hold " + chargesAvailable + " charges");
             }
             activatable = Set.copyOf(activatable);
+        }
+    }
+
+    /**
+     * A call to stow what a card has just put on the table.
+     *
+     * <p>The one moment cargo can be moved at all: cubes may be loaded, shuffled between
+     * holds, or thrown overboard to make room (quick reference). Anything left on the
+     * table when the player is done stays there.
+     *
+     * <p>The offer is a bound, not an instruction. A player is free to take less of it,
+     * and often has to — red cubes need a reinforced hold, and holds run out.
+     *
+     * @param player  who is stowing
+     * @param offered how many cubes of each colour are on the table
+     * @param holds   the cells that could take something
+     */
+    record ArrangeCargo(PlayerColor player, Map<GoodColor, Integer> offered,
+                        Set<Position> holds) implements PlayerPrompt {
+
+        /**
+         * Validates the call and takes defensive copies.
+         *
+         * @throws NullPointerException if the player is {@code null}
+         */
+        public ArrangeCargo {
+            if (player == null) {
+                throw new NullPointerException("a cargo call needs a player");
+            }
+            offered = Map.copyOf(offered);
+            holds = Set.copyOf(holds);
         }
     }
 }

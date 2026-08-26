@@ -2,9 +2,11 @@ package it.polimi.ingsw.server.data;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import it.polimi.ingsw.server.model.adventure.AdventureCard;
 import it.polimi.ingsw.server.model.adventure.AdventureCardIdentity;
 import it.polimi.ingsw.server.model.adventure.AdventureCardType;
 import it.polimi.ingsw.server.model.adventure.CardLevel;
+import it.polimi.ingsw.server.model.adventure.card.AbandonedStationCard;
 import it.polimi.ingsw.server.model.board.DeckComposition;
 import it.polimi.ingsw.server.model.board.FlightBoardSpec;
 import it.polimi.ingsw.server.model.board.GameLevel;
@@ -29,6 +31,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -76,7 +79,9 @@ public final class GameDataLoader {
         List<ComponentTile> tiles = new ArrayList<>();
         Map<PlayerColor, StartingCabinTile> startingCabins = new EnumMap<>(PlayerColor.class);
         readTiles(tiles, startingCabins);
-        return new GameData(readLevels(), tiles, startingCabins, readCards(), readBankStock());
+        Map<String, AdventureCard> playable = new LinkedHashMap<>();
+        List<AdventureCardIdentity> cards = readCards(playable);
+        return new GameData(readLevels(), tiles, startingCabins, cards, readBankStock(), playable);
     }
 
     // ---------------------------------------------------------------- components
@@ -117,22 +122,55 @@ public final class GameDataLoader {
 
     // ---------------------------------------------------------------- cards
 
-    private List<AdventureCardIdentity> readCards() {
+    private List<AdventureCardIdentity> readCards(Map<String, AdventureCard> playable) {
         List<AdventureCardIdentity> cards = new ArrayList<>();
         for (JsonNode entry : array(read(CARDS_FILE), "cards", CARDS_FILE)) {
             String id = text(entry, "id", CARDS_FILE);
             String where = CARDS_FILE + " entry " + id;
             try {
-                cards.add(new AdventureCardIdentity(
+                AdventureCardIdentity identity = new AdventureCardIdentity(
                         id,
                         enumValue(AdventureCardType.class, text(entry, "type", where), where),
                         enumValue(CardLevel.class, text(entry, "level", where), where),
-                        required(entry, "testFlight", where).asBoolean()));
+                        required(entry, "testFlight", where).asBoolean());
+                cards.add(identity);
+                buildCard(identity, entry, where).ifPresent(card -> playable.put(id, card));
             } catch (IllegalArgumentException | NullPointerException e) {
                 throw new GameDataException(where + ": " + e.getMessage(), e);
             }
         }
         return cards;
+    }
+
+    /**
+     * Builds a card's rules from its printed values.
+     *
+     * <p>Returns empty for a type whose rules are still being written, so that the rest of
+     * the catalogue keeps loading. Every type is expected to be here by the end of
+     * milestone M3, and a test says so.
+     *
+     * @param identity the card's identity
+     * @param entry    its data
+     * @param where    where to say the fault is
+     * @return the playable card, or empty while its type is unimplemented
+     */
+    private Optional<AdventureCard> buildCard(AdventureCardIdentity identity, JsonNode entry, String where) {
+        return switch (identity.type()) {
+            case ABANDONED_STATION -> Optional.of(new AbandonedStationCard(
+                    identity,
+                    integer(entry, "minimumCrew", where),
+                    readGoods(required(entry, "goods", where), where),
+                    integer(entry, "flightDays", where)));
+            default -> Optional.empty();
+        };
+    }
+
+    private static Map<GoodColor, Integer> readGoods(JsonNode node, String where) {
+        Map<GoodColor, Integer> goods = new EnumMap<>(GoodColor.class);
+        for (GoodColor color : GoodColor.values()) {
+            goods.put(color, integer(node, color.name(), where));
+        }
+        return goods;
     }
 
     // ---------------------------------------------------------------- boards
