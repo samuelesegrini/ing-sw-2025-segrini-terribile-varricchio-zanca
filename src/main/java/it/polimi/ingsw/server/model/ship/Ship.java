@@ -6,6 +6,7 @@ import it.polimi.ingsw.server.model.component.CabinComponent;
 import it.polimi.ingsw.server.model.component.CannonComponent;
 import it.polimi.ingsw.server.model.component.EngineComponent;
 import it.polimi.ingsw.server.model.component.CargoHoldComponent;
+import it.polimi.ingsw.server.model.component.ComponentKind;
 import it.polimi.ingsw.server.model.component.ShieldComponent;
 import it.polimi.ingsw.server.model.component.ShipComponent;
 import it.polimi.ingsw.server.model.component.StartingCabinTile;
@@ -89,6 +90,21 @@ public final class Ship {
      */
     public Map<Position, ShipComponent> components() {
         return grid.occupied();
+    }
+
+    /**
+     * Returns the cells holding components of one kind.
+     *
+     * <p>What a card needs to tell a player which doubles they could pay to run.
+     *
+     * @param kind the kind to look for
+     * @return the matching cells
+     */
+    public Set<Position> componentsOfKind(ComponentKind kind) {
+        return components().entrySet().stream()
+                .filter(entry -> entry.getValue().kind() == kind)
+                .map(Map.Entry::getKey)
+                .collect(java.util.stream.Collectors.toUnmodifiableSet());
     }
 
     /**
