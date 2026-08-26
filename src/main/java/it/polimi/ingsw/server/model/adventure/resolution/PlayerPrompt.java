@@ -121,4 +121,34 @@ public sealed interface PlayerPrompt {
             holds = Set.copyOf(holds);
         }
     }
+
+    /**
+     * A call to give up crew.
+     *
+     * <p>The player chooses which cabins the losses come out of, and that is a real choice:
+     * an alien is worth two humans of space but only one crew member, and giving up the
+     * wrong one can cost a ship its firepower bonus or its last human (manual p.11, p.18).
+     *
+     * @param player who is losing crew
+     * @param count  how many must go
+     * @param cabins the cabins with somebody in them
+     */
+    record GiveUpCrew(PlayerColor player, int count, Set<Position> cabins) implements PlayerPrompt {
+
+        /**
+         * Validates the call and takes a defensive copy.
+         *
+         * @throws IllegalArgumentException if the count is not positive
+         * @throws NullPointerException     if the player is {@code null}
+         */
+        public GiveUpCrew {
+            if (player == null) {
+                throw new NullPointerException("a crew call needs a player");
+            }
+            if (count < 1) {
+                throw new IllegalArgumentException("a card taking " + count + " crew is taking nothing");
+            }
+            cabins = Set.copyOf(cabins);
+        }
+    }
 }

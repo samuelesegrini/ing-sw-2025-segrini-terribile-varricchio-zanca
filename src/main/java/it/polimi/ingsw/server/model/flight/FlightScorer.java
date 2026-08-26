@@ -64,6 +64,7 @@ public final class FlightScorer {
                     finished ? rewards.finishReward(placement) : 0,
                     isPrettiest ? rewards.prettiestShip() : 0,
                     sellCargo(ship, rewards, finished),
+                    flight.creditsEarned(player),
                     ship.lostComponentCount() * rewards.lostComponentPenalty()));
         }
         sheets.sort(Comparator.comparingInt(ScoreSheet::total).reversed());

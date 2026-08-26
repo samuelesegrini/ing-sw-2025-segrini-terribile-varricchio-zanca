@@ -6,6 +6,7 @@ import it.polimi.ingsw.server.model.adventure.AdventureCard;
 import it.polimi.ingsw.server.model.adventure.AdventureCardIdentity;
 import it.polimi.ingsw.server.model.adventure.AdventureCardType;
 import it.polimi.ingsw.server.model.adventure.CardLevel;
+import it.polimi.ingsw.server.model.adventure.card.AbandonedShipCard;
 import it.polimi.ingsw.server.model.adventure.card.AbandonedStationCard;
 import it.polimi.ingsw.server.model.board.DeckComposition;
 import it.polimi.ingsw.server.model.board.FlightBoardSpec;
@@ -156,6 +157,11 @@ public final class GameDataLoader {
      */
     private Optional<AdventureCard> buildCard(AdventureCardIdentity identity, JsonNode entry, String where) {
         return switch (identity.type()) {
+            case ABANDONED_SHIP -> Optional.of(new AbandonedShipCard(
+                    identity,
+                    integer(entry, "crewCost", where),
+                    integer(entry, "credits", where),
+                    integer(entry, "flightDays", where)));
             case ABANDONED_STATION -> Optional.of(new AbandonedStationCard(
                     identity,
                     integer(entry, "minimumCrew", where),

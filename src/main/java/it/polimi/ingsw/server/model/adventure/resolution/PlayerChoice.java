@@ -2,6 +2,9 @@ package it.polimi.ingsw.server.model.adventure.resolution;
 
 import it.polimi.ingsw.server.model.player.PlayerColor;
 import it.polimi.ingsw.server.model.ship.BatteryPlan;
+import it.polimi.ingsw.server.model.ship.Position;
+
+import java.util.List;
 
 /**
  * A player's answer to a {@link PlayerPrompt}.
@@ -68,5 +71,30 @@ public sealed interface PlayerChoice {
      * @param player who is done
      */
     record Done(PlayerColor player) implements PlayerChoice {
+    }
+
+    /**
+     * The cabins a player is taking their losses out of.
+     *
+     * <p>One entry per crew member surrendered, so a cabin holding two humans can be named
+     * twice. The resolution checks the list is the right length and that every cabin named
+     * still has somebody in it.
+     *
+     * @param player who is giving up crew
+     * @param cabins one entry per crew member, in the order they leave
+     */
+    record CrewGiven(PlayerColor player, List<Position> cabins) implements PlayerChoice {
+
+        /**
+         * Takes a defensive copy of the cabins.
+         *
+         * @throws NullPointerException if the player or the list is {@code null}
+         */
+        public CrewGiven {
+            if (player == null) {
+                throw new NullPointerException("a crew answer needs a player");
+            }
+            cabins = List.copyOf(cabins);
+        }
     }
 }

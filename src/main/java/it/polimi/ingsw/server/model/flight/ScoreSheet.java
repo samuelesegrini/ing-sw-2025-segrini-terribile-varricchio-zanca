@@ -14,6 +14,7 @@ import it.polimi.ingsw.server.model.player.PlayerColor;
  * @param finishReward      credits for the finishing order, zero for anyone who gave up
  * @param prettiestShip     credits for the fewest exposed connectors, zero for anyone who gave up
  * @param goodsSold         credits from cargo, halved and rounded up for anyone who gave up
+ * @param creditsEarned     credits already paid out by cards during the flight
  * @param lostComponents    credits charged for everything left in the discard pile
  */
 public record ScoreSheet(PlayerColor player,
@@ -21,10 +22,15 @@ public record ScoreSheet(PlayerColor player,
                          int finishReward,
                          int prettiestShip,
                          int goodsSold,
+                         int creditsEarned,
                          int lostComponents) {
 
     /**
      * Returns what the player walks away with.
+     *
+     * <p>Credits earned during the flight are already in the player's hands, so they count
+     * whether or not the player finished — unlike the finishing reward, which is only paid
+     * for arriving.
      *
      * <p>May be negative. The manual is quite clear that trucking is a risky business,
      * and a player who lost half their ship can end the flight owing money.
@@ -32,7 +38,7 @@ public record ScoreSheet(PlayerColor player,
      * @return the total credits
      */
     public int total() {
-        return finishReward + prettiestShip + goodsSold - lostComponents;
+        return finishReward + prettiestShip + goodsSold + creditsEarned - lostComponents;
     }
 
     /**
