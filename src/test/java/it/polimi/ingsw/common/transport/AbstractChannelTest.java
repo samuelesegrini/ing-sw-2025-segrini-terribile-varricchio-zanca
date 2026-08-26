@@ -43,6 +43,7 @@ class AbstractChannelTest {
         Scripted(ChannelListener<Command> listener, Liveness liveness, boolean transmissionFails) {
             super(listener, Command.class, liveness);
             this.transmissionFails = transmissionFails;
+            start();
         }
 
         Scripted(ChannelListener<Command> listener) {
