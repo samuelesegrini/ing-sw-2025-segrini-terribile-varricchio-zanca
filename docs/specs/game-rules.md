@@ -72,6 +72,13 @@ cards `[p.10]`.
 Whenever players act "in route order" they act leader-first. "Reverse route order"
 means last-placed player first.
 
+**The order is read once per pass.** A card that asks every player in turn settles
+whose turn is whose when it is turned over, even though moving can reorder the route
+partway through. The manual never says to re-read it mid-pass, and it does say so for
+the one place it happens: Combat Zone notes that losing flight days on one line "can
+change the route order for the evaluation of the following lines" `[p.13]` — which
+only needs saying because each line is its own pass.
+
 ---
 
 ## 2. Ship geometry
@@ -514,10 +521,15 @@ set made by the first defeated player `[p.19]`.
 ### 8.5 Open Space
 
 In route order, each player declares engine power and immediately advances that
-many **empty** spaces `[p.13]`.
+many **empty** spaces `[p.13]`. Battery charges are spent at the moment of
+declaring, and are gone whether or not the move achieves anything.
 
-A player who cannot declare engine power greater than 0 is forced to give up
-`[QR]`.
+Overtaking is expected and changes nothing about whose turn is next: the order was
+settled when the card was turned over (§ 1.1).
+
+A player who declares engine power of 0 is forced to give up `[QR]`. Like every
+forced give-up this is applied once the card is **fully** resolved (§ 9.1), so a
+player left with no engines still watches everybody else move before they leave.
 
 ### 8.6 Meteor Swarm
 
