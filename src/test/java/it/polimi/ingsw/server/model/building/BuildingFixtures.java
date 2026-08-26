@@ -29,16 +29,16 @@ import java.util.Set;
  * them cares how. Spelling the wiring out in each test class buried what each test was
  * actually about, and meant a change to one constructor rippled through four files.
  */
-final class BuildingFixtures {
+public final class BuildingFixtures {
 
     /** Where the starting cabin sits on the fixture board. */
-    static final Position CABIN = new Position(2, 2);
+    public static final Position CABIN = new Position(2, 2);
 
     /** The cell directly ahead of the starting cabin, where most tests put their first tile. */
-    static final Position AHEAD = new Position(1, 2);
+    public static final Position AHEAD = new Position(1, 2);
 
     /** The cell to port of the starting cabin. */
-    static final Position PORT = new Position(2, 1);
+    public static final Position PORT = new Position(2, 1);
 
     private static final long SEED = 20250825L;
 
@@ -51,11 +51,11 @@ final class BuildingFixtures {
      * @param builder the player building
      * @param pool    the heap they share with everyone else
      */
-    record Site(ShipBuilder builder, ComponentPool pool) {
+    public record Site(ShipBuilder builder, ComponentPool pool) {
     }
 
     /** Returns interchangeable tiles, universal on every side so any of them welds anywhere. */
-    static List<ComponentTile> plainTiles(int count) {
+    public static List<ComponentTile> plainTiles(int count) {
         List<ComponentTile> tiles = new ArrayList<>();
         for (int i = 0; i < count; i++) {
             tiles.add(new ComponentTile("tile-" + i, ComponentKind.STRUCTURAL_MODULE,
@@ -74,7 +74,7 @@ final class BuildingFixtures {
     }
 
     /** Returns a level II deck: four piles of one level I card and two level II cards. */
-    static AdventureDeck levelTwoDeck() {
+    public static AdventureDeck levelTwoDeck() {
         Map<CardLevel, List<AdventureCardIdentity>> pools = new EnumMap<>(CardLevel.class);
         pools.put(CardLevel.LEVEL_I, cards(CardLevel.LEVEL_I, 20));
         pools.put(CardLevel.LEVEL_II, cards(CardLevel.LEVEL_II, 20));
@@ -84,19 +84,19 @@ final class BuildingFixtures {
     }
 
     /** Returns a test flight deck: one pile of eight, and nothing anyone may scout. */
-    static AdventureDeck testFlightDeck() {
+    public static AdventureDeck testFlightDeck() {
         return AdventureDeck.deal(
                 new DeckComposition(1, Map.of(CardLevel.LEVEL_I, 8), true),
                 Map.of(CardLevel.LEVEL_I, cards(CardLevel.LEVEL_I, 20)), new Random(SEED));
     }
 
     /** Returns a site on a level II deck, with the given number of reservation slots. */
-    static Site site(int reservationSlots) {
+    public static Site site(int reservationSlots) {
         return site(reservationSlots, levelTwoDeck());
     }
 
     /** Returns a site on a given deck, with the given number of reservation slots. */
-    static Site site(int reservationSlots, AdventureDeck deck) {
+    public static Site site(int reservationSlots, AdventureDeck deck) {
         ComponentPool pool = new ComponentPool(plainTiles(8), new Random(SEED));
         Ship ship = new Ship(new ShipBoardSpec(5, 5, 5, 4, CABIN, reservationSlots, Set.of()),
                 Tiles.startingCabin(PlayerColor.GREEN), Ships.deepBank());
