@@ -177,12 +177,16 @@ public final class GameController implements AutoCloseable {
     private void publish(List<Event> narration) {
         announcePhaseChange();
         narration.forEach(this::announce);
-        sessions.values().forEach(session ->
-                session.send(new GameEvent.StateChanged(game.viewFor(session.colour()))));
         if (game.phase() == GamePhase.FINISHED && !ended) {
             ended = true;
             announce(new GameEvent.GameEnded());
         }
+        // Last, and to everybody. "Every batch ends with the state" is the rule the whole
+        // protocol rests on, and GameEnded is a fact about what happened like any other — it
+        // used to go after the state, which meant the one batch that mattered most was the one
+        // batch that broke the rule.
+        sessions.values().forEach(session ->
+                session.send(new GameEvent.StateChanged(game.viewFor(session.colour()))));
     }
 
     private void announcePhaseChange() {

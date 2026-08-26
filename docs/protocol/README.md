@@ -201,7 +201,7 @@ driving interface before there was a network, and turned out to already be the p
 | `PhaseBegan` | `phase` | redundant with the state, and sent anyway — a phase change is the one moment a view has to restructure rather than redraw |
 | `Rejected` | `command`, `reason` | your command was refused and **nothing changed**; sent only to you, never followed by a state |
 | `ConnectionChanged` | `player`, `connected` | somebody dropped, or came back |
-| `GameEnded` | — | nothing further will be accepted; the ledger travels in the final `StateChanged` |
+| `GameEnded` | — | nothing further will be accepted. It comes **before** the final `StateChanged`, like every other fact, and the ledger travels in that state |
 
 `Rejected` carries a sentence, not a code. The server already knows what went wrong, and a
 numeric code would only have to be turned back into this sentence by every client that ever

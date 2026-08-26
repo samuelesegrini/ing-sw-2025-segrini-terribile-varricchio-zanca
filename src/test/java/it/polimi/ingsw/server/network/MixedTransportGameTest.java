@@ -88,6 +88,8 @@ class MixedTransportGameTest {
         private volatile PlayerColor colour;
         private volatile boolean declaredBuilt;
         private volatile boolean declaredCrewed;
+        private volatile boolean toldItEnded;
+        private volatile boolean sawTheLastBoard;
 
         Player(String nickname) {
             this.nickname = nickname;
@@ -110,7 +112,10 @@ class MixedTransportGameTest {
                     latest.set(state.state());
                     play(state.state());
                 }
-                case GameEvent.GameEnded ignored -> finished.countDown();
+                case GameEvent.GameEnded ignored -> {
+                    toldItEnded = true;
+                    releaseIfDone();
+                }
                 default -> {
                     // Narration. Kept, and not acted on: a client that reads only the state is
                     // still correct, which is the protocol's whole promise.
@@ -131,7 +136,8 @@ class MixedTransportGameTest {
          */
         private void play(GameView state) {
             if (state.phase() == GamePhase.FINISHED) {
-                finished.countDown();
+                sawTheLastBoard = true;
+                releaseIfDone();
                 return;
             }
             if (state.phase() == GamePhase.BUILDING && !declaredBuilt) {
@@ -148,6 +154,20 @@ class MixedTransportGameTest {
                     .filter(prompt -> prompt.player() == colour)
                     .ifPresent(prompt ->
                             channel.send(new FlightCommand.Answer(Answers.simplestTo(prompt))));
+        }
+
+        /**
+         * Lets the test move on once this client has both facts and truth.
+         *
+         * <p>Waiting for either on its own is a race. {@code GameEnded} arrives before the
+         * final state — every batch ends with the state, and the last batch is no exception —
+         * so a client released by the event has not seen the ledger yet, and one released by
+         * the board may still have the event in flight while its narration is compared.
+         */
+        private void releaseIfDone() {
+            if (toldItEnded && sawTheLastBoard) {
+                finished.countDown();
+            }
         }
 
         void send(Command command) {
