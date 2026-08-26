@@ -4,6 +4,7 @@ import it.polimi.ingsw.client.Startup;
 import it.polimi.ingsw.client.network.ServerLink;
 import it.polimi.ingsw.client.state.ClientState;
 import it.polimi.ingsw.client.view.UserInterface;
+import it.polimi.ingsw.client.view.gui.GraphicalInterface;
 import it.polimi.ingsw.client.view.tui.TextInterface;
 import it.polimi.ingsw.common.transport.TransportException;
 
@@ -58,10 +59,7 @@ public final class ClientMain {
 
     private static UserInterface interfaceFor(Startup startup, ClientState state, ServerLink server) {
         if (startup.graphical()) {
-            // The windows arrive with M6. Saying so is better than starting a text client
-            // somebody did not ask for and leaving them to work out why.
-            System.err.println("The graphical interface is not built yet. Try --tui.");
-            System.exit(3);
+            return new GraphicalInterface(state, server);
         }
         return new TextInterface(state, server,
                 new BufferedReader(new InputStreamReader(System.in, StandardCharsets.UTF_8)),

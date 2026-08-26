@@ -28,7 +28,10 @@ jobs:
 
       # verify runs compile, the test suite and the JaCoCo report in one pass.
       - name: Build, test and measure coverage
-        run: ./mvnw -B -ntp clean verify
+        # Under a virtual display, because the graphical client's tests build real JavaFX
+        # windows. Without one they skip, and six tests that quietly do nothing on the only
+        # machine anybody checks look exactly like six tests that pass.
+        run: xvfb-run -a ./mvnw -B -ntp clean verify
 
       # Printed rather than uploaded: artifact storage is a shared account quota,
       # and a number in the log is what a reviewer actually reads.
