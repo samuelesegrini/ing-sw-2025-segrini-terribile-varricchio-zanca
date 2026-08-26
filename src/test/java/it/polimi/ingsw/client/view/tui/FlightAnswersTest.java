@@ -239,12 +239,12 @@ class FlightAnswersTest {
         @DisplayName("a planet is landed on by number, or flown past")
         void landing() {
             PlayerPrompt prompt = new PlayerPrompt.ChoosePlanet(
-                    ME, Map.of(0, Map.of(GoodColor.BLUE, 2), 2, Map.of(GoodColor.RED, 1)), 1);
+                    ME, Map.of(1, Map.of(GoodColor.BLUE, 2), 3, Map.of(GoodColor.RED, 1)), 1);
 
-            assertEquals(new PlayerChoice.PlanetChosen(ME, 2), answer("planet 2", prompt));
+            assertEquals(new PlayerChoice.PlanetChosen(ME, 3), answer("planet 3", prompt));
             assertEquals(new PlayerChoice.Leave(ME), answer("leave", prompt));
-            assertTrue(refusal("planet 1", prompt).contains("which planet"),
-                    "planet one has somebody on it already and is not in the offer");
+            assertTrue(refusal("planet 2", prompt).contains("which planet"),
+                    "planet two has somebody on it already and is not in the offer");
         }
     }
 
@@ -255,7 +255,7 @@ class FlightAnswersTest {
         // Two pieces, because a ship in one piece is never asked which to keep.
         PlayerPrompt fragment =
                 new PlayerPrompt.ChooseFragment(ME, List.of(Set.of(CABIN), Set.of(HOLD)));
-        PlayerPrompt planet = new PlayerPrompt.ChoosePlanet(ME, Map.of(0, Map.of()), 1);
+        PlayerPrompt planet = new PlayerPrompt.ChoosePlanet(ME, Map.of(1, Map.of()), 1);
         PlayerPrompt offer = new PlayerPrompt.TakeOrLeave(ME, "salvage", 1);
 
         assertInstanceOf(PlayerChoice.FragmentKept.class, answer("keep 0", fragment));

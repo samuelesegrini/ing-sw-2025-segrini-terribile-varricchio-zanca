@@ -193,7 +193,7 @@ class FlightRenderersTest {
         @DisplayName("planets are listed with what is on them and what landing costs")
         void planets() {
             PlayerPrompt prompt = new PlayerPrompt.ChoosePlanet(PlayerColor.RED,
-                    Map.of(0, Map.of(GoodColor.BLUE, 2), 1, Map.of(GoodColor.RED, 1)), 2);
+                    Map.of(1, Map.of(GoodColor.BLUE, 2), 2, Map.of(GoodColor.RED, 1)), 2);
 
             String screen = joined(PromptRenderer.render(prompt, SHIP, PlayerColor.RED));
 

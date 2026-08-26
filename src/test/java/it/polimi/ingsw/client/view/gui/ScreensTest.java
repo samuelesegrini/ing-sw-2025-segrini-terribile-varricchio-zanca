@@ -17,6 +17,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
@@ -221,17 +222,19 @@ class ScreensTest {
     }
 
     @Test
-    @DisplayName("a screen that is not built yet says so instead of showing nothing")
-    void placeholders() {
+    @DisplayName("the three screens around the ship are one board, not three")
+    void oneBoard() {
         assumeTrue(toolkitStarted, "no display on this machine, so no windows to build");
 
         onTheToolkit(() -> {
-            List<Node> parts = everythingIn(screens().rootFor(Screen.FLIGHT));
+            Screens screens = screens();
 
-            assertFalse(parts.isEmpty(), "an empty window reads as a crash");
-            assertTrue(parts.stream()
-                    .anyMatch(node -> node instanceof javafx.scene.control.Label label
-                            && label.getText().contains("not built yet")));
+            // Building, repairing and crewing are the same board with different jobs to do to
+            // it. Three panes would mean the one being redrawn was not always the one on screen.
+            assertEquals(screens.rootFor(Screen.SHIPYARD), screens.rootFor(Screen.REPAIRS));
+            assertEquals(screens.rootFor(Screen.REPAIRS), screens.rootFor(Screen.CREW));
+            assertNotEquals(screens.rootFor(Screen.SHIPYARD), screens.rootFor(Screen.FLIGHT),
+                    "the route is a different picture");
             return null;
         });
     }
