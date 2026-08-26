@@ -46,6 +46,7 @@ public final class Ship {
     private final GoodsBank bank;
 
     private boolean cargoOperationsOpen;
+    private int lostComponents;
 
     /**
      * Builds a ship around its starting cabin.
@@ -134,18 +135,68 @@ public final class Ship {
     }
 
     /**
-     * Tears a component off the ship.
+     * Lifts a component off without counting it as lost.
      *
-     * <p>Used to fix an illegal ship and to resolve damage. Whatever the removal strands
-     * is not dealt with here — the caller decides, because the rules differ: correcting a
-     * ship lets the player choose what else to sacrifice, while a hit simply drops
-     * everything that comes loose.
+     * <p>For one purpose only: sliding the tile a player has just put down, before it is
+     * welded. Nothing is lost when a piece is moved from one cell to another, and counting
+     * it would charge the player a credit for changing their mind.
      *
      * @param cell the cell to clear
-     * @return what was removed, or empty when the cell was already free
+     * @return what was lifted, or empty when the cell was already free
      */
-    public Optional<ShipComponent> remove(Position cell) {
+    public Optional<ShipComponent> lift(Position cell) {
         return grid.remove(cell);
+    }
+
+    /**
+     * Tears a component off and writes it off.
+     *
+     * <p>For fixing an illegal ship: components removed to make a ship legal go to the
+     * discard pile and count as lost along the route, a credit each at journey's end
+     * (manual p.8, p.17). Whatever the removal strands is left to the caller, because the
+     * rules differ — correcting a ship lets the player choose what else to sacrifice,
+     * while a hit simply drops everything that comes loose.
+     *
+     * @param cell the cell to clear
+     * @return what was discarded, or empty when the cell was already free
+     */
+    public Optional<ShipComponent> discard(Position cell) {
+        Optional<ShipComponent> removed = grid.remove(cell);
+        removed.ifPresent(component -> {
+            returnTokensToBank(component);
+            lostComponents++;
+        });
+        return removed;
+    }
+
+    /**
+     * Returns how many components this ship has lost along the route.
+     *
+     * <p>Everything in the discard pile: shot off, torn away when the ship broke up,
+     * removed to make an illegal ship legal, and reserved but never attached. Each one
+     * costs a credit at journey's end (manual p.10).
+     *
+     * @return the number of components lost
+     */
+    public int lostComponentCount() {
+        return lostComponents;
+    }
+
+    /**
+     * Writes off components that never made it onto the ship.
+     *
+     * <p>The tiles left in the reservation corner when building ends. They were never
+     * welded on, so the ship never held them, but the manual counts them as lost along
+     * the route all the same (p.17).
+     *
+     * @param count how many were abandoned
+     * @throws IllegalArgumentException if the count is negative
+     */
+    public void writeOffAbandoned(int count) {
+        if (count < 0) {
+            throw new IllegalArgumentException("cannot write off " + count + " components");
+        }
+        lostComponents += count;
     }
 
     // ---------------------------------------------------------------- legality
@@ -349,7 +400,10 @@ public final class Ship {
     }
 
     private void destroy(Position cell) {
-        grid.remove(cell).ifPresent(this::returnTokensToBank);
+        grid.remove(cell).ifPresent(component -> {
+            returnTokensToBank(component);
+            lostComponents++;
+        });
         removeStrandedAliens();
     }
 

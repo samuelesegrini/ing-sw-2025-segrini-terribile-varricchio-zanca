@@ -4,6 +4,12 @@ import it.polimi.ingsw.server.data.GameData;
 import it.polimi.ingsw.server.data.GameDataLoader;
 import it.polimi.ingsw.server.model.board.GameLevel;
 import it.polimi.ingsw.server.model.board.LevelSpec;
+import it.polimi.ingsw.server.model.player.PlayerColor;
+import it.polimi.ingsw.server.model.ship.Ship;
+
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Flight configurations for tests, taken from the data the application actually ships.
@@ -22,5 +28,22 @@ final class FlightFixtures {
     /** Returns the real specification for a level, as shipped. */
     static LevelSpec levelSpec(GameLevel level) {
         return DATA.level(level);
+    }
+
+    /**
+     * Returns a level II flight with the given ships on the start spaces, best first.
+     *
+     * <p>Iteration order decides who leads, so a test can say "red, then blue" and get a
+     * route order it can reason about.
+     */
+    static Flight levelTwoFlight(Map<PlayerColor, Ship> ships) {
+        LevelSpec level = levelSpec(GameLevel.LEVEL_II);
+        List<Integer> spaces = level.flightBoard().startingPositions();
+        Map<PlayerColor, Integer> starts = new LinkedHashMap<>();
+        int index = 0;
+        for (PlayerColor player : ships.keySet()) {
+            starts.put(player, spaces.get(index++));
+        }
+        return new Flight(level, ships, starts);
     }
 }

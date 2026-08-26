@@ -279,7 +279,7 @@ public final class ShipBuilder {
         }
         requireEmptyHand();
 
-        ShipComponent loose = ship.remove(unwelded).orElseThrow();
+        ShipComponent loose = ship.lift(unwelded).orElseThrow();
         try {
             ship.place(cell, loose.tile(), rotation);
         } catch (RuntimeException rejected) {
@@ -310,6 +310,9 @@ public final class ShipBuilder {
      * hourglass period runs out, everyone still building has to stop where they stand
      * (manual p.17).
      *
+     * <p>Whatever is left in the corner at that point is written off: never welded on, and
+     * counted as lost along the route all the same.
+     *
      * @throws IllegalStateException if the player has already finished
      */
     public void finish() {
@@ -326,6 +329,7 @@ public final class ShipBuilder {
             }
             heldTileWasReserved = false;
         }
+        ship.writeOffAbandoned(reserved.size());
         finished = true;
     }
 
