@@ -110,6 +110,14 @@ reconnect command is a second code path that can disagree with the first.
 
 The game starts by itself when the last seat is taken. Nobody declares it started.
 
+**Colours are assigned, not chosen.** Letting players pick would be a second negotiation
+before the game had even begun, with its own rules for what happens when two people want red.
+They go out in the order people arrive.
+
+**Refusals travel as `GameEvent.Rejected`**, in the lobby as well as in a game. It is the one
+refusal message the protocol has; the family it is filed under is where a command is refused
+*from*, not what kind of command was refused.
+
 ### 3.2 `BuildingCommand` — the shipyard
 
 Everybody builds at once. There are no turns here, so these arrive interleaved from every
