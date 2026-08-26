@@ -217,29 +217,10 @@ class FlightPhaseTest {
                 continue;
             }
             Reaction reaction = game.apply(asked.player(),
-                    new FlightCommand.Answer(simplestAnswerTo(asked)));
+                    new FlightCommand.Answer(it.polimi.ingsw.common.game.Answers.simplestTo(asked)));
             everything.addAll(narrationOf(reaction));
         }
         return everything;
-    }
-
-    private static PlayerChoice simplestAnswerTo(PlayerPrompt prompt) {
-        return switch (prompt) {
-            case PlayerPrompt.TakeOrLeave leave -> new PlayerChoice.Leave(leave.player());
-            case PlayerPrompt.DeclarePower declare ->
-                    new PlayerChoice.Declaration(declare.player(),
-                            it.polimi.ingsw.common.game.BatteryPlan.none());
-            case PlayerPrompt.ArrangeCargo cargo -> new PlayerChoice.Done(cargo.player());
-            case PlayerPrompt.GiveUpCrew crew -> new PlayerChoice.CrewGiven(crew.player(),
-                    crew.cabins().stream().limit(crew.count()).toList());
-            case PlayerPrompt.ChooseDefence defence ->
-                    PlayerChoice.DefenceChosen.none(defence.player());
-            case PlayerPrompt.ChooseFragment fragment ->
-                    new PlayerChoice.FragmentKept(fragment.player(), fragment.pieces().get(0));
-            case PlayerPrompt.ChoosePlanet planet ->
-                    new PlayerChoice.PlanetChosen(planet.player(),
-                            planet.planets().keySet().iterator().next());
-        };
     }
 
     private static PlayerPrompt waitForAPrompt(Game game) {

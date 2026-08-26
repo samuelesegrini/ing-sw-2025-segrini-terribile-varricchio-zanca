@@ -25,16 +25,18 @@ Progress is tracked in [docs/roadmap.md](docs/roadmap.md) and in the repository'
 milestones. The table below reflects what is **implemented and tested**, not what is
 planned.
 
-The complete level II ruleset is done and covered by tests, but headless: there is no
-way to sit down and play yet. That arrives with the protocol and the interfaces.
+The server plays a complete game over both transports at once, and there is a test in which
+four players — two on a socket, two on RMI — do exactly that from the first tile to the last
+credit. What is missing is somebody to look at it: there is no interface yet, so the only
+clients that exist are in the test suite.
 
 ### Core requirements
 
 | Functionality | Status |
 |:--|:--:|
 | Complete rules (level II) | ✅ |
-| Socket | 🚧 |
-| RMI | 🚧 |
+| Socket | ✅ |
+| RMI | ✅ |
 | TUI | 🚧 |
 | GUI (JavaFX) | 🚧 |
 
@@ -42,10 +44,14 @@ way to sit down and play yet. That arrives with the protocol and the interfaces.
 
 | Functionality | Status |
 |:--|:--:|
-| Test flight | 🚧 |
-| Multiple concurrent games | 🚧 |
-| Disconnection resilience | 🚧 |
+| Test flight | ✅ |
+| Multiple concurrent games | ✅ |
+| Disconnection resilience | ✅ |
 | Persistence | 🚧 |
+
+The three advanced features marked done are done **on the server**. A player cannot yet choose
+a test flight or reconnect to a game, because a player cannot yet do anything: those are
+commands nothing sends until there is an interface.
 
 ✅ done and tested · 🚧 in progress · ⬜ not started
 
@@ -73,13 +79,22 @@ Requires JDK 23 or later. Maven is provided through the wrapper.
 
 ## Running
 
-Server:
+Server. It listens on a socket and through an RMI registry at the same time; a player uses
+whichever they prefer and cannot tell what anybody else chose.
 
 ```bash
 java -jar target/server.jar
 ```
 
-Client — interface and transport are chosen at startup:
+Both ports can be given, socket first. A zero asks the operating system for a free one, which
+is how the tests run several servers at once without picking numbers and hoping.
+
+```bash
+java -jar target/server.jar 4321 4322
+```
+
+Client — interface and transport are chosen at startup. Not yet implemented: there is no
+interface to choose between, and until there is, the only clients are in the test suite.
 
 ```bash
 java -jar target/client.jar
