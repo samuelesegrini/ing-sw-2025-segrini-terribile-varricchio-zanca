@@ -1,7 +1,11 @@
 package it.polimi.ingsw.server.model.ship;
 
+import it.polimi.ingsw.common.game.ComponentKind;
+import it.polimi.ingsw.common.game.Connector;
+import it.polimi.ingsw.common.game.Position;
+import it.polimi.ingsw.common.game.Rotation;
+import it.polimi.ingsw.common.game.ViolationKind;
 import it.polimi.ingsw.server.model.board.ShipBoardSpec;
-import it.polimi.ingsw.server.model.component.ComponentKind;
 import it.polimi.ingsw.server.model.component.ComponentTile;
 import it.polimi.ingsw.server.model.component.ShipComponent;
 import it.polimi.ingsw.server.model.component.Tiles;

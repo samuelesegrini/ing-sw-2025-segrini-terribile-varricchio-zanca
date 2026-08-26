@@ -4,13 +4,13 @@ import it.polimi.ingsw.server.model.adventure.AdventureCard;
 import it.polimi.ingsw.server.model.adventure.AdventureCardIdentity;
 import it.polimi.ingsw.server.model.adventure.AdventureCardType;
 import it.polimi.ingsw.server.model.adventure.CardLevel;
-import it.polimi.ingsw.server.model.board.GameLevel;
+import it.polimi.ingsw.common.game.GameLevel;
 import it.polimi.ingsw.server.model.board.LevelSpec;
-import it.polimi.ingsw.server.model.component.ComponentKind;
+import it.polimi.ingsw.common.game.ComponentKind;
 import it.polimi.ingsw.server.model.component.ComponentTile;
 import it.polimi.ingsw.server.model.component.StartingCabinTile;
-import it.polimi.ingsw.server.model.goods.GoodColor;
-import it.polimi.ingsw.server.model.player.PlayerColor;
+import it.polimi.ingsw.common.game.GoodColor;
+import it.polimi.ingsw.common.game.PlayerColor;
 
 import java.util.EnumMap;
 import java.util.HashSet;

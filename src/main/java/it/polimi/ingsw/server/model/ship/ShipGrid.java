@@ -1,5 +1,7 @@
 package it.polimi.ingsw.server.model.ship;
 
+import it.polimi.ingsw.common.game.Direction;
+import it.polimi.ingsw.common.game.Position;
 import it.polimi.ingsw.server.model.board.ShipBoardSpec;
 import it.polimi.ingsw.server.model.component.ShipComponent;
 

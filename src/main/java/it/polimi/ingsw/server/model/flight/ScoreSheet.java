@@ -1,6 +1,6 @@
 package it.polimi.ingsw.server.model.flight;
 
-import it.polimi.ingsw.server.model.player.PlayerColor;
+import it.polimi.ingsw.common.game.PlayerColor;
 
 /**
  * One player's account at journey's end, itemised.

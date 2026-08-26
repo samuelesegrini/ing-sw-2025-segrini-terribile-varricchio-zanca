@@ -1,6 +1,6 @@
 package it.polimi.ingsw.server.model.adventure.resolution;
 
-import it.polimi.ingsw.server.model.player.PlayerColor;
+import it.polimi.ingsw.common.game.PlayerColor;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

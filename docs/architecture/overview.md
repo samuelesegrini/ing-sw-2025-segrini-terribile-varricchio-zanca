@@ -44,6 +44,7 @@ it.polimi.ingsw
 ├── ServerMain / ClientMain          entry points
 │
 ├── common                           shared by both sides
+│   ├── game                         the vocabulary: colours, geometry, kinds
 │   ├── protocol
 │   │   ├── command                  client → server intents
 │   │   ├── event                    server → client facts
@@ -54,7 +55,9 @@ it.polimi.ingsw
 │   ├── model                        the authoritative domain
 │   │   ├── ship                     grid, components, validation, attributes
 │   │   ├── component                the component hierarchy
-│   │   ├── crew                     humans, aliens, life support
+│   │   ├── goods                    the cube bank
+│   │   ├── board                    what the printed boards say
+│   │   ├── building                 the pool, the timer, the shipyard
 │   │   ├── flight                   route, board, positions, rewards
 │   │   ├── adventure                cards and their resolutions
 │   │   └── game                     Game aggregate, phases, players
@@ -73,8 +76,28 @@ it.polimi.ingsw
         └── gui
 ```
 
-`common` deliberately holds **no logic**. If a class in `common` has a method that
-decides something about the game, it is in the wrong package.
+`common` holds no game **state** and no **authority**.
+
+That is a narrower rule than the one this document first stated, which was that `common`
+holds no logic at all. The narrower rule is the one worth keeping, and it is worth saying
+why. Twelve value types — the player and goods colours, the four directions, rotation,
+position, connector shape, component kind, hit kind, violation kind, level, ship attribute
+— are needed by every message the two sides exchange. Leaving them under `server.model`
+would mean either that the client depends on the server model, or that all twelve are
+duplicated and mapped. The first makes *"the client never receives a `Ship`"* a convention
+instead of something the compiler knows; the second buys nothing but twelve pairs that can
+drift apart.
+
+Some of those types carry small predicates: whether two connectors join, whether a shield
+stops a hit, which hold takes red. A literal no-logic rule would push each into a static
+helper on the server and make the server read worse to satisfy a slogan. What actually
+matters is that the client cannot *decide* anything. Those predicates let a view grey out
+an illegal placement before the player clicks it, which is good interface design; the
+server then revalidates the command as though the client had computed nothing, so a client
+that lies about geometry gets exactly the answer an honest one gets.
+
+The test is therefore: **does this class hold game state, or can the server's answer depend
+on trusting it?** If either, it belongs on the server.
 
 ## 3. Design decisions
 

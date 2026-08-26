@@ -1,5 +1,7 @@
 package it.polimi.ingsw.server.model.board;
 
+import it.polimi.ingsw.common.game.GameLevel;
+
 /**
  * Everything that distinguishes one flight configuration from another.
  *

@@ -1,11 +1,13 @@
 package it.polimi.ingsw.server.model.ship;
 
+import it.polimi.ingsw.common.game.AlienColor;
+import it.polimi.ingsw.common.game.ComponentKind;
+import it.polimi.ingsw.common.game.PlayerColor;
+import it.polimi.ingsw.common.game.Position;
+import it.polimi.ingsw.common.game.Rotation;
 import it.polimi.ingsw.server.model.board.ShipBoardSpec;
 import it.polimi.ingsw.server.model.component.CabinComponent;
-import it.polimi.ingsw.server.model.component.ComponentKind;
 import it.polimi.ingsw.server.model.component.Tiles;
-import it.polimi.ingsw.server.model.crew.AlienColor;
-import it.polimi.ingsw.server.model.player.PlayerColor;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

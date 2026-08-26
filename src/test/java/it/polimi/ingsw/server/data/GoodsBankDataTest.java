@@ -1,6 +1,6 @@
 package it.polimi.ingsw.server.data;
 
-import it.polimi.ingsw.server.model.goods.GoodColor;
+import it.polimi.ingsw.common.game.GoodColor;
 import it.polimi.ingsw.server.model.goods.GoodsBank;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

@@ -1,4 +1,4 @@
-package it.polimi.ingsw.server.model.ship;
+package it.polimi.ingsw.common.game;
 
 /**
  * A cell of a ship board, indexed from the top left corner.

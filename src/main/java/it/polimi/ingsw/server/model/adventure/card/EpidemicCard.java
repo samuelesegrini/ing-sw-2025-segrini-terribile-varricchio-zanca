@@ -5,8 +5,8 @@ import it.polimi.ingsw.server.model.adventure.AdventureCardIdentity;
 import it.polimi.ingsw.server.model.adventure.resolution.AdventureResolution;
 import it.polimi.ingsw.server.model.adventure.resolution.AutomaticResolution;
 import it.polimi.ingsw.server.model.flight.Flight;
-import it.polimi.ingsw.server.model.player.PlayerColor;
-import it.polimi.ingsw.server.model.ship.Position;
+import it.polimi.ingsw.common.game.PlayerColor;
+import it.polimi.ingsw.common.game.Position;
 import it.polimi.ingsw.server.model.ship.Ship;
 
 import java.util.LinkedHashSet;

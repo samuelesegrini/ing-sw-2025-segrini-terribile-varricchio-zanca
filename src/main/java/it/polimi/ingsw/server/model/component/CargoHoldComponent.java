@@ -1,8 +1,9 @@
 package it.polimi.ingsw.server.model.component;
 
-import it.polimi.ingsw.server.model.goods.GoodColor;
-import it.polimi.ingsw.server.model.ship.Rotation;
 
+import it.polimi.ingsw.common.game.ComponentKind;
+import it.polimi.ingsw.common.game.GoodColor;
+import it.polimi.ingsw.common.game.Rotation;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;

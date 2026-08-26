@@ -1,7 +1,9 @@
 package it.polimi.ingsw.server.model.component;
 
-import it.polimi.ingsw.server.model.ship.Direction;
-import it.polimi.ingsw.server.model.ship.Rotation;
+import it.polimi.ingsw.common.game.ComponentKind;
+import it.polimi.ingsw.common.game.Direction;
+import it.polimi.ingsw.common.game.Rotation;
+
 
 /**
  * A cannon welded to a ship.

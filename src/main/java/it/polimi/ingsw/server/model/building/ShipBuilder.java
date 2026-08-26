@@ -4,8 +4,8 @@ import it.polimi.ingsw.server.model.adventure.AdventureCardIdentity;
 import it.polimi.ingsw.server.model.adventure.AdventureDeck;
 import it.polimi.ingsw.server.model.component.ComponentTile;
 import it.polimi.ingsw.server.model.component.ShipComponent;
-import it.polimi.ingsw.server.model.ship.Position;
-import it.polimi.ingsw.server.model.ship.Rotation;
+import it.polimi.ingsw.common.game.Position;
+import it.polimi.ingsw.common.game.Rotation;
 import it.polimi.ingsw.server.model.ship.Ship;
 
 import java.util.ArrayList;

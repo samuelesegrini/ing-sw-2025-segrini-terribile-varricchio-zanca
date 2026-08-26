@@ -1,4 +1,4 @@
-package it.polimi.ingsw.server.model.ship;
+package it.polimi.ingsw.common.game;
 
 /**
  * How far a component tile is turned from the orientation it is printed in.

@@ -1,4 +1,4 @@
-package it.polimi.ingsw.server.model.player;
+package it.polimi.ingsw.common.game;
 
 /**
  * The four colours a player can take.

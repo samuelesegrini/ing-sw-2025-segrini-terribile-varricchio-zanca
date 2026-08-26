@@ -1,9 +1,10 @@
 package it.polimi.ingsw.server.model.adventure.resolution;
 
-import it.polimi.ingsw.server.model.player.PlayerColor;
-import it.polimi.ingsw.server.model.ship.Position;
 
-import it.polimi.ingsw.server.model.goods.GoodColor;
+import it.polimi.ingsw.common.game.GoodColor;
+import it.polimi.ingsw.common.game.PlayerColor;
+import it.polimi.ingsw.common.game.Position;
+import it.polimi.ingsw.common.game.ShipAttribute;
 import it.polimi.ingsw.server.model.ship.Hit;
 
 import java.util.List;

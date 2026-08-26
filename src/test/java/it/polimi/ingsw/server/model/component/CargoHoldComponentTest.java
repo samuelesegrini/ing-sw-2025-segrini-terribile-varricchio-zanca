@@ -1,7 +1,8 @@
 package it.polimi.ingsw.server.model.component;
 
-import it.polimi.ingsw.server.model.goods.GoodColor;
-import it.polimi.ingsw.server.model.ship.Rotation;
+import it.polimi.ingsw.common.game.ComponentKind;
+import it.polimi.ingsw.common.game.GoodColor;
+import it.polimi.ingsw.common.game.Rotation;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 

@@ -1,19 +1,22 @@
 package it.polimi.ingsw.server.model.ship;
 
+import it.polimi.ingsw.common.game.AlienColor;
+import it.polimi.ingsw.common.game.ComponentKind;
+import it.polimi.ingsw.common.game.Direction;
+import it.polimi.ingsw.common.game.GoodColor;
+import it.polimi.ingsw.common.game.Position;
+import it.polimi.ingsw.common.game.Rotation;
 import it.polimi.ingsw.server.model.board.ShipBoardSpec;
 import it.polimi.ingsw.server.model.component.BatteryComponent;
 import it.polimi.ingsw.server.model.component.CabinComponent;
 import it.polimi.ingsw.server.model.component.CannonComponent;
 import it.polimi.ingsw.server.model.component.EngineComponent;
 import it.polimi.ingsw.server.model.component.CargoHoldComponent;
-import it.polimi.ingsw.server.model.component.ComponentKind;
 import it.polimi.ingsw.server.model.component.ShieldComponent;
 import it.polimi.ingsw.server.model.component.ShipComponent;
 import it.polimi.ingsw.server.model.component.StartingCabinTile;
 import it.polimi.ingsw.server.model.component.Tile;
-import it.polimi.ingsw.server.model.crew.AlienColor;
 import it.polimi.ingsw.server.model.goods.Forfeit;
-import it.polimi.ingsw.server.model.goods.GoodColor;
 import it.polimi.ingsw.server.model.goods.GoodsBank;
 
 import java.util.ArrayList;

@@ -1,9 +1,9 @@
 package it.polimi.ingsw.server.model.building;
 
-import it.polimi.ingsw.server.model.component.ComponentKind;
+import it.polimi.ingsw.common.game.ComponentKind;
 import it.polimi.ingsw.server.model.component.ComponentTile;
 import it.polimi.ingsw.server.model.component.Tiles;
-import it.polimi.ingsw.server.model.ship.Connector;
+import it.polimi.ingsw.common.game.Connector;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 

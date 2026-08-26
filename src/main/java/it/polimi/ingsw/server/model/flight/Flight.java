@@ -1,7 +1,7 @@
 package it.polimi.ingsw.server.model.flight;
 
 import it.polimi.ingsw.server.model.board.LevelSpec;
-import it.polimi.ingsw.server.model.player.PlayerColor;
+import it.polimi.ingsw.common.game.PlayerColor;
 import it.polimi.ingsw.server.model.ship.Ship;
 
 import java.util.LinkedHashMap;

@@ -1,7 +1,7 @@
 package it.polimi.ingsw.server.model.building;
 
 import it.polimi.ingsw.server.model.component.ComponentTile;
-import it.polimi.ingsw.server.model.ship.Rotation;
+import it.polimi.ingsw.common.game.Rotation;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 

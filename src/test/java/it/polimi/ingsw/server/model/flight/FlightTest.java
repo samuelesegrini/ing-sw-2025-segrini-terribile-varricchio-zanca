@@ -1,12 +1,12 @@
 package it.polimi.ingsw.server.model.flight;
 
-import it.polimi.ingsw.server.model.board.GameLevel;
+import it.polimi.ingsw.common.game.GameLevel;
 import it.polimi.ingsw.server.model.board.LevelSpec;
 import it.polimi.ingsw.server.model.component.CabinComponent;
-import it.polimi.ingsw.server.model.component.ComponentKind;
-import it.polimi.ingsw.server.model.crew.AlienColor;
-import it.polimi.ingsw.server.model.player.PlayerColor;
-import it.polimi.ingsw.server.model.ship.Position;
+import it.polimi.ingsw.common.game.ComponentKind;
+import it.polimi.ingsw.common.game.AlienColor;
+import it.polimi.ingsw.common.game.PlayerColor;
+import it.polimi.ingsw.common.game.Position;
 import it.polimi.ingsw.server.model.ship.Ship;
 import it.polimi.ingsw.server.model.ship.Ships;
 import org.junit.jupiter.api.DisplayName;
