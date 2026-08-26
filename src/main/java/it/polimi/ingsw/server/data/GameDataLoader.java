@@ -9,6 +9,7 @@ import it.polimi.ingsw.server.model.adventure.CardLevel;
 import it.polimi.ingsw.server.model.adventure.card.AbandonedShipCard;
 import it.polimi.ingsw.server.model.adventure.card.AbandonedStationCard;
 import it.polimi.ingsw.server.model.adventure.card.SlaversCard;
+import it.polimi.ingsw.server.model.adventure.card.SmugglersCard;
 import it.polimi.ingsw.server.model.board.DeckComposition;
 import it.polimi.ingsw.server.model.board.FlightBoardSpec;
 import it.polimi.ingsw.server.model.board.GameLevel;
@@ -173,6 +174,12 @@ public final class GameDataLoader {
                     integer(entry, "firepower", where),
                     integer(entry, "credits", where),
                     integer(entry, "crewPenalty", where),
+                    integer(entry, "flightDays", where)));
+            case SMUGGLERS -> Optional.of(new SmugglersCard(
+                    identity,
+                    integer(entry, "firepower", where),
+                    readGoods(required(entry, "goods", where), where),
+                    integer(entry, "goodsPenalty", where),
                     integer(entry, "flightDays", where)));
             default -> Optional.empty();
         };
