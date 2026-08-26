@@ -1,0 +1,128 @@
+package it.polimi.ingsw.server.model.adventure.resolution;
+
+import it.polimi.ingsw.server.model.player.PlayerColor;
+
+import java.util.ArrayDeque;
+import java.util.Deque;
+import java.util.List;
+import java.util.Optional;
+
+/**
+ * The skeleton most adventure cards share: work down a queue of players, asking each one
+ * in turn, and stop when the card says to.
+ *
+ * <p>Three of the manual's shapes fall out of the same loop, and the only thing that
+ * separates them is what {@link #apply} returns:
+ *
+ * <ul>
+ *   <li><b>Everyone acts</b> — Planets, Open Space, Stardust. Never stop early.</li>
+ *   <li><b>First taker only</b> — an abandoned ship or station. Stop as soon as somebody
+ *       accepts; the rest are cut out (manual p.12).</li>
+ *   <li><b>Until defeated</b> — Smugglers, Pirates, Slavers. Stop as soon as somebody
+ *       beats them; nobody behind is attacked (manual p.12).</li>
+ * </ul>
+ *
+ * <p>The queue is fixed when the card starts. Route order can change while a card is
+ * being resolved — somebody advances in Open Space, somebody falls back on Planets — but
+ * whose turn it is was settled when the card was turned over. Combat Zone is the
+ * exception, and it re-reads the order between its lines by building a fresh queue for
+ * each one (manual p.13).
+ */
+public abstract class TurnByTurnResolution implements AdventureResolution {
+
+    private final Deque<PlayerColor> queue = new ArrayDeque<>();
+
+    private boolean started;
+    private boolean finished;
+    private PlayerPrompt current;
+
+    /**
+     * Creates a resolution that will work down the given order.
+     *
+     * @param order the players to ask, in the order to ask them
+     */
+    protected TurnByTurnResolution(List<PlayerColor> order) {
+        queue.addAll(order);
+    }
+
+    /**
+     * Returns what to ask a player, or empty to pass over them.
+     *
+     * <p>Passing over is a normal outcome, not a refusal: a player without the crew an
+     * abandoned station demands is simply not offered it.
+     *
+     * @param player whose turn it is
+     * @return the question for them, or empty to move on
+     */
+    protected abstract Optional<PlayerPrompt> promptFor(PlayerColor player);
+
+    /**
+     * Applies a player's answer.
+     *
+     * @param choice what they answered
+     * @return {@code true} to end the card here, {@code false} to carry on down the queue
+     */
+    protected abstract boolean apply(PlayerChoice choice);
+
+    /**
+     * Runs whatever the card does once nobody else will be asked.
+     *
+     * <p>Where the effects that happen to everybody at once belong — Planets moves every
+     * player who landed, in reverse route order, only after all of them have chosen
+     * (manual p.12). Called exactly once.
+     */
+    protected void afterEveryone() {
+        // Most cards have nothing left to do.
+    }
+
+    @Override
+    public final Optional<PlayerPrompt> pending() {
+        ensureStarted();
+        return Optional.ofNullable(current);
+    }
+
+    @Override
+    public final void submit(PlayerChoice choice) {
+        ensureStarted();
+        PlayerPrompt prompt = current;
+        if (prompt == null) {
+            throw new IllegalStateException("this card is finished and is waiting for nothing");
+        }
+        if (choice.player() != prompt.player()) {
+            throw new IllegalArgumentException(
+                    "the card is waiting on the " + prompt.player() + " player, not the " + choice.player());
+        }
+        current = null;
+        if (apply(choice)) {
+            queue.clear();
+        }
+        advance();
+    }
+
+    /**
+     * Returns the question currently outstanding, for a subclass that needs to check what
+     * it asked.
+     *
+     * @return the outstanding prompt, or empty when there is none
+     */
+    protected final Optional<PlayerPrompt> outstanding() {
+        return Optional.ofNullable(current);
+    }
+
+    private void ensureStarted() {
+        if (!started) {
+            started = true;
+            advance();
+        }
+    }
+
+    private void advance() {
+        while (current == null && !queue.isEmpty()) {
+            current = promptFor(queue.poll()).orElse(null);
+        }
+        if (current == null && !finished) {
+            finished = true;
+            afterEveryone();
+        }
+    }
+}
