@@ -17,6 +17,13 @@ public abstract class AutomaticResolution implements AdventureResolution {
     private boolean applied;
 
     /**
+     * Creates a resolution that has not yet done anything.
+     */
+    protected AutomaticResolution() {
+        // Subclasses hold whatever state their card needs.
+    }
+
+    /**
      * Applies the card's effects. Called exactly once.
      */
     protected abstract void apply();
