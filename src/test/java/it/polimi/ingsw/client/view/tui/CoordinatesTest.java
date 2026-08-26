@@ -27,7 +27,7 @@ class CoordinatesTest {
 
     /** The level II board: five rows numbered from 5, seven columns numbered from 4. */
     private static final ShipView LEVEL_TWO = new ShipView(5, 7, 5, 4,
-            Set.of(new Position(0, 0)), Map.of(), List.of(), 0,
+            Set.of(new Position(0, 0)), Map.of(), List.of(), List.of(), 0,
             new ShipAttributes(0, 0, 0), ValidationReport.legal());
 
     @Test
@@ -86,7 +86,7 @@ class CoordinatesTest {
     void anotherBoard() {
         // The test flight board is smaller and starts elsewhere. A client that assumed level II
         // would put every tile in the wrong place on it.
-        ShipView testFlight = new ShipView(5, 5, 5, 5, Set.of(), Map.of(), List.of(), 0,
+        ShipView testFlight = new ShipView(5, 5, 5, 5, Set.of(), Map.of(), List.of(), List.of(), 0,
                 new ShipAttributes(0, 0, 0), ValidationReport.legal());
 
         assertEquals(Optional.of(new Position(0, 0)),

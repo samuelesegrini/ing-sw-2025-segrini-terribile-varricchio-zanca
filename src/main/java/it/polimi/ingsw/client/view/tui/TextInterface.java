@@ -3,14 +3,19 @@ package it.polimi.ingsw.client.view.tui;
 import it.polimi.ingsw.client.network.ServerLink;
 import it.polimi.ingsw.client.state.ClientState;
 import it.polimi.ingsw.client.view.UserInterface;
+import it.polimi.ingsw.common.game.AlienColor;
 import it.polimi.ingsw.common.game.GameLevel;
 import it.polimi.ingsw.common.game.GamePhase;
 import it.polimi.ingsw.common.game.PlayerColor;
+import it.polimi.ingsw.common.game.PlayerPrompt;
 import it.polimi.ingsw.common.game.Position;
 import it.polimi.ingsw.common.game.Rotation;
 import it.polimi.ingsw.common.protocol.BuildingCommand;
 import it.polimi.ingsw.common.protocol.Command;
+import it.polimi.ingsw.common.protocol.FlightCommand;
+import it.polimi.ingsw.common.protocol.FlightEvent;
 import it.polimi.ingsw.common.protocol.LobbyCommand;
+import it.polimi.ingsw.common.protocol.PreparationCommand;
 import it.polimi.ingsw.common.protocol.view.GameView;
 import it.polimi.ingsw.common.protocol.view.PlayerView;
 import it.polimi.ingsw.common.protocol.view.ShipView;
@@ -21,6 +26,7 @@ import java.io.PrintStream;
 import java.io.UncheckedIOException;
 import java.util.List;
 import java.util.Optional;
+import java.util.OptionalInt;
 
 /**
  * Playing by typing.
@@ -171,14 +177,167 @@ public final class TextInterface implements UserInterface {
                     () -> print(List.of("  the shipyard closed a while ago")));
             return;
         }
+        if (typed.is("route", "board")) {
+            game.flightIfAny().ifPresentOrElse(
+                    flight -> print(RouteRenderer.render(flight, game.players())),
+                    () -> print(List.of("  the ships have not launched yet")));
+            return;
+        }
+        if (typed.is("scores", "ledger")) {
+            game.scoresIfAny().ifPresentOrElse(
+                    scores -> print(ScoreRenderer.render(scores, game.players())),
+                    () -> print(List.of("  nothing has been settled yet")));
+            return;
+        }
         if (game.phase() == GamePhase.BUILDING) {
             inTheShipyard(typed, game);
             return;
         }
-        // The remaining phases arrive with #49. Until then a player is told plainly rather than
-        // left typing into silence.
-        print(List.of("  not yet: '" + typed.verb() + "' belongs to the "
-                + game.phase().name().toLowerCase().replace('_', ' ') + " phase"));
+        if (game.phase() == GamePhase.VALIDATION) {
+            repairing(typed, game);
+            return;
+        }
+        if (game.phase() == GamePhase.CREW_PLACEMENT) {
+            crewing(typed, game);
+            return;
+        }
+        if (game.pendingIfAny().isPresent()) {
+            answering(typed, game);
+            return;
+        }
+        if (typed.is("give", "quitflight") && game.phase() == GamePhase.FLIGHT) {
+            send(new FlightCommand.GiveUp());
+            return;
+        }
+        print(List.of("  ? nothing is waiting for you; type 'help'"));
+    }
+
+    // ------------------------------------------------------------------ repairs and crew
+
+    /**
+     * Throwing off what cannot stay, and choosing which half to keep when that breaks the ship.
+     *
+     * <p>Everybody works on their own ship at once, so there are no turns here and nothing to
+     * wait for. A player whose ship was legal to begin with has nothing to do.
+     */
+    private void repairing(Typed typed, GameView game) {
+        ShipView ship = myShip(game);
+        if (typed.is("scrap", "remove")) {
+            cellFrom(typed, game).ifPresent(cell ->
+                    sendThenShowShip(new PreparationCommand.RemoveComponent(cell)));
+            return;
+        }
+        if (typed.is("keep")) {
+            OptionalInt which = typed.number(0);
+            if (ship.isWhole()) {
+                print(List.of("  your ship is in one piece; there is nothing to choose"));
+                return;
+            }
+            if (which.isEmpty() || which.getAsInt() < 0 || which.getAsInt() >= ship.pieces().size()) {
+                print(List.of("  ? which piece? 0 to " + (ship.pieces().size() - 1)));
+                return;
+            }
+            sendThenShowShip(new PreparationCommand.KeepPiece(ship.pieces().get(which.getAsInt())));
+            return;
+        }
+        print(List.of("  ? the ships are being checked over; 'look' to see yours, "
+                + "'scrap <row> <col>' to throw something off"));
+    }
+
+    /**
+     * Filling the cabins, and launching.
+     *
+     * <p>Two people to a cabin, or one alien where life support of its colour is welded to it.
+     * Declaring ready fills whatever is still empty with people, which is the manual's default.
+     */
+    private void crewing(Typed typed, GameView game) {
+        if (typed.is("done", "ready", "finish")) {
+            send(new PreparationCommand.FinishPreparation());
+            return;
+        }
+        if (typed.is("crew", "people")) {
+            cellFrom(typed, game).ifPresent(cabin ->
+                    sendThenShowShip(new PreparationCommand.BoardCrew(cabin, null)));
+            return;
+        }
+        if (typed.is("alien")) {
+            Optional<Position> cabin = cellFrom(typed, game);
+            if (cabin.isEmpty()) {
+                return;
+            }
+            Optional<AlienColor> alien = alienFrom(typed.word(2));
+            if (alien.isEmpty()) {
+                print(List.of("  ? which alien? 'p' for purple or 'b' for brown"));
+                return;
+            }
+            sendThenShowShip(new PreparationCommand.BoardCrew(cabin.orElseThrow(),
+                    alien.orElseThrow()));
+            return;
+        }
+        print(List.of("  ? the ships are being crewed; 'crew <row> <col>' for people, "
+                + "'alien <row> <col> <p|b>', or 'done'"));
+    }
+
+    private static Optional<AlienColor> alienFrom(Optional<String> word) {
+        return word.flatMap(spoken -> {
+            String said = spoken.toLowerCase(java.util.Locale.ROOT);
+            if (said.startsWith("p")) {
+                return Optional.of(AlienColor.PURPLE);
+            }
+            return said.startsWith("b") ? Optional.of(AlienColor.BROWN) : Optional.empty();
+        });
+    }
+
+    // ------------------------------------------------------------------ answering a card
+
+    /**
+     * Reads a line against the question the card is actually asking.
+     *
+     * <p>Which question is outstanding decides what a word means: {@code keep} chooses a piece
+     * of a broken ship here and sets a tile aside in the shipyard, {@code leave} declines an
+     * offer and flies past a planet. Reading against the prompt rather than a global table is
+     * what lets both be true without either being renamed.
+     */
+    private void answering(Typed typed, GameView game) {
+        PlayerPrompt prompt = game.pendingIfAny().orElseThrow();
+        if (typed.is("give")) {
+            send(new FlightCommand.GiveUp());
+            return;
+        }
+        if (prompt.player() != game.you()) {
+            print(List.of("  the game is waiting for " + prompt.player() + ", not for you"));
+            return;
+        }
+        ShipView ship = myShip(game);
+        switch (FlightAnswers.read(typed, prompt, ship, game.you())) {
+            case FlightAnswers.Reading.Answer answer -> {
+                send(new FlightCommand.Answer(answer.choice()));
+                showWhatIsAskedNow();
+            }
+            case FlightAnswers.Reading.Wrong wrong -> print(List.of("  ? " + wrong.why()));
+            case FlightAnswers.Reading.NotForUs ignored ->
+                    print(List.of("  ? that is not an answer to this; type 'help'"));
+        }
+    }
+
+    /**
+     * Draws whatever the card is asking now, if it is asking this player.
+     *
+     * <p>An answer usually leads straight to another question — a volley is four shots, stowing
+     * is a cube at a time — and a player who had to type something to find out what was next
+     * would be typing blind.
+     */
+    private void showWhatIsAskedNow() {
+        state.game().ifPresent(after -> after.pendingIfAny().ifPresent(prompt ->
+                print(PromptRenderer.render(prompt, shipOf(after, prompt.player()), after.you()))));
+    }
+
+    private ShipView shipOf(GameView game, PlayerColor whose) {
+        return game.players().stream()
+                .filter(player -> player.colour() == whose)
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("no seat for " + whose))
+                .ship();
     }
 
     // ------------------------------------------------------------------ the shipyard
@@ -382,19 +541,56 @@ public final class TextInterface implements UserInterface {
 
     // ------------------------------------------------------------------ printing
 
+    /** How long to wait for a server that has nothing to say at all. */
+    private static final long ANSWER_TIMEOUT_MS = 500;
+
+    /** How long the server has to be quiet before it is taken to have finished answering. */
+    private static final long QUIET_MS = 25;
+
     private void send(Command command) {
+        int before = state.narration().size();
         server.send(command);
-        // Give the server a moment to answer, so that the next thing the player sees is the
-        // consequence of what they typed rather than the prompt again. A tenth of a second is
-        // below what anybody notices and above a loopback round trip.
-        settle();
+        awaitAnswer(before);
     }
 
-    private void settle() {
-        try {
-            Thread.sleep(100);
-        } catch (InterruptedException interrupted) {
-            Thread.currentThread().interrupt();
+    /**
+     * Waits for the server to answer, and then for it to stop.
+     *
+     * <p>Waiting for the first event is not enough: joining a game answers with a seat and then,
+     * a moment later, with the whole board once the last player sits down. A client that carried
+     * on after the first would draw a prompt saying it was still waiting for people who had
+     * already arrived.
+     *
+     * <p>So it waits until the server has been quiet for a moment. That is fast when there is an
+     * answer and bounded when there is not — some commands are refused by the client itself and
+     * never reach the server at all.
+     *
+     * @param narrationBefore how much had been heard before the command went out
+     */
+    private void awaitAnswer(int narrationBefore) {
+        long deadline = System.nanoTime()
+                + java.time.Duration.ofMillis(ANSWER_TIMEOUT_MS).toNanos();
+        long quiet = java.time.Duration.ofMillis(QUIET_MS).toNanos();
+        int heard = narrationBefore;
+        long lastChange = System.nanoTime();
+
+        while (System.nanoTime() < deadline) {
+            int now = state.narration().size();
+            if (now != heard) {
+                heard = now;
+                lastChange = System.nanoTime();
+            } else if (now > narrationBefore && System.nanoTime() - lastChange > quiet) {
+                return;
+            }
+            try {
+                // Sleeping rather than spinning. A busy loop here is a whole core burnt waiting
+                // for a server that is usually a millisecond away, and four clients on one
+                // machine would be four cores.
+                Thread.sleep(1);
+            } catch (InterruptedException interrupted) {
+                Thread.currentThread().interrupt();
+                return;
+            }
         }
     }
 
@@ -416,11 +612,19 @@ public final class TextInterface implements UserInterface {
     private List<String> pendingNarration() {
         List<it.polimi.ingsw.common.protocol.Event> fresh = state.narrationAfter(narrationShown);
         narrationShown += fresh.size();
-        return fresh.stream()
-                .map(NarrationRenderer::render)
-                .filter(Optional::isPresent)
-                .map(Optional::orElseThrow)
-                .toList();
+        List<String> lines = new java.util.ArrayList<>();
+        for (it.polimi.ingsw.common.protocol.Event event : fresh) {
+            if (event instanceof FlightEvent.Awaiting awaiting) {
+                // A question addressed to this player is the one event worth more than a line.
+                lines.addAll(state.game()
+                        .map(game -> PromptRenderer.render(awaiting.prompt(),
+                                shipOf(game, awaiting.prompt().player()), game.you()))
+                        .orElseGet(() -> List.of("  waiting for " + awaiting.prompt().player())));
+                continue;
+            }
+            NarrationRenderer.render(event).ifPresent(lines::add);
+        }
+        return List.copyOf(lines);
     }
 
     private void print(List<String> lines) {

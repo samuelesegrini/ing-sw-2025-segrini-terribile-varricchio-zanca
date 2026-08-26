@@ -9,6 +9,7 @@ import it.polimi.ingsw.common.protocol.view.TileView;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * A ship, drawn as the board it is.
@@ -101,13 +102,43 @@ public final class ShipRenderer {
      * @return one line per violation, or nothing when there is nothing wrong
      */
     public static List<String> problems(ShipView ship) {
-        if (ship.validation().isLegal()) {
+        List<String> lines = new ArrayList<>();
+        if (!ship.validation().isLegal()) {
+            lines.add("  this ship cannot fly:");
+            for (ShipViolation violation : ship.validation().violations()) {
+                lines.add("    " + violation.description() + "  at " + cellsOf(ship, violation));
+            }
+        }
+        lines.addAll(pieces(ship));
+        return List.copyOf(lines);
+    }
+
+    /**
+     * Lists the parts a broken ship is in.
+     *
+     * <p>A board cannot show this: two components sitting next to each other look joined whether
+     * their connectors meet or not. Being in one piece is a separate question from being legal
+     * and both have to be answered before a ship can fly, so the parts are numbered and the
+     * player picks one.
+     *
+     * @param ship the ship
+     * @return one line per piece, or nothing when the ship is whole
+     */
+    public static List<String> pieces(ShipView ship) {
+        if (ship.isWhole()) {
             return List.of();
         }
         List<String> lines = new ArrayList<>();
-        lines.add("  this ship cannot fly:");
-        for (ShipViolation violation : ship.validation().violations()) {
-            lines.add("    " + violation.description() + "  at " + cellsOf(ship, violation));
+        lines.add("  this ship is in " + ship.pieces().size() + " pieces:");
+        for (int piece = 0; piece < ship.pieces().size(); piece++) {
+            Set<Position> cells = ship.pieces().get(piece);
+            lines.add("    " + piece + ")  " + cells.size()
+                    + (cells.size() == 1 ? " component:  " : " components:  ")
+                    + cells.stream()
+                            .map(cell -> Coordinates.printed(ship, cell))
+                            .sorted()
+                            .reduce((left, right) -> left + " " + right)
+                            .orElse(""));
         }
         return List.copyOf(lines);
     }

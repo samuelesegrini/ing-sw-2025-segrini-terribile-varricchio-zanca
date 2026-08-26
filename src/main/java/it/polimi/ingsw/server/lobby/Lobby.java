@@ -307,11 +307,15 @@ public final class Lobby implements AutoCloseable {
         GameController controller = new GameController(game);
         games.put(table.id(), controller);
 
+        // Everybody is attached before anybody is announced. Announcing as each is bound would
+        // mean the second player never hears about the first, and four players would end up
+        // with four different accounts of the same moment.
         for (Connection player : players) {
             PlayerColor colour = table.colourOf(player);
             playing.put(player.nickname(), new Seated(controller, colour));
-            player.handOverTo(colour, controller.bind(colour, player.channel()));
+            player.handOverTo(colour, controller.attach(colour, player.channel()));
         }
+        players.forEach(player -> controller.announceArrival(table.colourOf(player)));
     }
 
     // ------------------------------------------------------------------ leaving

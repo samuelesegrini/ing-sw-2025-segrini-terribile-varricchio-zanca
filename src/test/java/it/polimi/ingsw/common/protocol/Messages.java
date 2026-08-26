@@ -193,6 +193,7 @@ public final class Messages {
                 Map.of(CABIN, new CellView(tile(ComponentKind.CABIN), 0, List.of(), 2, null),
                         HOLD, new CellView(tile(ComponentKind.CARGO_HOLD), 0,
                                 List.of(GoodColor.BLUE), 0, null)),
+                List.of(Set.of(CABIN, HOLD)),
                 List.of(tile(ComponentKind.STRUCTURAL_MODULE)), 1,
                 new ShipAttributes(5, 3, 4),
                 new ValidationReport(List.of(new ShipViolation(

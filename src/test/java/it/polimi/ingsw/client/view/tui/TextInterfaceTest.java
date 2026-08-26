@@ -198,7 +198,14 @@ class TextInterfaceTest {
     private static void waitUntil(java.util.function.Supplier<java.util.Optional<?>> ready) {
         long deadline = System.nanoTime() + java.time.Duration.ofSeconds(5).toNanos();
         while (System.nanoTime() < deadline && ready.get().isEmpty()) {
-            Thread.onSpinWait();
+            try {
+                // A sleep rather than a spin: a build machine has two cores and other tests
+                // are using them.
+                Thread.sleep(1);
+            } catch (InterruptedException interrupted) {
+                Thread.currentThread().interrupt();
+                break;
+            }
         }
     }
 }

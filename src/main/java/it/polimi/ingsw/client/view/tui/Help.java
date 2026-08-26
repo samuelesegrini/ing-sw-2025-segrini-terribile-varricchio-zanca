@@ -25,6 +25,7 @@ public final class Help {
     private static final List<Line> ALWAYS = List.of(
             new Line("help", "this list"),
             new Line("look [player]", "show a ship — yours, or somebody else's"),
+            new Line("scores", "the ledger, once there is one"),
             new Line("quit", "leave"));
 
     private static final List<Line> LOBBY = List.of(
@@ -80,14 +81,23 @@ public final class Help {
                     new Line("alien <row> <col> <p|b>", "put a purple or brown alien in one"),
                     new Line("done", "fill the rest with people and launch"));
             case FLIGHT -> List.of(
+                    new Line("route", "where everybody is, and who plays first"),
                     new Line("take / leave", "accept or decline what a card is offering"),
-                    new Line("power [<row> <col> …]", "declare, spending these batteries"),
-                    new Line("load / move / drop", "arrange cargo"),
+                    new Line("power [<row> <col> …]", "declare, powering these components"),
+                    new Line("load <colour> <r> <c>", "take a cube a card is offering"),
+                    new Line("move <r> <c> <r> <c> <col>", "shift a cube between holds"),
+                    new Line("drop <r> <c> <colour>", "throw one overboard"),
+                    new Line("done", "finished stowing"),
+                    new Line("crew <r> <c> …", "give up crew, one cabin per person"),
                     new Line("shield <row> <col>", "put something in front of a shot"),
-                    new Line("hit", "take the hit"),
+                    new Line("hit", "take the shot"),
+                    new Line("keep <n>", "choose which piece of a broken ship to fly on"),
                     new Line("planet <n>", "land on a planet"),
                     new Line("give up", "leave the route"));
-            case LOBBY, SCORING, FINISHED -> List.of();
+            case SCORING, FINISHED -> List.of(
+                    new Line("scores", "the final ledger, line by line"),
+                    new Line("route", "where everybody finished"));
+            case LOBBY -> List.of();
         };
     }
 
