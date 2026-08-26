@@ -31,6 +31,7 @@ public final class Flight {
     private final Route route;
     private final Map<PlayerColor, Ship> ships = new LinkedHashMap<>();
     private final Set<PlayerColor> retired = new LinkedHashSet<>();
+    private final Map<PlayerColor, Integer> credits = new LinkedHashMap<>();
 
     /**
      * Starts a flight with every ship on its start space.
@@ -148,6 +149,38 @@ public final class Flight {
      */
     public boolean isDeserted() {
         return route.flyingCount() == 0;
+    }
+
+    // ---------------------------------------------------------------- credits
+
+    /**
+     * Pays a player credits from the bank.
+     *
+     * <p>Several cards pay out mid-flight — an abandoned ship, the Slavers, the Pirates —
+     * and the manual's instruction is simply "take them from the bank; they are yours now"
+     * (quick reference). They are kept apart from the end-of-flight rewards because they
+     * are already earned: a player who gives up afterwards keeps them.
+     *
+     * @param player who is being paid
+     * @param amount how many credits
+     * @throws IllegalArgumentException if the amount is negative or the player is not in this flight
+     */
+    public void awardCredits(PlayerColor player, int amount) {
+        shipOf(player);
+        if (amount < 0) {
+            throw new IllegalArgumentException("a card cannot pay " + amount + " credits");
+        }
+        credits.merge(player, amount, Integer::sum);
+    }
+
+    /**
+     * Returns what a player has been paid during the flight.
+     *
+     * @param player whose purse to look in
+     * @return the credits earned so far
+     */
+    public int creditsEarned(PlayerColor player) {
+        return credits.getOrDefault(player, 0);
     }
 
     // ---------------------------------------------------------------- giving up
