@@ -132,9 +132,11 @@ class RepairAndCrewByTypingTest {
     @Test
     @DisplayName("declaring ready fills the rest with people and launches")
     void launching() {
-        String screen = playing("done", "done", "route");
+        // 'route' is repeated because typing it once, right after declaring ready, is a race
+        // with the other player doing the same. A slower machine loses that race.
+        String screen = playing("done", "done", "route", "route", "route", "route");
 
-        assertTrue(screen.contains("Route"), "the fleet should have launched");
+        assertTrue(screen.contains("Route"), "the fleet should have launched:\n" + screen);
         assertTrue(screen.contains("cards left"));
     }
 

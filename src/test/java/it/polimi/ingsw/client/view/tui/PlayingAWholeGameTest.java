@@ -130,7 +130,9 @@ class PlayingAWholeGameTest {
                 route
                 """);
         for (int turn = 0; turn < 300; turn++) {
-            script.append("leave\npower\nhit\ndone\n");
+            // 'route' goes in the loop rather than once before it. Typed at a fixed point it is
+            // a race with the other player finishing their ship, and a slower machine loses it.
+            script.append("leave\npower\nhit\ndone\nroute\n");
         }
         script.append("scores\nquit\n");
 
@@ -159,16 +161,33 @@ class PlayingAWholeGameTest {
         ServerLink link = ServerLink.connect(
                 Transport.SOCKET, "localhost", server.socketPort(), mine);
         ByteArrayOutputStream screen = new ByteArrayOutputStream();
-        new TextInterface(mine, link,
-                new BufferedReader(new StringReader(
-                        "name samuele\njoin game-1\ndone\ndone\nroute\nquit\n")),
-                new PrintStream(screen, true, StandardCharsets.UTF_8)).run();
+
+        // Two sittings, with a wait between them, which is what a person does: get the ship out
+        // of the shipyard, wait for everybody else, then look at the route. One script typed
+        // straight through is a race against the other player, and a slower machine loses it.
+        type(mine, link, screen, "name samuele\njoin game-1\ndone\ndone\n");
+        waitUntil(() -> mine.game()
+                .map(game -> game.phase() == GamePhase.FLIGHT)
+                .orElse(false));
+        type(mine, link, screen, "route\nquit\n");
         link.close();
 
         String printed = screen.toString(StandardCharsets.UTF_8);
         assertTrue(printed.contains("spaces"));
         assertTrue(printed.contains("cards left"));
         assertTrue(printed.contains("leading"), "somebody is always in front");
+    }
+
+    /**
+     * Types a script at a client, leaving the connection open for the next one.
+     *
+     * <p>The end of the input is the end of the sitting, not the end of the client: a script
+     * without a {@code quit} returns from the loop with everything still connected.
+     */
+    private static void type(ClientState state, ServerLink link, ByteArrayOutputStream screen,
+                             String script) {
+        new TextInterface(state, link, new BufferedReader(new StringReader(script)),
+                new PrintStream(screen, true, StandardCharsets.UTF_8)).run();
     }
 
     @Test
