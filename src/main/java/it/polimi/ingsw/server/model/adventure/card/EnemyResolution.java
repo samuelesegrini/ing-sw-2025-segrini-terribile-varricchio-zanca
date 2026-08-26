@@ -1,7 +1,7 @@
 package it.polimi.ingsw.server.model.adventure.card;
 
-import it.polimi.ingsw.server.model.adventure.resolution.PlayerChoice;
-import it.polimi.ingsw.server.model.adventure.resolution.PlayerPrompt;
+import it.polimi.ingsw.common.game.PlayerChoice;
+import it.polimi.ingsw.common.game.PlayerPrompt;
 import it.polimi.ingsw.common.game.ShipAttribute;
 import it.polimi.ingsw.server.model.adventure.resolution.TurnByTurnResolution;
 import it.polimi.ingsw.common.game.ComponentKind;

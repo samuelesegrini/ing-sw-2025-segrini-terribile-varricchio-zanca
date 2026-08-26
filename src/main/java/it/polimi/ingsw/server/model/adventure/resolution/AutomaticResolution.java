@@ -1,5 +1,7 @@
 package it.polimi.ingsw.server.model.adventure.resolution;
 
+import it.polimi.ingsw.common.game.PlayerChoice;
+import it.polimi.ingsw.common.game.PlayerPrompt;
 import java.util.Optional;
 
 /**

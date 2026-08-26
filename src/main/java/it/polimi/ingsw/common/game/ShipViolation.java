@@ -1,7 +1,5 @@
-package it.polimi.ingsw.server.model.ship;
+package it.polimi.ingsw.common.game;
 
-import it.polimi.ingsw.common.game.Position;
-import it.polimi.ingsw.common.game.ViolationKind;
 import java.util.LinkedHashSet;
 import java.util.Set;
 

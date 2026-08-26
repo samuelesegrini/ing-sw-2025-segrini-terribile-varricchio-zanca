@@ -1,15 +1,16 @@
 package it.polimi.ingsw.server.model.flight;
 
-import it.polimi.ingsw.server.model.component.CabinComponent;
+import it.polimi.ingsw.common.game.BatteryPlan;
 import it.polimi.ingsw.common.game.ComponentKind;
-import it.polimi.ingsw.common.game.GoodColor;
-import it.polimi.ingsw.common.game.PlayerColor;
-import it.polimi.ingsw.server.model.ship.Defence;
-import it.polimi.ingsw.server.model.ship.DamageReport;
+import it.polimi.ingsw.common.game.DamageReport;
 import it.polimi.ingsw.common.game.Direction;
-import it.polimi.ingsw.server.model.ship.Hit;
+import it.polimi.ingsw.common.game.GoodColor;
+import it.polimi.ingsw.common.game.Hit;
 import it.polimi.ingsw.common.game.HitKind;
+import it.polimi.ingsw.common.game.PlayerColor;
 import it.polimi.ingsw.common.game.Position;
+import it.polimi.ingsw.server.model.component.CabinComponent;
+import it.polimi.ingsw.server.model.ship.Defence;
 import it.polimi.ingsw.server.model.ship.Ship;
 import it.polimi.ingsw.server.model.ship.Ships;
 import org.junit.jupiter.api.DisplayName;
@@ -82,7 +83,7 @@ class FlightSimulationTest {
         // Card two, Open Space: everyone declares engine power and moves. Blue takes the lead.
         for (PlayerColor player : List.copyOf(flight.stillFlying())) {
             int power = flight.shipOf(player).attributes(
-                    it.polimi.ingsw.server.model.ship.BatteryPlan.none()).enginePower();
+                    BatteryPlan.none()).enginePower();
             assertEquals(1, power, "one single engine apiece");
         }
         flight.route().advance(PlayerColor.BLUE, 5);
