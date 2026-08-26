@@ -2,8 +2,12 @@ package it.polimi.ingsw.server.model.game;
 
 import it.polimi.ingsw.common.game.GamePhase;
 import it.polimi.ingsw.common.game.PlayerColor;
+import it.polimi.ingsw.common.game.AdventureCardIdentity;
+import it.polimi.ingsw.common.game.PlayerPrompt;
 import it.polimi.ingsw.common.protocol.Command;
+import it.polimi.ingsw.common.protocol.Event;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -47,4 +51,44 @@ interface Phase {
      * @return the next phase, or empty while this one is still running
      */
     Optional<Phase> next();
+
+    /**
+     * Says what happened on the way in.
+     *
+     * <p>Most phases begin by waiting, and have nothing to report. The flight does not: it
+     * turns a card over the moment it starts, and that has to reach the players who were
+     * watching the fleet launch rather than being discovered in the next state.
+     *
+     * @return what to narrate, empty for a phase that starts quietly
+     */
+    default List<Event> onEntry() {
+        return List.of();
+    }
+
+    /**
+     * Returns the decision the game is waiting for.
+     *
+     * @return the outstanding prompt, or empty when the game is waiting for nobody
+     */
+    default Optional<PlayerPrompt> pending() {
+        return Optional.empty();
+    }
+
+    /**
+     * Returns the card being resolved.
+     *
+     * @return the card on the table, or empty when there is not one
+     */
+    default Optional<AdventureCardIdentity> cardOnTheTable() {
+        return Optional.empty();
+    }
+
+    /**
+     * Returns how many cards are still to come.
+     *
+     * @return what is left of the deck, zero before the flight starts
+     */
+    default int cardsLeft() {
+        return 0;
+    }
 }

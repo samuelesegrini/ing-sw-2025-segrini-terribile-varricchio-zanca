@@ -71,7 +71,7 @@ final class CrewPhase implements Phase {
             return Optional.empty();
         }
         game.launch(new Flight(game.level(), game.ships(), startingPositions(),
-                Dice.fair(new java.util.Random())));
+                Dice.fair(game.random())));
         return Optional.of(new FlightPhase(game));
     }
 

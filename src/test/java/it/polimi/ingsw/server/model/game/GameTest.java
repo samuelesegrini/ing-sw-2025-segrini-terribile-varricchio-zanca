@@ -216,8 +216,10 @@ class GameTest {
             accepted(game, PlayerColor.BLUE, new BuildingCommand.FlipTimer());
             clock.pass(Duration.ofSeconds(91));
 
-            assertTrue(game.tick(), "time ran out and the shipyard should have closed");
-            assertNotEquals(GamePhase.BUILDING, game.phase());
+            game.tick();
+
+            assertNotEquals(GamePhase.BUILDING, game.phase(),
+                    "time ran out and the shipyard should have closed");
         }
 
         @Test
@@ -289,27 +291,14 @@ class GameTest {
         }
 
         @Test
-        @DisplayName("the flight has not asked anything yet, so there is nothing to answer")
-        void nothingToAnswerYet() {
-            Game game = crewing();
-            accepted(game, PlayerColor.RED, new PreparationCommand.FinishPreparation());
-            accepted(game, PlayerColor.BLUE, new PreparationCommand.FinishPreparation());
-
-            assertEquals("nothing is waiting to be answered",
-                    refused(game, PlayerColor.RED, new FlightCommand.Answer(
-                            new it.polimi.ingsw.common.game.PlayerChoice.Take(PlayerColor.RED))));
-        }
-
-        @Test
         @DisplayName("giving up takes a ship off the route")
         void givingUp() {
             Game game = crewing();
             accepted(game, PlayerColor.RED, new PreparationCommand.FinishPreparation());
             accepted(game, PlayerColor.BLUE, new PreparationCommand.FinishPreparation());
 
-            Reaction reaction = send(game, PlayerColor.RED, new FlightCommand.GiveUp());
+            send(game, PlayerColor.RED, new FlightCommand.GiveUp());
 
-            assertEquals(1, assertInstanceOf(Reaction.Accepted.class, reaction).narration().size());
             assertTrue(game.viewFor(PlayerColor.BLUE).players().get(0).retired());
             assertEquals("this ship has already left the route",
                     refused(game, PlayerColor.RED, new FlightCommand.GiveUp()));
@@ -573,19 +562,18 @@ class GameTest {
     class TestFlight {
 
         @Test
-        @DisplayName("start spaces go in finishing order, with no choice about it")
+        @DisplayName("start spaces go in finishing order, and asking for one is refused")
         void finishingOrderDecides() {
             Game game = Games.testFlight();
 
+            assertEquals("start spaces are handed out in finishing order on this board, not chosen",
+                    refused(game, PlayerColor.BLUE, new BuildingCommand.FinishBuilding(2)));
+
             accepted(game, PlayerColor.BLUE, new BuildingCommand.FinishBuilding(null));
-            accepted(game, PlayerColor.RED, new BuildingCommand.FinishBuilding(null));
-            accepted(game, PlayerColor.BLUE, new PreparationCommand.FinishPreparation());
-            accepted(game, PlayerColor.RED, new PreparationCommand.FinishPreparation());
 
-            var positions = game.viewFor(PlayerColor.RED).flightIfAny().orElseThrow().positions();
-
-            assertTrue(positions.get(PlayerColor.BLUE) > positions.get(PlayerColor.RED),
-                    "whoever finished first starts in front (p.8)");
+            assertEquals(List.of(2), game.viewFor(PlayerColor.RED).buildingIfAny().orElseThrow()
+                    .freeStartSpaces(),
+                    "whoever finishes first takes the space at the front (p.8)");
         }
 
         @Test

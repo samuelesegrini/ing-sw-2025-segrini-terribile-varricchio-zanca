@@ -95,8 +95,15 @@ public abstract class TurnByTurnResolution implements AdventureResolution {
             throw new IllegalArgumentException(
                     "the card is waiting on the " + prompt.player() + " player, not the " + choice.player());
         }
+        // The answer is applied while the question is still outstanding, so that an answer
+        // the card refuses leaves the question standing. Clearing it first and applying
+        // afterwards loses the prompt on every rejected answer: the card would then be
+        // waiting for nobody while players were still queued behind it, and the flight would
+        // walk straight past them.
+        boolean noFurtherPlayers = apply(choice);
+
         current = null;
-        if (apply(choice)) {
+        if (noFurtherPlayers) {
             queue.clear();
         }
         if (followUp != null) {
@@ -136,16 +143,6 @@ public abstract class TurnByTurnResolution implements AdventureResolution {
      */
     protected final void askAgain(PlayerPrompt prompt) {
         followUp = prompt;
-    }
-
-    /**
-     * Returns the question currently outstanding, for a subclass that needs to check what
-     * it asked.
-     *
-     * @return the outstanding prompt, or empty when there is none
-     */
-    protected final Optional<PlayerPrompt> outstanding() {
-        return Optional.ofNullable(current);
     }
 
     private void ensureStarted() {

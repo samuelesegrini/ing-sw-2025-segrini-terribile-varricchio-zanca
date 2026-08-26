@@ -115,6 +115,29 @@ public final class StartSpaces {
      * @throws IllegalArgumentException if the choice is not one they may make
      */
     public int claim(PlayerColor player, OptionalInt chosen) {
+        int space = checkClaimable(player, chosen);
+        claimed.put(player, space);
+        return space;
+    }
+
+    /**
+     * Works out which space a claim would take, and complains if it could not be made.
+     *
+     * <p>Separate from {@link #claim} because taking a place on the starting line is the second
+     * half of declaring a ship finished, and the two halves have to succeed or fail together.
+     * Finishing first and discovering afterwards that the space was refused leaves a ship that
+     * is built, out of the shipyard, and not on the board — which is a state nothing else in
+     * this game knows how to recover from.
+     *
+     * <p>Changes nothing.
+     *
+     * @param player who is claiming
+     * @param chosen the space they picked, or empty to take the best free one
+     * @return the space the claim would take
+     * @throws IllegalStateException    if the player has already finished, or nothing is free
+     * @throws IllegalArgumentException if the choice is not one they may make
+     */
+    public int checkClaimable(PlayerColor player, OptionalInt chosen) {
         if (claimed.containsKey(player)) {
             throw new IllegalStateException("the " + player + " player has already taken space " + claimed.get(player));
         }
@@ -122,10 +145,7 @@ public final class StartSpaces {
         if (free.isEmpty()) {
             throw new IllegalStateException("every start space is taken");
         }
-
-        int space = chosen.isEmpty() ? free.getFirst() : checkedChoice(chosen.getAsInt(), free);
-        claimed.put(player, space);
-        return space;
+        return chosen.isEmpty() ? free.getFirst() : checkedChoice(chosen.getAsInt(), free);
     }
 
     private int checkedChoice(int wanted, List<Integer> free) {
