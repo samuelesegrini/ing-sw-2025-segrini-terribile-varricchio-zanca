@@ -180,6 +180,13 @@ sequence of questions and the answers to them, and there is nothing else a fligh
 of. There is no `TakeReward` command, no `DeclareFirepower` command, and no switch anywhere
 that has to grow when a card is added.
 
+**Arranging cargo is several answers, not one.** A player landing on a planet takes a cube,
+decides the red one will not fit anywhere useful, moves a blue one to free the special hold,
+and only then says they have finished. So `ArrangeCargo` is answered by any number of
+`CargoStowed` — load, move, or jettison — and closed by `Done`. Each is a separate answer
+because each can be refused on its own: a red cube in an ordinary hold, a hold already full, a
+cube the card never offered.
+
 That is not a coincidence. `PlayerPrompt` and `PlayerChoice` were written as the model's
 driving interface before there was a network, and turned out to already be the protocol.
 

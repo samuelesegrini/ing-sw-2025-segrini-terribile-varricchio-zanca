@@ -27,6 +27,9 @@ public final class Answers {
             case PlayerPrompt.TakeOrLeave leave -> new PlayerChoice.Leave(leave.player());
             case PlayerPrompt.DeclarePower declare ->
                     new PlayerChoice.Declaration(declare.player(), BatteryPlan.none());
+            // Done, not a cube: the least interesting answer to an offer of goods is to take
+            // none of them. What happens when a player does take some is CargoTest's business
+            // and PlanetsCardTest's, not this helper's.
             case PlayerPrompt.ArrangeCargo cargo -> new PlayerChoice.Done(cargo.player());
             case PlayerPrompt.GiveUpCrew crew -> new PlayerChoice.CrewGiven(crew.player(),
                     crew.cabins().stream().limit(crew.count()).toList());

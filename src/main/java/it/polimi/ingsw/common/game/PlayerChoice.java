@@ -2,6 +2,7 @@ package it.polimi.ingsw.common.game;
 
 
 import java.io.Serializable;
+import java.util.Optional;
 import java.util.List;
 import java.util.Set;
 
@@ -172,10 +173,109 @@ public sealed interface PlayerChoice extends Serializable {
     }
 
     /**
-     * The planet a player is landing on.
+     * What a player is doing with the goods a card is offering.
+     *
+     * <p>Arranging cargo is several decisions, not one. A player landing on a planet takes a
+     * cube, decides the red one will not fit anywhere useful, moves a blue one to make room,
+     * and only then says they have finished. Until this existed the only answer to an
+     * {@link PlayerPrompt.ArrangeCargo} was {@link Done}, so the goods were offered and could
+     * never be taken.
+     *
+     * @param player who is stowing
+     * @param what   the kind of move
+     * @param hold   the hold being loaded, emptied, or moved out of
+     * @param to     the hold being moved into, {@code null} unless this is a move
+     * @param colour which cube
+     */
+    record CargoStowed(PlayerColor player, Stowing what, Position hold, Position to,
+                       GoodColor colour) implements PlayerChoice {
+
+        /**
+         * Validates the move.
+         *
+         * @throws NullPointerException if a part this kind of move needs is {@code null}
+         */
+        public CargoStowed {
+            if (player == null || what == null || hold == null || colour == null) {
+                throw new NullPointerException("stowing needs a player, a move, a hold and a cube");
+            }
+            if (what == Stowing.MOVE && to == null) {
+                throw new NullPointerException("moving a cube needs somewhere to move it to");
+            }
+        }
+
+        /**
+         * Takes a cube a card is offering.
+         *
+         * @param player who is taking it
+         * @param hold   where to put it
+         * @param colour which cube
+         * @return the answer
+         */
+        public static CargoStowed load(PlayerColor player, Position hold, GoodColor colour) {
+            return new CargoStowed(player, Stowing.LOAD, hold, null, colour);
+        }
+
+        /**
+         * Moves a cube already aboard from one hold to another.
+         *
+         * <p>Worth doing because a red cube needs a special hold, and the room it wants may be
+         * taken by something that would sit anywhere.
+         *
+         * @param player who is rearranging
+         * @param from   where it is
+         * @param to     where it should go
+         * @param colour which cube
+         * @return the answer
+         */
+        public static CargoStowed move(PlayerColor player, Position from, Position to,
+                                       GoodColor colour) {
+            return new CargoStowed(player, Stowing.MOVE, from, to, colour);
+        }
+
+        /**
+         * Throws a cube overboard, returning it to the bank.
+         *
+         * @param player who is jettisoning it
+         * @param hold   where it is
+         * @param colour which cube
+         * @return the answer
+         */
+        public static CargoStowed jettison(PlayerColor player, Position hold, GoodColor colour) {
+            return new CargoStowed(player, Stowing.JETTISON, hold, null, colour);
+        }
+
+        /**
+         * Returns where a moved cube is going.
+         *
+         * @return the destination hold, or empty for anything but a move
+         */
+        public Optional<Position> destination() {
+            return Optional.ofNullable(to);
+        }
+    }
+
+    /** The three things a player can do with a cube while cargo operations are open. */
+    enum Stowing {
+
+        /** Take one the card is offering. */
+        LOAD,
+
+        /** Shift one already aboard, usually to free a special hold for a red cube. */
+        MOVE,
+
+        /** Throw one overboard, back to the bank. */
+        JETTISON
+    }
+
+    /**
+     * Which planet a player is landing on.
+     *
+     * <p>A planet taken is gone: the leader chooses first, and whoever is behind them chooses
+     * from what is left (manual p.12).
      *
      * @param player who is landing
-     * @param planet the planet's printed number
+     * @param planet which planet, counted from zero as the card prints them
      */
     record PlanetChosen(PlayerColor player, int planet) implements PlayerChoice {
 
