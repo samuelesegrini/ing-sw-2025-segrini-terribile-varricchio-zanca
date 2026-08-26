@@ -281,7 +281,7 @@ class MalformedMessagesTest {
         }
 
         private BuildingView shipyard(int faceDown, int hourglassSpaces, long seconds) {
-            return new BuildingView(faceDown, List.of(), null, List.of(), null,
+            return new BuildingView(faceDown, List.of(), null, null, List.of(), null,
                     hourglassSpaces, seconds, Set.of(), List.of());
         }
 

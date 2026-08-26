@@ -62,6 +62,20 @@ public final class Glyphs {
     }
 
     /**
+     * Describes a tile nobody has welded yet.
+     *
+     * <p>The same symbol it will have once it is down, minus whatever it would be holding —
+     * which is nothing, since a tile in the hand is empty. Showing a player one thing in their
+     * hand and another on the board would make them read the board twice.
+     *
+     * @param tile the tile
+     * @return exactly {@value #CELL_WIDTH} characters
+     */
+    public static String of(TileView tile) {
+        return of(new CellView(tile, 0, java.util.List.of(), 0, null));
+    }
+
+    /**
      * Names a component in words, for a legend or an inspection.
      *
      * @param kind what it is

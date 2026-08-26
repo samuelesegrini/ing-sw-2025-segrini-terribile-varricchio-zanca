@@ -145,6 +145,10 @@ know them will build an interface that lies:
   outline and touching what is already built. Whether the connectors match is *not* checked:
   the manual lets a player build an illegal ship and find out during validation, and taking
   that away would be changing the game.
+- **A tile down is not a tile welded**, and a board cannot show the difference — the two look
+  identical once a tile is in a square. `BuildingView.unwelded` names the square holding a loose
+  one, because whether it can still be moved for nothing or only thrown away is the whole
+  decision between `AdjustPlacement` and `Weld`.
 - **The last turn of the glass is restricted.** Anyone may `FlipTimer`, except that the final
   turn may only be made by a player who has already finished. Otherwise somebody still
   building could start the final countdown at a moment that suits them.

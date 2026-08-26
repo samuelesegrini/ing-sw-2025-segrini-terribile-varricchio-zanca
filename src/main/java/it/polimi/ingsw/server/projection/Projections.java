@@ -182,6 +182,7 @@ public final class Projections {
                 pool.faceDownCount(),
                 pool.faceUp().stream().map(Projections::tileOf).toList(),
                 builder.inHand().map(Projections::tileOf).orElse(null),
+                builder.unweldedCell().orElse(null),
                 List.copyOf(peekedCards),
                 timer.isInPlay() ? timer.space() : null,
                 timer.spaces(),
