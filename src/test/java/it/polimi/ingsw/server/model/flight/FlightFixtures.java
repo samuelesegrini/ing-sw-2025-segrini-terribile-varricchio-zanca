@@ -17,8 +17,11 @@ import java.util.Map;
  * <p>Hand-built board specifications drift from the real ones, and a test that passes
  * against a board nobody plays on is worth very little. Loading the bundled catalogue
  * once keeps the flight tests honest about route lengths, start spaces and rewards.
+ *
+ * <p>Public because the card tests need flights too, and every card is tested by playing
+ * it against one.
  */
-final class FlightFixtures {
+public final class FlightFixtures {
 
     private static final GameData DATA = GameDataLoader.loadBundled();
 
@@ -26,7 +29,7 @@ final class FlightFixtures {
     }
 
     /** Returns the real specification for a level, as shipped. */
-    static LevelSpec levelSpec(GameLevel level) {
+    public static LevelSpec levelSpec(GameLevel level) {
         return DATA.level(level);
     }
 
@@ -36,7 +39,7 @@ final class FlightFixtures {
      * <p>Iteration order decides who leads, so a test can say "red, then blue" and get a
      * route order it can reason about.
      */
-    static Flight levelTwoFlight(Map<PlayerColor, Ship> ships) {
+    public static Flight levelTwoFlight(Map<PlayerColor, Ship> ships) {
         LevelSpec level = levelSpec(GameLevel.LEVEL_II);
         List<Integer> spaces = level.flightBoard().startingPositions();
         Map<PlayerColor, Integer> starts = new LinkedHashMap<>();
