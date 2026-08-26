@@ -90,8 +90,12 @@ class PlayingAWholeGameTest {
         waitFor(state::gameId);
 
         partnerLoop = new Thread(() -> {
-            boolean built = false;
-            boolean crewed = false;
+            // Driven by what the phase is rather than by what has already been said. A flag
+            // saying "I have finished building" is a claim about a command that may have been
+            // refused, or lost, or arrived while the game was somewhere else; the phase is a
+            // fact. Saying so twice is refused harmlessly, and never saying it at all leaves
+            // the fleet on the ground for ever.
+            GamePhase said = null;
             while (!Thread.currentThread().isInterrupted()) {
                 Optional<GameView> seen = state.game();
                 if (seen.isEmpty()) {
@@ -102,12 +106,13 @@ class PlayingAWholeGameTest {
                 if (game.phase() == GamePhase.FINISHED) {
                     return;
                 }
-                if (game.phase() == GamePhase.BUILDING && !built) {
-                    built = true;
+                if (game.phase() == GamePhase.BUILDING && said != GamePhase.BUILDING) {
+                    said = GamePhase.BUILDING;
                     partner.send(new it.polimi.ingsw.common.protocol.BuildingCommand
                             .FinishBuilding(null));
-                } else if (game.phase() == GamePhase.CREW_PLACEMENT && !crewed) {
-                    crewed = true;
+                } else if (game.phase() == GamePhase.CREW_PLACEMENT
+                        && said != GamePhase.CREW_PLACEMENT) {
+                    said = GamePhase.CREW_PLACEMENT;
                     partner.send(new PreparationCommand.FinishPreparation());
                 } else {
                     game.pendingIfAny()
@@ -189,7 +194,7 @@ class PlayingAWholeGameTest {
         // still in the shipyard, is refused, and nothing ever declares the crew.
         type(mine, link, screen, "name samuele\njoin game-1\ndone\n");
         waitUntil(() -> phaseOf(mine) == GamePhase.CREW_PLACEMENT);
-        type(mine, link, screen, "done\n");
+        type(mine, link, screen, "done\ndone\n");
         waitUntil(() -> phaseOf(mine) == GamePhase.FLIGHT);
         type(mine, link, screen, "route\nquit\n");
         link.close();
