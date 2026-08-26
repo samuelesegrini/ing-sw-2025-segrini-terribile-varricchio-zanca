@@ -95,7 +95,7 @@ class PlayingAWholeGameTest {
             while (!Thread.currentThread().isInterrupted()) {
                 Optional<GameView> seen = state.game();
                 if (seen.isEmpty()) {
-                    Thread.onSpinWait();
+                    pause();
                     continue;
                 }
                 GameView game = seen.orElseThrow();
@@ -115,7 +115,7 @@ class PlayingAWholeGameTest {
                             .ifPresent(prompt -> partner.send(
                                     new FlightCommand.Answer(Answers.simplestTo(prompt))));
                 }
-                Thread.onSpinWait();
+                pause();
             }
         }, "the-other-player");
         partnerLoop.setDaemon(true);
@@ -248,8 +248,23 @@ class PlayingAWholeGameTest {
             if (condition.getAsBoolean()) {
                 return;
             }
-            Thread.onSpinWait();
+            pause();
         }
         throw new AssertionError("that never happened within " + PATIENCE);
+    }
+
+    /**
+     * Yields for a moment.
+     *
+     * <p>A sleep rather than a spin. This partner runs for a whole flight, and a hot loop that
+     * long takes a core to itself — which on a two-core build machine is half the machine, and
+     * turns a one-second test into one that never finishes.
+     */
+    private static void pause() {
+        try {
+            Thread.sleep(1);
+        } catch (InterruptedException interrupted) {
+            Thread.currentThread().interrupt();
+        }
     }
 }

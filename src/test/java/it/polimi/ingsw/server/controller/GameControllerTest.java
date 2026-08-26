@@ -372,7 +372,14 @@ class GameControllerTest {
             if (condition.getAsBoolean()) {
                 return;
             }
-            Thread.onSpinWait();
+            try {
+                // A sleep rather than a spin: a build machine has two cores and other tests
+                // are using them.
+                Thread.sleep(1);
+            } catch (InterruptedException interrupted) {
+                Thread.currentThread().interrupt();
+                break;
+            }
         }
         assertNotNull(null, "the game never got there");
     }

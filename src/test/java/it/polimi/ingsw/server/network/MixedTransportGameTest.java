@@ -329,7 +329,14 @@ class MixedTransportGameTest {
             if (condition.getAsBoolean()) {
                 return;
             }
-            Thread.onSpinWait();
+            try {
+                // A sleep rather than a spin: a build machine has two cores and other tests
+                // are using them.
+                Thread.sleep(1);
+            } catch (InterruptedException interrupted) {
+                Thread.currentThread().interrupt();
+                break;
+            }
         }
         throw new AssertionError("that never happened within " + PATIENCE);
     }

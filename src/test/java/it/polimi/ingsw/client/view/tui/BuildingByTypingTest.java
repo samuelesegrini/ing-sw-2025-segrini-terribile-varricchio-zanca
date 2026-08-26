@@ -186,7 +186,14 @@ class BuildingByTypingTest {
     private static void waitFor(Supplier<Optional<?>> ready) {
         long deadline = System.nanoTime() + PATIENCE.toNanos();
         while (System.nanoTime() < deadline && ready.get().isEmpty()) {
-            Thread.onSpinWait();
+            try {
+                // A sleep rather than a spin: a build machine has two cores and other tests
+                // are using them.
+                Thread.sleep(1);
+            } catch (InterruptedException interrupted) {
+                Thread.currentThread().interrupt();
+                break;
+            }
         }
     }
 }
