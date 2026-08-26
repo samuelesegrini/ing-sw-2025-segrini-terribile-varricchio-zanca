@@ -395,7 +395,7 @@ public final class Ship {
 
     private DamageReport report(Optional<Position> target, DamageReport.Outcome outcome,
                                 Optional<Position> destroyed) {
-        return new DamageReport(target, outcome, destroyed, pieces());
+        return new DamageReport(target.orElse(null), outcome, destroyed.orElse(null), pieces());
     }
 
     /**

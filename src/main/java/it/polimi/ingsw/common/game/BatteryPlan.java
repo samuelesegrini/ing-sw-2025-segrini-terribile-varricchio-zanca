@@ -1,5 +1,6 @@
 package it.polimi.ingsw.common.game;
 
+import java.io.Serializable;
 import java.util.Set;
 
 /**
@@ -12,7 +13,7 @@ import java.util.Set;
  *
  * @param powered the cells holding the components to run
  */
-public record BatteryPlan(Set<Position> powered) {
+public record BatteryPlan(Set<Position> powered) implements Serializable {
 
     /**
      * Takes a defensive copy of the chosen cells.

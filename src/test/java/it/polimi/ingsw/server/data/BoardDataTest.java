@@ -1,6 +1,6 @@
 package it.polimi.ingsw.server.data;
 
-import it.polimi.ingsw.server.model.adventure.CardLevel;
+import it.polimi.ingsw.common.game.CardLevel;
 import it.polimi.ingsw.common.game.GameLevel;
 import it.polimi.ingsw.common.game.GoodColor;
 import it.polimi.ingsw.server.model.board.LevelSpec;

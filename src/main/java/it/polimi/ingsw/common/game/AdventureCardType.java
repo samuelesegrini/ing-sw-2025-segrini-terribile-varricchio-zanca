@@ -1,4 +1,4 @@
-package it.polimi.ingsw.server.model.adventure;
+package it.polimi.ingsw.common.game;
 
 /**
  * The kinds of adventure a flight can run into.

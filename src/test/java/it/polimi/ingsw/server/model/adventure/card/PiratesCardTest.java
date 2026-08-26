@@ -2,9 +2,9 @@ package it.polimi.ingsw.server.model.adventure.card;
 
 import it.polimi.ingsw.server.data.GameData;
 import it.polimi.ingsw.server.data.GameDataLoader;
-import it.polimi.ingsw.server.model.adventure.AdventureCardIdentity;
-import it.polimi.ingsw.server.model.adventure.AdventureCardType;
-import it.polimi.ingsw.server.model.adventure.CardLevel;
+import it.polimi.ingsw.common.game.AdventureCardIdentity;
+import it.polimi.ingsw.common.game.AdventureCardType;
+import it.polimi.ingsw.common.game.CardLevel;
 import it.polimi.ingsw.server.model.adventure.resolution.AdventureResolution;
 import it.polimi.ingsw.common.game.PlayerChoice;
 import it.polimi.ingsw.common.game.PlayerPrompt;
@@ -265,7 +265,7 @@ class PiratesCardTest {
                     (PlayerPrompt.ChooseDefence) resolution.pending().orElseThrow();
 
             assertEquals(java.util.Set.of(), shot.options());
-            assertTrue(shot.target().isPresent(), "the player can at least see what they are losing");
+            assertTrue(shot.targetIfAny().isPresent(), "the player can at least see what they are losing");
         }
 
         @Test
@@ -281,7 +281,7 @@ class PiratesCardTest {
 
             PlayerPrompt.ChooseDefence shot =
                     (PlayerPrompt.ChooseDefence) resolution.pending().orElseThrow();
-            assertTrue(shot.target().isEmpty(), "a roll of two names no column");
+            assertTrue(shot.targetIfAny().isEmpty(), "a roll of two names no column");
 
             takeTheHit(resolution, PlayerColor.RED);
 

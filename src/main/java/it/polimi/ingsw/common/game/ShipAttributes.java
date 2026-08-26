@@ -1,5 +1,7 @@
 package it.polimi.ingsw.common.game;
 
+import java.io.Serializable;
+
 /**
  * What a ship is worth right now, for the three things cards compare.
  *
@@ -12,7 +14,7 @@ package it.polimi.ingsw.common.game;
  * @param enginePower     engine power, a whole number
  * @param crew            humans and aliens aboard
  */
-public record ShipAttributes(int firepowerHalves, int enginePower, int crew) {
+public record ShipAttributes(int firepowerHalves, int enginePower, int crew) implements Serializable {
 
     /**
      * Returns firepower as a number for display.

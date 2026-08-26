@@ -1,6 +1,6 @@
 package it.polimi.ingsw.server.model.board;
 
-import it.polimi.ingsw.server.model.adventure.CardLevel;
+import it.polimi.ingsw.common.game.CardLevel;
 
 import java.util.EnumMap;
 import java.util.Map;

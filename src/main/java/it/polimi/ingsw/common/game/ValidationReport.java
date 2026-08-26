@@ -1,5 +1,6 @@
 package it.polimi.ingsw.common.game;
 
+import java.io.Serializable;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -14,7 +15,7 @@ import java.util.Set;
  *
  * @param violations every broken rule found, in the order they were found
  */
-public record ValidationReport(List<ShipViolation> violations) {
+public record ValidationReport(List<ShipViolation> violations) implements Serializable {
 
     /**
      * Takes a defensive copy of the violations.

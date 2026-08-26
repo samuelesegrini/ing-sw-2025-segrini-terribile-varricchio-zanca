@@ -1,5 +1,7 @@
 package it.polimi.ingsw.common.game;
 
+import java.io.Serializable;
+
 
 /**
  * One incoming threat: what it is, where it comes from, and which line it is on.
@@ -13,7 +15,7 @@ package it.polimi.ingsw.common.game;
  * @param from    the direction it arrives from
  * @param diceSum the sum of the two dice that named its line
  */
-public record Hit(HitKind kind, Direction from, int diceSum) {
+public record Hit(HitKind kind, Direction from, int diceSum) implements Serializable {
 
     /**
      * Validates the threat.

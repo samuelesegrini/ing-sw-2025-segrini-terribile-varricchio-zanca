@@ -1,9 +1,9 @@
 package it.polimi.ingsw.server.model.building;
 
-import it.polimi.ingsw.server.model.adventure.AdventureCardIdentity;
-import it.polimi.ingsw.server.model.adventure.AdventureCardType;
+import it.polimi.ingsw.common.game.AdventureCardIdentity;
+import it.polimi.ingsw.common.game.AdventureCardType;
 import it.polimi.ingsw.server.model.adventure.AdventureDeck;
-import it.polimi.ingsw.server.model.adventure.CardLevel;
+import it.polimi.ingsw.common.game.CardLevel;
 import it.polimi.ingsw.server.model.board.DeckComposition;
 import it.polimi.ingsw.server.model.board.ShipBoardSpec;
 import it.polimi.ingsw.common.game.ComponentKind;

@@ -1,6 +1,6 @@
 package it.polimi.ingsw.server.model.building;
 
-import it.polimi.ingsw.server.model.adventure.CardLevel;
+import it.polimi.ingsw.common.game.CardLevel;
 import it.polimi.ingsw.server.model.board.DeckComposition;
 import it.polimi.ingsw.server.model.board.FlightBoardSpec;
 import it.polimi.ingsw.server.model.board.RewardTable;

@@ -2,9 +2,9 @@ package it.polimi.ingsw.server.model.adventure.card;
 
 import it.polimi.ingsw.server.data.GameData;
 import it.polimi.ingsw.server.data.GameDataLoader;
-import it.polimi.ingsw.server.model.adventure.AdventureCardIdentity;
-import it.polimi.ingsw.server.model.adventure.AdventureCardType;
-import it.polimi.ingsw.server.model.adventure.CardLevel;
+import it.polimi.ingsw.common.game.AdventureCardIdentity;
+import it.polimi.ingsw.common.game.AdventureCardType;
+import it.polimi.ingsw.common.game.CardLevel;
 import it.polimi.ingsw.server.model.adventure.resolution.AdventureResolution;
 import it.polimi.ingsw.common.game.PlayerChoice;
 import it.polimi.ingsw.common.game.PlayerPrompt;

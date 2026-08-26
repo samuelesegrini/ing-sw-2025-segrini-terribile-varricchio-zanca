@@ -1,6 +1,7 @@
-package it.polimi.ingsw.server.model.flight;
+package it.polimi.ingsw.common.game;
 
-import it.polimi.ingsw.common.game.PlayerColor;
+import java.io.Serializable;
+
 
 /**
  * One player's account at journey's end, itemised.
@@ -23,7 +24,7 @@ public record ScoreSheet(PlayerColor player,
                          int prettiestShip,
                          int goodsSold,
                          int creditsEarned,
-                         int lostComponents) {
+                         int lostComponents) implements Serializable {
 
     /**
      * Returns what the player walks away with.
