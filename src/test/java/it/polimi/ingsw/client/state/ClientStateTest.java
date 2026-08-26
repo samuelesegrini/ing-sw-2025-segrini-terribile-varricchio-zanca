@@ -39,6 +39,7 @@ class ClientStateTest {
         assertTrue(state.gameId().isEmpty());
         assertTrue(state.game().isEmpty());
         assertTrue(state.lastRefusal().isEmpty());
+        assertTrue(state.lostConnection().isEmpty());
         assertEquals(List.of(), state.openGames());
         assertEquals(List.of(), state.narration());
         assertTrue(state.isConnected());
@@ -72,10 +73,20 @@ class ClientStateTest {
     }
 
     @Test
-    @DisplayName("a refusal is remembered until something happens")
+    @DisplayName("a refusal appears once in the narration, which is where a screen prints it from")
+    void refusalsAreSaidOnce() {
+        state.apply(new GameEvent.Rejected("Weld", "there is nothing waiting to be welded"));
+
+        assertEquals("there is nothing waiting to be welded", state.lastRefusal().orElseThrow());
+        assertEquals(1, state.narration().size());
+        assertEquals(0, state.narrationAfter(1).size(),
+                "a stream each event appears in exactly once is what 'say this once' wants");
+    }
+
+    @Test
+    @DisplayName("a refusal is forgotten when something happens")
     void refusalsAreTransient() {
         state.apply(new GameEvent.Rejected("Weld", "there is nothing waiting to be welded"));
-        assertEquals("there is nothing waiting to be welded", state.lastRefusal().orElseThrow());
 
         state.apply(new GameEvent.StateChanged(Messages.state()));
 
@@ -136,7 +147,9 @@ class ClientStateTest {
         state.disconnected("the other end hung up");
 
         assertFalse(state.isConnected());
-        assertEquals("the other end hung up", state.lastRefusal().orElseThrow());
+        assertEquals("the other end hung up", state.lostConnection().orElseThrow());
+        assertTrue(state.lastRefusal().isEmpty(),
+                "a lost connection is not a refused command");
     }
 
     @Test

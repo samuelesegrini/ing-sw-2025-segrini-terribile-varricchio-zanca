@@ -49,6 +49,7 @@ public final class ClientState {
     private GameView game;
     private List<GameSummary> openGames = List.of();
     private String lastRefusal;
+    private String lostConnection;
     private boolean connected = true;
 
     /**
@@ -94,7 +95,7 @@ public final class ClientState {
      */
     public synchronized void disconnected(String reason) {
         connected = false;
-        lastRefusal = reason;
+        lostConnection = reason;
         listeners.forEach(Runnable::run);
     }
 
@@ -166,12 +167,30 @@ public final class ClientState {
      * Returns why the last command was refused.
      *
      * <p>Cleared by the next state, because a refusal is about something that did not happen
-     * and stops being interesting the moment something does.
+     * and stops being interesting the moment something does. It is not cleared by being read:
+     * this is a record of the last thing the client was told, and a reader that changed it
+     * would make it something else.
+     *
+     * <p>A screen that wants to <em>show</em> a refusal once should print it from the narration
+     * rather than from here, since the narration is already a stream each event appears in
+     * exactly once.
      *
      * @return the reason, or empty when nothing has been refused since
      */
     public synchronized Optional<String> lastRefusal() {
         return Optional.ofNullable(lastRefusal);
+    }
+
+    /**
+     * Returns why the connection went, if it has.
+     *
+     * <p>Not consumed, because it does not stop being true. A client whose server has gone is
+     * in that state until it is restarted.
+     *
+     * @return the reason, or empty while the connection is up
+     */
+    public synchronized Optional<String> lostConnection() {
+        return Optional.ofNullable(lostConnection);
     }
 
     /**

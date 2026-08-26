@@ -1,5 +1,6 @@
 package it.polimi.ingsw;
 
+import it.polimi.ingsw.common.transport.DefaultPorts;
 import it.polimi.ingsw.common.transport.TransportException;
 import it.polimi.ingsw.server.network.Server;
 
@@ -26,8 +27,8 @@ public final class ServerMain {
      *             the operating system for a free one
      */
     public static void main(String[] args) {
-        int socketPort = portFrom(args, 0, Server.DEFAULT_SOCKET_PORT);
-        int rmiPort = portFrom(args, 1, Server.DEFAULT_RMI_PORT);
+        int socketPort = portFrom(args, 0, DefaultPorts.SOCKET);
+        int rmiPort = portFrom(args, 1, DefaultPorts.RMI);
 
         Server server;
         try {
