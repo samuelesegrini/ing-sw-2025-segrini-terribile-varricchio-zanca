@@ -44,9 +44,25 @@ class PlayingAWholeGameTest {
 
     private static final Duration PATIENCE = Duration.ofSeconds(20);
 
+    /** The same shuffle and the same dice every run, so the flight is the same flight. */
+    private static final long SEED = 20260826L;
+
     private Server server;
     private ServerLink partner;
     private Thread partnerLoop;
+
+    /**
+     * A server whose game is the same one every time.
+     *
+     * <p>{@code Server.start(0, 0)} shuffles from an unseeded generator, so the cards differ on
+     * every run — and a script of typed answers that happens to cover one flight will not cover
+     * the next. That is fine for a test about connecting and fatal for a test about playing.
+     */
+    private static Server reproducible() {
+        return Server.start(0, 0, it.polimi.ingsw.server.data.GameDataLoader.loadBundled(),
+                new java.util.Random(SEED), java.time.InstantSource.system(),
+                it.polimi.ingsw.server.lobby.DisconnectionPolicy.GAME_CARRIES_ON);
+    }
 
     @AfterEach
     void shutDown() {
@@ -109,7 +125,7 @@ class PlayingAWholeGameTest {
     @Test
     @DisplayName("somebody types their way from an empty shipyard to the final ledger")
     void aWholeGameByTyping() {
-        server = Server.start(0, 0);
+        server = reproducible();
         ClientState theirs = new ClientState();
         partner = ServerLink.connect(Transport.SOCKET, "localhost", server.socketPort(), theirs);
         seatThePartner(theirs);
@@ -129,10 +145,14 @@ class PlayingAWholeGameTest {
                 done
                 route
                 """);
-        for (int turn = 0; turn < 300; turn++) {
-            // 'route' goes in the loop rather than once before it. Typed at a fixed point it is
+        for (int turn = 0; turn < 120; turn++) {
+            // One of each answer a card can want. Whichever question is outstanding, exactly one
+            // of these is read as an answer and the rest are told they are not — which is the
+            // point of reading a line against the prompt rather than against a table of verbs.
+            //
+            // 'route' is in here rather than once before the loop: typed at a fixed point it is
             // a race with the other player finishing their ship, and a slower machine loses it.
-            script.append("leave\npower\nhit\ndone\nroute\n");
+            script.append("leave\npower\nhit\ndone\nkeep 0\nplanet 0\ncrew 7 7\nroute\n");
         }
         script.append("scores\nquit\n");
 
@@ -152,7 +172,7 @@ class PlayingAWholeGameTest {
     @Test
     @DisplayName("the route can be looked at whenever, and says who plays first")
     void lookingAtTheRoute() {
-        server = Server.start(0, 0);
+        server = reproducible();
         ClientState theirs = new ClientState();
         partner = ServerLink.connect(Transport.SOCKET, "localhost", server.socketPort(), theirs);
         seatThePartner(theirs);
@@ -193,7 +213,7 @@ class PlayingAWholeGameTest {
     @Test
     @DisplayName("asking for a ledger before there is one says so rather than showing an empty table")
     void noLedgerYet() {
-        server = Server.start(0, 0);
+        server = reproducible();
         ClientState theirs = new ClientState();
         partner = ServerLink.connect(Transport.SOCKET, "localhost", server.socketPort(), theirs);
         seatThePartner(theirs);

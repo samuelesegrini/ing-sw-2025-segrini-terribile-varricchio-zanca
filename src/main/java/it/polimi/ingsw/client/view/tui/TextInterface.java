@@ -541,19 +541,56 @@ public final class TextInterface implements UserInterface {
 
     // ------------------------------------------------------------------ printing
 
+    /** How long to wait for a server that has nothing to say at all. */
+    private static final long ANSWER_TIMEOUT_MS = 500;
+
+    /** How long the server has to be quiet before it is taken to have finished answering. */
+    private static final long QUIET_MS = 25;
+
     private void send(Command command) {
+        int before = state.narration().size();
         server.send(command);
-        // Give the server a moment to answer, so that the next thing the player sees is the
-        // consequence of what they typed rather than the prompt again. A tenth of a second is
-        // below what anybody notices and above a loopback round trip.
-        settle();
+        awaitAnswer(before);
     }
 
-    private void settle() {
-        try {
-            Thread.sleep(100);
-        } catch (InterruptedException interrupted) {
-            Thread.currentThread().interrupt();
+    /**
+     * Waits for the server to answer, and then for it to stop.
+     *
+     * <p>Waiting for the first event is not enough: joining a game answers with a seat and then,
+     * a moment later, with the whole board once the last player sits down. A client that carried
+     * on after the first would draw a prompt saying it was still waiting for people who had
+     * already arrived.
+     *
+     * <p>So it waits until the server has been quiet for a moment. That is fast when there is an
+     * answer and bounded when there is not — some commands are refused by the client itself and
+     * never reach the server at all.
+     *
+     * @param narrationBefore how much had been heard before the command went out
+     */
+    private void awaitAnswer(int narrationBefore) {
+        long deadline = System.nanoTime()
+                + java.time.Duration.ofMillis(ANSWER_TIMEOUT_MS).toNanos();
+        long quiet = java.time.Duration.ofMillis(QUIET_MS).toNanos();
+        int heard = narrationBefore;
+        long lastChange = System.nanoTime();
+
+        while (System.nanoTime() < deadline) {
+            int now = state.narration().size();
+            if (now != heard) {
+                heard = now;
+                lastChange = System.nanoTime();
+            } else if (now > narrationBefore && System.nanoTime() - lastChange > quiet) {
+                return;
+            }
+            try {
+                // Sleeping rather than spinning. A busy loop here is a whole core burnt waiting
+                // for a server that is usually a millisecond away, and four clients on one
+                // machine would be four cores.
+                Thread.sleep(1);
+            } catch (InterruptedException interrupted) {
+                Thread.currentThread().interrupt();
+                return;
+            }
         }
     }
 

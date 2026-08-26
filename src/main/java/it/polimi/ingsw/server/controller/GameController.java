@@ -99,11 +99,40 @@ public final class GameController implements AutoCloseable {
      * @throws IllegalArgumentException if there is no such player in this game
      */
     public ChannelListener<Command> bind(PlayerColor player, Channel<Event, Command> channel) {
+        ChannelListener<Command> listener = attach(player, channel);
+        announceArrival(player);
+        return listener;
+    }
+
+    /**
+     * Points a seat at a connection without telling anybody yet.
+     *
+     * <p>For seating a whole table at once. Announcing as each player is bound means the second
+     * player never hears about the first, because the first was announced before the second had
+     * a channel — so four players end up with four different accounts of the same moment.
+     * Attaching everybody and then announcing gives them all the same one.
+     *
+     * @param player  which seat
+     * @param channel where to send that player's events
+     * @return the listener for that connection
+     * @throws IllegalArgumentException if there is no such player in this game
+     */
+    public ChannelListener<Command> attach(PlayerColor player, Channel<Event, Command> channel) {
         PlayerSession session = sessionOf(player);
         Channel<Event, Command> replaced = session.attach(channel);
         if (replaced != null && replaced != channel) {
             replaced.close();
         }
+        return new SeatListener(player, channel);
+    }
+
+    /**
+     * Tells everybody a player is here, and tells that player everything.
+     *
+     * @param player who has arrived, or come back
+     */
+    public void announceArrival(PlayerColor player) {
+        PlayerSession session = sessionOf(player);
         run(() -> {
             game.connectionChanged(player, true);
             announce(new GameEvent.ConnectionChanged(player, true));
@@ -111,7 +140,6 @@ public final class GameController implements AutoCloseable {
             // one needs too. There is no third case to write.
             session.send(new GameEvent.StateChanged(game.viewFor(player)));
         });
-        return new SeatListener(player, channel);
     }
 
     private void dropped(PlayerColor player, Channel<Event, Command> channel) {
