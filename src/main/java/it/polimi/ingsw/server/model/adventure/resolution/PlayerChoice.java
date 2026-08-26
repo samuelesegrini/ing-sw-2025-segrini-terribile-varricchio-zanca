@@ -1,6 +1,7 @@
 package it.polimi.ingsw.server.model.adventure.resolution;
 
 import it.polimi.ingsw.server.model.player.PlayerColor;
+import it.polimi.ingsw.server.model.ship.BatteryPlan;
 
 /**
  * A player's answer to a {@link PlayerPrompt}.
@@ -36,5 +37,25 @@ public sealed interface PlayerChoice {
      * @param player who is declining
      */
     record Leave(PlayerColor player) implements PlayerChoice {
+    }
+
+    /**
+     * A declared attribute, and the charges being spent to reach it.
+     *
+     * @param player who is declaring
+     * @param plan   which doubles they are paying to run
+     */
+    record Declaration(PlayerColor player, BatteryPlan plan) implements PlayerChoice {
+
+        /**
+         * Validates the declaration.
+         *
+         * @throws NullPointerException if the player or plan is {@code null}
+         */
+        public Declaration {
+            if (player == null || plan == null) {
+                throw new NullPointerException("a declaration needs a player and a battery plan");
+            }
+        }
     }
 }
