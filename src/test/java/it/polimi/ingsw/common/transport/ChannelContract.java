@@ -35,7 +35,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * delivers on the caller's thread and a socket does not, and a suite that worked for one and
  * not the other would be worth very little.
  */
-abstract class ChannelContract {
+public abstract class ChannelContract {
 
     /** How long to wait for something that ought to happen almost at once. */
     protected static final long TIMEOUT_MS = 2_000;
@@ -60,7 +60,7 @@ abstract class ChannelContract {
      * @param atClient what the client end has been told
      * @param atServer what the server end has been told
      */
-    protected record Connected(Channel<Command, Event> client, Channel<Event, Command> server,
+    public record Connected(Channel<Command, Event> client, Channel<Event, Command> server,
                                Recorder<Event> atClient, Recorder<Command> atServer) {
     }
 
@@ -219,7 +219,7 @@ abstract class ChannelContract {
      *
      * @param <M> what this end receives
      */
-    protected static final class Recorder<M> implements ChannelListener<M> {
+    public static final class Recorder<M> implements ChannelListener<M> {
 
         private final BlockingQueue<M> received = new LinkedBlockingQueue<>();
         private final BlockingQueue<String> closures = new LinkedBlockingQueue<>();
@@ -240,7 +240,7 @@ abstract class ChannelContract {
          * @return what arrived
          * @throws AssertionError if nothing arrives in time
          */
-        M next() {
+        public M next() {
             M message = poll(received);
             if (message == null) {
                 throw new AssertionError("nothing arrived within " + TIMEOUT_MS + "ms");
@@ -253,7 +253,7 @@ abstract class ChannelContract {
          *
          * @return why it closed, or {@code null} if it did not
          */
-        String closure() {
+        public String closure() {
             return poll(closures);
         }
 
@@ -264,7 +264,7 @@ abstract class ChannelContract {
          *
          * @return the number of closures reported
          */
-        int closures() {
+        public int closures() {
             if (poll(closures, TIMEOUT_MS) == null) {
                 return 0;
             }
@@ -280,7 +280,7 @@ abstract class ChannelContract {
          *
          * @return {@code true} when nothing came
          */
-        boolean isEmpty() {
+        public boolean isEmpty() {
             return poll(received, QUIET_MS) == null;
         }
 

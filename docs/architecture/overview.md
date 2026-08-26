@@ -50,6 +50,8 @@ it.polimi.ingsw
 │   │   ├── event                    server → client facts
 │   │   └── view                     immutable projections of model state
 │   └── transport                    transport-neutral connection abstraction
+│       ├── socket                   object streams over TCP
+│       └── rmi                      the same messages over a registry
 │
 ├── server
 │   ├── model                        the authoritative domain
@@ -63,14 +65,14 @@ it.polimi.ingsw
 │   │   └── game                     Game aggregate, phases, players
 │   ├── controller                   command handling, turn arbitration
 │   ├── lobby                        game creation, joining, nickname registry
-│   ├── network                      socket and RMI adapters
+│   ├── network                      turning a connection into a session
 │   ├── persistence                  snapshot writing and recovery
 │   └── data                         JSON loading of cards, tiles, boards
 │
 └── client
     ├── controller                   translates user intent into commands
     ├── state                        local read-only projection
-    ├── network                      socket and RMI clients
+    ├── network                      dialling a server, dispatching its events
     └── view
         ├── tui
         └── gui

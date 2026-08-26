@@ -21,13 +21,4 @@ public class TransportException extends RuntimeException {
     public TransportException(String message, Throwable cause) {
         super(message, cause);
     }
-
-    /**
-     * Reports a failure to establish a connection.
-     *
-     * @param message what was being attempted, and why it could not be
-     */
-    public TransportException(String message) {
-        super(message);
-    }
 }

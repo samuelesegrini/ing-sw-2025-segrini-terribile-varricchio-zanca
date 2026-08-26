@@ -1,0 +1,134 @@
+package it.polimi.ingsw.common.transport.socket;
+
+import it.polimi.ingsw.common.protocol.Command;
+import it.polimi.ingsw.common.protocol.Event;
+import it.polimi.ingsw.common.transport.Channel;
+import it.polimi.ingsw.common.transport.ChannelListener;
+import it.polimi.ingsw.common.transport.Liveness;
+import it.polimi.ingsw.common.transport.TransportException;
+
+import java.io.IOException;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
+
+/**
+ * Listens on a port and turns everything that connects into a channel.
+ *
+ * <p>Deliberately knows nothing about games, players or nicknames. It takes a function that
+ * says what to do with a new connection and calls it; whether that function starts a session,
+ * refuses the connection or writes it down is somebody else's business.
+ *
+ * <p>Every accepted connection is kept so that closing the server closes them too. A server
+ * that stopped listening but left twenty sockets open would look shut down and would not be.
+ */
+public final class SocketServer implements AutoCloseable {
+
+    private final ServerSocket listening;
+    private final Function<Channel<Event, Command>, ChannelListener<Command>> onConnect;
+    private final Liveness liveness;
+    private final Set<Channel<Event, Command>> connected = ConcurrentHashMap.newKeySet();
+    private final Thread acceptor;
+
+    private volatile boolean running = true;
+
+    private SocketServer(ServerSocket listening,
+                         Function<Channel<Event, Command>, ChannelListener<Command>> onConnect,
+                         Liveness liveness) {
+        this.listening = listening;
+        this.onConnect = onConnect;
+        this.liveness = liveness;
+        this.acceptor = new Thread(this::accept, "socket-acceptor-" + listening.getLocalPort());
+        this.acceptor.setDaemon(true);
+    }
+
+    /**
+     * Starts listening.
+     *
+     * @param port      the port to bind, or zero to be given a free one
+     * @param onConnect what to do with each new connection, given the channel to answer on
+     * @param liveness  how hard each connection should try to notice a client going away
+     * @return the running server
+     * @throws TransportException if the port cannot be bound
+     */
+    public static SocketServer listening(int port,
+                                         Function<Channel<Event, Command>, ChannelListener<Command>> onConnect,
+                                         Liveness liveness) {
+        if (onConnect == null || liveness == null) {
+            throw new NullPointerException("a server needs to know what to do with a connection");
+        }
+        ServerSocket listening;
+        try {
+            listening = new ServerSocket(port);
+        } catch (IOException problem) {
+            throw new TransportException("could not listen on port " + port, problem);
+        }
+        SocketServer server = new SocketServer(listening, onConnect, liveness);
+        server.acceptor.start();
+        return server;
+    }
+
+    /**
+     * Returns the port actually being listened on.
+     *
+     * <p>Worth having because a server started on port zero is given one, which is how a test
+     * runs without picking a number and hoping.
+     *
+     * @return the bound port
+     */
+    public int port() {
+        return listening.getLocalPort();
+    }
+
+    /**
+     * Returns how many clients are connected.
+     *
+     * @return the number of open channels
+     */
+    public int connectionCount() {
+        connected.removeIf(channel -> !channel.isOpen());
+        return connected.size();
+    }
+
+    @Override
+    public void close() {
+        running = false;
+        try {
+            listening.close();
+        } catch (IOException ignored) {
+            // Shutting down. Nothing useful to do with this.
+        }
+        connected.forEach(Channel::close);
+        connected.clear();
+    }
+
+    private void accept() {
+        while (running) {
+            Socket socket;
+            try {
+                socket = listening.accept();
+            } catch (IOException stopped) {
+                // Either the server was closed, in which case this is how it ends, or the
+                // listening socket failed, in which case there is nothing to fall back to.
+                return;
+            }
+            try {
+                // Registered before the handler sees it, not after. A handler is entitled to
+                // start using the channel immediately — and to hand it to something else that
+                // does — so a server that only counted the connection once the handler
+                // returned would spend that whole window claiming to have none.
+                StreamChannel.over(socket, Event.class, Command.class, channel -> {
+                    connected.add(channel);
+                    return onConnect.apply(channel);
+                }, liveness);
+            } catch (TransportException refused) {
+                // One connection that could not be set up. The others are unaffected, and a
+                // server that stopped accepting because of one bad handshake would be worse.
+                continue;
+            }
+            connected.removeIf(channel -> !channel.isOpen());
+        }
+    }
+}

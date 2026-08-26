@@ -9,6 +9,7 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Everything a channel does that has nothing to do with how the bytes move.
@@ -44,11 +45,11 @@ public abstract class AbstractChannel<O extends Serializable, I extends Serializ
     private final Class<I> expected;
     private final AtomicBoolean open = new AtomicBoolean(true);
     private final AtomicLong lastHeard = new AtomicLong(System.nanoTime());
-    private final ScheduledFuture<?> heartbeat;
-    private final Duration silenceAllowed;
+    private final AtomicReference<ScheduledFuture<?>> heartbeat = new AtomicReference<>();
+    private final Liveness liveness;
 
     /**
-     * Opens a channel that watches for silence.
+     * Builds a channel that will watch for silence once it is started.
      *
      * @param listener what to do with what arrives
      * @param expected what this side receives, so that a message of the wrong kind is
@@ -62,14 +63,11 @@ public abstract class AbstractChannel<O extends Serializable, I extends Serializ
         }
         this.listener = listener;
         this.expected = expected;
-        this.silenceAllowed = liveness.silenceAllowed();
-        long period = liveness.keepAliveEvery().toMillis();
-        this.heartbeat = CLOCK.scheduleAtFixedRate(
-                this::beat, period, period, TimeUnit.MILLISECONDS);
+        this.liveness = liveness;
     }
 
     /**
-     * Opens a channel that does not watch for silence.
+     * Builds a channel that does not watch for silence.
      *
      * <p>For connections inside one process, where the other end cannot go away without this
      * one going with it, and there is nothing a heartbeat could discover.
@@ -84,8 +82,27 @@ public abstract class AbstractChannel<O extends Serializable, I extends Serializ
         }
         this.listener = listener;
         this.expected = expected;
-        this.silenceAllowed = null;
-        this.heartbeat = null;
+        this.liveness = null;
+    }
+
+    /**
+     * Starts the heartbeat, once the subclass is ready to be used.
+     *
+     * <p>Separate from the constructor because a heartbeat is a timer that calls
+     * {@link #transmit} on another thread, and a constructor that started one would be
+     * calling into a subclass whose own fields are not assigned yet. Every transport here
+     * is built by a static factory that calls this as its last act, so there is nowhere for
+     * a caller to forget it.
+     *
+     * <p>Harmless to call on a channel with no liveness, and harmless to call twice.
+     */
+    protected final void start() {
+        if (liveness == null || heartbeat.get() != null) {
+            return;
+        }
+        long period = liveness.keepAliveEvery().toMillis();
+        heartbeat.set(CLOCK.scheduleAtFixedRate(
+                this::beat, period, period, TimeUnit.MILLISECONDS));
     }
 
     // ------------------------------------------------------------------ what a transport implements
@@ -174,7 +191,7 @@ public abstract class AbstractChannel<O extends Serializable, I extends Serializ
      * @return the silence so far, or empty on a channel that is not watching for it
      */
     protected final Optional<Duration> silence() {
-        return silenceAllowed == null
+        return liveness == null
                 ? Optional.empty()
                 : Optional.of(Duration.ofNanos(System.nanoTime() - lastHeard.get()));
     }
@@ -183,6 +200,7 @@ public abstract class AbstractChannel<O extends Serializable, I extends Serializ
         if (!open.get()) {
             return;
         }
+        Duration silenceAllowed = liveness.silenceAllowed();
         if (System.nanoTime() - lastHeard.get() > silenceAllowed.toNanos()) {
             shutdown("nothing heard for " + silenceAllowed);
             return;
@@ -200,8 +218,9 @@ public abstract class AbstractChannel<O extends Serializable, I extends Serializ
             // worth reporting. The first one through does the work.
             return;
         }
-        if (heartbeat != null) {
-            heartbeat.cancel(false);
+        ScheduledFuture<?> beating = heartbeat.get();
+        if (beating != null) {
+            beating.cancel(false);
         }
         try {
             release();
