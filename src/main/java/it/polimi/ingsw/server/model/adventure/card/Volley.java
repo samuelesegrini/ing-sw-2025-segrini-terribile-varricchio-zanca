@@ -56,7 +56,7 @@ final class Volley {
         }
         Hit shot = shots.get(next);
         return Optional.of(new PlayerPrompt.ChooseDefence(
-                player, shot, ship.targetOf(shot), ship.defencesAgainst(shot)));
+                player, shot, ship.targetOf(shot).orElse(null), ship.defencesAgainst(shot)));
     }
 
     /**
@@ -78,7 +78,7 @@ final class Volley {
             throw new IllegalArgumentException("a shot is incoming and is waiting to be answered");
         }
         Hit shot = shots.get(next++);
-        Defence answer = defence.component().map(Defence::using).orElseGet(Defence::none);
+        Defence answer = defence.componentIfAny().map(Defence::using).orElseGet(Defence::none);
         awaitingFragmentChoice = ship.applyHit(shot, answer).brokeUp();
     }
 

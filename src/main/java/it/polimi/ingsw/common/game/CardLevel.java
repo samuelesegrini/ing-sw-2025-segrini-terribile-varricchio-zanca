@@ -1,4 +1,4 @@
-package it.polimi.ingsw.server.model.adventure;
+package it.polimi.ingsw.common.game;
 
 /**
  * The difficulty band printed on an adventure card, shown as rocket flames.

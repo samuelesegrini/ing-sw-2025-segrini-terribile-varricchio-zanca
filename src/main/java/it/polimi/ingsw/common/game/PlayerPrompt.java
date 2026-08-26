@@ -2,6 +2,7 @@ package it.polimi.ingsw.common.game;
 
 
 
+import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -17,7 +18,7 @@ import java.util.Set;
  * <p>Variants arrive with the cards that need them rather than being guessed at up
  * front — a prompt nobody sends is a prompt nobody has thought through.
  */
-public sealed interface PlayerPrompt {
+public sealed interface PlayerPrompt extends Serializable {
 
     /**
      * Returns who is being asked.
@@ -158,15 +159,16 @@ public sealed interface PlayerPrompt {
      * the right side, or a cannon that can reach a big meteor from where it sits. An empty
      * set means nothing can be done, which is the normal answer to heavy fire.
      *
-     * <p>The target is named so a player can see what they are about to lose. It is empty
-     * when the roll named a line with nothing on it, and the whole thing is a formality.
+     * <p>The target is named so a player can see what they are about to lose. It is
+     * {@code null} when the roll named a line with nothing on it, and the whole thing is a
+     * formality; read it through {@link #targetIfAny()}.
      *
      * @param player  whose ship is in the way
      * @param hit     what is coming
-     * @param target  the component it would strike, empty when it misses
+     * @param target  the component it would strike, {@code null} when it misses
      * @param options the components that could stop it, each costing a charge to use
      */
-    record ChooseDefence(PlayerColor player, Hit hit, Optional<Position> target,
+    record ChooseDefence(PlayerColor player, Hit hit, Position target,
                          Set<Position> options) implements PlayerPrompt {
 
         /**
@@ -175,10 +177,19 @@ public sealed interface PlayerPrompt {
          * @throws NullPointerException if any part is {@code null}
          */
         public ChooseDefence {
-            if (player == null || hit == null || target == null) {
-                throw new NullPointerException("an incoming shot needs a player, a hit and a target");
+            if (player == null || hit == null) {
+                throw new NullPointerException("an incoming shot needs a player and a hit");
             }
             options = Set.copyOf(options);
+        }
+
+        /**
+         * Returns the component the shot would strike.
+         *
+         * @return the target, or empty when the roll named a line with nothing on it
+         */
+        public Optional<Position> targetIfAny() {
+            return Optional.ofNullable(target);
         }
     }
 

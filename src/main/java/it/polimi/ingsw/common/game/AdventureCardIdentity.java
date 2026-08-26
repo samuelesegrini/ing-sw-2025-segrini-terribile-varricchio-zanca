@@ -1,4 +1,6 @@
-package it.polimi.ingsw.server.model.adventure;
+package it.polimi.ingsw.common.game;
+
+import java.io.Serializable;
 
 /**
  * What deck building needs to know about a card, without knowing what it does.
@@ -12,7 +14,7 @@ package it.polimi.ingsw.server.model.adventure;
  * @param level      the difficulty band printed on it
  * @param testFlight whether it carries the L mark
  */
-public record AdventureCardIdentity(String id, AdventureCardType type, CardLevel level, boolean testFlight) {
+public record AdventureCardIdentity(String id, AdventureCardType type, CardLevel level, boolean testFlight) implements Serializable {
 
     /**
      * Validates the identity.

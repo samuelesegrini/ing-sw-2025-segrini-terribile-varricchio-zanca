@@ -1,5 +1,7 @@
 package it.polimi.ingsw.common.game;
 
+import java.io.Serializable;
+
 /**
  * A cell of a ship board, indexed from the top left corner.
  *
@@ -11,7 +13,7 @@ package it.polimi.ingsw.common.game;
  * @param row    the row index, 0 at the top
  * @param column the column index, 0 at the left
  */
-public record Position(int row, int column) {
+public record Position(int row, int column) implements Serializable {
 
     /**
      * Returns the cell immediately next to this one in the given direction.

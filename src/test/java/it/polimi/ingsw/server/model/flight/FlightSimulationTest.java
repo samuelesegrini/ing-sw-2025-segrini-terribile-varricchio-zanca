@@ -9,6 +9,7 @@ import it.polimi.ingsw.common.game.Hit;
 import it.polimi.ingsw.common.game.HitKind;
 import it.polimi.ingsw.common.game.PlayerColor;
 import it.polimi.ingsw.common.game.Position;
+import it.polimi.ingsw.common.game.ScoreSheet;
 import it.polimi.ingsw.server.model.component.CabinComponent;
 import it.polimi.ingsw.server.model.ship.Defence;
 import it.polimi.ingsw.server.model.ship.Ship;

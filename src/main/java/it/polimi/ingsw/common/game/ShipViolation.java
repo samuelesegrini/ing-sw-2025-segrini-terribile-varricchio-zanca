@@ -1,5 +1,6 @@
 package it.polimi.ingsw.common.game;
 
+import java.io.Serializable;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
@@ -15,7 +16,7 @@ import java.util.Set;
  * @param cells       the cells involved, at least one
  * @param description a sentence naming the pieces at fault
  */
-public record ShipViolation(ViolationKind kind, Set<Position> cells, String description) {
+public record ShipViolation(ViolationKind kind, Set<Position> cells, String description) implements Serializable {
 
     /**
      * Validates the violation and takes a defensive copy of its cells.

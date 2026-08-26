@@ -4,6 +4,7 @@ import it.polimi.ingsw.common.game.ComponentKind;
 import it.polimi.ingsw.common.game.GoodColor;
 import it.polimi.ingsw.common.game.PlayerColor;
 import it.polimi.ingsw.common.game.Position;
+import it.polimi.ingsw.common.game.ScoreSheet;
 import it.polimi.ingsw.server.model.ship.Ship;
 import it.polimi.ingsw.server.model.ship.Ships;
 import org.junit.jupiter.api.DisplayName;

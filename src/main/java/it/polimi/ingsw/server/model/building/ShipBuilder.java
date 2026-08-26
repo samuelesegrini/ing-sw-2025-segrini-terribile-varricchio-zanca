@@ -1,6 +1,6 @@
 package it.polimi.ingsw.server.model.building;
 
-import it.polimi.ingsw.server.model.adventure.AdventureCardIdentity;
+import it.polimi.ingsw.common.game.AdventureCardIdentity;
 import it.polimi.ingsw.server.model.adventure.AdventureDeck;
 import it.polimi.ingsw.server.model.component.ComponentTile;
 import it.polimi.ingsw.server.model.component.ShipComponent;

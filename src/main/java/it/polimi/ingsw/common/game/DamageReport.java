@@ -1,5 +1,6 @@
 package it.polimi.ingsw.common.game;
 
+import java.io.Serializable;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -11,16 +12,20 @@ import java.util.Set;
  * player what happened: whether the shot missed the ship entirely, whether their shield
  * earned its battery, and which components they have just lost.
  *
- * @param target    the component the threat was aimed at, empty when it missed the ship
+ * <p>The two positions are {@code null} rather than {@link Optional} because this record
+ * crosses the wire, and RMI marshals with Java serialization, which cannot carry an
+ * {@code Optional}. Read them through {@link #targetIfAny()} and {@link #destroyedIfAny()}.
+ *
+ * @param target    the component the threat was aimed at, {@code null} when it missed the ship
  * @param outcome   how it ended
- * @param destroyed the component destroyed, empty when nothing was
+ * @param destroyed the component destroyed, {@code null} when nothing was
  * @param fragments the pieces the ship is now in, largest first; more than one means the
  *                  player has to choose which to keep flying
  */
-public record DamageReport(Optional<Position> target,
+public record DamageReport(Position target,
                            Outcome outcome,
-                           Optional<Position> destroyed,
-                           List<Set<Position>> fragments) {
+                           Position destroyed,
+                           List<Set<Position>> fragments) implements Serializable {
 
     /**
      * How a threat ended up.
@@ -43,13 +48,31 @@ public record DamageReport(Optional<Position> target,
     /**
      * Takes a defensive copy of the fragments.
      *
-     * @throws NullPointerException if any part is {@code null}
+     * @throws NullPointerException if the outcome is {@code null}
      */
     public DamageReport {
-        if (target == null || outcome == null || destroyed == null) {
-            throw new NullPointerException("a damage report needs all of its parts");
+        if (outcome == null) {
+            throw new NullPointerException("a damage report needs an outcome");
         }
         fragments = fragments.stream().map(Set::copyOf).toList();
+    }
+
+    /**
+     * Returns the component the threat was aimed at.
+     *
+     * @return the target, or empty when the threat missed the ship entirely
+     */
+    public Optional<Position> targetIfAny() {
+        return Optional.ofNullable(target);
+    }
+
+    /**
+     * Returns the component the threat destroyed.
+     *
+     * @return the wreck, or empty when the ship came through it
+     */
+    public Optional<Position> destroyedIfAny() {
+        return Optional.ofNullable(destroyed);
     }
 
     /**

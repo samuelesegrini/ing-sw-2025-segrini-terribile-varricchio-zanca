@@ -1,5 +1,7 @@
 package it.polimi.ingsw.server.model.adventure;
 
+import it.polimi.ingsw.common.game.AdventureCardIdentity;
+import it.polimi.ingsw.common.game.CardLevel;
 import it.polimi.ingsw.server.model.board.DeckComposition;
 
 import java.util.ArrayList;

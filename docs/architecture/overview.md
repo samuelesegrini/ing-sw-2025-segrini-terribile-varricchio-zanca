@@ -118,11 +118,49 @@ Client to server is a closed set of `Command` records. Server to client is a clo
 set of `Event` records. RMI is used as a *transport for these messages*, not as a
 way to expose model methods remotely.
 
-*Why.* One protocol, documented once (`docs/protocol/`), works identically on both
-transports. It also makes the whole controller testable without a network: feed it
-commands, assert on emitted events.
+*Why.* One protocol, documented once ([`docs/protocol/`](../protocol/README.md)),
+works identically on both transports. It also makes the whole controller testable
+without a network: feed it commands, assert on emitted events.
+
+Both sets are sealed in two layers, and the families match the phases of § 3.3. That
+is what turns "each phase decides which commands are legal" from a convention into
+something the compiler knows: a phase switches over the family it owns and is told at
+compile time when a message is added to it.
 
 *Patterns.* Command; Observer for event dispatch; Adapter for the two transports.
+
+### 3.2.1 Facts, then truth
+
+Events arrive in batches, and every batch ends with one `StateChanged` carrying the
+whole picture. The events before it — a card revealed, a seven rolled, a cabin
+destroyed — exist so a view can narrate. A client that ignores all of them and reads
+only the state is still correct.
+
+*Why.* Nothing is then ever expressed only as a delta, so a client cannot drift out of
+step by missing a message. And reconnecting becomes the same operation as joining:
+send the state. That removes the replay log, the sequence numbers and the
+resynchronisation handshake that AF4 would otherwise need, along with everything that
+can go wrong in them.
+
+*What it costs.* A `GameView` on every command instead of a few bytes. During building
+that view is small — no route, no cards, no scores — and during the flight the batches
+are far apart. It is not a trade worth optimising before there is a measurement saying
+so.
+
+### 3.2.2 Nothing on the wire is an `Optional`
+
+A value that may be absent is `null` on the wire, read through an `…IfAny()` accessor.
+
+*Why.* RMI marshals with Java serialization and `java.util.Optional` is deliberately
+not serializable. A message carrying one compiles, passes its unit tests, works over a
+socket, and fails the first time two people play over RMI — which is the worst possible
+place to find out. `ProtocolContractTest` walks every record component of both sealed
+hierarchies and fails the build instead.
+
+*Why not fix it in the transport.* An RMI interface that passes JSON strings would let
+the protocol keep `Optional`, and would also make RMI a socket with extra steps. Typed
+messages on both transports is the design worth having; this is its price, and it is
+four fields.
 
 ### 3.3 Game phases as a state machine
 

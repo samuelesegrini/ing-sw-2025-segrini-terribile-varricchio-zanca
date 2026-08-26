@@ -151,7 +151,7 @@ class DamageTest {
                     new Hit(HitKind.SMALL_METEOR, Direction.NORTH, DICE_FOR_CABIN_COLUMN), Defence.none());
 
             assertEquals(DamageReport.Outcome.DESTROYED, report.outcome());
-            assertEquals(Optional.of(new Position(1, 2)), report.destroyed());
+            assertEquals(Optional.of(new Position(1, 2)), report.destroyedIfAny());
             assertTrue(ship.componentAt(new Position(1, 2)).isEmpty());
         }
 

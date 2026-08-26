@@ -1,6 +1,7 @@
 package it.polimi.ingsw.common.game;
 
 
+import java.io.Serializable;
 import java.util.List;
 import java.util.Set;
 
@@ -11,7 +12,7 @@ import java.util.Set;
  * player it asked and that it answers the question it asked — an answer to a different
  * question is a bug in the client, not a move, and is refused rather than guessed at.
  */
-public sealed interface PlayerChoice {
+public sealed interface PlayerChoice extends Serializable {
 
     /**
      * Returns who is answering.
@@ -100,19 +101,28 @@ public sealed interface PlayerChoice {
      * What a player is putting in front of an incoming shot, if anything.
      *
      * @param player    whose ship is in the way
-     * @param component the shield or cannon to use, or empty to take the hit
+     * @param component the shield or cannon to use, {@code null} to take the hit
      */
-    record DefenceChosen(PlayerColor player, java.util.Optional<Position> component) implements PlayerChoice {
+    record DefenceChosen(PlayerColor player, Position component) implements PlayerChoice {
 
         /**
          * Validates the answer.
          *
-         * @throws NullPointerException if the player or the optional is {@code null}
+         * @throws NullPointerException if the player is {@code null}
          */
         public DefenceChosen {
-            if (player == null || component == null) {
-                throw new NullPointerException("a defence answer needs a player and an optional component");
+            if (player == null) {
+                throw new NullPointerException("a defence answer needs a player");
             }
+        }
+
+        /**
+         * Returns the component being put in front of the shot.
+         *
+         * @return the shield or cannon, or empty when the player is taking the hit
+         */
+        public java.util.Optional<Position> componentIfAny() {
+            return java.util.Optional.ofNullable(component);
         }
 
         /**
@@ -122,7 +132,7 @@ public sealed interface PlayerChoice {
          * @return a defence that does nothing
          */
         public static DefenceChosen none(PlayerColor player) {
-            return new DefenceChosen(player, java.util.Optional.empty());
+            return new DefenceChosen(player, null);
         }
 
         /**
@@ -133,7 +143,10 @@ public sealed interface PlayerChoice {
          * @return the answer
          */
         public static DefenceChosen using(PlayerColor player, Position component) {
-            return new DefenceChosen(player, java.util.Optional.of(component));
+            if (component == null) {
+                throw new NullPointerException("use none() to take the hit, not using(null)");
+            }
+            return new DefenceChosen(player, component);
         }
     }
 

@@ -1,8 +1,8 @@
 package it.polimi.ingsw.server.data;
 
 import it.polimi.ingsw.server.model.adventure.AdventureCard;
-import it.polimi.ingsw.server.model.adventure.AdventureCardIdentity;
-import it.polimi.ingsw.server.model.adventure.AdventureCardType;
+import it.polimi.ingsw.common.game.AdventureCardIdentity;
+import it.polimi.ingsw.common.game.AdventureCardType;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
