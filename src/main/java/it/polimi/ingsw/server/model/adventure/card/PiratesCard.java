@@ -8,9 +8,7 @@ import it.polimi.ingsw.server.model.adventure.resolution.PlayerPrompt;
 import it.polimi.ingsw.server.model.flight.Dice;
 import it.polimi.ingsw.server.model.flight.Flight;
 import it.polimi.ingsw.server.model.player.PlayerColor;
-import it.polimi.ingsw.server.model.ship.Direction;
 import it.polimi.ingsw.server.model.ship.Hit;
-import it.polimi.ingsw.server.model.ship.HitKind;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -38,38 +36,13 @@ import java.util.Optional;
  * @param flightDays what claiming the reward costs
  */
 public record PiratesCard(AdventureCardIdentity identity, int firepower, int credits,
-                          List<ShotPattern> shots, int flightDays) implements AdventureCard {
-
-    /**
-     * One shot printed on a card: what it is and which side it comes from.
-     *
-     * <p>The line it lands on is not printed — that is what the dice decide.
-     *
-     * @param kind whether it is light or heavy fire
-     * @param from the side it arrives from
-     */
-    public record ShotPattern(HitKind kind, Direction from) {
-
-        /**
-         * Validates the shot.
-         *
-         * @throws NullPointerException     if either part is {@code null}
-         * @throws IllegalArgumentException if the kind is not cannon fire
-         */
-        public ShotPattern {
-            if (kind == null || from == null) {
-                throw new NullPointerException("a shot needs a kind and a direction");
-            }
-            if (kind != HitKind.LIGHT_FIRE && kind != HitKind.HEAVY_FIRE) {
-                throw new IllegalArgumentException("pirates fire cannons, not " + kind);
-            }
-        }
-    }
+                          List<ThreatPattern> shots, int flightDays) implements AdventureCard {
 
     /**
      * Validates the printed values and takes a defensive copy of the shots.
      *
-     * @throws IllegalArgumentException if a value is negative or they fire nothing
+     * @throws IllegalArgumentException if a value is negative, they fire nothing, or one of
+     *                                  their shots is a meteor
      */
     public PiratesCard {
         if (firepower < 0 || credits < 0 || flightDays < 0) {
@@ -79,6 +52,11 @@ public record PiratesCard(AdventureCardIdentity identity, int firepower, int cre
         if (shots.isEmpty()) {
             throw new IllegalArgumentException("pirates who do not shoot are not pirates");
         }
+        shots.forEach(shot -> {
+            if (shot.isMeteor()) {
+                throw new IllegalArgumentException("pirates fire cannons, not " + shot.kind());
+            }
+        });
     }
 
     @Override

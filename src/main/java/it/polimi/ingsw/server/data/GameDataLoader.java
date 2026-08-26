@@ -9,7 +9,9 @@ import it.polimi.ingsw.server.model.adventure.CardLevel;
 import it.polimi.ingsw.server.model.adventure.card.AbandonedShipCard;
 import it.polimi.ingsw.server.model.adventure.card.AbandonedStationCard;
 import it.polimi.ingsw.server.model.adventure.card.SlaversCard;
+import it.polimi.ingsw.server.model.adventure.card.MeteorSwarmCard;
 import it.polimi.ingsw.server.model.adventure.card.PiratesCard;
+import it.polimi.ingsw.server.model.adventure.card.ThreatPattern;
 import it.polimi.ingsw.server.model.adventure.card.SmugglersCard;
 import it.polimi.ingsw.server.model.board.DeckComposition;
 import it.polimi.ingsw.server.model.board.FlightBoardSpec;
@@ -187,20 +189,22 @@ public final class GameDataLoader {
                     identity,
                     integer(entry, "firepower", where),
                     integer(entry, "credits", where),
-                    readShots(array(entry, "shots", where), where),
+                    readThreats(array(entry, "shots", where), where),
                     integer(entry, "flightDays", where)));
+            case METEOR_SWARM -> Optional.of(new MeteorSwarmCard(
+                    identity, readThreats(array(entry, "meteors", where), where)));
             default -> Optional.empty();
         };
     }
 
-    private static List<PiratesCard.ShotPattern> readShots(JsonNode node, String where) {
-        List<PiratesCard.ShotPattern> shots = new ArrayList<>();
-        for (JsonNode shot : node) {
-            shots.add(new PiratesCard.ShotPattern(
-                    enumValue(HitKind.class, text(shot, "kind", where), where),
-                    enumValue(Direction.class, text(shot, "from", where), where)));
+    private static List<ThreatPattern> readThreats(JsonNode node, String where) {
+        List<ThreatPattern> threats = new ArrayList<>();
+        for (JsonNode threat : node) {
+            threats.add(new ThreatPattern(
+                    enumValue(HitKind.class, text(threat, "kind", where), where),
+                    enumValue(Direction.class, text(threat, "from", where), where)));
         }
-        return shots;
+        return threats;
     }
 
     private static Map<GoodColor, Integer> readGoods(JsonNode node, String where) {
