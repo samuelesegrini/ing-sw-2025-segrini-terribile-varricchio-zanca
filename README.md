@@ -25,9 +25,9 @@ Progress is tracked in [docs/roadmap.md](docs/roadmap.md) and in the repository'
 milestones. The table below reflects what is **implemented and tested**, not what is
 planned.
 
-The game is playable. A person opens a terminal, claims a name, builds a ship tile by tile,
-launches, flies the cards and reads the final ledger — over a socket or over RMI, at a table
-with people who chose the other one. What is missing is the graphical interface.
+The game is playable both ways. A person claims a name, builds a ship tile by tile,
+launches, flies the cards and reads the final ledger — in a terminal or in a window, over a
+socket or over RMI, at a table with people who chose differently on every count.
 
 ### Core requirements
 
@@ -37,7 +37,7 @@ with people who chose the other one. What is missing is the graphical interface.
 | Socket | ✅ |
 | RMI | ✅ |
 | TUI | ✅ |
-| GUI (JavaFX) | 🚧 |
+| GUI (JavaFX) | ✅ |
 
 ### Advanced features
 
@@ -100,6 +100,8 @@ java -jar target/client.jar --tui --socket --host localhost --port 4321
 ```
 
 Both choices default: `--tui` over `--socket`, on localhost, on the port that matches the
-transport. `--gui` is not built yet and says so, rather than starting something you did not
-ask for. Type `help` at any point — it lists what is legal in the phase the game is actually
-in, which is shorter and more useful than everything the game can do.
+transport. `--gui` opens a window on the same game — the board is the printed one, and where
+each square sits on it was measured from the artwork rather than guessed.
+
+In the terminal, type `help` at any point: it lists what is legal in the phase the game is
+actually in, which is shorter and more useful than everything the game can do.
