@@ -1,7 +1,5 @@
-package it.polimi.ingsw.server.model.ship;
+package it.polimi.ingsw.common.game;
 
-import it.polimi.ingsw.common.game.Direction;
-import it.polimi.ingsw.common.game.HitKind;
 
 /**
  * One incoming threat: what it is, where it comes from, and which line it is on.

@@ -1,10 +1,12 @@
 package it.polimi.ingsw.server.model.ship;
 
 import it.polimi.ingsw.common.game.AlienColor;
+import it.polimi.ingsw.common.game.BatteryPlan;
 import it.polimi.ingsw.common.game.ComponentKind;
 import it.polimi.ingsw.common.game.PlayerColor;
 import it.polimi.ingsw.common.game.Position;
 import it.polimi.ingsw.common.game.Rotation;
+import it.polimi.ingsw.common.game.ShipAttributes;
 import it.polimi.ingsw.server.model.board.ShipBoardSpec;
 import it.polimi.ingsw.server.model.component.CabinComponent;
 import it.polimi.ingsw.server.model.component.Tiles;

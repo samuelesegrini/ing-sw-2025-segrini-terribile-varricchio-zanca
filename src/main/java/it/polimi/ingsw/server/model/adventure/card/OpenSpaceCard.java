@@ -3,14 +3,14 @@ package it.polimi.ingsw.server.model.adventure.card;
 import it.polimi.ingsw.server.model.adventure.AdventureCard;
 import it.polimi.ingsw.server.model.adventure.AdventureCardIdentity;
 import it.polimi.ingsw.server.model.adventure.resolution.AdventureResolution;
-import it.polimi.ingsw.server.model.adventure.resolution.PlayerChoice;
-import it.polimi.ingsw.server.model.adventure.resolution.PlayerPrompt;
+import it.polimi.ingsw.common.game.PlayerChoice;
+import it.polimi.ingsw.common.game.PlayerPrompt;
 import it.polimi.ingsw.common.game.ShipAttribute;
 import it.polimi.ingsw.server.model.adventure.resolution.TurnByTurnResolution;
 import it.polimi.ingsw.common.game.ComponentKind;
 import it.polimi.ingsw.server.model.flight.Flight;
 import it.polimi.ingsw.common.game.PlayerColor;
-import it.polimi.ingsw.server.model.ship.BatteryPlan;
+import it.polimi.ingsw.common.game.BatteryPlan;
 import it.polimi.ingsw.server.model.ship.Ship;
 
 import java.util.ArrayList;

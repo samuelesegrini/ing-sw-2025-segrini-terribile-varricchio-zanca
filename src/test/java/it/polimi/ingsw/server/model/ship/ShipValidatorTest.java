@@ -4,6 +4,8 @@ import it.polimi.ingsw.common.game.ComponentKind;
 import it.polimi.ingsw.common.game.Connector;
 import it.polimi.ingsw.common.game.Position;
 import it.polimi.ingsw.common.game.Rotation;
+import it.polimi.ingsw.common.game.ShipViolation;
+import it.polimi.ingsw.common.game.ValidationReport;
 import it.polimi.ingsw.common.game.ViolationKind;
 import it.polimi.ingsw.server.model.board.ShipBoardSpec;
 import it.polimi.ingsw.server.model.component.ComponentTile;

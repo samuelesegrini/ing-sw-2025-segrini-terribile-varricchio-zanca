@@ -1,8 +1,13 @@
 /**
- * Geometry of a player's ship: directions, rotations, connectors and grid positions.
+ * The ship: a grid of welded components, and everything that can be asked of it.
  *
- * <p>These are the value types every other part of the model builds on. They carry no
- * game state of their own, which is why they can be shared freely between the ship,
- * the adventure cards and the data layer.
+ * <p>{@link it.polimi.ingsw.server.model.ship.Ship} is the deep module of the model. It
+ * hides the grid, the connector matrix and the connectivity search behind questions worth
+ * asking — what is this ship's firepower, what does that shot hit, is it still in one
+ * piece — so that no card and no controller ever walks the grid itself.
+ *
+ * <p>The value types those answers are made of live in
+ * {@link it.polimi.ingsw.common.game}, because a client needs them to draw the ship and to
+ * say what it wants done to it. What stays here is the part that decides.
  */
 package it.polimi.ingsw.server.model.ship;

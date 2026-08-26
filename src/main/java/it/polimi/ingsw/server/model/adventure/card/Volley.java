@@ -1,10 +1,10 @@
 package it.polimi.ingsw.server.model.adventure.card;
 
-import it.polimi.ingsw.server.model.adventure.resolution.PlayerChoice;
-import it.polimi.ingsw.server.model.adventure.resolution.PlayerPrompt;
+import it.polimi.ingsw.common.game.PlayerChoice;
+import it.polimi.ingsw.common.game.PlayerPrompt;
 import it.polimi.ingsw.common.game.PlayerColor;
 import it.polimi.ingsw.server.model.ship.Defence;
-import it.polimi.ingsw.server.model.ship.Hit;
+import it.polimi.ingsw.common.game.Hit;
 import it.polimi.ingsw.server.model.ship.Ship;
 
 import java.util.List;

@@ -3,6 +3,8 @@ package it.polimi.ingsw.server.model.ship;
 import it.polimi.ingsw.common.game.Connector;
 import it.polimi.ingsw.common.game.Direction;
 import it.polimi.ingsw.common.game.Position;
+import it.polimi.ingsw.common.game.ShipViolation;
+import it.polimi.ingsw.common.game.ValidationReport;
 import it.polimi.ingsw.common.game.ViolationKind;
 import it.polimi.ingsw.server.model.component.CannonComponent;
 import it.polimi.ingsw.server.model.component.EngineComponent;

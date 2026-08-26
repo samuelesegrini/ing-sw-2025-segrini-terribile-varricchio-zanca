@@ -3,12 +3,12 @@ package it.polimi.ingsw.server.model.adventure.card;
 import it.polimi.ingsw.server.model.adventure.AdventureCard;
 import it.polimi.ingsw.server.model.adventure.AdventureCardIdentity;
 import it.polimi.ingsw.server.model.adventure.resolution.AdventureResolution;
-import it.polimi.ingsw.server.model.adventure.resolution.PlayerChoice;
-import it.polimi.ingsw.server.model.adventure.resolution.PlayerPrompt;
+import it.polimi.ingsw.common.game.PlayerChoice;
+import it.polimi.ingsw.common.game.PlayerPrompt;
 import it.polimi.ingsw.server.model.flight.Dice;
 import it.polimi.ingsw.server.model.flight.Flight;
 import it.polimi.ingsw.common.game.PlayerColor;
-import it.polimi.ingsw.server.model.ship.Hit;
+import it.polimi.ingsw.common.game.Hit;
 
 import java.util.ArrayList;
 import java.util.HashMap;

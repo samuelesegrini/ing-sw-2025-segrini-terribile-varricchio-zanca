@@ -3,6 +3,7 @@ package it.polimi.ingsw.server.model.ship;
 import it.polimi.ingsw.common.game.ComponentKind;
 import it.polimi.ingsw.common.game.Direction;
 import it.polimi.ingsw.common.game.GoodColor;
+import it.polimi.ingsw.common.game.Hit;
 import it.polimi.ingsw.common.game.HitKind;
 import it.polimi.ingsw.common.game.Position;
 import it.polimi.ingsw.server.model.goods.Forfeit;

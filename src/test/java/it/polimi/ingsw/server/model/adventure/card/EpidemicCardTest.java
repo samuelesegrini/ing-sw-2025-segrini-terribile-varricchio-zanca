@@ -4,7 +4,7 @@ import it.polimi.ingsw.server.model.adventure.AdventureCardIdentity;
 import it.polimi.ingsw.server.model.adventure.AdventureCardType;
 import it.polimi.ingsw.server.model.adventure.CardLevel;
 import it.polimi.ingsw.server.model.adventure.resolution.AdventureResolution;
-import it.polimi.ingsw.server.model.adventure.resolution.PlayerChoice;
+import it.polimi.ingsw.common.game.PlayerChoice;
 import it.polimi.ingsw.common.game.ComponentKind;
 import it.polimi.ingsw.server.model.component.ComponentTile;
 import it.polimi.ingsw.server.model.component.Tiles;
