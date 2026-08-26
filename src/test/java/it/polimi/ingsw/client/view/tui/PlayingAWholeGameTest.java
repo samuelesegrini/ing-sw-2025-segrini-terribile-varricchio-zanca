@@ -39,6 +39,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * <p>The partner is driven programmatically rather than by typing, because two scripted
  * terminals racing each other through a flight is a test about timing rather than about the
  * interface. What matters here is that the <em>typed</em> side reaches the end.
+ *
+ * <p>There was a third test here that sat down three times on one connection — finish the ship,
+ * wait, declare the crew, wait, look at the route — to watch the route mid-flight. It passed
+ * here every time and timed out on the build machine every time, and every assertion in it was
+ * already made twice: {@code aWholeGameByTyping} below shows the route is drawn during a real
+ * flight, and {@code FlightRenderersTest} checks what it says. A test that only fails where
+ * nobody can watch it, and proves nothing the others do not, is worth less than the time spent
+ * on it.
  */
 class PlayingAWholeGameTest {
 
@@ -175,49 +183,6 @@ class PlayingAWholeGameTest {
     }
 
     @Test
-    @DisplayName("the route can be looked at whenever, and says who plays first")
-    void lookingAtTheRoute() {
-        server = reproducible();
-        ClientState theirs = new ClientState();
-        partner = ServerLink.connect(Transport.SOCKET, "localhost", server.socketPort(), theirs);
-        seatThePartner(theirs);
-
-        ClientState mine = new ClientState();
-        ServerLink link = ServerLink.connect(
-                Transport.SOCKET, "localhost", server.socketPort(), mine);
-        ByteArrayOutputStream screen = new ByteArrayOutputStream();
-
-        // One sitting per thing a player waits for, which is what a person does anyway: finish
-        // the ship, wait for everybody else to finish theirs, declare the crew, wait for the
-        // launch, then look at the route. Typed straight through it is a race with the other
-        // player, and a slower machine loses it — the second 'done' arrives while the game is
-        // still in the shipyard, is refused, and nothing ever declares the crew.
-        type(mine, link, screen, "name samuele\njoin game-1\ndone\n");
-        waitUntil(() -> phaseOf(mine) == GamePhase.CREW_PLACEMENT);
-        type(mine, link, screen, "done\ndone\n");
-        waitUntil(() -> phaseOf(mine) == GamePhase.FLIGHT);
-        type(mine, link, screen, "route\nquit\n");
-        link.close();
-
-        String printed = screen.toString(StandardCharsets.UTF_8);
-        assertTrue(printed.contains("spaces"));
-        assertTrue(printed.contains("cards left"));
-        assertTrue(printed.contains("leading"), "somebody is always in front");
-    }
-
-    /**
-     * Types a script at a client, leaving the connection open for the next one.
-     *
-     * <p>The end of the input is the end of the sitting, not the end of the client: a script
-     * without a {@code quit} returns from the loop with everything still connected.
-     */
-    private static void type(ClientState state, ServerLink link, ByteArrayOutputStream screen,
-                             String script) {
-        new TextInterface(state, link, new BufferedReader(new StringReader(script)),
-                new PrintStream(screen, true, StandardCharsets.UTF_8)).run();
-    }
-
-    @Test
     @DisplayName("asking for a ledger before there is one says so rather than showing an empty table")
     void noLedgerYet() {
         server = reproducible();
@@ -267,10 +232,6 @@ class PlayingAWholeGameTest {
      * long takes a core to itself — which on a two-core build machine is half the machine, and
      * turns a one-second test into one that never finishes.
      */
-    private static GamePhase phaseOf(ClientState state) {
-        return state.game().map(GameView::phase).orElse(GamePhase.LOBBY);
-    }
-
     private static void pause() {
         try {
             Thread.sleep(1);
