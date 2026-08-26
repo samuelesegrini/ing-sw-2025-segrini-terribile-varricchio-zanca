@@ -26,8 +26,8 @@ public final class LocalChannel<O extends Serializable, I extends Serializable>
 
     private LocalChannel<I, O> peer;
 
-    private LocalChannel(ChannelListener<I> listener, Class<I> expected) {
-        super(listener, expected);
+    private LocalChannel(Class<I> expected) {
+        super(expected);
     }
 
     /**
@@ -62,10 +62,14 @@ public final class LocalChannel<O extends Serializable, I extends Serializable>
             Class<O> sent, Class<I> received,
             ChannelListener<I> nearListener, ChannelListener<O> farListener) {
 
-        LocalChannel<O, I> near = new LocalChannel<>(nearListener, received);
-        LocalChannel<I, O> far = new LocalChannel<>(farListener, sent);
+        LocalChannel<O, I> near = new LocalChannel<>(received);
+        LocalChannel<I, O> far = new LocalChannel<>(sent);
         near.peer = far;
         far.peer = near;
+        near.listenWith(nearListener);
+        far.listenWith(farListener);
+        near.start();
+        far.start();
         return new Pair<>(near, far);
     }
 

@@ -48,6 +48,13 @@ public final class SocketServer implements AutoCloseable {
      * Starts listening.
      *
      * @param port      the port to bind, or zero to be given a free one
+     *
+     * <p>The handler runs on a transport thread and must return promptly. On RMI it runs
+     * inside the connecting client's own call, so a handler that waited for something else to
+     * happen would leave that client waiting for it; on a socket it runs on the thread that
+     * accepts, so the same handler would stop anybody else connecting. Register the session
+     * and return.
+     *
      * @param onConnect what to do with each new connection, given the channel to answer on
      * @param liveness  how hard each connection should try to notice a client going away
      * @return the running server

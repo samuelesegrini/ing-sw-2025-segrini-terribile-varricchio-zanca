@@ -165,12 +165,15 @@ public abstract class ChannelContract {
     // ------------------------------------------------------------------ closing
 
     @Test
-    @DisplayName("closing one end is noticed at the other")
+    @DisplayName("closing one end is noticed at the other, and quickly")
     void closingIsNoticed() throws Exception {
         Connected pair = open();
 
         pair.client().close();
 
+        // Two seconds, against a heartbeat that allows six of silence: passing this means the
+        // close was announced rather than eventually deduced. A socket gives that away for
+        // free by ending its stream and RMI does not, which is why channels say goodbye.
         assertNotNull(pair.atServer().closure(), "the server was never told the client had gone");
         assertFalse(pair.client().isOpen());
     }

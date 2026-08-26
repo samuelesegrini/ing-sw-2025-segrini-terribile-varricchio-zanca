@@ -52,8 +52,8 @@ public final class StreamChannel<O extends Serializable, I extends Serializable>
     private Thread reader;
 
     private StreamChannel(Socket socket, ObjectOutputStream out, ObjectInputStream in,
-                          ChannelListener<I> listener, Class<I> expected, Liveness liveness) {
-        super(listener, expected, liveness);
+                          Class<I> expected, Liveness liveness) {
+        super(expected, liveness);
         this.socket = socket;
         this.out = out;
         this.in = in;
@@ -95,10 +95,8 @@ public final class StreamChannel<O extends Serializable, I extends Serializable>
             throw new TransportException("could not open a channel over " + socket, problem);
         }
 
-        Deferred<I> deferred = new Deferred<>();
-        StreamChannel<O, I> channel =
-                new StreamChannel<>(socket, out, in, deferred, received, liveness);
-        deferred.to(listener.apply(channel));
+        StreamChannel<O, I> channel = new StreamChannel<>(socket, out, in, received, liveness);
+        channel.listenWith(listener.apply(channel));
 
         channel.reader = new Thread(channel::read, "channel-reader-" + socket.getPort());
         channel.reader.setDaemon(true);
@@ -147,39 +145,6 @@ public final class StreamChannel<O extends Serializable, I extends Serializable>
             socket.close();
         } catch (IOException ignored) {
             // Already going away. There is nothing useful to do with this.
-        }
-    }
-
-    /**
-     * A listener that is chosen a moment after the channel is built.
-     *
-     * <p>Exists only to close the loop between a channel and a listener that wants to answer
-     * on it. Set once, before anything is read, so nothing is ever dropped or queued.
-     *
-     * @param <I> what this end receives
-     */
-    private static final class Deferred<I> implements ChannelListener<I> {
-
-        private volatile ChannelListener<I> real;
-
-        void to(ChannelListener<I> listener) {
-            if (listener == null) {
-                throw new NullPointerException("a channel needs a listener");
-            }
-            this.real = listener;
-        }
-
-        @Override
-        public void received(I message) {
-            real.received(message);
-        }
-
-        @Override
-        public void closed(String reason) {
-            ChannelListener<I> listener = real;
-            if (listener != null) {
-                listener.closed(reason);
-            }
         }
     }
 }
