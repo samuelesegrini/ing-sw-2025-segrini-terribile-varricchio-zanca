@@ -52,6 +52,13 @@ public final class ClientState {
     private boolean connected = true;
 
     /**
+     * Builds a client that has been told nothing.
+     */
+    public ClientState() {
+        // Everything here starts empty, which is what a client that has not connected knows.
+    }
+
+    /**
      * Takes in one event.
      *
      * <p>Everything that is not recognised is still logged. A client that quietly dropped
