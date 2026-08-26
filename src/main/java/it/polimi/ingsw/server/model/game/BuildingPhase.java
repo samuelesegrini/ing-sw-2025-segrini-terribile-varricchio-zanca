@@ -95,14 +95,17 @@ final class BuildingPhase implements Phase {
     }
 
     private void finish(PlayerColor player, ShipBuilder builder, BuildingCommand.FinishBuilding finish) {
+        OptionalInt wanted = finish.startSpaceIfAny()
+                .map(OptionalInt::of)
+                .orElseGet(OptionalInt::empty);
+        // Asked before anything happens, because declaring a ship finished and taking a place
+        // on the starting line are two halves of one command and have to succeed or fail
+        // together. Finishing first and finding out afterwards that the space was refused
+        // leaves a ship that is built, out of the shipyard, and not on the board.
+        game.starts().checkClaimable(player, wanted);
         builder.finish();
         game.peeked().remove(player);
-        // The claim happens after the builder has accepted the finish, so a ship that cannot
-        // be declared done does not take a place on the starting line on its way to being
-        // refused.
-        game.starts().claim(player, finish.startSpaceIfAny()
-                .map(OptionalInt::of)
-                .orElseGet(OptionalInt::empty));
+        game.starts().claim(player, wanted);
     }
 
     @Override

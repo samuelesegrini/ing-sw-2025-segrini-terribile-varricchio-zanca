@@ -7,6 +7,7 @@ import it.polimi.ingsw.common.game.GamePhase;
 import it.polimi.ingsw.common.game.PlayerColor;
 import it.polimi.ingsw.common.game.ScoreSheet;
 import it.polimi.ingsw.common.protocol.Command;
+import it.polimi.ingsw.common.protocol.Event;
 import it.polimi.ingsw.common.protocol.view.GameView;
 import it.polimi.ingsw.common.protocol.view.PlayerView;
 import it.polimi.ingsw.server.data.GameData;
@@ -59,6 +60,8 @@ public final class Game {
     private final Map<PlayerColor, ShipBuilder> builders;
     private final Map<PlayerColor, List<AdventureCardIdentity>> peeked = new EnumMap<>(PlayerColor.class);
     private final Set<PlayerColor> away = EnumSet.noneOf(PlayerColor.class);
+    private final GameData data;
+    private final RandomGenerator random;
     private final ComponentPool pool;
     private final BuildingTimer timer;
     private final AdventureDeck deck;
@@ -69,13 +72,15 @@ public final class Game {
     private List<ScoreSheet> scores;
 
     private Game(String id, LevelSpec level, List<Seat> seats, Map<PlayerColor, Ship> ships,
-                 Map<PlayerColor, ShipBuilder> builders, ComponentPool pool,
-                 BuildingTimer timer, AdventureDeck deck, StartSpaces starts) {
+                 Map<PlayerColor, ShipBuilder> builders, GameData data, RandomGenerator random,
+                 ComponentPool pool, BuildingTimer timer, AdventureDeck deck, StartSpaces starts) {
         this.id = id;
         this.level = level;
         this.seats = List.copyOf(seats);
         this.ships = ships;
         this.builders = builders;
+        this.data = data;
+        this.random = random;
         this.pool = pool;
         this.timer = timer;
         this.deck = deck;
@@ -117,7 +122,7 @@ public final class Game {
                 spec.rules().hourglass() ? StartSpacePolicy.CHOSEN_BY_PLAYER
                         : StartSpacePolicy.IN_FINISHING_ORDER);
 
-        Game game = new Game(id, spec, seats, ships, builders, pool, timer, deck, starts);
+        Game game = new Game(id, spec, seats, ships, builders, data, random, pool, timer, deck, starts);
         game.phase = new BuildingPhase(game);
         if (timer.isInPlay()) {
             timer.start();
@@ -150,10 +155,12 @@ public final class Game {
             return new Reaction.Refused("there is no " + player + " player in this game");
         }
         Reaction reaction = phase.apply(player, command);
-        if (reaction instanceof Reaction.Accepted) {
-            advance();
+        if (!(reaction instanceof Reaction.Accepted accepted)) {
+            return reaction;
         }
-        return reaction;
+        List<Event> narration = new java.util.ArrayList<>(accepted.narration());
+        narration.addAll(advance());
+        return new Reaction.Accepted(narration);
     }
 
     /**
@@ -165,18 +172,27 @@ public final class Game {
      *
      * @return {@code true} if the phase changed
      */
-    public boolean tick() {
-        GamePhase before = phase.name();
-        advance();
-        return phase.name() != before;
+    public List<Event> tick() {
+        return advance();
     }
 
-    private void advance() {
+    /**
+     * Moves through as many phases as are already finished, collecting what each says on the
+     * way in.
+     *
+     * <p>A loop rather than one step, because a phase can be over the moment it starts: two
+     * ships with nothing wrong with them pass through validation without anybody doing
+     * anything, and a flight whose last card asks nobody anything runs to the end of the deck.
+     */
+    private List<Event> advance() {
+        List<Event> entering = new java.util.ArrayList<>();
         Optional<Phase> next = phase.next();
         while (next.isPresent()) {
             phase = next.get();
+            entering.addAll(phase.onEntry());
             next = phase.next();
         }
+        return entering;
     }
 
     // ------------------------------------------------------------------ what it looks like
@@ -202,8 +218,9 @@ public final class Game {
 
         return new GameView(id, level.level(), phase.name(), recipient, players,
                 phase.name() == GamePhase.BUILDING ? buildingView(recipient) : null,
-                flight == null ? null : Projections.of(flight, null, deck.cards().size()),
-                null,
+                flight == null ? null : Projections.of(flight,
+                        phase.cardOnTheTable().orElse(null), phase.cardsLeft()),
+                phase.pending().orElse(null),
                 scores);
     }
 
@@ -275,6 +292,32 @@ public final class Game {
 
     LevelSpec level() {
         return level;
+    }
+
+    /**
+     * Returns where this game's randomness comes from.
+     *
+     * <p>The same source that shuffled the tiles and dealt the cards also throws the dice, so
+     * a game is reproducible from its seed. That is what makes a flight testable, and it is
+     * the difference between a bug report that can be replayed and one that cannot.
+     *
+     * @return the generator
+     */
+    RandomGenerator random() {
+        return random;
+    }
+
+    /**
+     * Returns the rules behind a card.
+     *
+     * @param cardId which card
+     * @return what it does
+     * @throws IllegalStateException if the data has a card with no rules, which the coverage
+     *                               test exists to make impossible
+     */
+    it.polimi.ingsw.server.model.adventure.AdventureCard rulesFor(String cardId) {
+        return data.playableCard(cardId).orElseThrow(() ->
+                new IllegalStateException(cardId + " has no rules behind it"));
     }
 
     Map<PlayerColor, Ship> ships() {
