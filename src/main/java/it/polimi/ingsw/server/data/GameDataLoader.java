@@ -6,9 +6,13 @@ import it.polimi.ingsw.server.model.adventure.AdventureCard;
 import it.polimi.ingsw.server.model.adventure.AdventureCardIdentity;
 import it.polimi.ingsw.server.model.adventure.AdventureCardType;
 import it.polimi.ingsw.server.model.adventure.CardLevel;
+import it.polimi.ingsw.server.model.adventure.resolution.ShipAttribute;
 import it.polimi.ingsw.server.model.adventure.card.AbandonedShipCard;
 import it.polimi.ingsw.server.model.adventure.card.AbandonedStationCard;
 import it.polimi.ingsw.server.model.adventure.card.SlaversCard;
+import it.polimi.ingsw.server.model.adventure.card.CombatLine;
+import it.polimi.ingsw.server.model.adventure.card.CombatPenalty;
+import it.polimi.ingsw.server.model.adventure.card.CombatZoneCard;
 import it.polimi.ingsw.server.model.adventure.card.MeteorSwarmCard;
 import it.polimi.ingsw.server.model.adventure.card.PiratesCard;
 import it.polimi.ingsw.server.model.adventure.card.PlanetsCard;
@@ -197,6 +201,8 @@ public final class GameDataLoader {
             case PLANETS -> Optional.of(new PlanetsCard(
                     identity, readPlanets(array(entry, "planets", where), where),
                     integer(entry, "flightDays", where)));
+            case COMBAT_ZONE -> Optional.of(new CombatZoneCard(
+                    identity, readCombatLines(array(entry, "lines", where), where)));
             default -> Optional.empty();
         };
     }
@@ -209,6 +215,29 @@ public final class GameDataLoader {
                     enumValue(Direction.class, text(threat, "from", where), where)));
         }
         return threats;
+    }
+
+    private static List<CombatLine> readCombatLines(JsonNode node, String where) {
+        List<CombatLine> lines = new ArrayList<>();
+        for (JsonNode line : node) {
+            JsonNode penalty = required(line, "penalty", where);
+            lines.add(new CombatLine(
+                    enumValue(ShipAttribute.class, text(line, "attribute", where), where),
+                    readCombatPenalty(penalty, where)));
+        }
+        return lines;
+    }
+
+    private static CombatPenalty readCombatPenalty(JsonNode node, String where) {
+        String kind = text(node, "kind", where);
+        return switch (kind) {
+            case "FLIGHT_DAYS" -> new CombatPenalty.LoseFlightDays(integer(node, "value", where));
+            case "CREW" -> new CombatPenalty.LoseCrew(integer(node, "value", where));
+            case "GOODS" -> new CombatPenalty.LoseGoods(integer(node, "value", where));
+            case "CANNON_FIRE" -> new CombatPenalty.TakeFire(
+                    readThreats(array(node, "shots", where), where));
+            default -> throw new GameDataException(where + ": '" + kind + "' is not a combat penalty");
+        };
     }
 
     private static List<Map<GoodColor, Integer>> readPlanets(JsonNode node, String where) {
