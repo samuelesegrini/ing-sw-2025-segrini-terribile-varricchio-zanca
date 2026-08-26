@@ -59,7 +59,7 @@ class ShipRendererTest {
                 outline.add(new Position(row, column));
             }
         }
-        return new ShipView(5, 7, 5, 4, outline, cells, List.of(), 0,
+        return new ShipView(5, 7, 5, 4, outline, cells, List.of(), List.of(), 0,
                 new ShipAttributes(0, 0, 0), ValidationReport.legal());
     }
 
@@ -81,7 +81,7 @@ class ShipRendererTest {
         @DisplayName("an empty square you may build on is not the same as a hole in the board")
         void outlineVersusEmpty() {
             ShipView holed = new ShipView(1, 3, 5, 4,
-                    Set.of(new Position(0, 0), new Position(0, 2)), Map.of(), List.of(), 0,
+                    Set.of(new Position(0, 0), new Position(0, 2)), Map.of(), List.of(), List.of(), 0,
                     new ShipAttributes(0, 0, 0), ValidationReport.legal());
 
             String row = ShipRenderer.render(holed).get(1);
@@ -175,7 +175,7 @@ class ShipRendererTest {
         @Test
         @DisplayName("what is wrong with a ship is said in printed coordinates")
         void problemsAreLocatable() {
-            ShipView broken = new ShipView(5, 7, 5, 4, Set.of(CABIN), Map.of(), List.of(), 1,
+            ShipView broken = new ShipView(5, 7, 5, 4, Set.of(CABIN), Map.of(), List.of(), List.of(), 1,
                     new ShipAttributes(0, 0, 0),
                     new ValidationReport(List.of(new ShipViolation(
                             ViolationKind.BLOCKED_ENGINE_EXHAUST, Set.of(CABIN),

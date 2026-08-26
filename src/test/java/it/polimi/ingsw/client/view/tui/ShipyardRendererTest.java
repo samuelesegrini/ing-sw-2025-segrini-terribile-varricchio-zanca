@@ -131,7 +131,7 @@ class ShipyardRendererTest {
     @Test
     @DisplayName("a tile that is down but not welded is called out, because a board cannot show it")
     void looseTiles() {
-        ShipView ship = new ShipView(5, 7, 5, 4, Set.of(), Map.of(), List.of(), 0,
+        ShipView ship = new ShipView(5, 7, 5, 4, Set.of(), Map.of(), List.of(), List.of(), 0,
                 new it.polimi.ingsw.common.game.ShipAttributes(0, 0, 0),
                 it.polimi.ingsw.common.game.ValidationReport.legal());
         BuildingView loose = new BuildingView(96, List.of(), null,

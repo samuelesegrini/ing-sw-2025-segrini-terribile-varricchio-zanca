@@ -83,7 +83,8 @@ public final class Projections {
         ship.components().forEach((cell, component) -> cells.put(cell, cellOf(component)));
 
         return new ShipView(board.rows(), board.columns(),
-                board.firstPrintedRow(), board.firstPrintedColumn(), outline, cells, List.of(),
+                board.firstPrintedRow(), board.firstPrintedColumn(), outline, cells,
+                ship.pieces(), List.of(),
                 ship.lostComponentCount(),
                 // With nothing powered: a view showing what a ship could manage with every
                 // battery spent would be showing a number the player cannot act on.
@@ -105,7 +106,7 @@ public final class Projections {
     public static ShipView of(Ship ship, List<? extends Tile> reserved) {
         ShipView bare = of(ship);
         return new ShipView(bare.rows(), bare.columns(), bare.firstPrintedRow(),
-                bare.firstPrintedColumn(), bare.outline(), bare.cells(),
+                bare.firstPrintedColumn(), bare.outline(), bare.cells(), bare.pieces(),
                 reserved.stream().map(Projections::tileOf).toList(),
                 bare.lostComponents(), bare.attributes(), bare.validation());
     }

@@ -30,6 +30,8 @@ import java.util.Set;
  * @param firstPrintedColumn what the leftmost column is called
  * @param outline         the cells that may hold a component; everything else is off the board
  * @param cells           what is welded where
+ * @param pieces          the parts the ship is in, largest first; more than one means somebody
+ *                        has to choose which to keep
  * @param reserved        tiles set aside and not welded, which count as lost at the end (p.7)
  * @param lostComponents  how many components this ship has already lost
  * @param attributes      firepower, engine power and crew with no double component powered
@@ -37,7 +39,8 @@ import java.util.Set;
  */
 public record ShipView(int rows, int columns, int firstPrintedRow, int firstPrintedColumn,
                        Set<Position> outline, Map<Position, CellView> cells,
-                       List<TileView> reserved, int lostComponents, ShipAttributes attributes,
+                       List<Set<Position>> pieces, List<TileView> reserved, int lostComponents,
+                       ShipAttributes attributes,
                        ValidationReport validation) implements Serializable {
 
     /**
@@ -58,6 +61,7 @@ public record ShipView(int rows, int columns, int firstPrintedRow, int firstPrin
         }
         outline = Set.copyOf(outline);
         cells = Map.copyOf(cells);
+        pieces = pieces.stream().map(Set::copyOf).toList();
         reserved = List.copyOf(reserved);
         if (!outline.containsAll(cells.keySet())) {
             throw new IllegalArgumentException("this ship has components welded outside its own outline");
@@ -82,5 +86,18 @@ public record ShipView(int rows, int columns, int firstPrintedRow, int firstPrin
      */
     public int printedColumn(int column) {
         return firstPrintedColumn + column;
+    }
+
+    /**
+     * Tells whether this ship is still in one piece.
+     *
+     * <p>Different from being legal, and both have to be true before it can fly. A component
+     * welded on with connectors that meet nothing is part of the board and not part of the ship,
+     * which is the manual's rule rather than an oversight.
+     *
+     * @return {@code true} when nothing has come apart
+     */
+    public boolean isWhole() {
+        return pieces.size() <= 1;
     }
 }

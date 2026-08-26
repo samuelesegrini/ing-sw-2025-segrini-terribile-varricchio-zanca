@@ -203,7 +203,7 @@ class MalformedMessagesTest {
         void componentsOffTheBoard() {
             refuses(IllegalArgumentException.class, () -> new ShipView(5, 7, 5, 4, Set.of(),
                     Map.of(CELL, new CellView(tile, 0, List.of(), 2, null)),
-                    List.of(), 0, new ShipAttributes(0, 0, 0), ValidationReport.legal()));
+                    List.of(), List.of(), 0, new ShipAttributes(0, 0, 0), ValidationReport.legal()));
         }
 
         @Test
@@ -213,9 +213,9 @@ class MalformedMessagesTest {
             refuses(IllegalArgumentException.class, () -> ship(5, 0, 0));
             refuses(IllegalArgumentException.class, () -> ship(5, 7, -1));
             refuses(NullPointerException.class, () -> new ShipView(5, 7, 5, 4, Set.of(), Map.of(),
-                    List.of(), 0, null, ValidationReport.legal()));
+                    List.of(), List.of(), 0, null, ValidationReport.legal()));
             refuses(NullPointerException.class, () -> new ShipView(5, 7, 5, 4, Set.of(), Map.of(),
-                    List.of(), 0, new ShipAttributes(0, 0, 0), null));
+                    List.of(), List.of(), 0, new ShipAttributes(0, 0, 0), null));
         }
 
         @Test
@@ -276,7 +276,7 @@ class MalformedMessagesTest {
         }
 
         private ShipView ship(int rows, int columns, int lost) {
-            return new ShipView(rows, columns, 5, 4, Set.of(), Map.of(), List.of(), lost,
+            return new ShipView(rows, columns, 5, 4, Set.of(), Map.of(), List.of(), List.of(), lost,
                     new ShipAttributes(0, 0, 0), ValidationReport.legal());
         }
 
