@@ -11,7 +11,8 @@ import java.io.Serializable;
  * {@code Event} would grow a case for it.
  *
  * <p>So the transport wraps. A {@link Message} carries a command or an event and is passed
- * up; a {@link KeepAlive} is answered by the transport and never seen above it.
+ * up; a {@link KeepAlive} and a {@link Goodbye} are dealt with by the transport and never
+ * seen above it.
  */
 public sealed interface Envelope extends Serializable {
 
@@ -42,5 +43,18 @@ public sealed interface Envelope extends Serializable {
      * what this is.
      */
     record KeepAlive() implements Envelope {
+    }
+
+    /**
+     * The last thing a channel sends: this end is closing on purpose.
+     *
+     * <p>Without it, a clean close is only noticed the slow way. A socket happens to give it
+     * away — the reader sees the end of the stream at once — but RMI does not: unexporting an
+     * endpoint is invisible until somebody tries to call it, and a server with nothing to say
+     * to a player who has just quit would go on believing in them until the heartbeat ran out.
+     * Six seconds of a departed player still listed as present is the kind of difference
+     * between two transports that requirement S5 exists to rule out.
+     */
+    record Goodbye() implements Envelope {
     }
 }

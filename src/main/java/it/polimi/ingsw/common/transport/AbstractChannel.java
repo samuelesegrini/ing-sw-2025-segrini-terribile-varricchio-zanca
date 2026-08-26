@@ -41,7 +41,7 @@ public abstract class AbstractChannel<O extends Serializable, I extends Serializ
                 return thread;
             });
 
-    private final ChannelListener<I> listener;
+    private final AtomicReference<ChannelListener<I>> listener = new AtomicReference<>();
     private final Class<I> expected;
     private final AtomicBoolean open = new AtomicBoolean(true);
     private final AtomicLong lastHeard = new AtomicLong(System.nanoTime());
@@ -51,17 +51,15 @@ public abstract class AbstractChannel<O extends Serializable, I extends Serializ
     /**
      * Builds a channel that will watch for silence once it is started.
      *
-     * @param listener what to do with what arrives
      * @param expected what this side receives, so that a message of the wrong kind is
      *                 reported as a protocol error rather than thrown deep inside a handler
      * @param liveness how hard to try to notice the other end going away
-     * @throws NullPointerException if any argument is {@code null}
+     * @throws NullPointerException if either argument is {@code null}
      */
-    protected AbstractChannel(ChannelListener<I> listener, Class<I> expected, Liveness liveness) {
-        if (listener == null || expected == null || liveness == null) {
-            throw new NullPointerException("a channel needs a listener, a message type and liveness");
+    protected AbstractChannel(Class<I> expected, Liveness liveness) {
+        if (expected == null || liveness == null) {
+            throw new NullPointerException("a channel needs a message type and liveness");
         }
-        this.listener = listener;
         this.expected = expected;
         this.liveness = liveness;
     }
@@ -72,31 +70,56 @@ public abstract class AbstractChannel<O extends Serializable, I extends Serializ
      * <p>For connections inside one process, where the other end cannot go away without this
      * one going with it, and there is nothing a heartbeat could discover.
      *
-     * @param listener what to do with what arrives
      * @param expected what this side receives
-     * @throws NullPointerException if either argument is {@code null}
+     * @throws NullPointerException if it is {@code null}
      */
-    protected AbstractChannel(ChannelListener<I> listener, Class<I> expected) {
-        if (listener == null || expected == null) {
-            throw new NullPointerException("a channel needs a listener and a message type");
+    protected AbstractChannel(Class<I> expected) {
+        if (expected == null) {
+            throw new NullPointerException("a channel needs a message type");
         }
-        this.listener = listener;
         this.expected = expected;
         this.liveness = null;
     }
 
     /**
-     * Starts the heartbeat, once the subclass is ready to be used.
+     * Says what to do with what arrives.
      *
-     * <p>Separate from the constructor because a heartbeat is a timer that calls
+     * <p>Separate from the constructor, and it has to be. A server accepting a connection
+     * usually wants a listener that can answer on the very channel being built, so the
+     * listener cannot exist before the channel does. Both transports do the same three
+     * things in the same order: build, install, start.
+     *
+     * @param listener what to do with what arrives
+     * @throws NullPointerException  if the listener is {@code null}
+     * @throws IllegalStateException if one has already been installed
+     */
+    protected final void listenWith(ChannelListener<I> listener) {
+        if (listener == null) {
+            throw new NullPointerException("a channel needs a listener");
+        }
+        if (!this.listener.compareAndSet(null, listener)) {
+            throw new IllegalStateException("this channel already has a listener");
+        }
+    }
+
+    /**
+     * Starts the channel, once the subclass is ready to be used.
+     *
+     * <p>Separate from the constructor because the heartbeat is a timer that calls
      * {@link #transmit} on another thread, and a constructor that started one would be
-     * calling into a subclass whose own fields are not assigned yet. Every transport here
-     * is built by a static factory that calls this as its last act, so there is nowhere for
-     * a caller to forget it.
+     * calling into a subclass whose own fields are not assigned yet. Every transport here is
+     * built by a static factory that calls this as its last act, so there is nowhere for a
+     * caller to forget it.
      *
-     * <p>Harmless to call on a channel with no liveness, and harmless to call twice.
+     * <p>Harmless to call twice.
+     *
+     * @throws IllegalStateException if no listener has been installed, which would mean
+     *                               whatever arrived first had nowhere to go
      */
     protected final void start() {
+        if (listener.get() == null) {
+            throw new IllegalStateException("this channel has no listener, so nothing can arrive");
+        }
         if (liveness == null || heartbeat.get() != null) {
             return;
         }
@@ -138,13 +161,17 @@ public abstract class AbstractChannel<O extends Serializable, I extends Serializ
         if (!open.get() || envelope instanceof Envelope.KeepAlive) {
             return;
         }
+        if (envelope instanceof Envelope.Goodbye) {
+            shutdown("the other end said goodbye");
+            return;
+        }
         Serializable payload = ((Envelope.Message) envelope).payload();
         if (!expected.isInstance(payload)) {
             failed("expected a " + expected.getSimpleName() + " and got a "
                     + payload.getClass().getSimpleName());
             return;
         }
-        listener.received(expected.cast(payload));
+        listener.get().received(expected.cast(payload));
     }
 
     /**
@@ -223,10 +250,22 @@ public abstract class AbstractChannel<O extends Serializable, I extends Serializ
             beating.cancel(false);
         }
         try {
+            // Best effort, and before letting go of the connection: on a transport where a
+            // close is otherwise invisible, this is the only thing that tells the other end
+            // promptly. It goes through transmit rather than send because send has already
+            // been switched off by the line above.
+            transmit(new Envelope.Goodbye());
+        } catch (Exception alreadyGone) {
+            // The connection is closing and may well be why. Nothing to report.
+        }
+        try {
             release();
         } catch (RuntimeException problem) {
             // Already closing. There is nowhere useful for this to go.
         }
-        listener.closed(reason);
+        ChannelListener<I> told = listener.get();
+        if (told != null) {
+            told.closed(reason);
+        }
     }
 }

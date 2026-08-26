@@ -16,7 +16,8 @@ import org.junit.jupiter.api.Test;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -44,13 +45,12 @@ class SocketChannelTest extends ChannelContract {
     protected Connected connect(Recorder<Event> atClient, Recorder<Command> atServer)
             throws Exception {
 
-        SynchronousQueue<Channel<Event, Command>> accepted = new SynchronousQueue<>();
+        BlockingQueue<Channel<Event, Command>> accepted = new LinkedBlockingQueue<>();
         SocketServer server = SocketServer.listening(0, channel -> {
-            try {
-                accepted.put(channel);
-            } catch (InterruptedException interrupted) {
-                Thread.currentThread().interrupt();
-            }
+            // A queue that does not wait for a taker. On RMI the connection handler runs
+            // inside the client's own connect call, so a handler that blocked for a
+            // rendezvous would block the client that is waiting for it to return.
+            accepted.add(channel);
             return atServer;
         }, Liveness.DEFAULT);
         servers.add(server);
@@ -94,16 +94,15 @@ class SocketChannelTest extends ChannelContract {
     @Test
     @DisplayName("closing the server closes the connections it accepted")
     void closingTheServerHangsUp() throws Exception {
-        SynchronousQueue<Channel<Event, Command>> accepted = new SynchronousQueue<>();
+        BlockingQueue<Channel<Event, Command>> accepted = new LinkedBlockingQueue<>();
         Recorder<Event> atClient = new Recorder<>();
         Recorder<Command> atServer = new Recorder<>();
 
         SocketServer server = SocketServer.listening(0, channel -> {
-            try {
-                accepted.put(channel);
-            } catch (InterruptedException interrupted) {
-                Thread.currentThread().interrupt();
-            }
+            // A queue that does not wait for a taker. On RMI the connection handler runs
+            // inside the client's own connect call, so a handler that blocked for a
+            // rendezvous would block the client that is waiting for it to return.
+            accepted.add(channel);
             return atServer;
         }, Liveness.DEFAULT);
 
@@ -122,15 +121,14 @@ class SocketChannelTest extends ChannelContract {
     @DisplayName("a client that vanishes is noticed, without it having said anything")
     void silenceIsNoticed() throws Exception {
         Liveness impatient = new Liveness(Duration.ofMillis(60), Duration.ofMillis(200));
-        SynchronousQueue<Channel<Event, Command>> accepted = new SynchronousQueue<>();
+        BlockingQueue<Channel<Event, Command>> accepted = new LinkedBlockingQueue<>();
         Recorder<Command> atServer = new Recorder<>();
 
         SocketServer server = SocketServer.listening(0, channel -> {
-            try {
-                accepted.put(channel);
-            } catch (InterruptedException interrupted) {
-                Thread.currentThread().interrupt();
-            }
+            // A queue that does not wait for a taker. On RMI the connection handler runs
+            // inside the client's own connect call, so a handler that blocked for a
+            // rendezvous would block the client that is waiting for it to return.
+            accepted.add(channel);
             return atServer;
         }, impatient);
         servers.add(server);
@@ -172,14 +170,13 @@ class SocketChannelTest extends ChannelContract {
     @Test
     @DisplayName("a client that sends events instead of commands has its connection closed")
     void aHostileClient() throws Exception {
-        SynchronousQueue<Channel<Event, Command>> accepted = new SynchronousQueue<>();
+        BlockingQueue<Channel<Event, Command>> accepted = new LinkedBlockingQueue<>();
         Recorder<Command> atServer = new Recorder<>();
         SocketServer server = SocketServer.listening(0, channel -> {
-            try {
-                accepted.put(channel);
-            } catch (InterruptedException interrupted) {
-                Thread.currentThread().interrupt();
-            }
+            // A queue that does not wait for a taker. On RMI the connection handler runs
+            // inside the client's own connect call, so a handler that blocked for a
+            // rendezvous would block the client that is waiting for it to return.
+            accepted.add(channel);
             return atServer;
         }, Liveness.DEFAULT);
         servers.add(server);

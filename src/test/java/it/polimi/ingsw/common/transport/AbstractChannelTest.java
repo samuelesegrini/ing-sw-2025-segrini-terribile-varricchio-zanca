@@ -41,14 +41,17 @@ class AbstractChannelTest {
         private boolean released;
 
         Scripted(ChannelListener<Command> listener, Liveness liveness, boolean transmissionFails) {
-            super(listener, Command.class, liveness);
+            super(Command.class, liveness);
             this.transmissionFails = transmissionFails;
+            listenWith(listener);
             start();
         }
 
         Scripted(ChannelListener<Command> listener) {
-            super(listener, Command.class);
+            super(Command.class);
             this.transmissionFails = false;
+            listenWith(listener);
+            start();
         }
 
         @Override
@@ -70,6 +73,10 @@ class AbstractChannelTest {
 
         void arriveKeepAlive() {
             deliver(new Envelope.KeepAlive());
+        }
+
+        void listenAgain(ChannelListener<Command> listener) {
+            listenWith(listener);
         }
     }
 
@@ -210,6 +217,32 @@ class AbstractChannelTest {
             assertThrows(NullPointerException.class, () -> new Scripted(null));
             assertThrows(NullPointerException.class,
                     () -> new Scripted(heard, null, false));
+        }
+
+        @Test
+        @DisplayName("a channel started without a listener says so, rather than dropping the first message")
+        void startingWithNowhereToDeliver() {
+            AbstractChannel<Event, Command> unlistened = new AbstractChannel<>(Command.class) {
+                @Override
+                protected void transmit(Envelope envelope) {
+                    // Nothing is ever sent through this one.
+                }
+
+                @Override
+                protected void release() {
+                    // Nothing to let go of.
+                }
+            };
+
+            assertThrows(IllegalStateException.class, unlistened::start);
+        }
+
+        @Test
+        @DisplayName("a listener is installed once")
+        void oneListenerOnly() {
+            Scripted channel = new Scripted(heard);
+
+            assertThrows(IllegalStateException.class, () -> channel.listenAgain(heard));
         }
     }
 }
