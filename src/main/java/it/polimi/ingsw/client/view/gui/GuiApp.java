@@ -44,7 +44,7 @@ public final class GuiApp extends Application {
         GraphicalInterface.Handover handover = GraphicalInterface.handover();
         this.state = handover.state();
         this.server = handover.server();
-        this.screens = new Screens(state, server);
+        this.screens = new Screens(state, server::send);
         this.stage = primary;
 
         primary.setScene(new Scene(screens.rootFor(Screen.LOGIN), WIDTH, HEIGHT));
