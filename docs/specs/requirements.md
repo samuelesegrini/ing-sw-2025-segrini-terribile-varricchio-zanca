@@ -62,14 +62,27 @@ and demonstrated autonomy and communication.
 
 | ID | Requirement | Verified by |
 |:--|:--|:--|
-| L1 | Connecting with no game starting creates one; otherwise the player joins the starting game | Lobby tests |
-| L2 | The creating player chooses the player count (2-4) | Lobby tests |
-| L3 | The game starts as soon as the expected player count is reached | Lobby tests |
-| L4 | A player leaving **or** a dropped connection ends the game, including during setup, and every player is notified | Disconnection tests |
+| L1 | Connecting with no game starting creates one; otherwise the player joins the starting game | `LobbyTest` |
+| L2 | The creating player chooses the player count (2-4) | `LobbyTest.creatingATable` |
+| L3 | The game starts as soon as the expected player count is reached | `LobbyTest.reachingTheExpectedCountStartsTheGame` |
+| L4 | A player leaving **or** a dropped connection ends the game, including during setup, and every player is notified | `LobbyTest.theBaselinePolicy` |
 
-L4 is the *baseline* behaviour. Advanced feature AF4 (§ AF below) replaces it with
-reconnection; both behaviours must remain reachable and the active one must be
-explicit, not accidental.
+**L1 and AF2 want different things**, and AF2 wins where they disagree. The baseline
+describes a server running one game at a time, where there is nothing to choose between.
+AF2 asks for several at once, which means a joining player has to be able to pick. So the
+protocol offers `ListGames`, `CreateGame` and `JoinGame`, and L1's behaviour is what a
+client does by default over that: list, then join the first open game or create one. The
+server does not decide for them, because with more than one game open it would be deciding
+wrongly.
+
+**L4 is the baseline that AF4 replaces**, and the requirements are explicit that both must
+stay reachable and that the active one must be a decision rather than an accident. It is
+one: `DisconnectionPolicy`, passed to the `Lobby`.
+
+| policy | what a dropped connection does |
+|:--|:--|
+| `ENDS_THE_GAME` | L4. Everybody still connected is told the game is over, then hung up on. |
+| `GAME_CARRIES_ON` | AF4, and the default. The seat waits, turns are skipped, logging in again reclaims it. |
 
 ## AF — Advanced features (§ 2.3)
 

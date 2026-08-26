@@ -195,6 +195,19 @@ public final class GameController implements AutoCloseable {
         announce(new GameEvent.PhaseBegan(game.phase()));
     }
 
+    /**
+     * Sends one event to everybody still attached.
+     *
+     * <p>Public because a lobby ending a game under the baseline policy has to say so before it
+     * hangs up: a client that is simply cut off cannot tell a finished game from a failed
+     * network.
+     *
+     * @param event what to send
+     */
+    public void announceToEveryone(Event event) {
+        run(() -> announce(event));
+    }
+
     private void announce(Event event) {
         sessions.values().forEach(session -> session.send(event));
     }
