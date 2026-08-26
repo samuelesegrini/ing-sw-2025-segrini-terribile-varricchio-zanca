@@ -213,4 +213,40 @@ public sealed interface PlayerPrompt {
             }
         }
     }
+
+    /**
+     * A call to pick a planet to land on, or none.
+     *
+     * <p>Only free planets are offered: one ship per planet, and once a rocket marker is on
+     * one nobody else may land there (manual p.12). Landing is never compulsory, and
+     * landing purely to deny somebody else a good planet is a legitimate move — which is
+     * why the goods on each one are shown rather than just their number.
+     *
+     * @param player     who is choosing
+     * @param planets    the free planets, by their printed number, and what is on each
+     * @param flightDays what landing costs
+     */
+    record ChoosePlanet(PlayerColor player, Map<Integer, Map<GoodColor, Integer>> planets,
+                        int flightDays) implements PlayerPrompt {
+
+        /**
+         * Validates the call and takes a defensive copy.
+         *
+         * @throws IllegalArgumentException if nothing is on offer or the cost is negative
+         * @throws NullPointerException     if the player is {@code null}
+         */
+        public ChoosePlanet {
+            if (player == null) {
+                throw new NullPointerException("a planet call needs a player");
+            }
+            if (flightDays < 0) {
+                throw new IllegalArgumentException("landing cannot pay flight days");
+            }
+            planets = planets.entrySet().stream().collect(java.util.stream.Collectors.toUnmodifiableMap(
+                    Map.Entry::getKey, entry -> Map.copyOf(entry.getValue())));
+            if (planets.isEmpty()) {
+                throw new IllegalArgumentException("a call with no free planets should not be made");
+            }
+        }
+    }
 }

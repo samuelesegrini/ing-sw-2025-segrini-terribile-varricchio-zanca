@@ -11,6 +11,7 @@ import it.polimi.ingsw.server.model.adventure.card.AbandonedStationCard;
 import it.polimi.ingsw.server.model.adventure.card.SlaversCard;
 import it.polimi.ingsw.server.model.adventure.card.MeteorSwarmCard;
 import it.polimi.ingsw.server.model.adventure.card.PiratesCard;
+import it.polimi.ingsw.server.model.adventure.card.PlanetsCard;
 import it.polimi.ingsw.server.model.adventure.card.ThreatPattern;
 import it.polimi.ingsw.server.model.adventure.card.SmugglersCard;
 import it.polimi.ingsw.server.model.board.DeckComposition;
@@ -193,6 +194,9 @@ public final class GameDataLoader {
                     integer(entry, "flightDays", where)));
             case METEOR_SWARM -> Optional.of(new MeteorSwarmCard(
                     identity, readThreats(array(entry, "meteors", where), where)));
+            case PLANETS -> Optional.of(new PlanetsCard(
+                    identity, readPlanets(array(entry, "planets", where), where),
+                    integer(entry, "flightDays", where)));
             default -> Optional.empty();
         };
     }
@@ -205,6 +209,14 @@ public final class GameDataLoader {
                     enumValue(Direction.class, text(threat, "from", where), where)));
         }
         return threats;
+    }
+
+    private static List<Map<GoodColor, Integer>> readPlanets(JsonNode node, String where) {
+        List<Map<GoodColor, Integer>> planets = new ArrayList<>();
+        for (JsonNode planet : node) {
+            planets.add(readGoods(required(planet, "goods", where), where));
+        }
+        return planets;
     }
 
     private static Map<GoodColor, Integer> readGoods(JsonNode node, String where) {

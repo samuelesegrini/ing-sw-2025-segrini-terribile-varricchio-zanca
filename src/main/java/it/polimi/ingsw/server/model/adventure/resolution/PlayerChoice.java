@@ -160,4 +160,28 @@ public sealed interface PlayerChoice {
             piece = Set.copyOf(piece);
         }
     }
+
+    /**
+     * The planet a player is landing on.
+     *
+     * @param player who is landing
+     * @param planet the planet's printed number
+     */
+    record PlanetChosen(PlayerColor player, int planet) implements PlayerChoice {
+
+        /**
+         * Validates the answer.
+         *
+         * @throws NullPointerException     if the player is {@code null}
+         * @throws IllegalArgumentException if the planet number is not positive
+         */
+        public PlanetChosen {
+            if (player == null) {
+                throw new NullPointerException("a landing needs a player");
+            }
+            if (planet < 1) {
+                throw new IllegalArgumentException("planets are numbered from one, got " + planet);
+            }
+        }
+    }
 }
