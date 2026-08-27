@@ -1,8 +1,8 @@
 # Roadmap
 
-Twelve milestones, ordered so that each one is independently demonstrable and
+Thirteen milestones, ordered so that each one is independently demonstrable and
 nothing is built before the thing it depends on. The first twelve carry the
-submission; M12 is the first that changes no behaviour at all. Milestones map one-to-one onto
+submission; M12 was the first that changed no behaviour at all. Milestones map one-to-one onto
 GitHub milestones; every issue belongs to exactly one.
 
 The ordering principle: **the model is finished and fully tested before a single
@@ -24,6 +24,7 @@ found in a unit test are free.
 | M10 | AF — Persistence | Snapshot and recovery | `v0.11.0` |
 | M11 | Deliverables | UML, protocol doc, Javadoc, jars, peer reviews | `v1.0.0` |
 | M12 | Polymorphic dispatch | Dispatch moved back into the hierarchies that own it | `v1.1.0` |
+| M13 | Seams and silent failures | A missing transport seam, two unchecked casts, a thread that dies quietly | `v1.2.0` |
 
 ## M0 — Foundations
 
@@ -144,6 +145,31 @@ presence of a switch is not a defect**. Three things are:
 Exit criterion: no behaviour changed, no test rewritten to accommodate the
 refactor, and every one of the four sites either fails the build or cannot be
 written when a variant is added.
+
+## M13 — Seams and silent failures
+
+What M12 left, plus one thing M12 turned up. Three items, and the thread
+between them is that in each case something the compiler or the runtime
+should have caught was arranged so that it could not.
+
+- **A seam with two adapters and no interface** (#149). `SocketServer` and
+  `RmiServer` present the same four members and share most of their
+  implementation; `RmiServer`'s Javadoc says it is *"the same shape as
+  `SocketServer` on purpose"*, which is a comment doing an interface's job.
+  `Doorway`, `Doorman` and `AbstractListeningPost` say it in the type system
+  instead — the shape `AbstractChannel` already uses one layer down.
+- **Two sealed unions unwrapped by hand** (#150). `Envelope` and `Reaction`
+  are each taken apart by an `instanceof` chain ending in an unchecked cast,
+  so a new variant compiles and fails at runtime. The `Envelope` one fails on
+  a transport thread, inside the module whose whole job is that a dropped
+  connection never throws.
+- **A keeper that kills a game thread** (#147). A snapshot write that fails
+  takes the game's single thread with it, and that game then stops applying
+  commands with nobody told. Found while working M12; it predates it.
+
+Exit criterion: no behaviour changed except where #147 deliberately changes
+it, both listening posts reachable through one interface, and no unchecked
+cast over a sealed type left in the tree.
 
 ## Working agreement
 
