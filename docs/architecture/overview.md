@@ -21,7 +21,7 @@ engineer it.
 │        ▲                      │                          │                          │
 │        └────────Event─────────┴──observes────────────────┘                          │
 │                                                                                    │
-│   GameRegistry (many concurrent games)      SnapshotStore (persistence)             │
+│   Lobby — the game registry (many games)    SnapshotStore (persistence)             │
 └────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -283,8 +283,13 @@ reliable (`requirements.pdf` § 2.3).
 - The building phase is simultaneous, but every action is still a command on the
   same queue, so "two players grab the same tile" resolves deterministically by
   arrival order.
-- `GameRegistry` is the only shared mutable structure across games and is guarded
-  explicitly.
+- The **lobby** is the game registry — the only structure shared across games. It is
+  guarded not by a lock but by a thread: every command from every table is applied by
+  the same worker, one at a time, so there is no interleaving to reason about.
+- A game nobody is connected to is **reclaimed**, whatever the disconnection policy
+  says. Carrying on is for a table somebody may come back to; a table with every seat
+  empty has nobody to carry on for, and holding it open costs a thread, a game object
+  and every nickname at it for as long as the server runs.
 
 *Why.* Fine-grained locking inside a domain model is where subtle, unreproducible
 multiplayer bugs live. A queue per game gives the model single-threaded semantics

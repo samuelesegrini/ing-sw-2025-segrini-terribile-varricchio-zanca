@@ -47,6 +47,9 @@ public final class Lobby implements AutoCloseable {
     private final RandomGenerator random;
     private final InstantSource clock;
     private final DisconnectionPolicy onDisconnection;
+    /** How long to let the worker finish what it was doing before shutting the desk. */
+    private static final Duration SHUTDOWN_PATIENCE = Duration.ofSeconds(2);
+
     private final ExecutorService queue;
     private final AtomicInteger nextGame = new AtomicInteger(1);
 
@@ -334,9 +337,34 @@ public final class Lobby implements AutoCloseable {
             // The seat stays in `playing`, unattached, so that logging in again finds it. The
             // game itself carries on without them: the controller has already been told, and a
             // flight that stopped every time somebody's laptop did would be a worse game.
+            //
+            // Unless they were the last one. A game with nobody connected to it has nobody to
+            // carry on for, and holding it open costs a thread, a game, and every nickname at
+            // that table — for as long as the server runs.
+            Seated seat = playing.get(name);
+            if (seat != null && nobodyIsLeftAt(seat.controller())) {
+                abandon(seat);
+            }
             return;
         }
         tableOf(gone).ifPresent(table -> stepAwayFrom(table, gone));
+    }
+
+    /**
+     * Tells whether every seat at a table is empty.
+     *
+     * <p>Answered from the desk's own books rather than by asking the game. The game learns
+     * about a disconnection on its own queue, so asking it here races with that: the second
+     * player can hang up before the game has been told about the first, and the table looks
+     * occupied when nobody is in it. Who is logged in is this thread's own business and cannot
+     * be stale.
+     *
+     * @param controller the game
+     * @return {@code true} when nobody at that table is still connected
+     */
+    private boolean nobodyIsLeftAt(GameController controller) {
+        return controller.seats().stream()
+                .noneMatch(seat -> loggedIn.containsKey(seat.nickname()));
     }
 
     /**
@@ -391,8 +419,22 @@ public final class Lobby implements AutoCloseable {
 
     @Override
     public void close() {
+        // Wait for the worker before touching anything it owns. Shutdown lets already-queued
+        // work run, and one of those may be a disconnection that reclaims a game — which would
+        // be a second thread removing from `games` while this one walks it.
         queue.shutdown();
-        games.values().forEach(GameController::close);
+        try {
+            if (!queue.awaitTermination(SHUTDOWN_PATIENCE.toMillis(),
+                    java.util.concurrent.TimeUnit.MILLISECONDS)) {
+                queue.shutdownNow();
+            }
+        } catch (InterruptedException interrupted) {
+            Thread.currentThread().interrupt();
+            queue.shutdownNow();
+        }
+        // A copy even so: closing a controller can call back in, and a collection being walked
+        // is a poor place to be modified from.
+        List.copyOf(games.values()).forEach(GameController::close);
         games.clear();
     }
 }
