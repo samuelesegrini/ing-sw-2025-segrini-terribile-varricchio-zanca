@@ -46,11 +46,13 @@ socket or over RMI, at a table with people who chose differently on every count.
 | Test flight | ✅ |
 | Multiple concurrent games | ✅ |
 | Disconnection resilience | ✅ |
-| Persistence | 🚧 |
+| Persistence | ✅ |
 
-All three marked done are reachable by a player, not just by the server. `new 2 test` opens a
-test flight, and logging back in with the name of a seat somebody dropped out of puts them
-back in it, mid-card, with the question they left unanswered still waiting.
+All four are reachable by a player, not just by the server. `new 2 test` opens a test flight;
+logging back in with the name of a seat somebody dropped out of puts them back in it, mid-card,
+with the question they left unanswered still waiting; a game whose players have all gone quiet
+answers for them rather than freezing; and a server that stops can be started again on the same
+games.
 
 ✅ done and tested · 🚧 in progress · ⬜ not started
 
