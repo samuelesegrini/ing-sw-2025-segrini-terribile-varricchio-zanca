@@ -1,6 +1,6 @@
 # Roadmap
 
-Thirteen milestones, ordered so that each one is independently demonstrable and
+Fourteen milestones, ordered so that each one is independently demonstrable and
 nothing is built before the thing it depends on. The first twelve carry the
 submission; M12 was the first that changed no behaviour at all. Milestones map one-to-one onto
 GitHub milestones; every issue belongs to exactly one.
@@ -25,6 +25,7 @@ found in a unit test are free.
 | M11 | Deliverables | UML, protocol doc, Javadoc, jars, peer reviews | `v1.0.0` |
 | M12 | Polymorphic dispatch | Dispatch moved back into the hierarchies that own it | `v1.1.0` |
 | M13 | Seams and silent failures | A missing transport seam, two unchecked casts, a thread that dies quietly | `v1.2.0` |
+| M14 | What the jar actually does | An advanced feature the shipped server could not reach | `v1.3.0` |
 
 ## M0 — Foundations
 
@@ -170,6 +171,41 @@ should have caught was arranged so that it could not.
 Exit criterion: no behaviour changed except where #147 deliberately changes
 it, both listening posts reachable through one interface, and no unchecked
 cast over a sealed type left in the tree.
+
+## M14 — What the jar actually does
+
+Found by driving the built artifacts rather than the test suite: a real
+server, a real socket client and a real RMI client, playing a game and being
+killed at various points.
+
+Two things came out of it, and they are the same kind of thing. A test can
+pass while the product cannot do what the test proves, because the test
+reaches a constructor the product never calls.
+
+- **A test that checked the rarest path** (#155). `ScrappingTest` covered
+  `Ship.discard` — a mistake put right in the shipyard. The two routes that
+  fire on most cards of most flights, enemy fire and a ship coming apart, were
+  not covered. Deleting `scrapped` from `Ship.destroy` left the whole suite
+  green.
+- **Persistence the shipped server cannot reach** (#157). AF3 says the server
+  writes game state to disk and resumes after a crash. It does, in
+  `PersistenceTest`. Every `Server.start` overload funnels into the one `Lobby`
+  constructor that keeps nothing, so `java -jar server.jar` has never written
+  a snapshot in its life. Confirmed against the jar: no file appears, and a
+  restarted server has no game to give back.
+
+The groundwork is one settings record (#159) — `Server` could not reach a
+persisting `Lobby` without either a seventh positional parameter or that.
+
+**The bound, stated on purpose.** Snapshots are written at phase changes and
+after each resolved card, not after each command. A server killed mid-card
+resumes at the start of that card. That is a coherent game rather than a
+corrupt one, and the alternative rewrites the whole command history on every
+command; § 3.10 has the reasoning.
+
+Exit criterion: kill the running server jar mid-flight, start it again on the
+same ports, and log in with the nickname you had — by hand, not only in a
+test.
 
 ## Working agreement
 
