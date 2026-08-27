@@ -1,6 +1,10 @@
 package it.polimi.ingsw.server.model.ship;
 
 import it.polimi.ingsw.common.game.ComponentKind;
+import it.polimi.ingsw.common.game.DamageReport;
+import it.polimi.ingsw.common.game.Direction;
+import it.polimi.ingsw.common.game.Hit;
+import it.polimi.ingsw.common.game.HitKind;
 import it.polimi.ingsw.common.game.GoodColor;
 import it.polimi.ingsw.common.game.Position;
 import it.polimi.ingsw.server.model.component.ShipComponent;
@@ -14,6 +18,7 @@ import org.junit.jupiter.api.Test;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -92,6 +97,78 @@ class ScrappingTest {
 
             assertEquals(aboard - 2, ship.crewCount(), "a cabin holds two");
             assertEquals(STOCK, bank.stock(), "crew are not cubes either");
+        }
+    }
+
+    @Nested
+    @DisplayName("a component destroyed by the route, rather than in the shipyard")
+    class WhenShotOff {
+
+        // The tests above go through Ship.discard — a mistake put right in the shipyard, or
+        // the trial flight's forgiveness rule. That is one of the two ways a component is
+        // scrapped, and much the rarer one. Enemy fire and meteors go through Ship.destroy,
+        // and so does every piece that flies away when a ship breaks up. A leak on those
+        // paths would be a cube lost on most cards of most flights.
+
+        private static final Position IN_THE_LINE_OF_FIRE = new Position(1, 2);
+        private static final int DICE_FOR_THE_CABIN_COLUMN = 6;
+
+        @Test
+        @DisplayName("a hold shot off the ship still hands its cubes back")
+        void aHoldShotOffGivesItsCargoBack() {
+            GoodsBank bank = Ships.bankOf(STOCK);
+            Ship ship = Ships.openShip(bank);
+            Ships.put(ship, IN_THE_LINE_OF_FIRE, ComponentKind.CARGO_HOLD);
+            ship.beginCargoOperations(Map.of(GoodColor.BLUE, 2));
+            assertTrue(ship.load(IN_THE_LINE_OF_FIRE, GoodColor.BLUE));
+            assertTrue(ship.load(IN_THE_LINE_OF_FIRE, GoodColor.BLUE));
+            ship.endCargoOperations();
+            assertEquals(2, bank.available(GoodColor.BLUE), "two cubes are aboard");
+
+            DamageReport report = ship.applyHit(
+                    new Hit(HitKind.HEAVY_FIRE, Direction.NORTH, DICE_FOR_THE_CABIN_COLUMN),
+                    Defence.none());
+
+            assertEquals(DamageReport.Outcome.DESTROYED, report.outcome());
+            assertTrue(ship.componentAt(IN_THE_LINE_OF_FIRE).isEmpty());
+            assertEquals(4, bank.available(GoodColor.BLUE),
+                    "cubes shot off the ship go back on the table, or the bank quietly drains");
+        }
+
+        @Test
+        @DisplayName("and so does a piece that flies away when the ship comes apart")
+        void aFragmentLeftBehindGivesItsCargoBack() {
+            GoodsBank bank = Ships.bankOf(STOCK);
+            Ship ship = Ships.openShip(bank);
+            // The hold hangs off the joint rather than beyond it, so that the joint is the
+            // first thing a shot from the west meets: a hit always takes the outermost
+            // component in its line, and one aimed past the joint would simply take the hold.
+            Position joint = new Position(2, 1);
+            Position faraway = new Position(3, 1);
+            Ships.put(ship, joint, ComponentKind.STRUCTURAL_MODULE);
+            Ships.put(ship, faraway, ComponentKind.CARGO_HOLD);
+            ship.beginCargoOperations(Map.of(GoodColor.BLUE, 2));
+            assertTrue(ship.load(faraway, GoodColor.BLUE));
+            ship.endCargoOperations();
+            assertEquals(3, bank.available(GoodColor.BLUE), "one cube is aboard");
+
+            // Take out the joint, and the hold is on a piece of its own.
+            ship.applyHit(new Hit(HitKind.HEAVY_FIRE, Direction.WEST, diceForRow(joint)),
+                    Defence.none());
+            assertFalse(ship.isWhole(), "the ship should be in pieces now");
+
+            ship.keepFragment(ship.pieces().stream()
+                    .filter(piece -> piece.contains(Ships.CABIN))
+                    .findFirst().orElseThrow());
+
+            assertTrue(ship.componentAt(faraway).isEmpty(), "the far piece flew away");
+            assertEquals(4, bank.available(GoodColor.BLUE),
+                    "a piece that flies away takes its cargo off the ship, not out of the game");
+        }
+
+        /** The roll that names a row, on the five by five fixture board. */
+        private static int diceForRow(Position cell) {
+            return cell.row() + 5;
         }
     }
 
