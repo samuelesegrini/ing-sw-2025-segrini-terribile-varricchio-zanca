@@ -282,6 +282,29 @@ and deterministic by construction — there is no second code path that could di
 with the first. Written at the same quiescent points either way: after each resolved
 card, at each phase change, and once when the game is dealt.
 
+*What a kill costs.* Snapshots go in at quiescent points, so the play since the last one is
+lost: a server killed halfway through a Combat Zone comes back with that card un-turned, the
+volley un-thrown and the declarations un-made. That is a bound worth stating rather than
+discovering. It is accepted deliberately — the alternative rewrites the whole command history
+on every command, which is quadratic over a game, to protect against a case the requirements
+open by assuming the disk is reliable. What comes back is a coherent game one card behind,
+never a half-applied one.
+
+*Where.* `games/`, relative to the directory the server was started in, chosen by `ServerMain`
+rather than by the library: `ServerSettings.defaults()` keeps nothing, so a test that never
+thought about persistence cannot write files it did not ask for or recover another test's
+leftovers. The product says otherwise in one line, where it can be read.
+
+*Shutting down.* The lobby is closed before the doors. Closing a door drops every connection,
+and a dropped connection is news the desk acts on — with the doors closed first the desk reads
+a shutdown as the whole building walking out, reclaims every table as abandoned, and deletes
+the games on the way out. Persistence then survives a kill and not an orderly stop, which is
+the wrong way round.
+
+*A snapshot that will not replay.* Moved aside to `.snapshot.broken` rather than deleted. The
+file is the one artifact that explains a replay bug, and a server that reads this directory at
+every startup would otherwise report the same dead game for ever.
+
 *Writing.* Never in place. A snapshot goes to a temporary file beside the real one, is
 forced to the disk, and is moved into place in a single operation — so a process killed
 at any point leaves either the previous snapshot untouched or the new one complete.

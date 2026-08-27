@@ -53,6 +53,11 @@ with the question they left unanswered still waiting; a game whose players have 
 answers for them rather than freezing; and a server that stops can be started again on the same
 games.
 
+Games are kept in `games/`, beside wherever the server was started, and the server says so
+on startup. Snapshots are written when a card is resolved and when a phase changes rather
+than after every command, so a server killed in the middle of a card comes back at the start
+of that card — a coherent game, one card behind.
+
 ✅ done and tested · 🚧 in progress · ⬜ not started
 
 ## Documentation
