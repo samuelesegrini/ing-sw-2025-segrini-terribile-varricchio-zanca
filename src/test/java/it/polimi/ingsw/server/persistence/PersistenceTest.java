@@ -241,6 +241,70 @@ class PersistenceTest {
     }
 
     @Nested
+    @DisplayName("a snapshot this build can read but cannot replay")
+    class SetAside {
+
+        /**
+         * A snapshot whose commands are legal to write down and impossible to replay: giving
+         * up a flight that has not launched. Stands in for the real case, which is a rules
+         * change under a game somebody had already played.
+         */
+        private GameSnapshot unreplayable() {
+            return new GameSnapshot(GameSnapshot.FORMAT, "game-1", GameLevel.LEVEL_II,
+                    List.of(new GameSnapshot.Seated("samuele", PlayerColor.BLUE),
+                            new GameSnapshot.Seated("chiara", PlayerColor.GREEN)),
+                    SEED, List.of(new GameSnapshot.Recorded(PlayerColor.BLUE,
+                            new it.polimi.ingsw.common.protocol.FlightCommand.GiveUp())));
+        }
+
+        @Test
+        @DisplayName("is moved out of the way rather than deleted, so the evidence survives")
+        void itIsRenamedRatherThanRemoved(@TempDir Path directory) {
+            new SnapshotStore(directory).save(unreplayable());
+
+            new Lobby(ServerSettings.defaults().dealtFrom(DATA).timedBy(CLOCK)
+                    .keeping(directory)).close();
+
+            assertFalse(Files.exists(directory.resolve("game-1.snapshot")),
+                    "a game that will never replay should stop being read every startup");
+            assertTrue(Files.exists(directory.resolve("game-1.snapshot.broken")),
+                    "and the one artifact that would explain why should still be there");
+        }
+
+        @Test
+        @DisplayName("and is not complained about a second time")
+        void itIsReportedOnce(@TempDir Path directory) {
+            new SnapshotStore(directory).save(unreplayable());
+            new Lobby(ServerSettings.defaults().dealtFrom(DATA).timedBy(CLOCK)
+                    .keeping(directory)).close();
+
+            Lobby second = new Lobby(ServerSettings.defaults().dealtFrom(DATA).timedBy(CLOCK)
+                    .keeping(directory));
+
+            // The point of setting it aside. A warning printed at every single startup for a
+            // game that is never coming back is a warning people learn to scroll past.
+            assertEquals(List.of(), second.gamesRunning());
+            second.close();
+        }
+
+        @Test
+        @DisplayName("and one dead game does not stop the live ones coming back")
+        void theOthersStillReturn(@TempDir Path directory) {
+            SnapshotStore store = new SnapshotStore(directory);
+            store.save(unreplayable());
+            GameSnapshot live = snapshotOf(aGame());
+            store.save(new GameSnapshot(live.version(), "game-2", live.level(), live.seats(),
+                    live.seed(), live.accepted()));
+
+            Lobby desk = new Lobby(ServerSettings.defaults().dealtFrom(DATA).timedBy(CLOCK)
+                    .keeping(directory));
+
+            assertEquals(List.of("game-2"), desk.gamesRunning());
+            desk.close();
+        }
+    }
+
+    @Nested
     @DisplayName("a server that stopped and started again")
     class AcrossARestart {
 

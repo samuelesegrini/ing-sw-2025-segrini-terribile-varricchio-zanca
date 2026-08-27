@@ -17,6 +17,7 @@ class Recorded <<record>> {
 class SnapshotStore {
   -SUFFIX : String
   -PARTIAL : String
+  -BROKEN : String
   -directory : Path
   --
   +save() : void
@@ -24,11 +25,13 @@ class SnapshotStore {
   +loadAll() : List<GameSnapshot>
   +delete() : void
   +count() : int
+  +setAside() : void
 }
 interface Snapshots {
   +save() : void
   +loadAll() : List<GameSnapshot>
   +delete() : void
+  +setAside() : void
 }
 
 Snapshots <|.. SnapshotStore
