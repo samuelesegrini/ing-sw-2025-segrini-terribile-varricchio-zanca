@@ -75,12 +75,75 @@ class AbstractChannelTest {
             deliver(new Envelope.KeepAlive());
         }
 
+        void arriveGoodbye() {
+            deliver(new Envelope.Goodbye());
+        }
+
         void listenAgain(ChannelListener<Command> listener) {
             listenWith(listener);
         }
     }
 
     private final ChannelContract.Recorder<Command> heard = new ChannelContract.Recorder<>();
+
+    @Nested
+    @DisplayName("the three kinds of envelope")
+    class ThreeKindsOfEnvelope {
+
+        // deliver used to be two instanceof checks ending in a cast to Message, so a fourth
+        // kind of envelope would have compiled and thrown ClassCastException on a live
+        // connection's reading thread. It is a switch with no default now, which the compiler
+        // holds exhaustive; these pin what each of the three arms actually does, and the
+        // goodbye arm had no test at all before this.
+
+        @Test
+        @DisplayName("a message is unwrapped and passed up")
+        void aMessageReachesTheListener() {
+            Scripted channel = new Scripted(heard);
+
+            channel.arrive(new LobbyCommand.ListGames());
+
+            assertEquals(new LobbyCommand.ListGames(), heard.next());
+            assertTrue(channel.isOpen(), "a message is not a reason to hang up");
+        }
+
+        @Test
+        @DisplayName("a keep-alive is swallowed, and nothing above the transport hears it")
+        void aKeepAliveIsSwallowed() {
+            Scripted channel = new Scripted(heard);
+
+            channel.arriveKeepAlive();
+
+            assertTrue(heard.isEmpty(),
+                    "the listener was told the connection is proving it still works");
+            assertTrue(channel.isOpen());
+        }
+
+        @Test
+        @DisplayName("a goodbye closes the channel and says so")
+        void aGoodbyeCloses() {
+            Scripted channel = new Scripted(heard);
+
+            channel.arriveGoodbye();
+
+            assertFalse(channel.isOpen(), "the other end said it was going");
+            assertTrue(heard.closure().contains("goodbye"),
+                    "and the listener should have been told why");
+            assertTrue(channel.released, "the connection should have been let go of");
+        }
+
+        @Test
+        @DisplayName("a goodbye is not passed up as a message")
+        void aGoodbyeIsNotAMessage() {
+            Scripted channel = new Scripted(heard);
+
+            channel.arriveGoodbye();
+
+            // The cast this replaced would have made a Goodbye a ClassCastException, not a
+            // message — but a default arm that fell through to passUp would have made it one.
+            assertTrue(heard.isEmpty());
+        }
+    }
 
     @Nested
     @DisplayName("keep-alives")

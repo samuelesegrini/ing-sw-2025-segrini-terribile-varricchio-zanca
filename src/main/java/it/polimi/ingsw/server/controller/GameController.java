@@ -200,14 +200,15 @@ public final class GameController implements AutoCloseable {
     }
 
     private void handle(PlayerColor player, Command command) {
-        Reaction reaction = game.apply(player, command);
-        if (reaction instanceof Reaction.Refused refused) {
+        // Both arms written out, with no default and no cast. A third kind of Reaction would
+        // otherwise have been read as an acceptance and published as one.
+        switch (game.apply(player, command)) {
             // Only to the sender, and no state after it: nothing changed, so there is no new
             // truth to send and nobody else has anything to learn.
-            sessionOf(player).send(new GameEvent.Rejected(nameOf(command), refused.reason()));
-            return;
+            case Reaction.Refused refused -> sessionOf(player)
+                    .send(new GameEvent.Rejected(nameOf(command), refused.reason()));
+            case Reaction.Accepted accepted -> publish(accepted.narration());
         }
-        publish(((Reaction.Accepted) reaction).narration());
     }
 
     private void tick() {

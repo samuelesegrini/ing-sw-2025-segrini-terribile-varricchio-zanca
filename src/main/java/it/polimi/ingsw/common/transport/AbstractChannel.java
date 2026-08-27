@@ -158,14 +158,33 @@ public abstract class AbstractChannel<O extends Serializable, I extends Serializ
      */
     protected final void deliver(Envelope envelope) {
         lastHeard.set(System.nanoTime());
-        if (!open.get() || envelope instanceof Envelope.KeepAlive) {
+        if (!open.get()) {
             return;
         }
-        if (envelope instanceof Envelope.Goodbye) {
-            shutdown("the other end said goodbye");
-            return;
+        // No default arm, on purpose. This used to be two instanceof checks ending in a cast
+        // to Message, which meant a fourth kind of envelope — a resend, a version handshake,
+        // a flow-control frame — would compile everywhere and throw ClassCastException on the
+        // reading thread of every live connection. That is the worst place in the project for
+        // an unchecked cast to be: this is the module whose whole job is that a dropped
+        // connection never throws, and nothing up there is catching. Now it stops the build.
+        switch (envelope) {
+            case Envelope.KeepAlive ignored -> {
+                // Consumed here. Nothing above the transport ever learns that the connection
+                // has to keep proving it works.
+            }
+            case Envelope.Goodbye ignored -> shutdown("the other end said goodbye");
+            case Envelope.Message message -> passUp(message.payload());
         }
-        Serializable payload = ((Envelope.Message) envelope).payload();
+    }
+
+    /**
+     * Checks what arrived is the kind this side expects, and hands it to the listener.
+     *
+     * <p>Split out so that {@link #deliver} is three arms and nothing else: what an envelope
+     * means and what is inside one are two questions, and reading them together was part of
+     * why the cast went unnoticed.
+     */
+    private void passUp(Serializable payload) {
         if (!expected.isInstance(payload)) {
             failed("expected a " + expected.getSimpleName() + " and got a "
                     + payload.getClass().getSimpleName());
