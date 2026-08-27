@@ -18,7 +18,9 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.io.UncheckedIOException;
 import java.time.Duration;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -28,6 +30,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -363,6 +366,77 @@ class GameControllerTest {
 
             assertThrows(IllegalArgumentException.class,
                     () -> table.controller().isAttached(PlayerColor.GREEN));
+        }
+    }
+
+    @Nested
+    @DisplayName("writing the game down")
+    class Keeping {
+
+        @Test
+        @DisplayName("a keeper that fails still lets the batch end with the state")
+        void aFailingKeeperStillSendsTheState() {
+            AtomicInteger attempts = new AtomicInteger();
+            GameController controller = new GameController(Games.levelTwo(), game -> {
+                attempts.incrementAndGet();
+                throw new UncheckedIOException("the disk is full",
+                        new java.io.IOException("no space left on device"));
+            });
+            open.add(controller);
+            Watcher atRed = new Watcher();
+            Watcher atBlue = new Watcher();
+            LocalChannel.connect(Command.class, Event.class, channel -> atRed,
+                    channel -> controller.bind(PlayerColor.RED, channel));
+            LocalChannel.connect(Command.class, Event.class, channel -> atBlue,
+                    channel -> controller.bind(PlayerColor.BLUE, channel));
+            assertTrue(controller.awaitQuiet(PATIENCE));
+
+            // Finishing both ships changes the phase, and a phase change is a save point — so
+            // the second of these is a batch in which the keeper is called half way through
+            // publish(). The first is not, which is why the assertion below is about the
+            // content of the last state and not about how many arrived: a count still grows
+            // on the strength of the earlier batch and proves nothing.
+            controller.submit(PlayerColor.RED, new BuildingCommand.FinishBuilding(null));
+            controller.submit(PlayerColor.BLUE, new BuildingCommand.FinishBuilding(null));
+            assertTrue(controller.awaitQuiet(PATIENCE));
+
+            assertNotEquals(GamePhase.BUILDING, controller.game().phase(),
+                    "the phase should have moved on, or this test is not exercising a save point");
+            assertTrue(attempts.get() > 0, "the keeper should have been called");
+            // "Every batch ends with the state" is the rule the whole protocol rests on. An
+            // exception out of the keeper abandoned the rest of publish(), so both players
+            // were sent a PhaseBegan and then left holding a state that still said BUILDING.
+            for (Watcher watcher : List.of(atRed, atBlue)) {
+                List<GameEvent.StateChanged> states = watcher.only(GameEvent.StateChanged.class);
+                assertFalse(states.isEmpty());
+                assertEquals(controller.game().phase(),
+                        states.get(states.size() - 1).state().phase(),
+                        "the last thing a client was told has to be what is now true");
+            }
+        }
+
+        @Test
+        @DisplayName("closing waits for what was queued, so nothing is written afterwards")
+        void closingWaitsForTheQueue() {
+            AtomicInteger kept = new AtomicInteger();
+            GameController controller = new GameController(Games.levelTwo(), game -> {
+                try {
+                    // Long enough that a close which only asked the queue to stop would
+                    // return before this ever ran — which is exactly what it used to do, and
+                    // why a snapshot could land in a directory its caller had already deleted.
+                    Thread.sleep(150);
+                } catch (InterruptedException interrupted) {
+                    Thread.currentThread().interrupt();
+                    return;
+                }
+                kept.incrementAndGet();
+            });
+            open.add(controller);
+
+            controller.close();
+
+            assertEquals(1, kept.get(),
+                    "close() should mean the game has stopped, not that it has been asked to");
         }
     }
 

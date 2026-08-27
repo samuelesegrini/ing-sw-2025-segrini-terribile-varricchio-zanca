@@ -45,6 +45,9 @@ public final class GameController implements AutoCloseable {
     /** How often to let the hourglass notice that it has run out. */
     private static final Duration TICK = Duration.ofMillis(500);
 
+    /** How long to let the queue finish what it was doing before giving up on it. */
+    private static final Duration SHUTDOWN_PATIENCE = Duration.ofSeconds(2);
+
     private final Game game;
     private final java.util.function.Consumer<Game> keeper;
     private final Map<PlayerColor, PlayerSession> sessions = new EnumMap<>(PlayerColor.class);
@@ -90,7 +93,7 @@ public final class GameController implements AutoCloseable {
         // Written down as soon as it exists. A game is recoverable from the moment it is
         // dealt, not from the moment somebody first does something in it — a server that
         // stopped between the two would otherwise lose a table that was already seated.
-        run(() -> keeper.accept(game));
+        run(this::keep);
         this.clock.scheduleAtFixedRate(this::tick, TICK.toMillis(), TICK.toMillis(),
                 TimeUnit.MILLISECONDS);
     }
@@ -285,7 +288,38 @@ public final class GameController implements AutoCloseable {
         boolean quiescent = phaseChanged || narration.stream()
                 .anyMatch(event -> event instanceof FlightEvent.CardResolved);
         if (quiescent) {
+            keep();
+        }
+    }
+
+    /**
+     * Writes the game down, and carries on if that fails.
+     *
+     * <p><b>What an unguarded failure actually broke.</b> The keeper is called from
+     * {@link #publish}, part-way through — after the narration has gone out and before the
+     * {@code StateChanged} that closes the batch. An exception there abandoned the rest of
+     * {@code publish}, so the players were sent a phase change and a story about what had
+     * happened and then never told what was true. "Every batch ends with the state" is the
+     * rule the whole protocol rests on, and a failing disk broke it precisely on a phase
+     * change, which is the one batch a view has to restructure for.
+     *
+     * <p>The thread was never the problem, despite what this looks like: a single-thread
+     * executor quietly replaces a worker that dies, so the game went on being played. What it
+     * did instead was discard and rebuild its thread at every save point and print a stack
+     * trace each time.
+     *
+     * <p>So a failed write now costs the ability to recover this game after a restart, and
+     * nothing else. That is much the smaller loss: the table playing right now is worth more
+     * than the ability to resume it later, and a full disk does not make a flight unplayable.
+     *
+     * <p>Reported to {@code System.err} because that is where this project puts things nobody
+     * has anywhere better for yet; it belongs in the log #136 will add.
+     */
+    private void keep() {
+        try {
             keeper.accept(game);
+        } catch (RuntimeException failed) {
+            System.err.println("could not keep " + game.id() + ": " + failed.getMessage());
         }
     }
 
@@ -323,7 +357,19 @@ public final class GameController implements AutoCloseable {
     @Override
     public void close() {
         clock.shutdownNow();
+        // Waited for, not just asked to stop. Shutdown lets already-queued work run and
+        // returns at once, so a caller taking close() to mean "this game has stopped" was
+        // wrong: a snapshot queued a moment earlier would still be written, and could land
+        // after whoever closed the game had already taken away the directory it writes into.
         queue.shutdown();
+        try {
+            if (!queue.awaitTermination(SHUTDOWN_PATIENCE.toMillis(), TimeUnit.MILLISECONDS)) {
+                queue.shutdownNow();
+            }
+        } catch (InterruptedException interrupted) {
+            Thread.currentThread().interrupt();
+            queue.shutdownNow();
+        }
         sessions.values().forEach(session -> {
             Channel<Event, Command> connection = session.attach(null);
             if (connection != null) {
