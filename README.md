@@ -17,13 +17,12 @@ degree at Politecnico di Milano.
 
 ## Status
 
-The project is being rebuilt from the rules and the requirements on the `develop`
-branch. The previous implementation remains on `main` for reference; note that
-`main` does not currently compile.
+The rebuild is finished. Every milestone from the build to the deliverables is closed,
+and `v1.0.0` is the result. The previous implementation is still reachable in the history
+and under the tags that precede `v0.2.0`.
 
-Progress is tracked in [docs/roadmap.md](docs/roadmap.md) and in the repository's
-milestones. The table below reflects what is **implemented and tested**, not what is
-planned.
+[docs/roadmap.md](docs/roadmap.md) records how it was built, milestone by milestone. The
+table below reflects what is **implemented and tested**, not what is planned.
 
 The game is playable both ways. A person claims a name, builds a ship tile by tile,
 launches, flies the cards and reads the final ledger — in a terminal or in a window, over a
