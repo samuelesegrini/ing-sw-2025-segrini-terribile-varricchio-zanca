@@ -82,6 +82,15 @@ class PendingGame {
   +isEmpty() : boolean
   +summary() : GameSummary
 }
+class ServerSettings <<record>> {
+  +defaults() : ServerSettings
+  +keeping() : ServerSettings
+  +dealtFrom() : ServerSettings
+  +shuffledBy() : ServerSettings
+  +timedBy() : ServerSettings
+  +whenSomebodyDrops() : ServerSettings
+  +waiting() : ServerSettings
+}
 
 ConnectionState <|.. Anonymous
 ConnectionState <|.. AtTheDesk
