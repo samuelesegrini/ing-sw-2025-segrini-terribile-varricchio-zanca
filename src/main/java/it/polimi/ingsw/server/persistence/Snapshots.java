@@ -28,6 +28,11 @@ public interface Snapshots {
         public void delete(String gameId) {
             // Nothing was kept, so there is nothing to forget.
         }
+
+        @Override
+        public void setAside(String gameId) {
+            // Nothing was kept, so there is nothing that could have failed to come back.
+        }
     };
 
     /**
@@ -50,4 +55,17 @@ public interface Snapshots {
      * @param gameId which game
      */
     void delete(String gameId);
+
+    /**
+     * Puts a snapshot out of the way, because this build cannot bring it back.
+     *
+     * <p>Not deleted: a game that will not replay is the one artifact that would explain why,
+     * and throwing it away throws away the bug report with it. Not left where it is either —
+     * a server that keeps its games reads this directory at every startup, so a snapshot it
+     * can never recover would be complained about for ever, and a warning that appears every
+     * single time is one people learn to scroll past.
+     *
+     * @param gameId which game
+     */
+    void setAside(String gameId);
 }

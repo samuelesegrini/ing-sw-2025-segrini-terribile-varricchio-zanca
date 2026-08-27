@@ -9,6 +9,8 @@ class ClientMain {
   +main() : void
 }
 class ServerMain {
+  -GAMES : Path
+  --
   +main() : void
 }
 

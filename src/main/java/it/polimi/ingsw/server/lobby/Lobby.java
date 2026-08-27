@@ -369,9 +369,12 @@ public final class Lobby implements AutoCloseable {
                         playing.put(seat.nickname(), new Seated(controller, seat.colour())));
             } catch (RuntimeException broken) {
                 // One game that cannot be replayed must not stop the server carrying the rest.
-                // The file is left where it is, because somebody will want to know why.
-                System.err.println("could not put " + kept.gameId() + " back: "
+                // The file is kept, because somebody will want to know why, but moved out of
+                // the way: a server that reads this directory at every startup would otherwise
+                // report the same dead game for ever.
+                System.err.println("could not put " + kept.gameId() + " back, setting it aside: "
                         + broken.getMessage());
+                snapshots.setAside(kept.gameId());
             }
         }
     }

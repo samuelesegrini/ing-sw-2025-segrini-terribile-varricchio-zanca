@@ -2,6 +2,7 @@ package it.polimi.ingsw;
 
 import it.polimi.ingsw.common.transport.DefaultPorts;
 import it.polimi.ingsw.common.transport.TransportException;
+import it.polimi.ingsw.server.lobby.ServerSettings;
 import it.polimi.ingsw.server.network.Server;
 
 /**
@@ -20,6 +21,9 @@ public final class ServerMain {
         // Entry point holder, never instantiated.
     }
 
+    /** Where games are written down, relative to wherever the server was started. */
+    private static final java.nio.file.Path GAMES = java.nio.file.Path.of("games");
+
     /**
      * Starts the server.
      *
@@ -32,7 +36,12 @@ public final class ServerMain {
 
         Server server;
         try {
-            server = Server.start(socketPort, rmiPort);
+            // The one line that decides this server keeps its games. Requirement AF3 says a
+            // server writes game state to disk and resumes after a crash, so it is not
+            // something to be asked for: the library defaults to keeping nothing because a
+            // test should not write files it did not ask for, and the product says otherwise
+            // here, where it can be read.
+            server = Server.start(socketPort, rmiPort, ServerSettings.defaults().keeping(GAMES));
         } catch (TransportException unavailable) {
             System.err.println("Could not start: " + unavailable.getMessage());
             System.exit(1);
@@ -42,6 +51,9 @@ public final class ServerMain {
         System.out.println("Galaxy Trucker server");
         System.out.println("  socket  localhost:" + server.socketPort());
         System.out.println("  rmi     localhost:" + server.rmiPort());
+        // Said out loud, because a feature nobody can see is one nobody can check. Stopping
+        // this server and starting it again brings these games back.
+        System.out.println("  games   " + GAMES.toAbsolutePath());
         System.out.println("Ctrl-C to stop.");
 
         Runtime.getRuntime().addShutdownHook(new Thread(server::close, "shutdown"));

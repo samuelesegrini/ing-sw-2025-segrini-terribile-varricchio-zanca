@@ -32,6 +32,7 @@ public final class SnapshotStore implements Snapshots {
 
     private static final String SUFFIX = ".snapshot";
     private static final String PARTIAL = ".writing";
+    private static final String BROKEN = ".broken";
 
     private final Path directory;
 
@@ -145,6 +146,24 @@ public final class SnapshotStore implements Snapshots {
                     .count();
         } catch (IOException unreadable) {
             throw new UncheckedIOException("cannot read snapshots from " + directory, unreadable);
+        }
+    }
+
+    /**
+     * Renames a snapshot aside so it is read once and then left alone.
+     *
+     * <p>Best effort. If the rename fails there is nothing useful to do about it: the server
+     * is starting, this game was already not coming back, and refusing to start over a file
+     * that could not be renamed would turn one lost game into no server at all.
+     *
+     * @param gameId which game
+     */
+    @Override
+    public void setAside(String gameId) {
+        try {
+            move(fileFor(gameId), directory.resolve(gameId + SUFFIX + BROKEN));
+        } catch (IOException | RuntimeException stuck) {
+            System.err.println("could not set " + gameId + " aside: " + stuck.getMessage());
         }
     }
 

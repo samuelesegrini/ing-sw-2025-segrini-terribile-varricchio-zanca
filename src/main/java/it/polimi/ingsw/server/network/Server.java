@@ -127,7 +127,17 @@ public final class Server implements AutoCloseable {
 
     @Override
     public void close() {
-        doors.forEach(Doorway::close);
+        // The lobby first, and this order is load-bearing rather than tidy. Closing a door
+        // drops every connection through it, and a dropped connection is news the desk acts
+        // on: with the doors closed first, the desk is told the whole building walked out
+        // while it still believes it is open, decides every table is abandoned, and deletes
+        // the snapshot of every game in progress on the way out. Persistence then survived a
+        // kill and not an orderly shutdown, which is the wrong way round.
+        //
+        // Closing the desk first shuts its queue, so the disconnections the doors are about to
+        // cause are refused rather than acted on. ServerPersistenceTest fails if these two
+        // lines are swapped.
         lobby.close();
+        doors.forEach(Doorway::close);
     }
 }
