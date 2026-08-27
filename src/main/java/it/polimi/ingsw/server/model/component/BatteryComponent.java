@@ -2,6 +2,7 @@ package it.polimi.ingsw.server.model.component;
 
 import it.polimi.ingsw.common.game.ComponentKind;
 import it.polimi.ingsw.common.game.Rotation;
+import it.polimi.ingsw.server.model.goods.GoodsBank;
 
 
 /**
@@ -100,4 +101,17 @@ public final class BatteryComponent implements ShipComponent {
     public void drain() {
         charges = 0;
     }
+
+    /**
+     * Loses the charges this battery was holding.
+     *
+     * <p>Charges are not the bank's: they came printed on the tile and go with it.
+     *
+     * @param bank unused, because nothing here belongs to it
+     */
+    @Override
+    public void scrapped(GoodsBank bank) {
+        drain();
+    }
+
 }

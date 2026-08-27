@@ -1,0 +1,119 @@
+package it.polimi.ingsw.server.model.ship;
+
+import it.polimi.ingsw.common.game.ComponentKind;
+import it.polimi.ingsw.common.game.GoodColor;
+import it.polimi.ingsw.common.game.Position;
+import it.polimi.ingsw.server.model.component.ShipComponent;
+import it.polimi.ingsw.server.model.component.StructuralComponent;
+import it.polimi.ingsw.server.model.component.Tile;
+import it.polimi.ingsw.server.model.goods.GoodsBank;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+/**
+ * What a component lets go of when it is destroyed.
+ *
+ * <p>Cubes are conserved, and the bank is finite: a cube that quietly disappeared would make
+ * a shortage arrive sooner than it should, or never, and nothing at the table would show why.
+ * So a hold destroyed with cargo aboard has to hand back what it held.
+ *
+ * <p>This used to be a {@code switch} over {@link ShipComponent} inside {@link Ship} — the one
+ * switch over that hierarchy in the whole project with a {@code default} arm in it, and so the
+ * one place where adding a ninth kind of component would compile cleanly and lose its contents
+ * for the rest of the flight. These tests pin the behaviour now that each component answers
+ * for itself.
+ *
+ * <p>Components involved: {@link Ship}, {@link ShipComponent}, {@link GoodsBank}.
+ */
+class ScrappingTest {
+
+    private static final Position HOLD = new Position(1, 2);
+    private static final Position BATTERY = new Position(2, 3);
+    private static final Position CABIN = new Position(3, 2);
+
+    private static final Map<GoodColor, Integer> STOCK = Map.of(
+            GoodColor.RED, 4, GoodColor.YELLOW, 4, GoodColor.GREEN, 4, GoodColor.BLUE, 4);
+
+    @Nested
+    @DisplayName("a destroyed component")
+    class WhenDestroyed {
+
+        @Test
+        @DisplayName("hands its cubes back, so the bank ends where it started")
+        void aHoldGivesItsCargoBack() {
+            GoodsBank bank = Ships.bankOf(STOCK);
+            Ship ship = Ships.openShip(bank);
+            Ships.put(ship, HOLD, ComponentKind.CARGO_HOLD);
+            ship.beginCargoOperations(Map.of(GoodColor.BLUE, 2));
+            assertTrue(ship.load(HOLD, GoodColor.BLUE));
+            assertTrue(ship.load(HOLD, GoodColor.BLUE));
+            ship.endCargoOperations();
+            assertEquals(2, bank.available(GoodColor.BLUE), "two cubes are aboard");
+
+            ship.discard(HOLD);
+
+            assertEquals(4, bank.available(GoodColor.BLUE),
+                    "cubes destroyed with their hold go back on the table");
+            assertEquals(0, ship.cargoCount());
+        }
+
+        @Test
+        @DisplayName("loses its charges, which were never the bank's to begin with")
+        void aBatteryLosesItsCharges() {
+            GoodsBank bank = Ships.bankOf(STOCK);
+            Ship ship = Ships.openShip(bank);
+            Ships.put(ship, BATTERY, ComponentKind.BATTERY);
+            ship.chargeBatteries();
+            assertEquals(2, ship.availableCharges());
+
+            ship.discard(BATTERY);
+
+            assertEquals(0, ship.availableCharges());
+            assertEquals(STOCK, bank.stock(), "charges are not cubes and owe the bank nothing");
+        }
+
+        @Test
+        @DisplayName("loses everybody aboard, because crew destroyed with a cabin are dead")
+        void aCabinLosesItsCrew() {
+            GoodsBank bank = Ships.bankOf(STOCK);
+            Ship ship = Ships.openShip(bank);
+            Ships.put(ship, CABIN, ComponentKind.CABIN);
+            ship.boardHumansIn(CABIN);
+            int aboard = ship.crewCount();
+            assertTrue(aboard > 0);
+
+            ship.discard(CABIN);
+
+            assertEquals(aboard - 2, ship.crewCount(), "a cabin holds two");
+            assertEquals(STOCK, bank.stock(), "crew are not cubes either");
+        }
+    }
+
+    @Nested
+    @DisplayName("the default on the interface")
+    class TheDefault {
+
+        @Test
+        @DisplayName("does nothing, which is what a component holding nothing should do")
+        void aComponentHoldingNothingLeavesTheBankAlone() {
+            GoodsBank bank = Ships.bankOf(STOCK);
+            Tile plate = it.polimi.ingsw.server.model.component.Tiles
+                    .of(ComponentKind.STRUCTURAL_MODULE, 0);
+            ShipComponent structural = new StructuralComponent(plate,
+                    it.polimi.ingsw.common.game.Rotation.NONE);
+
+            structural.scrapped(bank);
+
+            // The default is empty and has to stay reachable: it is the answer for five of the
+            // eight kinds, and the thing a ninth kind's author overrides if theirs holds
+            // anything. An exception here would make writing a plain component a chore.
+            assertEquals(STOCK, bank.stock());
+        }
+    }
+}

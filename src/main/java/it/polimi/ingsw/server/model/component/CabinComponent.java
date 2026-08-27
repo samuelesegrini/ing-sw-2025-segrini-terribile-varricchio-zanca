@@ -4,6 +4,7 @@ package it.polimi.ingsw.server.model.component;
 import it.polimi.ingsw.common.game.AlienColor;
 import it.polimi.ingsw.common.game.ComponentKind;
 import it.polimi.ingsw.common.game.Rotation;
+import it.polimi.ingsw.server.model.goods.GoodsBank;
 import java.util.Optional;
 
 /**
@@ -170,4 +171,17 @@ public final class CabinComponent implements ShipComponent {
             throw new IllegalStateException(id() + " already has crew aboard");
         }
     }
+
+    /**
+     * Loses everybody aboard.
+     *
+     * <p>Crew destroyed with their cabin are dead, not returned anywhere (manual p.10).
+     *
+     * @param bank unused, because nothing here belongs to it
+     */
+    @Override
+    public void scrapped(GoodsBank bank) {
+        evacuate();
+    }
+
 }

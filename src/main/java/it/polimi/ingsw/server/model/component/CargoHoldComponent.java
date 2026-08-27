@@ -4,6 +4,7 @@ package it.polimi.ingsw.server.model.component;
 import it.polimi.ingsw.common.game.ComponentKind;
 import it.polimi.ingsw.common.game.GoodColor;
 import it.polimi.ingsw.common.game.Rotation;
+import it.polimi.ingsw.server.model.goods.GoodsBank;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -154,4 +155,20 @@ public final class CargoHoldComponent implements ShipComponent {
     public void jettisonAll() {
         cubes.clear();
     }
+
+    /**
+     * Gives the cubes back to the bank and empties the hold.
+     *
+     * <p>The one component that owes anything to anybody. Cubes are a finite supply shared by
+     * the whole table, so a hold destroyed with cargo in it has to hand back what it held or
+     * those cubes are out of the game for good.
+     *
+     * @param bank where the cubes go
+     */
+    @Override
+    public void scrapped(GoodsBank bank) {
+        bank.giveBackAll(contents());
+        jettisonAll();
+    }
+
 }

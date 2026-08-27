@@ -4,6 +4,7 @@ import it.polimi.ingsw.common.game.ComponentKind;
 import it.polimi.ingsw.common.game.Connector;
 import it.polimi.ingsw.common.game.Direction;
 import it.polimi.ingsw.common.game.Rotation;
+import it.polimi.ingsw.server.model.goods.GoodsBank;
 
 
 /**
@@ -66,6 +67,28 @@ public sealed interface ShipComponent
      */
     default Connector connectorFacing(Direction side) {
         return tile().connectorFacing(side, rotation());
+    }
+
+    /**
+     * Lets go of everything this component was holding, because it has been destroyed.
+     *
+     * <p>Most components hold nothing, which is why the default does nothing. The three that
+     * do are the three that would otherwise leak: cubes belong to the {@link GoodsBank} and
+     * have to go back to it, while charges and crew simply cease to exist along with the
+     * component that held them.
+     *
+     * <p>Here rather than in a switch over the hierarchy. Every other switch over
+     * {@code ShipComponent} in this project is exhaustive on purpose — a ninth kind cannot be
+     * added without somebody being made to say what it looks like — and this was the one with
+     * a {@code default} in it. It was also the one where a forgotten case is expensive: an
+     * empty square is a drawing mistake, whereas cubes that never go back to the bank are
+     * gone from the game for the rest of the flight. A default on the interface is read by
+     * whoever writes the ninth component; a default in a switch is read by nobody.
+     *
+     * @param bank where cubes go back to
+     */
+    default void scrapped(GoodsBank bank) {
+        // Nothing else carries anything worth giving back.
     }
 
     /**
