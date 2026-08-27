@@ -30,6 +30,10 @@ java -jar server.jar 4321 4322
 java -jar client.jar --tui --socket --host localhost --port 4321
 ```
 
+The server keeps its games in `games/`, beside wherever it was started, and prints the
+location on startup. Stopping it and starting it again on the same directory brings those
+games back; players return by logging in with the nickname they had.
+
 Rebuilt from the tagged commit with:
 
 ```bash
@@ -37,6 +41,9 @@ Rebuilt from the tagged commit with:
 cp target/server.jar target/client.jar deliverables/
 ```
 
-Verified here by starting each of them and playing a little: the server on both ports at
-once, and the client over a socket, over RMI, in the terminal and in a window. They have not
-been run on a machine other than the one they were built on.
+Verified here, on these binaries: the server listening on both ports at once, one client over
+a socket and one over RMI in the same game, a player dropped mid-card and answered for, that
+player rejoining and being handed the whole picture, and the server killed with `kill -9`
+during a flight, restarted, and resuming with the seats, the crew, the route positions and the
+card still on the table. The window was not exercised this time round; the terminal was. They
+have not been run on a machine other than the one they were built on.
