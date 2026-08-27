@@ -24,6 +24,9 @@ import java.util.Set;
  * @param firstPrintedColumn  the label printed above column 0
  * @param startingCabin       where the starting cabin is fixed at setup
  * @param reservationSlots    how many components may be set aside, zero when reserving is not allowed
+ * @param chargesForCorrections whether components thrown off to make an illegal ship legal count
+ *                            as lost; the trial flight does not charge a beginner for a mistake
+ *                            they were always going to make (manual p.9)
  * @param forbidden           the cells outside the ship outline
  */
 public record ShipBoardSpec(int rows,
@@ -32,6 +35,7 @@ public record ShipBoardSpec(int rows,
                             int firstPrintedColumn,
                             Position startingCabin,
                             int reservationSlots,
+                            boolean chargesForCorrections,
                             Set<Position> forbidden) {
 
     /**

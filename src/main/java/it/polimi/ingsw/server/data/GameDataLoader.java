@@ -350,6 +350,7 @@ public final class GameDataLoader {
                 integer(node, "firstPrintedColumn", where),
                 readPosition(required(node, "startingCabin", where), where),
                 integer(node, "reservationSlots", where),
+                required(node, "chargesForCorrections", where).asBoolean(),
                 forbidden);
     }
 

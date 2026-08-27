@@ -187,10 +187,30 @@ public final class Ship {
      * @return what was discarded, or empty when the cell was already free
      */
     public Optional<ShipComponent> discard(Position cell) {
+        return discard(cell, true);
+    }
+
+    /**
+     * Throws a component off without counting it against the player.
+     *
+     * <p>For the trial flight, where the manual does not charge a beginner for a ship they were
+     * always going to build wrong (p.9). The component still goes to the discard pile and its
+     * tokens still go back to the bank — it is only the credit at the end that is waived.
+     *
+     * @param cell the cell to clear
+     * @return what was discarded, or empty when the cell was already free
+     */
+    public Optional<ShipComponent> correct(Position cell) {
+        return discard(cell, false);
+    }
+
+    private Optional<ShipComponent> discard(Position cell, boolean counted) {
         Optional<ShipComponent> removed = grid.remove(cell);
         removed.ifPresent(component -> {
             returnTokensToBank(component);
-            lostComponents++;
+            if (counted) {
+                lostComponents++;
+            }
         });
         return removed;
     }

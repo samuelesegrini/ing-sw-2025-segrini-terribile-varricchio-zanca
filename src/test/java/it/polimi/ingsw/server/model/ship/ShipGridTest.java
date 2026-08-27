@@ -37,7 +37,7 @@ class ShipGridTest {
 
     /** A three by three board with every cell usable, so tests state their own shape. */
     private static ShipBoardSpec openBoard() {
-        return new ShipBoardSpec(3, 3, 5, 4, new Position(1, 1), 0, Set.of());
+        return new ShipBoardSpec(3, 3, 5, 4, new Position(1, 1), 0, true, Set.of());
     }
 
     private static ShipComponent tile(Connector north, Connector east, Connector south, Connector west) {
@@ -71,7 +71,7 @@ class ShipGridTest {
         @Test
         @DisplayName("a cell outside the ship outline refuses a component")
         void cellOutsideTheOutline_refusesAComponent() {
-            ShipBoardSpec board = new ShipBoardSpec(3, 3, 5, 4, new Position(1, 1), 0,
+            ShipBoardSpec board = new ShipBoardSpec(3, 3, 5, 4, new Position(1, 1), 0, true,
                     Set.of(new Position(0, 0)));
             ShipGrid grid = new ShipGrid(board);
 
