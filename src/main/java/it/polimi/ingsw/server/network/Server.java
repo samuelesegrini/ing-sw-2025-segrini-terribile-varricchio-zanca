@@ -6,16 +6,11 @@ import it.polimi.ingsw.common.transport.Liveness;
 import it.polimi.ingsw.common.transport.TransportException;
 import it.polimi.ingsw.common.transport.rmi.RmiServer;
 import it.polimi.ingsw.common.transport.socket.SocketServer;
-import it.polimi.ingsw.server.data.GameData;
-import it.polimi.ingsw.server.data.GameDataLoader;
-import it.polimi.ingsw.server.lobby.DisconnectionPolicy;
 import it.polimi.ingsw.server.lobby.Lobby;
+import it.polimi.ingsw.server.lobby.ServerSettings;
 
-import java.time.InstantSource;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
-import java.util.random.RandomGenerator;
 
 /**
  * One lobby, listening two ways at once.
@@ -61,7 +56,11 @@ public final class Server implements AutoCloseable {
     }
 
     /**
-     * Starts a server on the given ports, with the bundled game data.
+     * Starts a server on the given ports, with everything else left at its default.
+     *
+     * <p>Which means, among other things, that it keeps no games. A server that should
+     * survive being stopped says so with {@link #start(int, int, ServerSettings)}, because
+     * writing files is not something a caller should get without asking.
      *
      * @param socketPort where socket clients connect, or zero to be given a free port
      * @param rmiPort    where the RMI registry lives, or zero to be given a free port
@@ -69,25 +68,21 @@ public final class Server implements AutoCloseable {
      * @throws TransportException if either port is already in use
      */
     public static Server start(int socketPort, int rmiPort) {
-        return start(socketPort, rmiPort, GameDataLoader.loadBundled(), new Random(),
-                InstantSource.system(), DisconnectionPolicy.GAME_CARRIES_ON);
+        return start(socketPort, rmiPort, ServerSettings.defaults());
     }
 
     /**
      * Starts a server.
      *
-     * @param socketPort      where socket clients connect, or zero to be given a free port
-     * @param rmiPort         where the RMI registry lives, or zero to be given a free port
-     * @param data            the tiles, cards and boards games will be made of
-     * @param random          where the shuffling and the dice come from
-     * @param clock           where hourglasses read the time
-     * @param onDisconnection what a dropped connection does to a game in progress
+     * @param socketPort where socket clients connect, or zero to be given a free port
+     * @param rmiPort    where the RMI registry lives, or zero to be given a free port
+     * @param settings   the catalogue, the shuffle, the clock, the disconnection policy, the
+     *                   solo timeout, and where games are kept
      * @return a running server
      * @throws TransportException if either port is already in use
      */
-    public static Server start(int socketPort, int rmiPort, GameData data, RandomGenerator random,
-                               InstantSource clock, DisconnectionPolicy onDisconnection) {
-        Lobby lobby = new Lobby(data, random, clock, onDisconnection);
+    public static Server start(int socketPort, int rmiPort, ServerSettings settings) {
+        Lobby lobby = new Lobby(settings);
         List<Doorway> opened = new ArrayList<>();
         try {
             opened.add(SocketServer.listening(socketPort, lobby::welcome, Liveness.DEFAULT));

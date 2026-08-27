@@ -67,9 +67,9 @@ class PlayingAWholeGameTest {
      * the next. That is fine for a test about connecting and fatal for a test about playing.
      */
     private static Server reproducible() {
-        return Server.start(0, 0, it.polimi.ingsw.server.data.GameDataLoader.loadBundled(),
-                new java.util.Random(SEED), java.time.InstantSource.system(),
-                it.polimi.ingsw.server.lobby.DisconnectionPolicy.GAME_CARRIES_ON);
+        return Server.start(0, 0, it.polimi.ingsw.server.lobby.ServerSettings.defaults()
+                .dealtFrom(it.polimi.ingsw.server.data.GameDataLoader.loadBundled())
+                .shuffledBy(new java.util.Random(SEED)));
     }
 
     @AfterEach

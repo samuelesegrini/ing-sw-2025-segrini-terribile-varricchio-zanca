@@ -10,7 +10,7 @@ import it.polimi.ingsw.server.data.GameData;
 import it.polimi.ingsw.server.data.GameDataLoader;
 import it.polimi.ingsw.server.model.game.Game;
 import it.polimi.ingsw.server.lobby.Clients;
-import it.polimi.ingsw.server.lobby.DisconnectionPolicy;
+import it.polimi.ingsw.server.lobby.ServerSettings;
 import it.polimi.ingsw.server.lobby.Lobby;
 import it.polimi.ingsw.server.model.game.Seat;
 import org.junit.jupiter.api.DisplayName;
@@ -246,8 +246,12 @@ class PersistenceTest {
 
         /** A desk that keeps its games in a given directory. */
         private Lobby deskAt(Path directory) {
-            return new Lobby(DATA, new Random(SEED), CLOCK,
-                    DisconnectionPolicy.GAME_CARRIES_ON, Duration.ofMinutes(2), directory);
+            return new Lobby(ServerSettings.defaults()
+                    .dealtFrom(DATA)
+                    .shuffledBy(new Random(SEED))
+                    .timedBy(CLOCK)
+                    .waiting(Duration.ofMinutes(2))
+                    .keeping(directory));
         }
 
         @Test

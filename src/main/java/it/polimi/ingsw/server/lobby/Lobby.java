@@ -12,7 +12,6 @@ import it.polimi.ingsw.server.controller.GameController;
 import it.polimi.ingsw.common.game.GameLevel;
 import it.polimi.ingsw.server.data.GameData;
 import it.polimi.ingsw.server.persistence.GameSnapshot;
-import it.polimi.ingsw.server.persistence.SnapshotStore;
 import it.polimi.ingsw.server.persistence.Snapshots;
 import it.polimi.ingsw.server.model.game.Game;
 import it.polimi.ingsw.server.model.game.Seat;
@@ -69,66 +68,18 @@ public final class Lobby implements AutoCloseable {
     }
 
     /**
-     * Opens a lobby whose games survive a dropped connection.
-     *
-     * @param data   the tiles, cards and boards games will be made of
-     * @param random where the shuffling and the dice come from
-     * @param clock  where hourglasses read the time
-     */
-    public Lobby(GameData data, RandomGenerator random, InstantSource clock) {
-        this(data, random, clock, DisconnectionPolicy.GAME_CARRIES_ON);
-    }
-
-    /**
      * Opens a lobby.
      *
-     * @param data            the tiles, cards and boards games will be made of
-     * @param random          where the shuffling and the dice come from
-     * @param clock           where hourglasses read the time
-     * @param onDisconnection what a dropped connection does to a game in progress
+     * @param settings the catalogue, the shuffle, the clock, what a dropped connection does,
+     *                 how long a game waits for its last player, and where games are kept
      */
-    public Lobby(GameData data, RandomGenerator random, InstantSource clock,
-                 DisconnectionPolicy onDisconnection) {
-        this(data, random, clock, onDisconnection, Game.DEFAULT_SOLO_TIMEOUT);
-    }
-
-    /**
-     * Opens a desk that waits a stated time for a game's last player.
-     *
-     * @param data           the catalogue every game is built from
-     * @param random         the shuffle
-     * @param clock          what time it is
-     * @param onDisconnection what a dropped connection does to a game in progress
-     * @param soloTimeout    how long a game with one player left waits before awarding them
-     *                       the win
-     */
-    public Lobby(GameData data, RandomGenerator random, InstantSource clock,
-                 DisconnectionPolicy onDisconnection, Duration soloTimeout) {
-        this(data, random, clock, onDisconnection, soloTimeout, null);
-    }
-
-    /**
-     * Opens a desk that keeps its games somewhere they can be found after a restart.
-     *
-     * @param data            the catalogue every game is built from
-     * @param random          the shuffle
-     * @param clock           what time it is
-     * @param onDisconnection what a dropped connection does to a game in progress
-     * @param soloTimeout     how long a game with one player left waits
-     * @param keepGamesIn     where to write games down, or {@code null} to keep none — which is
-     *                        what a test wants unless it is a test about keeping them
-     */
-    public Lobby(GameData data, RandomGenerator random, InstantSource clock,
-                 DisconnectionPolicy onDisconnection, Duration soloTimeout,
-                 java.nio.file.Path keepGamesIn) {
-        this.soloTimeout = soloTimeout;
-        this.snapshots = keepGamesIn == null
-                ? Snapshots.NONE
-                : new SnapshotStore(keepGamesIn);
-        this.data = data;
-        this.random = random;
-        this.clock = clock;
-        this.onDisconnection = onDisconnection;
+    public Lobby(ServerSettings settings) {
+        this.data = settings.data();
+        this.random = settings.random();
+        this.clock = settings.clock();
+        this.onDisconnection = settings.onDisconnection();
+        this.soloTimeout = settings.soloTimeout();
+        this.snapshots = settings.snapshots();
         this.queue = Executors.newSingleThreadExecutor(runnable -> {
             Thread thread = new Thread(runnable, "lobby");
             thread.setDaemon(true);

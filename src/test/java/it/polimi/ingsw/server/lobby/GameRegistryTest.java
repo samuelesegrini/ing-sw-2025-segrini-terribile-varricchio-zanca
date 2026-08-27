@@ -47,8 +47,10 @@ class GameRegistryTest {
     private static final Duration PATIENCE = Duration.ofSeconds(3);
     private static final GameData DATA = GameDataLoader.loadBundled();
 
-    private final Lobby lobby = new Lobby(DATA, new Random(20260827L),
-            InstantSource.fixed(Instant.parse("2026-08-27T10:00:00Z")));
+    private final Lobby lobby = new Lobby(ServerSettings.defaults()
+            .dealtFrom(DATA)
+            .shuffledBy(new Random(20260827L))
+            .timedBy(InstantSource.fixed(Instant.parse("2026-08-27T10:00:00Z"))));
 
     private final List<Client> everybody = new ArrayList<>();
 

@@ -20,13 +20,12 @@ import it.polimi.ingsw.common.transport.Liveness;
 import it.polimi.ingsw.common.transport.rmi.RmiConnector;
 import it.polimi.ingsw.common.transport.socket.SocketConnector;
 import it.polimi.ingsw.server.data.GameDataLoader;
-import it.polimi.ingsw.server.lobby.DisconnectionPolicy;
+import it.polimi.ingsw.server.lobby.ServerSettings;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
-import java.time.InstantSource;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -230,8 +229,9 @@ class MixedTransportGameTest {
     @Test
     @DisplayName("socket and RMI players share one game, and play it to the end")
     void socketAndRmiPlayersShareOneGame() throws InterruptedException {
-        server = Server.start(0, 0, GameDataLoader.loadBundled(), new Random(20260826L),
-                InstantSource.system(), DisconnectionPolicy.GAME_CARRIES_ON);
+        server = Server.start(0, 0, ServerSettings.defaults()
+                .dealtFrom(GameDataLoader.loadBundled())
+                .shuffledBy(new Random(20260826L)));
 
         Player samuele = overSocket("samuele");
         Player chiara = overRmi("chiara");

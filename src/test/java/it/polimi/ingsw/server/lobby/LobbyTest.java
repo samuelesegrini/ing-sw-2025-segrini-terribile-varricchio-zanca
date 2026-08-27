@@ -51,8 +51,15 @@ class LobbyTest {
     private static final Duration PATIENCE = Duration.ofSeconds(2);
     private static final GameData DATA = GameDataLoader.loadBundled();
 
-    private Lobby lobby = new Lobby(DATA, new Random(20260826L),
-            InstantSource.fixed(Instant.parse("2026-08-26T10:00:00Z")));
+    /** The desk every test starts from: seeded, fixed clock, keeping nothing. */
+    private static ServerSettings aDesk() {
+        return ServerSettings.defaults()
+                .dealtFrom(DATA)
+                .shuffledBy(new Random(20260826L))
+                .timedBy(InstantSource.fixed(Instant.parse("2026-08-26T10:00:00Z")));
+    }
+
+    private Lobby lobby = new Lobby(aDesk());
 
     @AfterEach
     void closeTheDesk() {
@@ -67,9 +74,7 @@ class LobbyTest {
      */
     private void withTheBaselinePolicy() {
         lobby.close();
-        lobby = new Lobby(DATA, new Random(20260826L),
-                InstantSource.fixed(Instant.parse("2026-08-26T10:00:00Z")),
-                DisconnectionPolicy.ENDS_THE_GAME);
+        lobby = new Lobby(aDesk().whenSomebodyDrops(DisconnectionPolicy.ENDS_THE_GAME));
     }
 
     /** A client: what it can send, and what it has been told. */
