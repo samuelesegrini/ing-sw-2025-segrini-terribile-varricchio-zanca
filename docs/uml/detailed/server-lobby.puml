@@ -8,20 +8,32 @@ title it.polimi.ingsw.server.lobby
 class Connection {
   -lobby : Lobby
   -channel : Channel<Event, Command>
-  -nickname : volatile String
-  -playing : volatile ChannelListener<Command>
-  -colour : volatile PlayerColor
+  -state : volatile ConnectionState
   --
   +received() : void
   +closed() : void
+  +queueAtTheDesk() : void
+  +apply() : void
+  +gone() : void
   +send() : void
   +channel() : Channel<Event, Command>
   +nickname() : String
   +nameYourself() : void
-  +isLoggedIn() : boolean
-  +colour() : PlayerColor
-  +isPlaying() : boolean
   +handOverTo() : void
+}
+interface ConnectionState {
+  +nickname() : String
+  +deliver() : void
+  +apply() : void
+  +atTheDesk() : void
+  +leaving() : void
+  +gone() : void
+}
+class Anonymous <<record>> {
+}
+class AtTheDesk <<record>> {
+}
+class InGame <<record>> {
 }
 enum DisconnectionPolicy {
 }
@@ -43,6 +55,11 @@ class Lobby {
   +submit() : void
   +disconnected() : void
   +awaitQuiet() : boolean
+  +fromSomebodyNamed() : void
+  +login() : void
+  +leftTheDesk() : void
+  +leftAGame() : void
+  +refuse() : void
   +tablesWaiting() : List<String>
   +gamesRunning() : List<String>
   +close() : void
@@ -66,4 +83,7 @@ class PendingGame {
   +summary() : GameSummary
 }
 
+ConnectionState <|.. Anonymous
+ConnectionState <|.. AtTheDesk
+ConnectionState <|.. InGame
 @enduml

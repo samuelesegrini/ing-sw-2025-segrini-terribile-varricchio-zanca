@@ -159,11 +159,11 @@ public final class Lobby implements AutoCloseable {
     // ------------------------------------------------------------------ the queue
 
     void submit(Connection from, Command command) {
-        run(() -> handle(from, command));
+        run(() -> from.apply(command, this));
     }
 
     void disconnected(Connection from) {
-        run(() -> forget(from));
+        run(() -> from.gone(this));
     }
 
     private void run(Runnable work) {
@@ -210,17 +210,24 @@ public final class Lobby implements AutoCloseable {
 
     // ------------------------------------------------------------------ commands
 
-    private void handle(Connection from, Command command) {
-        if (!(command instanceof LobbyCommand lobby)) {
-            refuse(from, command, "you are not in a game yet");
-            return;
-        }
-        if (!from.isLoggedIn() && !(lobby instanceof LobbyCommand.Login)) {
-            refuse(from, command, "say who you are first");
-            return;
-        }
-        switch (lobby) {
-            case LobbyCommand.Login login -> login(from, login);
+    /**
+     * Deals with a command from a connection that has already said who it is.
+     *
+     * <p>The two guards that used to open this method have moved onto
+     * {@link ConnectionState}: whether a command belongs at the desk at all, and whether a
+     * connection may send it yet, are both facts about where the connection has got to, and
+     * asking a null field about that was the last state machine in this project not written
+     * as one.
+     *
+     * @param from    who sent it
+     * @param command what they want
+     */
+    void fromSomebodyNamed(Connection from, LobbyCommand command) {
+        switch (command) {
+            // Reached only from a connection that is already named — an anonymous one is
+            // logged in by its own state — so this is somebody logging in twice.
+            case LobbyCommand.Login ignored ->
+                    refuse(from, command, "you are already " + from.nickname());
             case LobbyCommand.ListGames ignored ->
                     from.send(new LobbyEvent.GamesListed(waiting.values().stream()
                             .filter(PendingGame::hasRoom)
@@ -232,11 +239,13 @@ public final class Lobby implements AutoCloseable {
         }
     }
 
-    private void login(Connection from, LobbyCommand.Login login) {
-        if (from.isLoggedIn()) {
-            refuse(from, login, "you are already " + from.nickname());
-            return;
-        }
+    /**
+     * Gives a connection a nickname, or puts it back where that nickname was sitting.
+     *
+     * @param from  the connection
+     * @param login the name it is claiming
+     */
+    void login(Connection from, LobbyCommand.Login login) {
         String name = login.nickname();
         Seated seat = playing.get(name);
         if (seat != null) {
@@ -418,31 +427,44 @@ public final class Lobby implements AutoCloseable {
 
     // ------------------------------------------------------------------ leaving
 
-    private void forget(Connection gone) {
-        String name = gone.nickname();
-        if (name == null) {
-            return;
-        }
+    /**
+     * Forgets a named connection that was not in a game.
+     *
+     * <p>It gives up its nickname and its place at whatever table it was waiting at. A
+     * connection that never said who it was is not here at all: its own state forgets nothing,
+     * because it was never written down.
+     *
+     * @param name what it was called
+     * @param gone the connection
+     */
+    void leftTheDesk(String name, Connection gone) {
         loggedIn.remove(name, gone);
-        if (gone.isPlaying()) {
-            if (onDisconnection == DisconnectionPolicy.ENDS_THE_GAME) {
-                abandon(playing.get(name));
-                return;
-            }
-            // The seat stays in `playing`, unattached, so that logging in again finds it. The
-            // game itself carries on without them: the controller has already been told, and a
-            // flight that stopped every time somebody's laptop did would be a worse game.
-            //
-            // Unless they were the last one. A game with nobody connected to it has nobody to
-            // carry on for, and holding it open costs a thread, a game, and every nickname at
-            // that table — for as long as the server runs.
-            Seated seat = playing.get(name);
-            if (seat != null && nobodyIsLeftAt(seat.controller())) {
-                abandon(seat);
-            }
+        tableOf(gone).ifPresent(table -> stepAwayFrom(table, gone));
+    }
+
+    /**
+     * Forgets a connection that was in a game, without forgetting its seat.
+     *
+     * @param name what it was called
+     * @param gone the connection
+     */
+    void leftAGame(String name, Connection gone) {
+        loggedIn.remove(name, gone);
+        if (onDisconnection == DisconnectionPolicy.ENDS_THE_GAME) {
+            abandon(playing.get(name));
             return;
         }
-        tableOf(gone).ifPresent(table -> stepAwayFrom(table, gone));
+        // The seat stays in `playing`, unattached, so that logging in again finds it. The
+        // game itself carries on without them: the controller has already been told, and a
+        // flight that stopped every time somebody's laptop did would be a worse game.
+        //
+        // Unless they were the last one. A game with nobody connected to it has nobody to
+        // carry on for, and holding it open costs a thread, a game, and every nickname at
+        // that table — for as long as the server runs.
+        Seated seat = playing.get(name);
+        if (seat != null && nobodyIsLeftAt(seat.controller())) {
+            abandon(seat);
+        }
     }
 
     /**
@@ -491,7 +513,14 @@ public final class Lobby implements AutoCloseable {
                 .findFirst();
     }
 
-    private static void refuse(Connection from, Command command, String reason) {
+    /**
+     * Tells one client that a command of theirs did nothing.
+     *
+     * @param from    who sent it
+     * @param command what they sent, named back to them
+     * @param reason  why, in a sentence
+     */
+    static void refuse(Connection from, Command command, String reason) {
         from.send(new GameEvent.Rejected(command.getClass().getSimpleName(), reason));
     }
 
