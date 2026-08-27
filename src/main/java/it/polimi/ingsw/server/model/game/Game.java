@@ -29,6 +29,7 @@ import it.polimi.ingsw.common.protocol.BuildingCommand;
 import it.polimi.ingsw.common.protocol.FlightCommand;
 import it.polimi.ingsw.common.protocol.FlightEvent;
 import it.polimi.ingsw.common.protocol.GameEvent;
+import it.polimi.ingsw.server.persistence.GameSnapshot;
 import it.polimi.ingsw.common.protocol.PreparationCommand;
 
 import java.time.Duration;
@@ -98,6 +99,18 @@ public final class Game {
 
     /** When the table last emptied to one player, or {@code null} while a game is playable. */
     private Instant aloneSince;
+
+    /**
+     * Everything this game has accepted, oldest first.
+     *
+     * <p>A game is a deterministic function of its level, its seats, its shuffle and this list:
+     * one thread applies one command at a time and the catalogue ships with the build. So this
+     * is what a snapshot keeps, and replaying it is what brings a game back.
+     */
+    private final List<GameSnapshot.Recorded> history = new java.util.ArrayList<>();
+
+    /** Off while a game is being replayed, so recovery does not re-record its own history. */
+    private boolean recording = true;
 
     private Game(String id, LevelSpec level, List<Seat> seats, Map<PlayerColor, Ship> ships,
                  Map<PlayerColor, ShipBuilder> builders, GameData data, RandomGenerator random,
@@ -208,6 +221,10 @@ public final class Game {
         if (!(reaction instanceof Reaction.Accepted accepted)) {
             return reaction;
         }
+        // Only what was accepted. A refused command changed nothing, so replaying it would
+        // change nothing either — and a history that included refusals would invite the reader
+        // to think otherwise.
+        accepted(player, command);
         List<Event> narration = new java.util.ArrayList<>(accepted.narration());
         narration.addAll(advance());
         return new Reaction.Accepted(narration);
@@ -356,6 +373,64 @@ public final class Game {
         phase = new ScoringPhase(this);
         told.addAll(phase.onEntry());
         return List.copyOf(told);
+    }
+
+    /**
+     * Returns everything this game has accepted, oldest first.
+     *
+     * @return the history, for keeping
+     */
+    public List<GameSnapshot.Recorded> history() {
+        return List.copyOf(history);
+    }
+
+    private void accepted(PlayerColor player, Command command) {
+        if (recording) {
+            history.add(new GameSnapshot.Recorded(player, command));
+        }
+    }
+
+    /**
+     * Puts a game back by doing again everything it did.
+     *
+     * <p>Replay rather than reconstruction: the same seed deals the same cards, the same
+     * commands in the same order reach the same state, and every one of them goes through the
+     * ordinary {@code apply}. There is no second code path that could disagree with the first.
+     *
+     * <p>Its own history is not re-recorded as it goes — it is set afterwards to the list that
+     * was replayed, so a recovered game keeps exactly the story it was given.
+     *
+     * @param snapshot what was kept
+     * @param data     the catalogue, which ships with the build and so is the same as before
+     * @param clock    what time it is now, which is not what time it was
+     * @param soloTimeout how long this game waits for its last player
+     * @return the game, as it was
+     * @throws IllegalStateException if a command the game once accepted is now refused, which
+     *                               means the rules have changed under the snapshot
+     */
+    public static Game restore(GameSnapshot snapshot, GameData data, InstantSource clock,
+                               Duration soloTimeout) {
+        List<Seat> seats = snapshot.seats().stream()
+                .map(seated -> new Seat(seated.nickname(), seated.colour()))
+                .toList();
+        Game game = create(snapshot.gameId(), snapshot.level(), seats, data,
+                new java.util.Random(snapshot.seed()), clock, soloTimeout);
+        game.recording = false;
+        try {
+            for (GameSnapshot.Recorded done : snapshot.accepted()) {
+                Reaction again = game.apply(done.player(), done.command());
+                if (again instanceof Reaction.Refused refused) {
+                    throw new IllegalStateException("replaying " + snapshot.gameId()
+                            + " went wrong: a command it once accepted is now refused — "
+                            + refused.reason());
+                }
+                game.tick();
+            }
+        } finally {
+            game.recording = true;
+        }
+        game.history.addAll(snapshot.accepted());
+        return game;
     }
 
     /** Says in a few words what was decided for somebody who was not there. */

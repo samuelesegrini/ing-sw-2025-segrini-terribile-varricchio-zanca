@@ -9,7 +9,11 @@ import it.polimi.ingsw.common.protocol.LobbyEvent;
 import it.polimi.ingsw.common.transport.Channel;
 import it.polimi.ingsw.common.transport.ChannelListener;
 import it.polimi.ingsw.server.controller.GameController;
+import it.polimi.ingsw.common.game.GameLevel;
 import it.polimi.ingsw.server.data.GameData;
+import it.polimi.ingsw.server.persistence.GameSnapshot;
+import it.polimi.ingsw.server.persistence.SnapshotStore;
+import it.polimi.ingsw.server.persistence.Snapshots;
 import it.polimi.ingsw.server.model.game.Game;
 import it.polimi.ingsw.server.model.game.Seat;
 
@@ -51,6 +55,7 @@ public final class Lobby implements AutoCloseable {
     private static final Duration SHUTDOWN_PATIENCE = Duration.ofSeconds(2);
 
     private final Duration soloTimeout;
+    private final Snapshots snapshots;
     private final ExecutorService queue;
     private final AtomicInteger nextGame = new AtomicInteger(1);
 
@@ -99,7 +104,27 @@ public final class Lobby implements AutoCloseable {
      */
     public Lobby(GameData data, RandomGenerator random, InstantSource clock,
                  DisconnectionPolicy onDisconnection, Duration soloTimeout) {
+        this(data, random, clock, onDisconnection, soloTimeout, null);
+    }
+
+    /**
+     * Opens a desk that keeps its games somewhere they can be found after a restart.
+     *
+     * @param data            the catalogue every game is built from
+     * @param random          the shuffle
+     * @param clock           what time it is
+     * @param onDisconnection what a dropped connection does to a game in progress
+     * @param soloTimeout     how long a game with one player left waits
+     * @param keepGamesIn     where to write games down, or {@code null} to keep none — which is
+     *                        what a test wants unless it is a test about keeping them
+     */
+    public Lobby(GameData data, RandomGenerator random, InstantSource clock,
+                 DisconnectionPolicy onDisconnection, Duration soloTimeout,
+                 java.nio.file.Path keepGamesIn) {
         this.soloTimeout = soloTimeout;
+        this.snapshots = keepGamesIn == null
+                ? Snapshots.NONE
+                : new SnapshotStore(keepGamesIn);
         this.data = data;
         this.random = random;
         this.clock = clock;
@@ -109,6 +134,9 @@ public final class Lobby implements AutoCloseable {
             thread.setDaemon(true);
             return thread;
         });
+        // Before anybody can connect. A player logging in while games were still being put back
+        // could be told their name was free and then find it was not.
+        recoverWhatWasKept();
     }
 
     /**
@@ -323,9 +351,14 @@ public final class Lobby implements AutoCloseable {
             seats.add(new Seat(player.nickname(), table.colourOf(player)));
         }
 
-        Game game = Game.create(table.id(), table.level(), seats, data, random, clock,
+        // A seed of its own, drawn from the desk's shuffle. A game that shared the lobby's
+        // generator could not be written down: reproducing it would mean reproducing every
+        // other game that had drawn from it since.
+        long seed = random.nextLong();
+        Game game = Game.create(table.id(), table.level(), seats, data, new java.util.Random(seed), clock,
                 soloTimeout);
-        GameController controller = new GameController(game);
+        GameController controller = new GameController(game, keeping(table.id(), table.level(),
+                seats, seed));
         games.put(table.id(), controller);
 
         // Everybody is attached before anybody is announced. Announcing as each is bound would
@@ -337,6 +370,50 @@ public final class Lobby implements AutoCloseable {
             player.handOverTo(colour, controller.attach(colour, player.channel()));
         }
         players.forEach(player -> controller.announceArrival(table.colourOf(player)));
+    }
+
+    /**
+     * Returns something that writes this game down whenever it reaches a point worth keeping.
+     *
+     * @param id    what the game is called
+     * @param level which rules
+     * @param seats who is playing
+     * @param seed  its shuffle
+     * @return the keeper the controller calls
+     */
+    private java.util.function.Consumer<Game> keeping(String id, GameLevel level,
+                                                      List<Seat> seats, long seed) {
+        List<GameSnapshot.Seated> written = seats.stream()
+                .map(seat -> new GameSnapshot.Seated(seat.nickname(), seat.colour()))
+                .toList();
+        return game -> snapshots.save(new GameSnapshot(GameSnapshot.FORMAT, id, level, written,
+                seed, game.history()));
+    }
+
+    /**
+     * Picks up every game that was running when the server stopped.
+     *
+     * <p>They come back with nobody attached: the seats are held under the old nicknames, and
+     * logging in with one puts that player back at their table. This is the same path a player
+     * takes after their own connection drops, which is why there is not a second one.
+     */
+    private void recoverWhatWasKept() {
+        for (GameSnapshot kept : snapshots.loadAll()) {
+            try {
+                Game game = Game.restore(kept, data, clock, soloTimeout);
+                GameController controller = new GameController(game,
+                        keeping(kept.gameId(), kept.level(),
+                                game.seats(), kept.seed()));
+                games.put(kept.gameId(), controller);
+                controller.seats().forEach(seat ->
+                        playing.put(seat.nickname(), new Seated(controller, seat.colour())));
+            } catch (RuntimeException broken) {
+                // One game that cannot be replayed must not stop the server carrying the rest.
+                // The file is left where it is, because somebody will want to know why.
+                System.err.println("could not put " + kept.gameId() + " back: "
+                        + broken.getMessage());
+            }
+        }
     }
 
     // ------------------------------------------------------------------ leaving
@@ -400,6 +477,9 @@ public final class Lobby implements AutoCloseable {
         String id = controller.game().id();
         controller.seats().forEach(sitting -> playing.remove(sitting.nickname()));
         games.remove(id);
+        // A finished game is not worth keeping, and one left behind would come back from the
+        // dead the next time the server started.
+        snapshots.delete(id);
         controller.announceToEveryone(new GameEvent.GameEnded());
         controller.awaitQuiet(Duration.ofSeconds(1));
         controller.close();
