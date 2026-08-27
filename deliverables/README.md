@@ -1,13 +1,42 @@
 # Deliverables
 
-This directory holds the artifacts handed in for evaluation. It is populated at
-release time, not on every build, so that the working tree stays clean.
+What is handed in for evaluation.
 
-| Artifact | Produced by |
-|:--|:--|
-| `server.jar`, `client.jar` | `./mvnw clean package`, copied here from `target/` when a version is tagged |
-| `peer-review/` | The two peer review documents required by `requirements.pdf` § 1 |
+| Artifact | What it is | Requirement |
+|:--|:--|:--|
+| `server.jar` | The server. `java -jar server.jar [socketPort] [rmiPort]` | D9 |
+| `client.jar` | The client, both interfaces. `java -jar client.jar [--tui\|--gui] [--socket\|--rmi]` | D9 |
+| `peer-review/` | The two peer review documents | D5 |
+| [`../docs/uml/high-level/`](../docs/uml/high-level/) | High-level UML | D1 |
+| [`../docs/uml/detailed/`](../docs/uml/detailed/) | Detailed UML, generated from source | D2 |
+| [`../docs/protocol/`](../docs/protocol/) | The communication protocol | D4 |
+| [`../src/`](../src/) | Source and tests | D3, D6, D8 |
 
-The jars from the previous implementation were removed on `develop`; they remain
-available on `main` and in the git history. Fresh ones are built from the tagged
-commit as part of `v1.0.0` (issue #62).
+Javadoc (D7) is generated rather than checked in:
+
+```bash
+./mvnw clean javadoc:javadoc
+```
+
+`clean` matters. On its own the goal is incremental and skips files whose output is already
+up to date, so it can report success having checked almost nothing.
+
+## The jars
+
+Both are self-contained: no classpath, no module path, nothing to install but a JDK 23.
+
+```bash
+java -jar server.jar 4321 4322
+java -jar client.jar --tui --socket --host localhost --port 4321
+```
+
+Rebuilt from the tagged commit with:
+
+```bash
+./mvnw clean package
+cp target/server.jar target/client.jar deliverables/
+```
+
+Verified here by starting each of them and playing a little: the server on both ports at
+once, and the client over a socket, over RMI, in the terminal and in a window. They have not
+been run on a machine other than the one they were built on.
