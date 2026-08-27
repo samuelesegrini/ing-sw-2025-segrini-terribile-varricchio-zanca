@@ -4,6 +4,7 @@ import it.polimi.ingsw.common.game.GamePhase;
 import it.polimi.ingsw.common.game.PlayerColor;
 import it.polimi.ingsw.common.protocol.Command;
 import it.polimi.ingsw.common.protocol.Event;
+import it.polimi.ingsw.common.protocol.FlightEvent;
 import it.polimi.ingsw.common.protocol.GameEvent;
 import it.polimi.ingsw.common.transport.Channel;
 import it.polimi.ingsw.common.transport.ChannelListener;
@@ -45,6 +46,7 @@ public final class GameController implements AutoCloseable {
     private static final Duration TICK = Duration.ofMillis(500);
 
     private final Game game;
+    private final java.util.function.Consumer<Game> keeper;
     private final Map<PlayerColor, PlayerSession> sessions = new EnumMap<>(PlayerColor.class);
     private final ExecutorService queue;
     private final ScheduledExecutorService clock;
@@ -58,6 +60,19 @@ public final class GameController implements AutoCloseable {
      * @param game the game to run
      */
     public GameController(Game game) {
+        this(game, snapshot -> { });
+    }
+
+    /**
+     * Runs a game, keeping it somewhere it can be found again.
+     *
+     * @param game    the game
+     * @param keeper  told to write a snapshot whenever the game reaches a point worth keeping;
+     *                a consumer rather than the store itself, because that is all this needs
+     *                and a test can then watch when it is called
+     */
+    public GameController(Game game, java.util.function.Consumer<Game> keeper) {
+        this.keeper = keeper;
         this.game = game;
         this.lastAnnounced = game.phase();
         game.seats().forEach(seat ->
@@ -72,6 +87,10 @@ public final class GameController implements AutoCloseable {
             thread.setDaemon(true);
             return thread;
         });
+        // Written down as soon as it exists. A game is recoverable from the moment it is
+        // dealt, not from the moment somebody first does something in it — a server that
+        // stopped between the two would otherwise lose a table that was already seated.
+        run(() -> keeper.accept(game));
         this.clock.scheduleAtFixedRate(this::tick, TICK.toMillis(), TICK.toMillis(),
                 TimeUnit.MILLISECONDS);
     }
@@ -203,8 +222,10 @@ public final class GameController implements AutoCloseable {
      * makes reconnecting the same operation as joining.
      */
     private void publish(List<Event> narration) {
+        boolean phaseChanged = game.phase() != lastAnnounced;
         announcePhaseChange();
         narration.forEach(this::announce);
+        keepIfWorthKeeping(narration, phaseChanged);
         if (game.phase() == GamePhase.FINISHED && !ended) {
             ended = true;
             announce(new GameEvent.GameEnded());
@@ -245,6 +266,27 @@ public final class GameController implements AutoCloseable {
     }
 
     // ------------------------------------------------------------------ running the queue
+
+    /**
+     * Writes a snapshot at the points a game can be picked up from.
+     *
+     * <p>After a card is resolved and at every phase change — the moments when nothing is
+     * half-done. Saving after every command would be a great deal of writing to save at most
+     * one command's worth of progress; saving less often would mean losing a whole card.
+     *
+     * <p>On the game's own thread, like everything else here, so a snapshot is never taken
+     * while the model is mid-change.
+     */
+    private void keepIfWorthKeeping(List<Event> narration, boolean phaseChanged) {
+        // The phase change is asked about separately rather than looked for in the narration,
+        // because it is announced by announcePhaseChange and never appears in that list. Reading
+        // it from the list looked right and kept nothing at all.
+        boolean quiescent = phaseChanged || narration.stream()
+                .anyMatch(event -> event instanceof FlightEvent.CardResolved);
+        if (quiescent) {
+            keeper.accept(game);
+        }
+    }
 
     private void run(Runnable work) {
         try {

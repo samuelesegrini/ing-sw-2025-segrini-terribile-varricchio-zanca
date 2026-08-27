@@ -267,12 +267,26 @@ After each resolved adventure card and at each phase transition, the server writ
 a JSON snapshot of the game aggregate. Recovery reconstructs the aggregate and
 waits for the original nicknames to reconnect.
 
-*Why a snapshot rather than an event log.* The requirement only asks to resume from
-where execution stopped. Snapshots at natural quiescent points are simpler to make
-correct than replaying a log through a state machine, and the disk is assumed
-reliable (`requirements.pdf` § 2.3).
+*What a snapshot holds.* Not the aggregate field by field, but the recipe for it: the
+game's name, its rules, its seats, its seed, and every command it accepted. A game is a
+deterministic function of those four things — one thread applies one command at a time
+and the catalogue ships with the build — so replaying them lands on the same state,
+down to the next card the deck will turn over.
 
-*Pattern.* Memento.
+*Why that rather than a field-by-field snapshot.* The original decision here assumed a
+snapshot would be simpler to make correct than a replay. In this codebase it is not: the
+aggregate has no serialization anywhere, its shuffle is a `RandomGenerator` which is not
+serializable at all, and it holds a catalogue of cards that are behaviour rather than
+data. Replay goes through `Game.apply`, which is the most exercised path in the project
+and deterministic by construction — there is no second code path that could disagree
+with the first. Written at the same quiescent points either way: after each resolved
+card, at each phase change, and once when the game is dealt.
+
+*Writing.* Never in place. A snapshot goes to a temporary file beside the real one, is
+forced to the disk, and is moved into place in a single operation — so a process killed
+at any point leaves either the previous snapshot untouched or the new one complete.
+
+*Pattern.* Memento, with the state expressed as history rather than as fields.
 
 ## 4. Concurrency
 
