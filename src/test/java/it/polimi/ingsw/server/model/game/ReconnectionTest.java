@@ -4,6 +4,7 @@ import it.polimi.ingsw.common.game.GameLevel;
 import it.polimi.ingsw.common.game.GamePhase;
 import it.polimi.ingsw.common.game.PlayerColor;
 import it.polimi.ingsw.common.protocol.BuildingCommand;
+import it.polimi.ingsw.common.protocol.Command;
 import it.polimi.ingsw.common.protocol.Event;
 import it.polimi.ingsw.common.protocol.GameEvent;
 import it.polimi.ingsw.common.protocol.view.GameView;
@@ -19,10 +20,12 @@ import java.time.Instant;
 import java.time.InstantSource;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Random;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -54,6 +57,30 @@ class ReconnectionTest {
 
         void moveOn(Duration by) {
             now = now.plus(by);
+        }
+    }
+
+    /**
+     * A phase that overrides nothing, standing in for the next one somebody writes.
+     *
+     * <p>Deliberately minimal: the only thing under test is what {@link Phase} does by
+     * default when it is asked to finish itself for a player who is not there.
+     */
+    private static final class Unattended implements Phase {
+
+        @Override
+        public GamePhase name() {
+            return GamePhase.VALIDATION;
+        }
+
+        @Override
+        public Reaction apply(PlayerColor player, Command command) {
+            return new Reaction.Refused("nothing happens here");
+        }
+
+        @Override
+        public Optional<Phase> next() {
+            return Optional.empty();
         }
     }
 
@@ -156,6 +183,50 @@ class ReconnectionTest {
 
             assertNotEquals(GamePhase.BUILDING, game.phase(),
                     "a shipyard that never closes is a game that never starts");
+        }
+
+        @Test
+        @DisplayName("and is stopped once, however many times the clock asks")
+        void theShipyardClosesOncePerPlayer() {
+            Game game = fourPlayers(Duration.ofMinutes(2));
+            List.of(PlayerColor.GREEN, PlayerColor.RED, PlayerColor.YELLOW)
+                    .forEach(player -> game.connectionChanged(player, false));
+            game.apply(PlayerColor.BLUE, new BuildingCommand.FinishBuilding(null));
+
+            long stopped = settle(game).stream()
+                    .filter(event -> event instanceof GameEvent.TurnSkipped skipped
+                            && skipped.what().equals("stopped building where they were"))
+                    .count();
+
+            // The tick runs many times over; a phase that reported closing the yard on every
+            // one of them would narrate the same fact to four clients until the glass ran out.
+            assertEquals(3, stopped,
+                    "each absent builder is stopped once, not once per tick");
+        }
+    }
+
+    @Nested
+    @DisplayName("finishing a phase on somebody's behalf")
+    class FinishingForSomebody {
+
+        @Test
+        @DisplayName("a phase that has not said what it means refuses, rather than being skipped")
+        void theDefaultIsToRefuse() {
+            Reaction answer = new Unattended().finishFor(PlayerColor.BLUE);
+
+            // The point of the default. A phase added later that genuinely can be finished for
+            // an absent player has to say so; one that says nothing is not quietly treated as
+            // though it had been dealt with.
+            assertInstanceOf(Reaction.Refused.class, answer,
+                    "silence is not consent to skip a phase");
+        }
+
+        @Test
+        @DisplayName("and says why, because a refusal that does not is not readable")
+        void theRefusalSaysWhy() {
+            Reaction answer = new Unattended().finishFor(PlayerColor.BLUE);
+
+            assertFalse(((Reaction.Refused) answer).reason().isBlank());
         }
     }
 

@@ -3,6 +3,7 @@ package it.polimi.ingsw.server.model.game;
 import it.polimi.ingsw.common.game.GamePhase;
 import it.polimi.ingsw.common.game.PlayerColor;
 import it.polimi.ingsw.common.protocol.Command;
+import it.polimi.ingsw.common.protocol.GameEvent;
 import it.polimi.ingsw.common.protocol.PreparationCommand;
 import it.polimi.ingsw.server.model.flight.Dice;
 import it.polimi.ingsw.server.model.flight.Flight;
@@ -10,6 +11,7 @@ import it.polimi.ingsw.server.model.ship.Ship;
 
 import java.util.EnumSet;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -54,8 +56,7 @@ final class CrewPhase implements Phase {
                     yield Reaction.Accepted.quietly();
                 }
                 case PreparationCommand.FinishPreparation ignored -> {
-                    ship.fillRemainingCabinsWithHumans();
-                    ready.add(player);
+                    readyUp(player, ship);
                     yield Reaction.Accepted.quietly();
                 }
                 default -> new Reaction.Refused("the ships are being crewed");
@@ -63,6 +64,41 @@ final class CrewPhase implements Phase {
         } catch (RuntimeException refused) {
             return new Reaction.Refused(Reasons.from(refused));
         }
+    }
+
+    /**
+     * Launches an absent player with whatever crew their cabins already hold.
+     *
+     * <p>The same thing declaring ready does, which is the point: an absent player is not
+     * given a worse crew than a present one who said nothing, and the fleet is not held on
+     * the starting line by somebody who is not coming back.
+     *
+     * @param player who is away
+     * @return the ship crewed and ready, or a refusal if it already was
+     */
+    @Override
+    public Reaction finishFor(PlayerColor player) {
+        if (ready.contains(player)) {
+            return new Reaction.Refused("this ship is crewed and waiting to launch");
+        }
+        try {
+            readyUp(player, game.ships().get(player));
+        } catch (RuntimeException refused) {
+            return new Reaction.Refused(Reasons.from(refused));
+        }
+        return new Reaction.Accepted(List.of(
+                new GameEvent.TurnSkipped(player, "flew with the crew they had")));
+    }
+
+    /**
+     * Fills the cabins nobody has filled and marks the ship ready.
+     *
+     * <p>Shared by declaring ready and by being launched while away, so the two cannot drift
+     * into meaning different things.
+     */
+    private void readyUp(PlayerColor player, Ship ship) {
+        ship.fillRemainingCabinsWithHumans();
+        ready.add(player);
     }
 
     @Override

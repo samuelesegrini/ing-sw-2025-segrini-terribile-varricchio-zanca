@@ -25,12 +25,10 @@ import it.polimi.ingsw.server.projection.Projections;
 
 import it.polimi.ingsw.common.game.PlayerPrompt;
 import it.polimi.ingsw.common.game.SkippedTurn;
-import it.polimi.ingsw.common.protocol.BuildingCommand;
 import it.polimi.ingsw.common.protocol.FlightCommand;
 import it.polimi.ingsw.common.protocol.FlightEvent;
 import it.polimi.ingsw.common.protocol.GameEvent;
 import it.polimi.ingsw.server.persistence.GameSnapshot;
-import it.polimi.ingsw.common.protocol.PreparationCommand;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -291,23 +289,19 @@ public final class Game {
 
     /**
      * Closes the shipyard, or the crew hatch, on behalf of anybody who is away.
+     *
+     * <p>Which phases that is true of is the phases' own business. Asking every phase and
+     * letting most of them refuse is the whole of the logic here — the alternative, a switch
+     * on {@code phase.name()} handing down a command the phase would have to parse back, was
+     * the enum chain {@link Phase} exists to abolish, and it had a {@code default} that made
+     * a forgotten phase silent.
      */
     private List<Event> finishForAnybodyAway() {
         List<Event> told = new java.util.ArrayList<>();
         for (PlayerColor player : List.copyOf(away)) {
-            Command onTheirBehalf = switch (phase.name()) {
-                case BUILDING -> new BuildingCommand.FinishBuilding(null);
-                case CREW_PLACEMENT -> new PreparationCommand.FinishPreparation();
-                default -> null;
-            };
-            if (onTheirBehalf == null) {
-                continue;
-            }
-            // Refused means they had already finished, which is exactly what we wanted anyway.
-            if (phase.apply(player, onTheirBehalf) instanceof Reaction.Accepted accepted) {
-                told.add(new GameEvent.TurnSkipped(player, phase.name() == GamePhase.BUILDING
-                        ? "stopped building where they were"
-                        : "flew with the crew they had"));
+            // Refused covers both "not something this phase can do" and "they had already
+            // finished", and neither needs anything doing about it.
+            if (phase.finishFor(player) instanceof Reaction.Accepted accepted) {
                 told.addAll(accepted.narration());
             }
         }

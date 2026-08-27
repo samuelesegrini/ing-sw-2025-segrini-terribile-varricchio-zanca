@@ -53,6 +53,27 @@ interface Phase {
     Optional<Phase> next();
 
     /**
+     * Finishes this phase for a player who is not there to finish it themselves.
+     *
+     * <p>Asked on every tick for everybody away, so that a shipyard does not stay open on a
+     * laptop that has closed. Most phases have nothing this could mean — a flight cannot be
+     * flown on somebody's behalf, and a score cannot be settled early — so the default is to
+     * refuse, and a phase that <em>can</em> be finished says so by overriding.
+     *
+     * <p>Refusing is the ordinary answer, not an error: it is also what a phase says when
+     * the player had already finished before they left.
+     *
+     * <p>The narration belongs to the phase rather than to the caller, because the phase is
+     * the only thing that knows what it just did on that player's behalf.
+     *
+     * @param player who is away
+     * @return what was done for them, or why nothing was
+     */
+    default Reaction finishFor(PlayerColor player) {
+        return new Reaction.Refused("nothing here can be finished on somebody's behalf");
+    }
+
+    /**
      * Says what happened on the way in.
      *
      * <p>Most phases begin by waiting, and have nothing to report. The flight does not: it
