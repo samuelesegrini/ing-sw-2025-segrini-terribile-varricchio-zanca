@@ -8,8 +8,10 @@ package it.polimi.ingsw.common.game;
  * settled card by card in M3, and a test that also tried to play cleverly would be testing two
  * things and telling you neither.
  *
- * <p>The switch is exhaustive over {@link PlayerPrompt}, so a new kind of question cannot be
- * added without somebody deciding what the boring answer to it is.
+ * <p>Which is the same question the server has to answer when a player drops, so this is now
+ * {@link SkippedTurn} under another name. Kept as a name because that is what these tests mean
+ * — they want to reach the end of a flight, not to play one well — and because a test reading
+ * {@code SkippedTurn.answerFor} would suggest somebody had disconnected.
  */
 public final class Answers {
 
@@ -23,23 +25,9 @@ public final class Answers {
      * @return an answer that does as little as possible
      */
     public static PlayerChoice simplestTo(PlayerPrompt prompt) {
-        return switch (prompt) {
-            case PlayerPrompt.TakeOrLeave leave -> new PlayerChoice.Leave(leave.player());
-            case PlayerPrompt.DeclarePower declare ->
-                    new PlayerChoice.Declaration(declare.player(), BatteryPlan.none());
-            // Done, not a cube: the least interesting answer to an offer of goods is to take
-            // none of them. What happens when a player does take some is CargoTest's business
-            // and PlanetsCardTest's, not this helper's.
-            case PlayerPrompt.ArrangeCargo cargo -> new PlayerChoice.Done(cargo.player());
-            case PlayerPrompt.GiveUpCrew crew -> new PlayerChoice.CrewGiven(crew.player(),
-                    crew.cabins().stream().limit(crew.count()).toList());
-            case PlayerPrompt.ChooseDefence defence ->
-                    PlayerChoice.DefenceChosen.none(defence.player());
-            case PlayerPrompt.ChooseFragment fragment ->
-                    new PlayerChoice.FragmentKept(fragment.player(), fragment.pieces().get(0));
-            case PlayerPrompt.ChoosePlanet planet ->
-                    new PlayerChoice.PlanetChosen(planet.player(),
-                            planet.planets().keySet().iterator().next());
-        };
+        // One definition, in the main sources, because the server needs it for real: it is what
+        // a game answers on behalf of somebody who has dropped. A second copy here would be a
+        // second thing to keep in step with the rules.
+        return SkippedTurn.answerFor(prompt);
     }
 }

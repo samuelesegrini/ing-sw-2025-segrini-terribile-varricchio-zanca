@@ -23,6 +23,16 @@ import it.polimi.ingsw.server.model.goods.GoodsBank;
 import it.polimi.ingsw.server.model.ship.Ship;
 import it.polimi.ingsw.server.projection.Projections;
 
+import it.polimi.ingsw.common.game.PlayerPrompt;
+import it.polimi.ingsw.common.game.SkippedTurn;
+import it.polimi.ingsw.common.protocol.BuildingCommand;
+import it.polimi.ingsw.common.protocol.FlightCommand;
+import it.polimi.ingsw.common.protocol.FlightEvent;
+import it.polimi.ingsw.common.protocol.GameEvent;
+import it.polimi.ingsw.common.protocol.PreparationCommand;
+
+import java.time.Duration;
+import java.time.Instant;
 import java.time.InstantSource;
 import java.util.EnumMap;
 import java.util.EnumSet;
@@ -53,6 +63,18 @@ import java.util.random.RandomGenerator;
  */
 public final class Game {
 
+    /**
+     * How long a game with one player left waits for somebody to come back.
+     *
+     * <p>A number with a reason rather than a magic one: long enough that a dropped connection,
+     * a reconnecting client and a person walking back to their desk all fit inside it, and short
+     * enough that the last player standing is not held there all afternoon.
+     */
+    public static final Duration DEFAULT_SOLO_TIMEOUT = Duration.ofMinutes(2);
+
+    /** A stop on skipping, so that a phase which somehow keeps asking cannot spin for ever. */
+    private static final int MOST_SKIPS_PER_TICK = 64;
+
     private final String id;
     private final LevelSpec level;
     private final List<Seat> seats;
@@ -67,13 +89,22 @@ public final class Game {
     private final AdventureDeck deck;
     private final StartSpaces starts;
 
+    private final InstantSource clock;
+    private final Duration soloTimeout;
+
     private Phase phase;
     private Flight flight;
     private List<ScoreSheet> scores;
 
+    /** When the table last emptied to one player, or {@code null} while a game is playable. */
+    private Instant aloneSince;
+
     private Game(String id, LevelSpec level, List<Seat> seats, Map<PlayerColor, Ship> ships,
                  Map<PlayerColor, ShipBuilder> builders, GameData data, RandomGenerator random,
-                 ComponentPool pool, BuildingTimer timer, AdventureDeck deck, StartSpaces starts) {
+                 ComponentPool pool, BuildingTimer timer, AdventureDeck deck, StartSpaces starts,
+                 InstantSource clock, Duration soloTimeout) {
+        this.clock = clock;
+        this.soloTimeout = soloTimeout;
         this.id = id;
         this.level = level;
         this.seats = List.copyOf(seats);
@@ -101,6 +132,24 @@ public final class Game {
      */
     public static Game create(String id, GameLevel level, List<Seat> seats, GameData data,
                               RandomGenerator random, InstantSource clock) {
+        return create(id, level, seats, data, random, clock, DEFAULT_SOLO_TIMEOUT);
+    }
+
+    /**
+     * Opens a game, saying how long it will wait for a second player before ending itself.
+     *
+     * @param id          what to call it
+     * @param level       which rules
+     * @param seats       who is playing
+     * @param data        the catalogue
+     * @param random      the shuffle
+     * @param clock       what time it is
+     * @param soloTimeout how long a game with one player left waits before awarding them the win
+     * @return the game, in its building phase
+     * @throws IllegalArgumentException if the table does not seat two to four players
+     */
+    public static Game create(String id, GameLevel level, List<Seat> seats, GameData data,
+                              RandomGenerator random, InstantSource clock, Duration soloTimeout) {
         if (seats.size() < 2 || seats.size() > 4) {
             throw new IllegalArgumentException("a game seats two to four players, not " + seats.size());
         }
@@ -122,7 +171,8 @@ public final class Game {
                 spec.rules().hourglass() ? StartSpacePolicy.CHOSEN_BY_PLAYER
                         : StartSpacePolicy.IN_FINISHING_ORDER);
 
-        Game game = new Game(id, spec, seats, ships, builders, data, random, pool, timer, deck, starts);
+        Game game = new Game(id, spec, seats, ships, builders, data, random, pool, timer, deck,
+                starts, clock, soloTimeout);
         game.phase = new BuildingPhase(game);
         if (timer.isInPlay()) {
             timer.start();
@@ -173,7 +223,152 @@ public final class Game {
      * @return {@code true} if the phase changed
      */
     public List<Event> tick() {
-        return advance();
+        List<Event> told = new java.util.ArrayList<>();
+        told.addAll(answerForAnybodyAway());
+        told.addAll(mindTheLastPlayer());
+        told.addAll(advance());
+        return List.copyOf(told);
+    }
+
+    /**
+     * Answers on behalf of whoever is not there.
+     *
+     * <p>A dropped connection must not stop three other people playing. What the answer is comes
+     * from {@link SkippedTurn}, which is a rule and not a convenience: always the passive one,
+     * always the same, and never something anybody could call unfair on the absent player's
+     * behalf.
+     *
+     * <p>Building and crewing are skipped by taking the player to have finished where they
+     * stand — there is nothing else "waiting for them" could mean once they are gone, and a
+     * shipyard that never closes is a game that never starts.
+     *
+     * @return what to tell everybody
+     */
+    private List<Event> answerForAnybodyAway() {
+        if (away.isEmpty() || phase.name() == GamePhase.FINISHED) {
+            return List.of();
+        }
+        List<Event> told = new java.util.ArrayList<>();
+        told.addAll(finishForAnybodyAway());
+
+        // A loop, because one skipped answer usually leads to the next question — a volley is
+        // four shots. Bounded, so that a phase which somehow keeps asking cannot spin for ever.
+        for (int asked = 0; asked < MOST_SKIPS_PER_TICK; asked++) {
+            Optional<PlayerPrompt> outstanding = phase.pending();
+            if (outstanding.isEmpty() || !away.contains(outstanding.get().player())) {
+                break;
+            }
+            PlayerPrompt prompt = outstanding.orElseThrow();
+            Reaction answered = phase.apply(prompt.player(),
+                    new FlightCommand.Answer(SkippedTurn.answerFor(prompt)));
+            if (!(answered instanceof Reaction.Accepted accepted)) {
+                // The passive answer was refused, which means the rules changed under us. Better
+                // to stop and let somebody look than to hammer a question that will not take.
+                break;
+            }
+            told.add(new GameEvent.TurnSkipped(prompt.player(), describe(prompt)));
+            told.addAll(accepted.narration());
+        }
+        return List.copyOf(told);
+    }
+
+    /**
+     * Closes the shipyard, or the crew hatch, on behalf of anybody who is away.
+     */
+    private List<Event> finishForAnybodyAway() {
+        List<Event> told = new java.util.ArrayList<>();
+        for (PlayerColor player : List.copyOf(away)) {
+            Command onTheirBehalf = switch (phase.name()) {
+                case BUILDING -> new BuildingCommand.FinishBuilding(null);
+                case CREW_PLACEMENT -> new PreparationCommand.FinishPreparation();
+                default -> null;
+            };
+            if (onTheirBehalf == null) {
+                continue;
+            }
+            // Refused means they had already finished, which is exactly what we wanted anyway.
+            if (phase.apply(player, onTheirBehalf) instanceof Reaction.Accepted accepted) {
+                told.add(new GameEvent.TurnSkipped(player, phase.name() == GamePhase.BUILDING
+                        ? "stopped building where they were"
+                        : "flew with the crew they had"));
+                told.addAll(accepted.narration());
+            }
+        }
+        return List.copyOf(told);
+    }
+
+    /**
+     * Suspends a game that has run out of players, and eventually ends it.
+     *
+     * <p>One player alone cannot finish a flight: the cards ask questions of an order of
+     * players, and an order of one is not a game. So it waits — and says how long it will wait,
+     * rather than either carrying on absurdly or ending the moment somebody's train goes into a
+     * tunnel. If nobody comes back in time, the last player standing is the winner: everybody
+     * else gives up, and the flight is scored as it stands.
+     *
+     * @return what to tell whoever is left
+     */
+    private List<Event> mindTheLastPlayer() {
+        if (phase.name() == GamePhase.FINISHED || phase.name() == GamePhase.SCORING) {
+            return List.of();
+        }
+        boolean alone = seats.size() - away.size() <= 1;
+        if (!alone) {
+            if (aloneSince == null) {
+                return List.of();
+            }
+            aloneSince = null;
+            return List.of(new GameEvent.GameResumed());
+        }
+        if (aloneSince == null) {
+            aloneSince = clock.instant();
+            return List.of(new GameEvent.GameSuspended(soloTimeout.toSeconds()));
+        }
+        Duration waited = Duration.between(aloneSince, clock.instant());
+        if (waited.compareTo(soloTimeout) < 0) {
+            return List.of();
+        }
+        return awardTheWinToWhoeverIsLeft();
+    }
+
+    /**
+     * Ends a game nobody came back to.
+     *
+     * <p>Everybody away gives up, which leaves whoever is still here as the only ship still
+     * flying — so the ordinary scoring makes them the winner, and there is no separate notion
+     * of "winning by default" to keep in step with the real one.
+     */
+    private List<Event> awardTheWinToWhoeverIsLeft() {
+        aloneSince = null;
+        if (flight == null) {
+            // Nobody has launched. There is nothing to score, so the game simply stops.
+            phase = new ScoringPhase(this);
+            return List.of(new GameEvent.GameEnded());
+        }
+        List<Event> told = new java.util.ArrayList<>();
+        for (Seat seat : seats) {
+            if (away.contains(seat.colour()) && !flight.retired().contains(seat.colour())) {
+                flight.giveUp(seat.colour());
+                told.add(new FlightEvent.ShipRetired(seat.colour(),
+                        "away when the game ran out of players"));
+            }
+        }
+        phase = new ScoringPhase(this);
+        told.addAll(phase.onEntry());
+        return List.copyOf(told);
+    }
+
+    /** Says in a few words what was decided for somebody who was not there. */
+    private static String describe(PlayerPrompt prompt) {
+        return switch (prompt) {
+            case PlayerPrompt.TakeOrLeave ignored -> "left an offer where it was";
+            case PlayerPrompt.DeclarePower ignored -> "declared with no batteries spent";
+            case PlayerPrompt.ArrangeCargo ignored -> "took none of the goods";
+            case PlayerPrompt.GiveUpCrew crew -> "gave up " + crew.count() + " crew";
+            case PlayerPrompt.ChooseDefence ignored -> "took the hit";
+            case PlayerPrompt.ChooseFragment ignored -> "kept the largest piece";
+            case PlayerPrompt.ChoosePlanet ignored -> "flew past the planets";
+        };
     }
 
     /**
