@@ -2,17 +2,14 @@ package it.polimi.ingsw.common.transport.socket;
 
 import it.polimi.ingsw.common.protocol.Command;
 import it.polimi.ingsw.common.protocol.Event;
-import it.polimi.ingsw.common.transport.Channel;
-import it.polimi.ingsw.common.transport.ChannelListener;
+import it.polimi.ingsw.common.transport.AbstractListeningPost;
+import it.polimi.ingsw.common.transport.Doorman;
 import it.polimi.ingsw.common.transport.Liveness;
 import it.polimi.ingsw.common.transport.TransportException;
 
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Function;
 
 /**
  * Listens on a port and turns everything that connects into a channel.
@@ -21,25 +18,20 @@ import java.util.function.Function;
  * says what to do with a new connection and calls it; whether that function starts a session,
  * refuses the connection or writes it down is somebody else's business.
  *
- * <p>Every accepted connection is kept so that closing the server closes them too. A server
- * that stopped listening but left twenty sockets open would look shut down and would not be.
+ * <p>Every accepted connection is kept so that closing the server closes them too — by
+ * {@link AbstractListeningPost}, which is also where the counting and the closing live,
+ * because the RMI door does exactly the same things with them.
  */
-public final class SocketServer implements AutoCloseable {
+public final class SocketServer extends AbstractListeningPost {
 
     private final ServerSocket listening;
-    private final Function<Channel<Event, Command>, ChannelListener<Command>> onConnect;
-    private final Liveness liveness;
-    private final Set<Channel<Event, Command>> connected = ConcurrentHashMap.newKeySet();
     private final Thread acceptor;
 
     private volatile boolean running = true;
 
-    private SocketServer(ServerSocket listening,
-                         Function<Channel<Event, Command>, ChannelListener<Command>> onConnect,
-                         Liveness liveness) {
+    private SocketServer(ServerSocket listening, Doorman doorman, Liveness liveness) {
+        super(doorman, liveness);
         this.listening = listening;
-        this.onConnect = onConnect;
-        this.liveness = liveness;
         this.acceptor = new Thread(this::accept, "socket-acceptor-" + listening.getLocalPort());
         this.acceptor.setDaemon(true);
     }
@@ -55,24 +47,19 @@ public final class SocketServer implements AutoCloseable {
      * accepts, so the same handler would stop anybody else connecting. Register the session
      * and return.
      *
-     * @param onConnect what to do with each new connection, given the channel to answer on
-     * @param liveness  how hard each connection should try to notice a client going away
+     * @param doorman  what to do with each new connection, given the channel to answer on
+     * @param liveness how hard each connection should try to notice a client going away
      * @return the running server
      * @throws TransportException if the port cannot be bound
      */
-    public static SocketServer listening(int port,
-                                         Function<Channel<Event, Command>, ChannelListener<Command>> onConnect,
-                                         Liveness liveness) {
-        if (onConnect == null || liveness == null) {
-            throw new NullPointerException("a server needs to know what to do with a connection");
-        }
+    public static SocketServer listening(int port, Doorman doorman, Liveness liveness) {
         ServerSocket listening;
         try {
             listening = new ServerSocket(port);
         } catch (IOException problem) {
             throw new TransportException("could not listen on port " + port, problem);
         }
-        SocketServer server = new SocketServer(listening, onConnect, liveness);
+        SocketServer server = new SocketServer(listening, doorman, liveness);
         server.acceptor.start();
         return server;
     }
@@ -85,30 +72,19 @@ public final class SocketServer implements AutoCloseable {
      *
      * @return the bound port
      */
+    @Override
     public int port() {
         return listening.getLocalPort();
     }
 
-    /**
-     * Returns how many clients are connected.
-     *
-     * @return the number of open channels
-     */
-    public int connectionCount() {
-        connected.removeIf(channel -> !channel.isOpen());
-        return connected.size();
-    }
-
     @Override
-    public void close() {
+    protected void stopListening() {
         running = false;
         try {
             listening.close();
         } catch (IOException ignored) {
             // Shutting down. Nothing useful to do with this.
         }
-        connected.forEach(Channel::close);
-        connected.clear();
     }
 
     private void accept() {
@@ -122,20 +98,13 @@ public final class SocketServer implements AutoCloseable {
                 return;
             }
             try {
-                // Registered before the handler sees it, not after. A handler is entitled to
-                // start using the channel immediately — and to hand it to something else that
-                // does — so a server that only counted the connection once the handler
-                // returned would spend that whole window claiming to have none.
-                StreamChannel.over(socket, Event.class, Command.class, channel -> {
-                    connected.add(channel);
-                    return onConnect.apply(channel);
-                }, liveness);
+                StreamChannel.over(socket, Event.class, Command.class, this::welcome, liveness());
             } catch (TransportException refused) {
                 // One connection that could not be set up. The others are unaffected, and a
                 // server that stopped accepting because of one bad handshake would be worse.
                 continue;
             }
-            connected.removeIf(channel -> !channel.isOpen());
+            forgetClosed();
         }
     }
 }

@@ -2,8 +2,9 @@ package it.polimi.ingsw.common.transport.rmi;
 
 import it.polimi.ingsw.common.protocol.Command;
 import it.polimi.ingsw.common.protocol.Event;
-import it.polimi.ingsw.common.transport.Channel;
+import it.polimi.ingsw.common.transport.AbstractListeningPost;
 import it.polimi.ingsw.common.transport.ChannelListener;
+import it.polimi.ingsw.common.transport.Doorman;
 import it.polimi.ingsw.common.transport.Liveness;
 import it.polimi.ingsw.common.transport.TransportException;
 
@@ -14,26 +15,25 @@ import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Function;
 
 /**
  * A registry with one thing in it, and a channel for everybody who looks it up.
  *
- * <p>The same shape as {@code SocketServer} on purpose: bind, hand each connection to a
- * function, keep them so that closing the server closes them too. Whoever calls it should not
- * have to hold the two differently, since the point of requirement S5 is that they can be
- * used together without either being a special case.
+ * <p>The same shape as the socket door, and now the same type: both are
+ * {@link it.polimi.ingsw.common.transport.Doorway Doorways} over
+ * {@link AbstractListeningPost}, so a server holding one of each holds them identically. That
+ * used to be a promise made in this comment, which is the sort of promise nothing checks —
+ * and the point of requirement S5 is that the two are not special cases of each other.
  */
-public final class RmiServer implements AutoCloseable {
+public final class RmiServer extends AbstractListeningPost {
 
     private final Registry registry;
     private final Gateway gateway;
     private final int port;
-    private final Set<Channel<Event, Command>> connected = ConcurrentHashMap.newKeySet();
 
-    private RmiServer(Registry registry, Gateway gateway, int port) {
+    private RmiServer(Registry registry, Gateway gateway, int port,
+                      Doorman doorman, Liveness liveness) {
+        super(doorman, liveness);
         this.registry = registry;
         this.gateway = gateway;
         this.port = port;
@@ -50,56 +50,38 @@ public final class RmiServer implements AutoCloseable {
      * accepts, so the same handler would stop anybody else connecting. Register the session
      * and return.
      *
-     * @param onConnect what to do with each new connection, given the channel to answer on
-     * @param liveness  how hard each connection should try to notice a client going away
+     * @param doorman  what to do with each new connection, given the channel to answer on
+     * @param liveness how hard each connection should try to notice a client going away
      * @return the running server
      * @throws TransportException if the registry cannot be created or the gateway bound
      */
-    public static RmiServer listening(int port,
-                                      Function<Channel<Event, Command>, ChannelListener<Command>> onConnect,
-                                      Liveness liveness) {
-        if (onConnect == null || liveness == null) {
-            throw new NullPointerException("a server needs to know what to do with a connection");
-        }
+    public static RmiServer listening(int port, Doorman doorman, Liveness liveness) {
         int chosen = port == 0 ? freePort() : port;
+        // The gateway needs somewhere to send a connection before there is a server to send it
+        // to, so it is given the door's own welcome once the door exists. It used to be handed
+        // the connection set the same way — a non-final field, null for a moment — which is
+        // the wart that having a base class to put the set in removes.
+        Gateway gateway = new Gateway(liveness);
         Registry registry;
-        Gateway gateway;
         try {
             registry = LocateRegistry.createRegistry(chosen);
-            gateway = new Gateway(onConnect, liveness);
             UnicastRemoteObject.exportObject(gateway, 0);
             registry.rebind(RemoteGateway.NAME, gateway);
         } catch (RemoteException problem) {
             throw new TransportException("could not start an RMI registry on port " + chosen, problem);
         }
-        RmiServer server = new RmiServer(registry, gateway, chosen);
-        gateway.connected = server.connected;
+        RmiServer server = new RmiServer(registry, gateway, chosen, doorman, liveness);
+        gateway.welcome = server::welcome;
         return server;
     }
 
-    /**
-     * Returns the port the registry is on.
-     *
-     * @return the bound port
-     */
+    @Override
     public int port() {
         return port;
     }
 
-    /**
-     * Returns how many clients are connected.
-     *
-     * @return the number of open channels
-     */
-    public int connectionCount() {
-        connected.removeIf(channel -> !channel.isOpen());
-        return connected.size();
-    }
-
     @Override
-    public void close() {
-        connected.forEach(Channel::close);
-        connected.clear();
+    protected void stopListening() {
         try {
             registry.unbind(RemoteGateway.NAME);
         } catch (Exception ignored) {
@@ -138,14 +120,12 @@ public final class RmiServer implements AutoCloseable {
      */
     private static final class Gateway implements RemoteGateway {
 
-        private final Function<Channel<Event, Command>, ChannelListener<Command>> onConnect;
         private final Liveness liveness;
 
-        private Set<Channel<Event, Command>> connected;
+        /** The door's own welcome, set once the door exists. */
+        private Doorman welcome;
 
-        Gateway(Function<Channel<Event, Command>, ChannelListener<Command>> onConnect,
-                Liveness liveness) {
-            this.onConnect = onConnect;
+        Gateway(Liveness liveness) {
             this.liveness = liveness;
         }
 
@@ -154,15 +134,8 @@ public final class RmiServer implements AutoCloseable {
             if (client == null) {
                 throw new NullPointerException("a client has to say where to send its events");
             }
-            RmiChannel<Event, Command> channel = RmiChannel.exported(
-                    Command.class, liveness, accepted -> {
-                        // Registered before the handler sees it, for the same reason the
-                        // socket server does it: a handler may start using the channel at
-                        // once, and a server that counted the connection afterwards would
-                        // spend that window claiming to have none.
-                        connected.add(accepted);
-                        return onConnect.apply(accepted);
-                    });
+            RmiChannel<Event, Command> channel =
+                    RmiChannel.exported(Command.class, liveness, welcome::answer);
             channel.attachTo(client);
             return channel;
         }

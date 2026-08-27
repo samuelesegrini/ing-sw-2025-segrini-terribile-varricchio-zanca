@@ -12,16 +12,12 @@ class SocketConnector {
 }
 class SocketServer {
   -listening : ServerSocket
-  -onConnect : Function<Channel<Event, Command>, ChannelListener<Command>>
-  -liveness : Liveness
-  -connected : Set<Channel<Event, Command>>
   -acceptor : Thread
   -running : volatile boolean
   --
   +listening() : SocketServer
   +port() : int
-  +connectionCount() : int
-  +close() : void
+  +stopListening() : void
 }
 class StreamChannel {
   -socket : Socket

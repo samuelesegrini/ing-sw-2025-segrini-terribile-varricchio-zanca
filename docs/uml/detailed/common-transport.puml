@@ -25,6 +25,18 @@ class AbstractChannel {
   +close() : void
   +silence() : Optional<Duration>
 }
+class AbstractListeningPost {
+  -connected : Set<Channel<Event, Command>>
+  -doorman : Doorman
+  -liveness : Liveness
+  --
+  +liveness() : Liveness
+  +welcome() : ChannelListener<Command>
+  +forgetClosed() : void
+  +connectionCount() : int
+  +close() : void
+  +stopListening() : void
+}
 interface Channel {
   +send() : void
   +isOpen() : boolean
@@ -37,6 +49,14 @@ interface ChannelListener {
 class DefaultPorts {
   -SOCKET : int
   -RMI : int
+}
+interface Doorman {
+  +answer() : ChannelListener<Command>
+}
+interface Doorway {
+  +port() : int
+  +connectionCount() : int
+  +close() : void
 }
 interface Envelope {
 }
@@ -64,6 +84,7 @@ class TransportException {
   -serialVersionUID : long
 }
 
+Doorway <|.. AbstractListeningPost
 Envelope <|.. Message
 Envelope <|.. KeepAlive
 Envelope <|.. Goodbye
