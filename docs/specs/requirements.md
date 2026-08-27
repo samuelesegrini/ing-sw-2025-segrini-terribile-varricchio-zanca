@@ -43,7 +43,7 @@ and demonstrated autonomy and communication.
 | ID | Requirement | Verified by |
 |:--|:--|:--|
 | S1 | Rules implemented in Java SE | Build |
-| S2 | One server instance; multiple concurrent games once AF2 is implemented | `GameRegistry` tests |
+| S2 | One server instance; multiple concurrent games once AF2 is implemented | `GameRegistryTest` |
 | S3 | Players take turns through client instances over the network | Integration tests |
 | S4 | Socket TCP/IP **and** RMI supported | Transport test suite run twice, once per transport |
 | S5 | A single game must accept players using **different** transports at the same time | Mixed-transport integration test |
