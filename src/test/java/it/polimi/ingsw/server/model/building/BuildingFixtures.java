@@ -98,7 +98,7 @@ public final class BuildingFixtures {
     /** Returns a site on a given deck, with the given number of reservation slots. */
     public static Site site(int reservationSlots, AdventureDeck deck) {
         ComponentPool pool = new ComponentPool(plainTiles(8), new Random(SEED));
-        Ship ship = new Ship(new ShipBoardSpec(5, 5, 5, 4, CABIN, reservationSlots, Set.of()),
+        Ship ship = new Ship(new ShipBoardSpec(5, 5, 5, 4, CABIN, reservationSlots, true, Set.of()),
                 Tiles.startingCabin(PlayerColor.GREEN), Ships.deepBank());
         return new Site(new ShipBuilder(ship, pool, deck), pool);
     }

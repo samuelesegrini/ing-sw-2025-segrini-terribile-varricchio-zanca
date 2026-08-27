@@ -37,7 +37,7 @@ class ShipValidatorTest {
 
     private static final Position CENTRE = new Position(1, 1);
 
-    private final ShipGrid grid = new ShipGrid(new ShipBoardSpec(3, 3, 5, 4, CENTRE, 0, Set.of()));
+    private final ShipGrid grid = new ShipGrid(new ShipBoardSpec(3, 3, 5, 4, CENTRE, 0, true, Set.of()));
 
     private ValidationReport validate() {
         return new ShipValidator(grid).validate();

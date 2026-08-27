@@ -121,7 +121,8 @@
             "row": 4,
             "column": 6
           }
-        ]
+        ],
+        "chargesForCorrections": false
       },
       "rules": {
         "hourglass": false,
@@ -209,7 +210,8 @@
             "row": 4,
             "column": 3
           }
-        ]
+        ],
+        "chargesForCorrections": true
       },
       "rules": {
         "hourglass": true,

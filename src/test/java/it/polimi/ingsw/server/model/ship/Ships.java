@@ -41,7 +41,7 @@ public final class Ships {
 
     /** Returns a square board with every cell usable and the cabin in the middle. */
     public static ShipBoardSpec openBoard(int size, int reservationSlots) {
-        return new ShipBoardSpec(size, size, 5, 4, CABIN, reservationSlots, Set.of());
+        return new ShipBoardSpec(size, size, 5, 4, CABIN, reservationSlots, true, Set.of());
     }
 
     /** Returns a five by five ship, so printed columns run 4 to 8 and rows 5 to 9. */

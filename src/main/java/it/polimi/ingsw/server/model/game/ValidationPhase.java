@@ -39,7 +39,11 @@ final class ValidationPhase implements Phase {
         try {
             return switch (command) {
                 case PreparationCommand.RemoveComponent remove -> {
-                    if (ship.discard(remove.cell()).isEmpty()) {
+                    // Free in the trial flight, a credit each in the full game. The board
+                    // says which, rather than this switching on the level.
+                    boolean charged = game.level().shipBoard().chargesForCorrections();
+                    if ((charged ? ship.discard(remove.cell()) : ship.correct(remove.cell()))
+                            .isEmpty()) {
                         yield new Reaction.Refused("there is nothing welded at " + remove.cell());
                     }
                     yield Reaction.Accepted.quietly();
