@@ -1,0 +1,50 @@
+@startuml 06-disconnect
+' A dropped connection, and the same player coming back to the same seat.
+skinparam shadowing false
+title Dropping out and coming back
+
+actor Player
+participant Lobby
+participant GameController as Controller
+participant Game
+
+Player -> Lobby : (the connection closes)
+Lobby -> Lobby : forget(connection)
+note right of Lobby
+  Under the default policy the seat stays,
+  unattached, under the old nickname — unless
+  that was the last player, in which case the
+  table is reclaimed.
+end note
+Lobby -> Controller : connectionChanged(colour, false)
+Controller -> Game : connectionChanged
+Controller --> "the others" : ConnectionChanged(away)
+
+loop while they are away and the card asks them
+  Game -> Game : answer passively for them
+  Controller --> "the others" : TurnSkipped
+end
+
+alt nobody else is left
+  Game --> Controller : GameSuspended(seconds)
+  ... the timeout passes with nobody back ...
+  Game -> Game : everybody away gives up
+  Game --> Controller : ShipRetired, then scoring
+end
+
+== later ==
+
+Player -> Lobby : Login("samuele")
+Lobby -> Lobby : the name belongs to a seat in a running game
+Lobby --> Player : LoggedIn, JoinedGame
+Lobby -> Controller : attach + announceArrival
+Controller -> Game : connectionChanged(colour, true)
+Controller --> Player : StateChanged
+note right of Controller
+  The whole picture, including the question
+  the card is still waiting on. A board alone
+  would leave them looking at a flight that
+  appears to have stopped for no reason.
+end note
+Controller --> "the others" : GameResumed
+@enduml

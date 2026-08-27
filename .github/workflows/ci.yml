@@ -68,4 +68,8 @@ jobs:
           cache: maven
       # doclint is fatal, so this fails on missing or malformed documentation.
       - name: Generate Javadoc
-        run: ./mvnw -B -ntp javadoc:javadoc
+        # clean, because javadoc:javadoc on its own is incremental: it skips files whose
+        # output is already up to date, so a run in a populated target/ can report success
+        # having checked almost nothing. A fresh checkout is clean anyway; saying so means
+        # the same command is trustworthy when somebody runs it locally.
+        run: ./mvnw -B -ntp clean javadoc:javadoc

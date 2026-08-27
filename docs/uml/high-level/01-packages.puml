@@ -1,0 +1,59 @@
+@startuml 01-packages
+' High-level package structure. What talks to what, and — more usefully — what does not.
+!pragma layout smetana
+skinparam packageStyle rectangle
+skinparam shadowing false
+title Galaxy Trucker — packages
+
+package "common" as common {
+  [game]      as commonGame
+  [protocol]  as protocol
+  [protocol.view] as views
+  [transport] as transport
+}
+
+package "server" as server {
+  [network]     as serverNet
+  [lobby]       as lobby
+  [controller]  as controller
+  [model]       as model
+  [persistence] as persistence
+  [data]        as data
+}
+
+package "client" as client {
+  [network]  as clientNet
+  [state]    as state
+  [view.tui] as tui
+  [view.gui] as gui
+}
+
+serverNet --> transport
+clientNet --> transport
+serverNet --> lobby
+lobby --> controller
+lobby --> persistence
+controller --> model
+model --> data
+model --> views : builds
+persistence --> protocol : keeps commands
+
+clientNet --> state
+state --> views : reads
+tui --> state
+gui --> state
+tui --> protocol : sends commands
+gui --> protocol : sends commands
+
+note right of model
+  The model never imports anything
+  from client, and never touches a
+  socket. It is handed commands and
+  answers with events.
+end note
+
+note bottom of views
+  Both interfaces render the same
+  projections. Neither has a rule in it.
+end note
+@enduml

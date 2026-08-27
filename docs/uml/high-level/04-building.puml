@@ -1,0 +1,46 @@
+@startuml 04-building
+' Building is simultaneous, but every action is still one command on one queue.
+skinparam shadowing false
+title Building a ship
+
+actor Player
+participant GameController as Controller
+participant Game
+participant BuildingPhase as Phase
+participant ShipBuilder as Builder
+participant Ship
+
+Player -> Controller : DrawFromPool
+Controller -> Game : apply(player, command)
+Game -> Phase : apply(player, command)
+Phase -> Builder : drawFromPool()
+Builder --> Phase : the tile is in hand
+Game -> Game : record it in the history
+Controller --> Player : StateChanged
+
+Player -> Controller : PlaceInHand(cell, rotation)
+Controller -> Game : apply
+Game -> Phase : apply
+Phase -> Builder : place(cell, rotation)
+note right of Builder
+  Only that the cell is on the outline and
+  touching what is built. Whether the
+  connectors match is not checked: the
+  manual lets a player build an illegal
+  ship and find out later.
+end note
+Controller --> Player : StateChanged
+
+Player -> Controller : Weld
+Controller -> Game : apply
+Game -> Phase : apply
+Phase -> Ship : weld(cell)
+Controller --> Player : StateChanged
+
+Player -> Controller : FinishBuilding(startSpace)
+Controller -> Game : apply
+Game -> Game : advance() while the phase is done
+Game --> Controller : PhaseBegan(VALIDATION)
+Controller -> Controller : keep a snapshot
+Controller --> Player : PhaseBegan, StateChanged
+@enduml

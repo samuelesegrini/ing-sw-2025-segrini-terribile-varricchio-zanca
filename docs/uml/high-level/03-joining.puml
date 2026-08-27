@@ -1,0 +1,46 @@
+@startuml 03-joining
+' Joining a table, over either transport. The lobby is the only thing that knows which.
+skinparam shadowing false
+title Joining a game
+
+actor Player
+participant "Channel\n(socket or RMI)" as Channel
+participant Lobby
+participant GameController as Controller
+participant Game
+
+Player -> Channel : Login("samuele")
+Channel -> Lobby : welcome / received
+Lobby -> Lobby : is the name free?
+Lobby --> Player : LoggedIn
+
+Player -> Lobby : ListGames
+Lobby --> Player : GamesListed
+
+Player -> Lobby : JoinGame("game-1")
+Lobby --> Player : JoinedGame(id, colour)
+
+note over Lobby
+  When the last seat fills, the table
+  becomes a game.
+end note
+
+Lobby -> Game : create(level, seats, seed, clock)
+Lobby -> Controller : new(game, keeper)
+Controller -> Controller : keep a snapshot at once
+
+loop for every player
+  Lobby -> Controller : attach(colour, channel)
+end
+note right of Lobby
+  Everybody is attached before anybody is
+  announced. Announcing as each is bound
+  would mean the second player never hears
+  about the first.
+end note
+loop for every player
+  Lobby -> Controller : announceArrival(colour)
+  Controller --> Player : ConnectionChanged
+  Controller --> Player : StateChanged
+end
+@enduml

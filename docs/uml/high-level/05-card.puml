@@ -1,0 +1,50 @@
+@startuml 05-card
+' Resolving one adventure card. Every card is a sequence of questions and the answers to
+' them, which is why the whole flight is two commands.
+skinparam shadowing false
+title Resolving an adventure card
+
+participant GameController as Controller
+participant Game
+participant FlightPhase as Phase
+participant AdventureDeck as Deck
+participant AdventureCard as Card
+participant AdventureResolution as Resolution
+actor "the player being asked" as Player
+
+Controller -> Game : tick()
+Game -> Phase : next() / onEntry()
+Phase -> Deck : draw()
+Deck --> Phase : a card
+Phase --> Controller : CardRevealed
+Phase -> Card : resolve(flight)
+Card --> Phase : a resolution
+
+loop until nothing is pending
+  Phase -> Resolution : pending()
+  Resolution --> Phase : PlayerPrompt
+  Phase --> Player : Awaiting(prompt)
+  note right of Player
+    The prompt carries its own options —
+    which cabins hold crew, what could stop
+    this shot. A client cannot offer a
+    choice the server would refuse.
+  end note
+  Player -> Controller : Answer(choice)
+  Controller -> Game : apply
+  Game -> Phase : apply
+  Phase -> Resolution : submit(choice)
+  Resolution --> Phase : effects
+  Phase --> Player : ThreatResolved / ShipMoved / ...
+end
+
+Phase --> Controller : CardResolved
+Controller -> Controller : keep a snapshot
+Controller --> Player : StateChanged
+
+alt the player being asked has dropped
+  Game -> Game : SkippedTurn.answerFor(prompt)
+  Game -> Phase : apply the passive answer
+  Game --> Controller : TurnSkipped(player, what)
+end
+@enduml

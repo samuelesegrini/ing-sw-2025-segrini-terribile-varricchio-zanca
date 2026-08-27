@@ -1,0 +1,87 @@
+@startuml 02-model
+' The model at the abstraction level of the architecture document: the aggregate, the
+' phases it moves through, and what a ship is made of. Field-by-field detail belongs in
+' docs/uml/detailed, which is generated from the source.
+!pragma layout smetana
+skinparam shadowing false
+title Galaxy Trucker — the model
+
+class Game <<aggregate root>> {
+  +apply(player, command) : Reaction
+  +tick() : List<Event>
+  +viewFor(player) : GameView
+  +history() : List<Recorded>
+  +restore(snapshot, ...) : Game
+}
+
+interface Phase {
+  +apply(player, command) : Reaction
+  +next() : Optional<Phase>
+  +pending() : Optional<PlayerPrompt>
+}
+
+class BuildingPhase
+class ValidationPhase
+class CrewPhase
+class FlightPhase
+class ScoringPhase
+class FinishedPhase
+
+Phase <|.. BuildingPhase
+Phase <|.. ValidationPhase
+Phase <|.. CrewPhase
+Phase <|.. FlightPhase
+Phase <|.. ScoringPhase
+Phase <|.. FinishedPhase
+
+class Ship {
+  +weld(cell)
+  +discard(cell)
+  +correct(cell)
+  +attributes(plan) : ShipAttributes
+  +pieces() : List<Set<Position>>
+}
+
+class ShipGrid
+class ShipValidator
+class Flight {
+  +route()
+  +giveUp(player)
+  +stillFlying()
+}
+class AdventureDeck
+class ComponentPool
+
+interface AdventureCard {
+  +resolve(flight) : AdventureResolution
+}
+
+class AdventureResolution {
+  +pending() : Optional<PlayerPrompt>
+  +submit(choice)
+}
+
+Game "1" *-- "1" Phase : is in
+Game "1" *-- "2..4" Ship
+Game "1" *-- "0..1" Flight
+Game "1" *-- "1" AdventureDeck
+Game "1" *-- "1" ComponentPool
+Ship *-- ShipGrid
+Ship ..> ShipValidator : checked by
+FlightPhase --> AdventureCard : turns over
+AdventureCard --> AdventureResolution : produces
+FlightPhase --> AdventureResolution : asks and answers
+
+note bottom of Game
+  One thread per game. The model has no
+  synchronisation of its own because it is
+  never touched by two.
+end note
+
+note right of AdventureResolution
+  Every card is a sequence of questions
+  and the answers to them. That is why
+  the flight is two commands rather than
+  one per card type.
+end note
+@enduml
