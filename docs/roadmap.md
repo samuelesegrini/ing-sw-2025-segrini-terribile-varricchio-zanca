@@ -1,7 +1,8 @@
 # Roadmap
 
-Eleven milestones, ordered so that each one is independently demonstrable and
-nothing is built before the thing it depends on. Milestones map one-to-one onto
+Twelve milestones, ordered so that each one is independently demonstrable and
+nothing is built before the thing it depends on. The first twelve carry the
+submission; M12 is the first that changes no behaviour at all. Milestones map one-to-one onto
 GitHub milestones; every issue belongs to exactly one.
 
 The ordering principle: **the model is finished and fully tested before a single
@@ -22,6 +23,7 @@ found in a unit test are free.
 | M9 | AF — Disconnection resilience | Rejoin, turn skipping, solo timeout | `v0.10.0` |
 | M10 | AF — Persistence | Snapshot and recovery | `v0.11.0` |
 | M11 | Deliverables | UML, protocol doc, Javadoc, jars, peer reviews | `v1.0.0` |
+| M12 | Polymorphic dispatch | Dispatch moved back into the hierarchies that own it | `v1.1.0` |
 
 ## M0 — Foundations
 
@@ -107,6 +109,42 @@ additive.
 High-level and generated UML, protocol document, Javadoc, peer review documents,
 final jars in `deliverables/`, README rewritten against reality.
 
+## M12 — Polymorphic dispatch
+
+The first milestone that ships no behaviour. Four places where dispatch had
+escaped the type that should have been doing it, found by reading all 32
+`instanceof` and 21 `switch` sites in `server` and `common`.
+
+The bar is deliberately narrow, because this codebase already chose sealed
+hierarchies with exhaustive switches and defends the choice in its Javadoc —
+*"a ninth kind of component cannot be added without somebody being made to say
+what it looks like."* That is sound. An exhaustive switch over a sealed type
+buys exactly the safety that avoiding `instanceof` is supposed to buy, so **the
+presence of a switch is not a defect**. Three things are:
+
+1. The same hierarchy answered in more than one file. The compiler is satisfied
+   and locality is gone anyway: everything about one variant lives everywhere
+   except the variant.
+2. A `default` arm, a `super` fall-through, or an unchecked cast. The seal is
+   reopened and the compiler stops helping — silently, at the one point where
+   somebody was relying on it.
+3. Dispatch on an enum name or a null check while a polymorphic object is
+   already in the room.
+
+- `PlayerPrompt` gains `passiveAnswer`, `describePassing` and `accepts`, which
+  deletes `SkippedTurn` and `Game.describe` and closes the
+  `default -> applyExtra` fall-through under `EnemyResolution` (#138).
+- `Phase.finishFor` replaces a `switch (phase.name())` inside the class that
+  holds the phase (#139).
+- `ShipComponent.surrenderTo` replaces the one non-exhaustive switch over the
+  component hierarchy, where a missed case leaks goods out of the bank (#140).
+- `ConnectionState` replaces three nullable fields and the two guard clauses
+  they forced on `Lobby.handle` (#141).
+
+Exit criterion: no behaviour changed, no test rewritten to accommodate the
+refactor, and every one of the four sites either fails the build or cannot be
+written when a variant is added.
+
 ## Working agreement
 
 - One issue, one branch, one PR (`CONTRIBUTING.md`).
@@ -115,4 +153,5 @@ final jars in `deliverables/`, README rewritten against reality.
   its issues.
 - `develop` is always green.
 - `main` keeps the previous submission untouched until the rebuild is deliverable;
-  `v1.0.0` is the one release that merges into it.
+  `v1.0.0` is the one release that merges into it. Milestones after it are tagged
+  on `develop` and merged to `main` only when a new submission is cut.
