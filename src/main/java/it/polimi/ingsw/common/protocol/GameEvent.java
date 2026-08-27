@@ -105,6 +105,58 @@ public sealed interface GameEvent extends Event {
     }
 
     /**
+     * A question was answered on behalf of somebody who was not there.
+     *
+     * <p>Announced rather than done quietly, because the other players can see a turn go by
+     * without anybody appearing to take it and would otherwise be left wondering whether the
+     * game had stalled. It also tells a returning player what was decided for them.
+     *
+     * @param player who was away
+     * @param what   the answer given for them, in words a person can read
+     */
+    record TurnSkipped(PlayerColor player, String what) implements GameEvent {
+
+        /**
+         * Validates the announcement.
+         *
+         * @throws NullPointerException if the player or the description is {@code null}
+         */
+        public TurnSkipped {
+            if (player == null || what == null) {
+                throw new NullPointerException("a skipped turn needs a player and a reason");
+            }
+        }
+    }
+
+    /**
+     * The game has stopped because there is nobody left to play against.
+     *
+     * <p>One player alone cannot finish a flight — the cards ask questions of an order of
+     * players, and an order of one is not a game. So it waits, and says how long it will wait,
+     * rather than either carrying on absurdly or ending on the spot.
+     *
+     * @param secondsRemaining how long until the last player standing is given the win
+     */
+    record GameSuspended(long secondsRemaining) implements GameEvent {
+
+        /**
+         * Validates the announcement.
+         *
+         * @throws IllegalArgumentException if the wait is negative
+         */
+        public GameSuspended {
+            if (secondsRemaining < 0) {
+                throw new IllegalArgumentException(
+                        "a game cannot wait for less than no time, got " + secondsRemaining);
+            }
+        }
+    }
+
+    /** Somebody came back, and the game is going again. */
+    record GameResumed() implements GameEvent {
+    }
+
+    /**
      * The game is over and will accept nothing further.
      *
      * <p>The ledger itself travels in the final {@link StateChanged}, so that a client which

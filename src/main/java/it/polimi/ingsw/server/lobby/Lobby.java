@@ -50,6 +50,7 @@ public final class Lobby implements AutoCloseable {
     /** How long to let the worker finish what it was doing before shutting the desk. */
     private static final Duration SHUTDOWN_PATIENCE = Duration.ofSeconds(2);
 
+    private final Duration soloTimeout;
     private final ExecutorService queue;
     private final AtomicInteger nextGame = new AtomicInteger(1);
 
@@ -83,6 +84,22 @@ public final class Lobby implements AutoCloseable {
      */
     public Lobby(GameData data, RandomGenerator random, InstantSource clock,
                  DisconnectionPolicy onDisconnection) {
+        this(data, random, clock, onDisconnection, Game.DEFAULT_SOLO_TIMEOUT);
+    }
+
+    /**
+     * Opens a desk that waits a stated time for a game's last player.
+     *
+     * @param data           the catalogue every game is built from
+     * @param random         the shuffle
+     * @param clock          what time it is
+     * @param onDisconnection what a dropped connection does to a game in progress
+     * @param soloTimeout    how long a game with one player left waits before awarding them
+     *                       the win
+     */
+    public Lobby(GameData data, RandomGenerator random, InstantSource clock,
+                 DisconnectionPolicy onDisconnection, Duration soloTimeout) {
+        this.soloTimeout = soloTimeout;
         this.data = data;
         this.random = random;
         this.clock = clock;
@@ -306,7 +323,8 @@ public final class Lobby implements AutoCloseable {
             seats.add(new Seat(player.nickname(), table.colourOf(player)));
         }
 
-        Game game = Game.create(table.id(), table.level(), seats, data, random, clock);
+        Game game = Game.create(table.id(), table.level(), seats, data, random, clock,
+                soloTimeout);
         GameController controller = new GameController(game);
         games.put(table.id(), controller);
 

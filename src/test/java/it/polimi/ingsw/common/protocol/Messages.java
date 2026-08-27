@@ -111,6 +111,9 @@ public final class Messages {
                 new GameEvent.PhaseBegan(GamePhase.FLIGHT),
                 new GameEvent.Rejected("Weld", "there is no tile in your hand"),
                 new GameEvent.ConnectionChanged(PlayerColor.BLUE, false),
+                new GameEvent.TurnSkipped(PlayerColor.BLUE, "took the hit"),
+                new GameEvent.GameSuspended(120),
+                new GameEvent.GameResumed(),
                 new GameEvent.GameEnded(),
 
                 new FlightEvent.CardRevealed(card()),

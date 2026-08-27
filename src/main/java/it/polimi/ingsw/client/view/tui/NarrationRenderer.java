@@ -44,6 +44,12 @@ public final class NarrationRenderer {
                     // first time and one returning after their laptop closed, and "is back"
                     // reads oddly for somebody who has never been away.
                     "  " + changed.player() + (changed.connected() ? " is connected" : " has dropped");
+            case GameEvent.TurnSkipped skipped ->
+                    "  " + skipped.player() + " is away — " + skipped.what() + " for them";
+            case GameEvent.GameSuspended waiting ->
+                    "── waiting for somebody to come back; " + waiting.secondsRemaining()
+                            + "s before the last player standing takes it";
+            case GameEvent.GameResumed ignored -> "── somebody is back; carrying on";
             case GameEvent.GameEnded ignored -> "── the game is over";
             case GameEvent.Rejected refused -> "  ✗ " + refused.reason();
             case FlightEvent.CardRevealed revealed ->
