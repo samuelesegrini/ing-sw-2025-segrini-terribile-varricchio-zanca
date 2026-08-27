@@ -212,6 +212,9 @@ driving interface before there was a network, and turned out to already be the p
 | `PhaseBegan` | `phase` | redundant with the state, and sent anyway — a phase change is the one moment a view has to restructure rather than redraw |
 | `Rejected` | `command`, `reason` | your command was refused and **nothing changed**; sent only to you, never followed by a state |
 | `ConnectionChanged` | `player`, `connected` | somebody dropped, or came back |
+| `TurnSkipped` | `player`, `what` | a question was answered on behalf of somebody who was not there, and in what way. Announced rather than done quietly: the others can see a turn go by without anybody taking it, and a returning player needs to know what was decided for them |
+| `GameSuspended` | `secondsRemaining` | there is one player left and the game is waiting. The number is how long before that player is given the win |
+| `GameResumed` | — | somebody came back and the waiting is over |
 | `GameEnded` | — | nothing further will be accepted. It comes **before** the final `StateChanged`, like every other fact, and the ledger travels in that state |
 
 `Rejected` carries a sentence, not a code. The server already knows what went wrong, and a
@@ -326,13 +329,30 @@ sequenceDiagram
     participant O as Others
     Note over C,S: connection lost
     S-->>O: ConnectionChanged(RED, false)
-    Note over S: the game carries on;<br/>Red's turns are skipped
+    loop while a card asks Red
+        Note over S: the passive answer,<br/>from SkippedTurn
+        S-->>O: TurnSkipped(RED, "took the hit")
+    end
+    opt nobody else is left
+        S-->>O: GameSuspended(120)
+    end
     C->>S: Login("samuele")
     S-->>C: LoggedIn("samuele")
     S-->>C: JoinedGame("game-1", RED)
     S-->>C: StateChanged(whole picture)
     S-->>O: ConnectionChanged(RED, true)
+    S-->>O: GameResumed
 ```
+
+The skipping is not a courtesy. Before it existed a game that asked a question of somebody
+who had dropped sat waiting for an answer that was never coming, and one closed laptop froze
+a table of four for good. What the server answers on their behalf is therefore a rule — always
+the passive choice, so that nobody could call it unfair on the absent player's behalf. See
+`SkippedTurn` for the answer to each kind of question.
+
+The `StateChanged` a returning player is sent carries the outstanding prompt along with
+everything else. A board alone would leave them looking at a flight that appears to have
+stopped for no reason.
 
 There is nothing else. No replay, no catch-up stream, no missed-message negotiation. That is
 the whole return on rule 2.2: because the state is sent in full at the end of every batch,
