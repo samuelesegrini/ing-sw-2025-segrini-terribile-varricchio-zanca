@@ -24,7 +24,6 @@ import it.polimi.ingsw.server.model.ship.Ship;
 import it.polimi.ingsw.server.projection.Projections;
 
 import it.polimi.ingsw.common.game.PlayerPrompt;
-import it.polimi.ingsw.common.game.SkippedTurn;
 import it.polimi.ingsw.common.protocol.FlightCommand;
 import it.polimi.ingsw.common.protocol.FlightEvent;
 import it.polimi.ingsw.common.protocol.GameEvent;
@@ -248,10 +247,10 @@ public final class Game {
     /**
      * Answers on behalf of whoever is not there.
      *
-     * <p>A dropped connection must not stop three other people playing. What the answer is comes
-     * from {@link SkippedTurn}, which is a rule and not a convenience: always the passive one,
-     * always the same, and never something anybody could call unfair on the absent player's
-     * behalf.
+     * <p>A dropped connection must not stop three other people playing. What the answer is is
+     * the prompt's own business — see {@link PlayerPrompt#passiveAnswer()} — which is a rule and
+     * not a convenience: always the passive one, always the same, and never something anybody
+     * could call unfair on the absent player's behalf.
      *
      * <p>Building and crewing are skipped by taking the player to have finished where they
      * stand — there is nothing else "waiting for them" could mean once they are gone, and a
@@ -275,13 +274,13 @@ public final class Game {
             }
             PlayerPrompt prompt = outstanding.orElseThrow();
             Reaction answered = phase.apply(prompt.player(),
-                    new FlightCommand.Answer(SkippedTurn.answerFor(prompt)));
+                    new FlightCommand.Answer(prompt.passiveAnswer()));
             if (!(answered instanceof Reaction.Accepted accepted)) {
                 // The passive answer was refused, which means the rules changed under us. Better
                 // to stop and let somebody look than to hammer a question that will not take.
                 break;
             }
-            told.add(new GameEvent.TurnSkipped(prompt.player(), describe(prompt)));
+            told.add(new GameEvent.TurnSkipped(prompt.player(), prompt.describePassing()));
             told.addAll(accepted.narration());
         }
         return List.copyOf(told);
@@ -425,19 +424,6 @@ public final class Game {
         }
         game.history.addAll(snapshot.accepted());
         return game;
-    }
-
-    /** Says in a few words what was decided for somebody who was not there. */
-    private static String describe(PlayerPrompt prompt) {
-        return switch (prompt) {
-            case PlayerPrompt.TakeOrLeave ignored -> "left an offer where it was";
-            case PlayerPrompt.DeclarePower ignored -> "declared with no batteries spent";
-            case PlayerPrompt.ArrangeCargo ignored -> "took none of the goods";
-            case PlayerPrompt.GiveUpCrew crew -> "gave up " + crew.count() + " crew";
-            case PlayerPrompt.ChooseDefence ignored -> "took the hit";
-            case PlayerPrompt.ChooseFragment ignored -> "kept the largest piece";
-            case PlayerPrompt.ChoosePlanet ignored -> "flew past the planets";
-        };
     }
 
     /**

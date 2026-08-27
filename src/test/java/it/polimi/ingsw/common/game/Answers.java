@@ -8,10 +8,10 @@ package it.polimi.ingsw.common.game;
  * settled card by card in M3, and a test that also tried to play cleverly would be testing two
  * things and telling you neither.
  *
- * <p>Which is the same question the server has to answer when a player drops, so this is now
- * {@link SkippedTurn} under another name. Kept as a name because that is what these tests mean
- * — they want to reach the end of a flight, not to play one well — and because a test reading
- * {@code SkippedTurn.answerFor} would suggest somebody had disconnected.
+ * <p>Which is the same question the server has to answer when a player drops, so this is
+ * {@link PlayerPrompt#passiveAnswer()} under another name. Kept as a name because that is what
+ * these tests mean — they want to reach the end of a flight, not to play one well — and because
+ * a test reading {@code passiveAnswer} would suggest somebody had disconnected.
  */
 public final class Answers {
 
@@ -25,9 +25,9 @@ public final class Answers {
      * @return an answer that does as little as possible
      */
     public static PlayerChoice simplestTo(PlayerPrompt prompt) {
-        // One definition, in the main sources, because the server needs it for real: it is what
-        // a game answers on behalf of somebody who has dropped. A second copy here would be a
-        // second thing to keep in step with the rules.
-        return SkippedTurn.answerFor(prompt);
+        // One definition, on the prompt itself, because the server needs it for real: it is
+        // what a game answers on behalf of somebody who has dropped. A second copy here would
+        // be a second thing to keep in step with the rules.
+        return prompt.passiveAnswer();
     }
 }

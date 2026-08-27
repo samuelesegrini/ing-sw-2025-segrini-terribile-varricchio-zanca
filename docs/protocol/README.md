@@ -330,7 +330,7 @@ sequenceDiagram
     Note over C,S: connection lost
     S-->>O: ConnectionChanged(RED, false)
     loop while a card asks Red
-        Note over S: the passive answer,<br/>from SkippedTurn
+        Note over S: the passive answer,<br/>from the prompt itself
         S-->>O: TurnSkipped(RED, "took the hit")
     end
     opt nobody else is left
@@ -347,8 +347,9 @@ sequenceDiagram
 The skipping is not a courtesy. Before it existed a game that asked a question of somebody
 who had dropped sat waiting for an answer that was never coming, and one closed laptop froze
 a table of four for good. What the server answers on their behalf is therefore a rule — always
-the passive choice, so that nobody could call it unfair on the absent player's behalf. See
-`SkippedTurn` for the answer to each kind of question.
+the passive choice, so that nobody could call it unfair on the absent player's behalf. Each
+kind of question carries its own answer: see `PlayerPrompt.passiveAnswer`, and
+`PlayerPrompt.describePassing` for the words the other players see.
 
 The `StateChanged` a returning player is sent carries the outstanding prompt along with
 everything else. A board alone would leave them looking at a flight that appears to have

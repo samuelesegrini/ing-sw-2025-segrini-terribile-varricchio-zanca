@@ -229,6 +229,44 @@ class TurnByTurnResolutionTest {
             assertThrows(IllegalArgumentException.class,
                     () -> walk.submit(new PlayerChoice.Leave(PlayerColor.RED)));
         }
+
+        @Test
+        @DisplayName("an answer of the wrong kind is refused here, before the card sees it")
+        void anAnswerOfTheWrongKindIsRefused() {
+            Walk walk = everyoneActs();
+
+            // An offer takes yes or no. Done answers a cargo call, and this card never makes
+            // one — which every card used to establish for itself in the default arm of its
+            // own switch, eight times over.
+            assertThrows(IllegalArgumentException.class,
+                    () -> walk.submit(new PlayerChoice.Done(PlayerColor.RED)));
+            assertEquals(List.of(), walk.log, "the card was never handed it");
+        }
+
+        @Test
+        @DisplayName("and the refusal names both the question and the answer")
+        void theRefusalNamesBoth() {
+            Walk walk = everyoneActs();
+
+            IllegalArgumentException refused = assertThrows(IllegalArgumentException.class,
+                    () -> walk.submit(new PlayerChoice.Done(PlayerColor.RED)));
+
+            assertTrue(refused.getMessage().contains("TakeOrLeave"));
+            assertTrue(refused.getMessage().contains("Done"));
+        }
+
+        @Test
+        @DisplayName("a refused answer leaves the question standing, so the queue does not walk past")
+        void aRefusedAnswerLeavesTheQuestionStanding() {
+            Walk walk = everyoneActs();
+
+            assertThrows(IllegalArgumentException.class,
+                    () -> walk.submit(new PlayerChoice.Done(PlayerColor.RED)));
+
+            assertEquals(PlayerColor.RED, asked(walk), "the card is still waiting on red");
+            walk.submit(new PlayerChoice.Leave(PlayerColor.RED));
+            assertEquals(PlayerColor.BLUE, asked(walk));
+        }
     }
 
     @Nested

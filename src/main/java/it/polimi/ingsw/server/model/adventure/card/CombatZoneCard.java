@@ -151,7 +151,9 @@ public record CombatZoneCard(AdventureCardIdentity identity, List<CombatLine> li
 
         private void compare(PlayerChoice choice) {
             if (!(choice instanceof PlayerChoice.Declaration declaration)) {
-                throw new IllegalArgumentException("this line is waiting for a declaration, not " + choice);
+                // Unreachable: a comparison line asks DeclarePower, which admits nothing else.
+                throw new IllegalStateException("a combat line was handed a "
+                        + choice.getClass().getSimpleName());
             }
             Ship ship = flight.shipOf(declaration.player());
             BatteryPlan plan = declaration.plan();
@@ -219,7 +221,9 @@ public record CombatZoneCard(AdventureCardIdentity identity, List<CombatLine> li
                 return;
             }
             if (!(choice instanceof PlayerChoice.CrewGiven given)) {
-                throw new IllegalArgumentException("this penalty is waiting for crew, not " + choice);
+                // Unreachable: a crew penalty asks GiveUpCrew, which admits nothing else.
+                throw new IllegalStateException("a crew penalty was handed a "
+                        + choice.getClass().getSimpleName());
             }
             handOverCrew(given.player(), given.cabins());
         }

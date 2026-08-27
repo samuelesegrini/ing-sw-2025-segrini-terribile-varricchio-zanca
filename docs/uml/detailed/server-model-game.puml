@@ -10,6 +10,7 @@ class BuildingPhase {
   --
   +name() : GamePhase
   +apply() : Reaction
+  +finishFor() : Reaction
   +next() : Optional<Phase>
 }
 class CrewPhase {
@@ -18,6 +19,7 @@ class CrewPhase {
   --
   +name() : GamePhase
   +apply() : Reaction
+  +finishFor() : Reaction
   +next() : Optional<Phase>
 }
 class FinishedPhase {
@@ -73,6 +75,7 @@ interface Phase {
   +name() : GamePhase
   +apply() : Reaction
   +next() : Optional<Phase>
+  +finishFor() : Reaction
   +onEntry() : List<Event>
   +pending() : Optional<PlayerPrompt>
   +cardOnTheTable() : Optional<AdventureCardIdentity>

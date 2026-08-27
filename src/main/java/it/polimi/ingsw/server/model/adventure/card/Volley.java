@@ -68,14 +68,19 @@ final class Volley {
     void apply(PlayerChoice choice) {
         if (awaitingFragmentChoice) {
             if (!(choice instanceof PlayerChoice.FragmentKept kept)) {
-                throw new IllegalArgumentException("this ship is in pieces and one has to be chosen");
+                // Unreachable: while a ship is in pieces the outstanding prompt is
+                // ChooseFragment, which admits nothing but a piece kept.
+                throw new IllegalStateException("a broken ship was handed a "
+                        + choice.getClass().getSimpleName());
             }
             ship.keepFragment(kept.piece());
             awaitingFragmentChoice = false;
             return;
         }
         if (!(choice instanceof PlayerChoice.DefenceChosen defence)) {
-            throw new IllegalArgumentException("a shot is incoming and is waiting to be answered");
+            // Unreachable: an incoming shot is a ChooseDefence, which admits nothing else.
+            throw new IllegalStateException("an incoming shot was handed a "
+                    + choice.getClass().getSimpleName());
         }
         Hit shot = shots.get(next++);
         Defence answer = defence.componentIfAny().map(Defence::using).orElseGet(Defence::none);

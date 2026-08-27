@@ -64,7 +64,8 @@ public record OpenSpaceCard(AdventureCardIdentity identity) implements Adventure
         @Override
         protected boolean apply(PlayerChoice choice) {
             if (!(choice instanceof PlayerChoice.Declaration declaration)) {
-                throw new IllegalArgumentException(
+                // Unreachable: DeclarePower is the only question this card asks.
+                throw new IllegalStateException(
                         "Open Space is waiting for a declared engine power, not " + choice);
             }
             PlayerColor player = declaration.player();

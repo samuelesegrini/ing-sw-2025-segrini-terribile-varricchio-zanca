@@ -91,8 +91,11 @@ public record AbandonedShipCard(AdventureCardIdentity identity, int crewCost, in
                     handOverCrew(given.player(), given.cabins());
                     yield true;
                 }
-                default -> throw new IllegalArgumentException(
-                        "an abandoned ship is waiting to be taken, left or paid for, not " + choice);
+                // Unreachable: TakeOrLeave admits Take and Leave, GiveUpCrew admits CrewGiven,
+                // and those are the only two questions this card asks. An assertion, not
+                // validation — validation now happens once, on the prompt.
+                default -> throw new IllegalStateException(
+                        "an abandoned ship was handed a " + choice.getClass().getSimpleName());
             };
         }
 
