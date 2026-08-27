@@ -4,6 +4,7 @@ import it.polimi.ingsw.common.game.GamePhase;
 import it.polimi.ingsw.common.game.PlayerColor;
 import it.polimi.ingsw.common.protocol.BuildingCommand;
 import it.polimi.ingsw.common.protocol.Command;
+import it.polimi.ingsw.common.protocol.GameEvent;
 import it.polimi.ingsw.server.model.building.ShipBuilder;
 
 import java.util.List;
@@ -85,7 +86,8 @@ final class BuildingPhase implements Phase {
             });
             case BuildingCommand.FlipTimer ignored ->
                     done(() -> game.timer().flip(builder.hasFinished()));
-            case BuildingCommand.FinishBuilding finish -> done(() -> finish(player, builder, finish));
+            case BuildingCommand.FinishBuilding finish -> done(() -> finish(player, builder,
+                    finish.startSpaceIfAny().map(OptionalInt::of).orElseGet(OptionalInt::empty)));
         };
     }
 
@@ -94,10 +96,7 @@ final class BuildingPhase implements Phase {
         return Reaction.Accepted.quietly();
     }
 
-    private void finish(PlayerColor player, ShipBuilder builder, BuildingCommand.FinishBuilding finish) {
-        OptionalInt wanted = finish.startSpaceIfAny()
-                .map(OptionalInt::of)
-                .orElseGet(OptionalInt::empty);
+    private void finish(PlayerColor player, ShipBuilder builder, OptionalInt wanted) {
         // Asked before anything happens, because declaring a ship finished and taking a place
         // on the starting line are two halves of one command and have to succeed or fail
         // together. Finishing first and finding out afterwards that the space was refused
@@ -106,6 +105,32 @@ final class BuildingPhase implements Phase {
         builder.finish();
         game.peeked().remove(player);
         game.starts().claim(player, wanted);
+    }
+
+    /**
+     * Stops an absent player's ship where it stands.
+     *
+     * <p>There is nothing else "waiting for them" could mean once they are gone, and a
+     * shipyard that never closes is a game that never starts. They take no place on the
+     * starting line: choosing one is a decision, and finishing order gives them the last
+     * free space anyway.
+     *
+     * @param player who is away
+     * @return the ship stopped where it was, or a refusal if it was already finished
+     */
+    @Override
+    public Reaction finishFor(PlayerColor player) {
+        ShipBuilder builder = game.builders().get(player);
+        if (builder.hasFinished()) {
+            return new Reaction.Refused("this ship is finished and is on the starting line");
+        }
+        try {
+            finish(player, builder, OptionalInt.empty());
+        } catch (RuntimeException refused) {
+            return new Reaction.Refused(Reasons.from(refused));
+        }
+        return new Reaction.Accepted(List.of(
+                new GameEvent.TurnSkipped(player, "stopped building where they were")));
     }
 
     @Override
