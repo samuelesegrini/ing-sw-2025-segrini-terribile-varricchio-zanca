@@ -91,6 +91,9 @@ enum PlayerColor {
 }
 interface PlayerPrompt {
   +player() : PlayerColor
+  +passiveAnswer() : PlayerChoice
+  +describePassing() : String
+  +accepts() : boolean
 }
 class TakeOrLeave <<record>> {
 }
@@ -125,9 +128,6 @@ class ShipAttributes <<record>> {
   +firepower() : double
 }
 class ShipViolation <<record>> {
-}
-class SkippedTurn {
-  +answerFor() : PlayerChoice
 }
 class ValidationReport <<record>> {
   +legal() : ValidationReport

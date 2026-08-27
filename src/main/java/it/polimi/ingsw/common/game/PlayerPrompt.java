@@ -3,6 +3,7 @@ package it.polimi.ingsw.common.game;
 
 
 import java.io.Serializable;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -26,6 +27,53 @@ public sealed interface PlayerPrompt extends Serializable {
      * @return the player whose answer the card is waiting for
      */
     PlayerColor player();
+
+    /**
+     * Returns the answer the server gives when the player is not there to give one.
+     *
+     * <p>A rule of the game rather than a convenience: a dropped connection must not stop
+     * three other people playing, so somebody has to answer, and the answer has to be the
+     * same every time, legal, and one nobody would call unfair on the absent player's
+     * behalf. It is therefore always the passive answer — the one that takes nothing,
+     * spends nothing and risks nothing.
+     *
+     * <p>On the prompt rather than in a table beside it, because the reason each answer is
+     * the passive one is a fact about that question. Kept apart, the question and its
+     * default could disagree and nothing would notice; here, adding a prompt is what makes
+     * somebody decide what happens when nobody answers it.
+     *
+     * @return an answer this prompt accepts, chosen to cost the absent player as little as
+     *         the question allows
+     */
+    PlayerChoice passiveAnswer();
+
+    /**
+     * Says in a few words what was decided for somebody who was not there.
+     *
+     * <p>For the announcement the other players see. Written from the absent player's side
+     * — what they did, not what was done to them — because from the table it looks the same
+     * either way and the shorter reading is the one that fits a line of a log.
+     *
+     * @return the passing, in words a person can read
+     */
+    String describePassing();
+
+    /**
+     * Tells whether an answer fits this question.
+     *
+     * <p>Checked once, by the resolution framework, before any card sees the answer. Each
+     * card used to check for itself in the {@code default} arm of its own switch, which
+     * meant the pairing of question to answer was written down eight times and agreed to by
+     * nobody in particular.
+     *
+     * <p>Only the shape is checked. Whether the answer is a <em>good</em> one — enough
+     * cabins named, a planet that is still free, batteries the ship actually holds — is the
+     * card's business and stays there.
+     *
+     * @param answer what came back
+     * @return {@code true} if this prompt could have been answered with it
+     */
+    boolean accepts(PlayerChoice answer);
 
     /**
      * An offer the player may take or leave.
@@ -54,6 +102,41 @@ public sealed interface PlayerPrompt extends Serializable {
             if (flightDays < 0) {
                 throw new IllegalArgumentException("an offer cannot pay flight days, got " + flightDays);
             }
+        }
+
+        /**
+         * Declines the offer.
+         *
+         * <p>Taking salvage costs flight days, and spending somebody else's days while they
+         * are away is not a decision to make for them.
+         *
+         * @return the refusal
+         */
+        @Override
+        public PlayerChoice passiveAnswer() {
+            return new PlayerChoice.Leave(player);
+        }
+
+        /**
+         * {@inheritDoc}
+         *
+         * @return what an untaken offer looks like from the table
+         */
+        @Override
+        public String describePassing() {
+            return "left an offer where it was";
+        }
+
+        /**
+         * {@inheritDoc}
+         *
+         * @param answer what came back
+         * @return {@code true} for taking it or leaving it, which are the only two things
+         *         an offer can be answered with
+         */
+        @Override
+        public boolean accepts(PlayerChoice answer) {
+            return answer instanceof PlayerChoice.Take || answer instanceof PlayerChoice.Leave;
         }
     }
 
@@ -89,6 +172,40 @@ public sealed interface PlayerPrompt extends Serializable {
             }
             activatable = Set.copyOf(activatable);
         }
+
+        /**
+         * Declares the ship as it stands, with no batteries spent.
+         *
+         * <p>This is the Open Space case too: an absent player's engines are whatever they
+         * built, and burning their last charge to move further is a choice, not a default.
+         *
+         * @return a declaration spending nothing
+         */
+        @Override
+        public PlayerChoice passiveAnswer() {
+            return new PlayerChoice.Declaration(player, BatteryPlan.none());
+        }
+
+        /**
+         * {@inheritDoc}
+         *
+         * @return what declaring nothing looks like from the table
+         */
+        @Override
+        public String describePassing() {
+            return "declared with no batteries spent";
+        }
+
+        /**
+         * {@inheritDoc}
+         *
+         * @param answer what came back
+         * @return {@code true} for a declaration
+         */
+        @Override
+        public boolean accepts(PlayerChoice answer) {
+            return answer instanceof PlayerChoice.Declaration;
+        }
     }
 
     /**
@@ -120,6 +237,43 @@ public sealed interface PlayerPrompt extends Serializable {
             offered = Map.copyOf(offered);
             holds = Set.copyOf(holds);
         }
+
+        /**
+         * Leaves the goods on the ground.
+         *
+         * <p>Loading a cube means choosing a hold, and choosing a hold for somebody who is
+         * not there is choosing what they throw away to make room.
+         *
+         * @return the answer that ends the stowing without taking anything
+         */
+        @Override
+        public PlayerChoice passiveAnswer() {
+            return new PlayerChoice.Done(player);
+        }
+
+        /**
+         * {@inheritDoc}
+         *
+         * @return what taking nothing looks like from the table
+         */
+        @Override
+        public String describePassing() {
+            return "took none of the goods";
+        }
+
+        /**
+         * {@inheritDoc}
+         *
+         * <p>Stowing is several answers in a row and {@code Done} is the one that ends it,
+         * so both are accepted for as long as the call stands.
+         *
+         * @param answer what came back
+         * @return {@code true} for a stowing move or for finishing
+         */
+        @Override
+        public boolean accepts(PlayerChoice answer) {
+            return answer instanceof PlayerChoice.CargoStowed || answer instanceof PlayerChoice.Done;
+        }
     }
 
     /**
@@ -149,6 +303,41 @@ public sealed interface PlayerPrompt extends Serializable {
                 throw new IllegalArgumentException("a card taking " + count + " crew is taking nothing");
             }
             cabins = Set.copyOf(cabins);
+        }
+
+        /**
+         * Gives up crew from the first cabins that have anybody in them.
+         *
+         * <p>The one question with no passive answer: somebody is going whatever happens.
+         * Taking them in the order the cabins come in is at least a rule rather than a
+         * judgement made on an absent player's behalf.
+         *
+         * @return the crew handed over
+         */
+        @Override
+        public PlayerChoice passiveAnswer() {
+            return new PlayerChoice.CrewGiven(player, cabins.stream().limit(count).toList());
+        }
+
+        /**
+         * {@inheritDoc}
+         *
+         * @return what the loss looks like from the table, with the number in it
+         */
+        @Override
+        public String describePassing() {
+            return "gave up " + count + " crew";
+        }
+
+        /**
+         * {@inheritDoc}
+         *
+         * @param answer what came back
+         * @return {@code true} for crew handed over
+         */
+        @Override
+        public boolean accepts(PlayerChoice answer) {
+            return answer instanceof PlayerChoice.CrewGiven;
         }
     }
 
@@ -191,6 +380,40 @@ public sealed interface PlayerPrompt extends Serializable {
         public Optional<Position> targetIfAny() {
             return Optional.ofNullable(target);
         }
+
+        /**
+         * Takes the hit.
+         *
+         * <p>Blocking costs a battery, and a ship that is not being flown should not be
+         * spending charges it may need later to defend a component it may not care about.
+         *
+         * @return the answer that puts nothing in the way
+         */
+        @Override
+        public PlayerChoice passiveAnswer() {
+            return PlayerChoice.DefenceChosen.none(player);
+        }
+
+        /**
+         * {@inheritDoc}
+         *
+         * @return what an undefended hit looks like from the table
+         */
+        @Override
+        public String describePassing() {
+            return "took the hit";
+        }
+
+        /**
+         * {@inheritDoc}
+         *
+         * @param answer what came back
+         * @return {@code true} for a chosen defence, including the empty one
+         */
+        @Override
+        public boolean accepts(PlayerChoice answer) {
+            return answer instanceof PlayerChoice.DefenceChosen;
+        }
     }
 
     /**
@@ -218,6 +441,45 @@ public sealed interface PlayerPrompt extends Serializable {
             if (pieces.size() < 2) {
                 throw new IllegalArgumentException("a ship in one piece needs no choosing");
             }
+        }
+
+        /**
+         * Keeps the largest piece.
+         *
+         * <p>There is no free answer to this one — every piece but the chosen one is lost —
+         * so the least destructive reading is the biggest.
+         *
+         * @return the largest piece, kept
+         * @throws IllegalStateException if there are somehow no pieces at all, which the
+         *                               constructor already rules out
+         */
+        @Override
+        public PlayerChoice passiveAnswer() {
+            return new PlayerChoice.FragmentKept(player, pieces.stream()
+                    .max(Comparator.comparingInt(Set::size))
+                    .orElseThrow(() -> new IllegalStateException(
+                            "a ship in no pieces at all cannot be asked which to keep")));
+        }
+
+        /**
+         * {@inheritDoc}
+         *
+         * @return what keeping the biggest piece looks like from the table
+         */
+        @Override
+        public String describePassing() {
+            return "kept the largest piece";
+        }
+
+        /**
+         * {@inheritDoc}
+         *
+         * @param answer what came back
+         * @return {@code true} for a piece kept
+         */
+        @Override
+        public boolean accepts(PlayerChoice answer) {
+            return answer instanceof PlayerChoice.FragmentKept;
         }
     }
 
@@ -264,6 +526,41 @@ public sealed interface PlayerPrompt extends Serializable {
             if (planets.isEmpty()) {
                 throw new IllegalArgumentException("a call with no free planets should not be made");
             }
+        }
+
+        /**
+         * Flies past the planets.
+         *
+         * <p>The one place where the passive answer differs from the obvious one: landing
+         * pays goods, but it also costs flight days and takes a planet somebody who is
+         * actually here might want.
+         *
+         * @return the refusal to land
+         */
+        @Override
+        public PlayerChoice passiveAnswer() {
+            return new PlayerChoice.Leave(player);
+        }
+
+        /**
+         * {@inheritDoc}
+         *
+         * @return what flying past looks like from the table
+         */
+        @Override
+        public String describePassing() {
+            return "flew past the planets";
+        }
+
+        /**
+         * {@inheritDoc}
+         *
+         * @param answer what came back
+         * @return {@code true} for landing on a planet or declining to
+         */
+        @Override
+        public boolean accepts(PlayerChoice answer) {
+            return answer instanceof PlayerChoice.PlanetChosen || answer instanceof PlayerChoice.Leave;
         }
     }
 }

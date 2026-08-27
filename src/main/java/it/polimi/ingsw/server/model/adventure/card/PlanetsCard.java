@@ -137,8 +137,10 @@ public record PlanetsCard(AdventureCardIdentity identity, List<Map<GoodColor, In
                     flight.shipOf(done.player()).endCargoOperations();
                     yield false;
                 }
-                default -> throw new IllegalArgumentException(
-                        "a planets card is waiting for a landing or a refusal, not " + choice);
+                // Unreachable, as above: ChoosePlanet admits PlanetChosen and Leave,
+                // ArrangeCargo admits CargoStowed and Done.
+                default -> throw new IllegalStateException(
+                        "a planets card was handed a " + choice.getClass().getSimpleName());
             };
         }
 

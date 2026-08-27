@@ -43,8 +43,8 @@ Controller -> Controller : keep a snapshot
 Controller --> Player : StateChanged
 
 alt the player being asked has dropped
-  Game -> Game : SkippedTurn.answerFor(prompt)
+  Game -> Game : prompt.passiveAnswer()
   Game -> Phase : apply the passive answer
-  Game --> Controller : TurnSkipped(player, what)
+  Game --> Controller : TurnSkipped(player, prompt.describePassing())
 end
 @enduml

@@ -117,8 +117,10 @@ public record AbandonedStationCard(AdventureCardIdentity identity, int minimumCr
                     castOff(done.player());
                     yield true;
                 }
-                default -> throw new IllegalArgumentException(
-                        "an abandoned station is waiting to be taken, left or finished with, not " + choice);
+                // Unreachable, as above: this card asks TakeOrLeave and ArrangeCargo, and
+                // between them they admit exactly the four answers handled here.
+                default -> throw new IllegalStateException(
+                        "an abandoned station was handed a " + choice.getClass().getSimpleName());
             };
         }
 

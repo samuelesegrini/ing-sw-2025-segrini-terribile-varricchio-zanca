@@ -95,6 +95,13 @@ public abstract class TurnByTurnResolution implements AdventureResolution {
             throw new IllegalArgumentException(
                     "the card is waiting on the " + prompt.player() + " player, not the " + choice.player());
         }
+        // Asked of the prompt, once, rather than of the card. Every card used to check this
+        // for itself in the default arm of its own switch, which wrote the pairing of question
+        // to answer down eight times over with nothing holding the eight in agreement.
+        if (!prompt.accepts(choice)) {
+            throw new IllegalArgumentException("a " + prompt.getClass().getSimpleName()
+                    + " cannot be answered with a " + choice.getClass().getSimpleName());
+        }
         // The answer is applied while the question is still outstanding, so that an answer
         // the card refuses leaves the question standing. Clearing it first and applying
         // afterwards loses the prompt on every rejected answer: the card would then be

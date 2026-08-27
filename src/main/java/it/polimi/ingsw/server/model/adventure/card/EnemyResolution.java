@@ -100,7 +100,11 @@ abstract class EnemyResolution extends TurnByTurnResolution {
      * @return {@code true} to end the card here
      */
     protected boolean applyExtra(PlayerChoice choice) {
-        throw new IllegalArgumentException("this enemy was not expecting " + choice);
+        // Reached only when a subclass asked a prompt it did not also handle here, which is a
+        // fault in the card rather than in the answer: the framework has already checked the
+        // answer against the outstanding prompt.
+        throw new IllegalStateException("this enemy asked a question it cannot answer, and was "
+                + "handed a " + choice.getClass().getSimpleName());
     }
 
     /**
