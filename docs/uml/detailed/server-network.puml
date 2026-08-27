@@ -7,8 +7,9 @@ title it.polimi.ingsw.server.network
 
 class Server {
   -lobby : Lobby
-  -sockets : SocketServer
-  -rmi : RmiServer
+  -sockets : Doorway
+  -rmi : Doorway
+  -doors : List<Doorway>
   --
   +start() : Server
   +socketPort() : int

@@ -1,6 +1,7 @@
 package it.polimi.ingsw.server.network;
 
 import it.polimi.ingsw.common.transport.DefaultPorts;
+import it.polimi.ingsw.common.transport.Doorway;
 import it.polimi.ingsw.common.transport.Liveness;
 import it.polimi.ingsw.common.transport.TransportException;
 import it.polimi.ingsw.common.transport.rmi.RmiServer;
@@ -11,6 +12,8 @@ import it.polimi.ingsw.server.lobby.DisconnectionPolicy;
 import it.polimi.ingsw.server.lobby.Lobby;
 
 import java.time.InstantSource;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 import java.util.random.RandomGenerator;
 
@@ -29,13 +32,22 @@ import java.util.random.RandomGenerator;
 public final class Server implements AutoCloseable {
 
     private final Lobby lobby;
-    private final SocketServer sockets;
-    private final RmiServer rmi;
+    private final Doorway sockets;
+    private final Doorway rmi;
 
-    private Server(Lobby lobby, SocketServer sockets, RmiServer rmi) {
+    /**
+     * Every door, so that opening and shutting them is written once rather than once each.
+     *
+     * <p>The two are also held by name, because a client has to be told which port to use and
+     * "the first one" is not something a caller should have to know.
+     */
+    private final List<Doorway> doors;
+
+    private Server(Lobby lobby, Doorway sockets, Doorway rmi) {
         this.lobby = lobby;
         this.sockets = sockets;
         this.rmi = rmi;
+        this.doors = List.of(sockets, rmi);
     }
 
     /**
@@ -76,17 +88,16 @@ public final class Server implements AutoCloseable {
     public static Server start(int socketPort, int rmiPort, GameData data, RandomGenerator random,
                                InstantSource clock, DisconnectionPolicy onDisconnection) {
         Lobby lobby = new Lobby(data, random, clock, onDisconnection);
-        SocketServer sockets = null;
+        List<Doorway> opened = new ArrayList<>();
         try {
-            sockets = SocketServer.listening(socketPort, lobby::welcome, Liveness.DEFAULT);
-            RmiServer rmi = RmiServer.listening(rmiPort, lobby::welcome, Liveness.DEFAULT);
-            return new Server(lobby, sockets, rmi);
+            opened.add(SocketServer.listening(socketPort, lobby::welcome, Liveness.DEFAULT));
+            opened.add(RmiServer.listening(rmiPort, lobby::welcome, Liveness.DEFAULT));
+            return new Server(lobby, opened.get(0), opened.get(1));
         } catch (TransportException failed) {
             // Half a server is worse than none: a client would connect to the door that opened
-            // and then find nobody else could reach the other one.
-            if (sockets != null) {
-                sockets.close();
-            }
+            // and then find nobody else could reach the other one. Written as a loop over what
+            // actually opened, so that a third door would not need a third null check.
+            opened.forEach(Doorway::close);
             lobby.close();
             throw failed;
         }
@@ -121,8 +132,7 @@ public final class Server implements AutoCloseable {
 
     @Override
     public void close() {
-        sockets.close();
-        rmi.close();
+        doors.forEach(Doorway::close);
         lobby.close();
     }
 }

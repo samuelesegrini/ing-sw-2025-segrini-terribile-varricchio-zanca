@@ -29,12 +29,10 @@ class RmiServer {
   -registry : Registry
   -gateway : Gateway
   -port : int
-  -connected : Set<Channel<Event, Command>>
   --
   +listening() : RmiServer
   +port() : int
-  +connectionCount() : int
-  +close() : void
+  +stopListening() : void
 }
 
 RemoteEndpoint <|.. RmiChannel
