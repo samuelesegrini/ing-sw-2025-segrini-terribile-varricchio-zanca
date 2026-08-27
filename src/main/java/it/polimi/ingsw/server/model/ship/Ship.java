@@ -207,7 +207,7 @@ public final class Ship {
     private Optional<ShipComponent> discard(Position cell, boolean counted) {
         Optional<ShipComponent> removed = grid.remove(cell);
         removed.ifPresent(component -> {
-            returnTokensToBank(component);
+            component.scrapped(bank);
             if (counted) {
                 lostComponents++;
             }
@@ -447,24 +447,13 @@ public final class Ship {
 
     private void destroy(Position cell) {
         grid.remove(cell).ifPresent(component -> {
-            returnTokensToBank(component);
+            // What a component was holding, and what of it the bank is owed, is the
+            // component's own business. A switch here would be a ninth kind of component
+            // away from leaking cubes nobody would notice were missing.
+            component.scrapped(bank);
             lostComponents++;
         });
         removeStrandedAliens();
-    }
-
-    private void returnTokensToBank(ShipComponent component) {
-        switch (component) {
-            case BatteryComponent battery -> battery.drain();
-            case CargoHoldComponent hold -> {
-                bank.giveBackAll(hold.contents());
-                hold.jettisonAll();
-            }
-            case CabinComponent cabin -> cabin.evacuate();
-            default -> {
-                // Nothing else carries anything the bank wants back.
-            }
-        }
     }
 
     // ---------------------------------------------------------------- life support

@@ -18,6 +18,7 @@ class BatteryComponent {
   +fill() : void
   +spend() : void
   +drain() : void
+  +scrapped() : void
 }
 class CabinComponent {
   -HUMAN_CAPACITY : int
@@ -38,6 +39,7 @@ class CabinComponent {
   +boardAlien() : void
   +removeOne() : void
   +evacuate() : void
+  +scrapped() : void
 }
 class CannonComponent <<record>> {
   +muzzleDirection() : Direction
@@ -62,6 +64,7 @@ class CargoHoldComponent {
   +remove() : void
   +mostValuable() : Optional<GoodColor>
   +jettisonAll() : void
+  +scrapped() : void
 }
 class ComponentTile <<record>> {
   +sidesOf() : Map<Direction, Connector>
@@ -87,6 +90,7 @@ interface ShipComponent {
   +id() : String
   +kind() : ComponentKind
   +connectorFacing() : Connector
+  +scrapped() : void
   +place() : ShipComponent
 }
 class StartingCabinTile <<record>> {
