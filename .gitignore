@@ -49,3 +49,5 @@ saves/
 
 ### Local tooling ###
 .claude/
+AGENTS.md
+docs/agents/
