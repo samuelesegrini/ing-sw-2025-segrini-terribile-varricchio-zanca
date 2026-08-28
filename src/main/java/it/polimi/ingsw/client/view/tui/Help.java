@@ -84,6 +84,23 @@ public final class Help {
         return LOBBY;
     }
 
+    /**
+     * Names what can be typed now, on one line, for a hint after an unrecognised word.
+     *
+     * <p>Read from the same declaration the help itself is printed from. Written out by hand
+     * these went stale without anybody noticing: the hint for the validation phase, whose whole
+     * job is putting a broken ship right, listed only {@code scrap} and left out the command
+     * that chooses which piece to keep.
+     *
+     * @param phase where the game has got to
+     * @return the forms, quoted and comma separated
+     */
+    static String oneLine(GamePhase phase) {
+        return commandsDuring(phase).stream()
+                .map(verb -> "'" + verb.form() + "'")
+                .collect(java.util.stream.Collectors.joining(", "));
+    }
+
     private static List<Verb> commandsDuring(GamePhase phase) {
         return switch (phase) {
             case BUILDING -> List.of(
@@ -101,7 +118,7 @@ public final class Help {
                     Verb.of("done [space]", "finish, and take a place on the starting line", "done", "finish"));
             case VALIDATION -> List.of(
                     Verb.of("scrap <row> <col>", "throw away a component that cannot stay", "scrap", "remove"),
-                    Verb.of("keep <row> <col> …", "choose which piece of a broken ship to fly", "keep"));
+                    Verb.of("keep <n>", "choose which piece of a broken ship to fly", "keep"));
             case CREW_PLACEMENT -> List.of(
                     Verb.of("crew <row> <col>", "put two people in a cabin", "crew", "people"),
                     Verb.of("alien <row> <col> <p|b>", "put a purple or brown alien in one", "alien"),

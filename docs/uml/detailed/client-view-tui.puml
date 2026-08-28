@@ -39,6 +39,7 @@ class Help {
   +verbsDuring() : List<Verb>
   +always() : List<Verb>
   +inTheLobbyVerbs() : List<Verb>
+  +oneLine() : String
 }
 class LobbyRenderer {
   +render() : List<String>
@@ -57,6 +58,8 @@ class RouteRenderer {
   +render() : List<String>
 }
 class ScoreRenderer {
+  -COLUMNS : String
+  --
   +render() : List<String>
 }
 class ShipRenderer {

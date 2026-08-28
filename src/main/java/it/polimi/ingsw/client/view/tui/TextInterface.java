@@ -243,8 +243,8 @@ public final class TextInterface implements UserInterface {
             sendThenShowShip(new PreparationCommand.KeepPiece(ship.pieces().get(which.getAsInt())));
             return;
         }
-        print(List.of("  ? the ships are being checked over; 'look' to see yours, "
-                + "'scrap <row> <col>' to throw something off"));
+        print(List.of("  ? the ships are being checked over; 'look' to see yours, or "
+                + Help.oneLine(GamePhase.VALIDATION)));
     }
 
     /**
@@ -277,8 +277,8 @@ public final class TextInterface implements UserInterface {
                     alien.orElseThrow()));
             return;
         }
-        print(List.of("  ? the ships are being crewed; 'crew <row> <col>' for people, "
-                + "'alien <row> <col> <p|b>', or 'done'"));
+        print(List.of("  ? the ships are being crewed; 'look' to see yours, or "
+                + Help.oneLine(GamePhase.CREW_PLACEMENT)));
     }
 
     private static Optional<AlienColor> alienFrom(Optional<String> word) {

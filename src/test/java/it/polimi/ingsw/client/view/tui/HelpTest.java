@@ -6,6 +6,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -74,6 +78,56 @@ class HelpTest {
         assertTrue(lines.contains("Always"));
         assertTrue(joined(lines).contains("look"),
                 "the ledger is worth looking at even when there is nothing to do about it");
+    }
+
+    @Test
+    @DisplayName("validation asks for a piece number, not a square")
+    void keepTakesAPieceNumber() {
+        String lines = joined(Help.during(GamePhase.VALIDATION));
+
+        assertTrue(lines.contains("keep <n>"),
+                "the handler reads one number and checks it against the list of pieces, so "
+                        + "help asking for a row and a column sends the player straight to a "
+                        + "refusal");
+        assertFalse(lines.contains("keep <row> <col>"));
+    }
+
+    @Test
+    @DisplayName("the one-line hint names everything the phase accepts")
+    void theHintNamesEveryCommand() {
+        for (GamePhase phase : List.of(GamePhase.VALIDATION, GamePhase.CREW_PLACEMENT)) {
+            String hint = Help.oneLine(phase);
+            for (Verb verb : Help.verbsDuring(phase)) {
+                assertTrue(hint.contains(verb.form()),
+                        phase + " accepts '" + verb.form() + "' and the hint a player gets "
+                                + "after typing something else does not mention it: " + hint);
+            }
+        }
+    }
+
+    @Test
+    @DisplayName("and the phase hints are built from it rather than written out again")
+    void theHintsDelegate() {
+        String source = sourceOf("TextInterface");
+
+        for (GamePhase phase : List.of(GamePhase.VALIDATION, GamePhase.CREW_PLACEMENT)) {
+            assertTrue(source.contains("Help.oneLine(GamePhase." + phase.name() + ")"),
+                    "the hint for " + phase + " lists its commands by hand. That is how the "
+                            + "validation hint came to name 'scrap' and not 'keep' — a player "
+                            + "whose ship was in pieces was told about the one command that "
+                            + "would not help. The test above cannot see a hand-written list, "
+                            + "so this one looks for the call instead");
+        }
+    }
+
+    private static String sourceOf(String className) {
+        Path source = Path.of("src/main/java/it/polimi/ingsw/client/view/tui",
+                className + ".java");
+        try {
+            return Files.readString(source);
+        } catch (IOException unreadable) {
+            throw new UncheckedIOException("cannot read " + source, unreadable);
+        }
     }
 
     private static String joined(List<String> lines) {
