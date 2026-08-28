@@ -34,9 +34,12 @@ import java.util.Optional;
  *       cannot be stale.</li>
  * </ul>
  *
- * <p><b>Not thread-safe, deliberately.</b> Every caller is the desk's single worker, which is
- * what makes plain maps correct here and a lock unnecessary — the same reason the model beneath
- * has none.
+ * <p><b>Not thread-safe, deliberately.</b> Every path in reaches it on the desk's single
+ * worker, which is what makes plain maps correct here and a lock unnecessary — the same reason
+ * the model beneath has none. That includes the two questions {@code Lobby} answers for anybody
+ * who asks from outside: they are put on the queue and waited for rather than read where they
+ * stand, because a plain map walked on one thread while another writes to it is the one thing
+ * the single-worker arrangement exists to rule out.
  */
 final class Roster {
 
@@ -264,10 +267,15 @@ final class Roster {
     }
 
     /**
-     * Forgets every running game, for a desk that is closing.
+     * Forgets every running game and every seat at one, for a desk that is closing.
+     *
+     * <p>Both, because {@link #started} promises they become known together and a seat pointing
+     * at a game nothing has heard of is a state nothing should be able to observe. Clearing
+     * only the games left exactly that.
      */
-    void forgetEveryGame() {
+    void forgetEverything() {
         games.clear();
+        seats.clear();
     }
 
     private void forgetIfEmpty(PendingGame table) {

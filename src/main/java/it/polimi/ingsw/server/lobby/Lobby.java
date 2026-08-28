@@ -98,6 +98,39 @@ public final class Lobby implements AutoCloseable {
         run(() -> from.gone(this));
     }
 
+    /**
+     * Asks the worker a question and waits for the answer.
+     *
+     * <p>Both of the questions below are asked from whatever thread wants to know, and read
+     * books the worker is writing to. Reading them here would be a plain map being walked on
+     * one thread while another puts into it — which is the one thing the single-worker
+     * arrangement exists to make impossible, and it does not stop being true because the
+     * caller is a test.
+     *
+     * @param question what to ask, run on the worker
+     * @param <T>      what comes back
+     * @return the answer, or an empty list if the desk has already shut
+     */
+    private <T> List<T> askTheDesk(java.util.function.Supplier<List<T>> question) {
+        List<T> answer = new ArrayList<>();
+        CountDownLatch asked = new CountDownLatch(1);
+        try {
+            queue.execute(() -> {
+                answer.addAll(question.get());
+                asked.countDown();
+            });
+            if (!asked.await(SHUTDOWN_PATIENCE.toMillis(), TimeUnit.MILLISECONDS)) {
+                return List.of();
+            }
+        } catch (RejectedExecutionException closing) {
+            return List.of();
+        } catch (InterruptedException interrupted) {
+            Thread.currentThread().interrupt();
+            return List.of();
+        }
+        return List.copyOf(answer);
+    }
+
     private void run(Runnable work) {
         try {
             queue.execute(work);
@@ -332,8 +365,8 @@ public final class Lobby implements AutoCloseable {
         // mean the second player never hears about the first, and four players would end up
         // with four different accounts of the same moment.
         for (Connection player : players) {
-            player.handOverTo(table.colourOf(player),
-                    controller.attach(table.colourOf(player), player.channel()));
+            PlayerColor colour = table.colourOf(player);
+            player.handOverTo(colour, controller.attach(colour, player.channel()));
         }
         LOG.debug("{} started, {} at {}", table.id(), seats.size(), table.level());
         players.forEach(player -> controller.announceArrival(table.colourOf(player)));
@@ -436,7 +469,7 @@ public final class Lobby implements AutoCloseable {
      * @return their identifiers, oldest first
      */
     public List<String> tablesWaiting() {
-        return roster.tablesWaiting();
+        return askTheDesk(roster::tablesWaiting);
     }
 
     /**
@@ -445,7 +478,7 @@ public final class Lobby implements AutoCloseable {
      * @return their identifiers, oldest first
      */
     public List<String> gamesRunning() {
-        return roster.gamesRunning();
+        return askTheDesk(roster::gamesRunning);
     }
 
     @Override
@@ -466,6 +499,6 @@ public final class Lobby implements AutoCloseable {
         // A copy even so: closing a controller can call back in, and a collection being walked
         // is a poor place to be modified from.
         roster.running().forEach(GameController::close);
-        roster.forgetEveryGame();
+        roster.forgetEverything();
     }
 }

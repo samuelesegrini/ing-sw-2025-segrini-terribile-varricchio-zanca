@@ -221,6 +221,22 @@ class RosterTest {
         }
 
         @Test
+        @DisplayName("and a closing desk forgets both, not just the games")
+        void forgettingEverythingLeavesNoSeatBehind() {
+            GameController game = aGame();
+            roster.started(game);
+
+            roster.forgetEverything();
+
+            // started() promises a game and its seats become known together. Clearing only the
+            // games left seats pointing at a game the roster had never heard of — exactly the
+            // state that promise says nothing should be able to observe.
+            assertEquals(List.of(), roster.gamesRunning());
+            game.seats().forEach(seat ->
+                    assertTrue(roster.seatOf(seat.nickname()).isEmpty()));
+        }
+
+        @Test
         @DisplayName("and are forgotten together")
         void reclaimingRemovesBoth() {
             GameController game = aGame();
