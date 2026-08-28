@@ -1,6 +1,6 @@
 # Roadmap
 
-Fifteen milestones, ordered so that each one is independently demonstrable and
+Sixteen milestones, ordered so that each one is independently demonstrable and
 nothing is built before the thing it depends on. The first twelve carry the
 submission; M12 was the first that changed no behaviour at all. Milestones map one-to-one onto
 GitHub milestones; every issue belongs to exactly one.
@@ -27,6 +27,7 @@ found in a unit test are free.
 | M13 | Seams and silent failures | A missing transport seam, two unchecked casts, a thread that dies quietly | `v1.2.0` |
 | M14 | What the jar actually does | An advanced feature the shipped server could not reach | `v1.3.0` |
 | M15 | What the requirements actually say | The derived spec read back against the PDF it came from | `v1.5.0` |
+| M16 | Where the defects kept landing | Two deepenings the earlier reviews proposed and nobody built | `v1.6.0` |
 
 ## M0 — Foundations
 
@@ -244,6 +245,40 @@ as a decision rather than dressed up as a requirement.
 Exit criterion: every claim in the derived spec is either a quotation or
 labelled a decision, and the two defects above are closed with tests that
 failed first.
+
+## M16 — Where the defects kept landing
+
+Two of the four things in this milestone were proposed before M12 and passed
+over. That was the right call at the time and it stopped being right, which is
+the interesting part: the argument for a deepening can strengthen while the
+code sits still.
+
+- **A game comes into being twice** (#183). `Lobby.start` and
+  `Lobby.recoverWhatWasKept` each build a keeper, a controller and two registry
+  entries, from different sources, fifty lines apart, with nothing checking
+  that they agree. When this was first proposed persistence was unreachable
+  from the shipped server, so it was a tidiness argument and was descoped.
+  **M14 made it real, and both defects M14 turned up were in this wiring** —
+  a shutdown deleting every snapshot, and an unreplayable snapshot read again
+  at every startup. Neither had a module to live in, so both were fixed inside
+  the two methods that do the same job twice.
+- **Where a nickname is has no name** (#184). Four maps, fourteen methods
+  keeping them in step by hand, three of those methods added since the
+  proposal. The invariants holding them together are comments.
+- **A verb's meaning depends on a phase checked inline** (#185). The client is
+  the last tier still asking `if` where the server asks a `Phase` and the lobby
+  asks a `ConnectionState`.
+- **A duplication a merged PR says it removed** (#182). It does not; the claim
+  is the only reason the item exists.
+
+**The order is deliberate.** #183 first: it is the smaller change and it makes
+#184 smaller still, because once the desk stops owning seeds and snapshot
+recipes, what is left of it is much closer to the roster and the switch that
+#184 wants to separate.
+
+Exit criterion: no behaviour changed anywhere except where a test says
+otherwise, and each of the four either removes a place a defect has already
+landed or makes a claim in the history true.
 
 ## Working agreement
 
