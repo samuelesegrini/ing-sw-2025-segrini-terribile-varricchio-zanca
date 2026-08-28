@@ -26,6 +26,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * conformance suite plays on the server side and for the same reason. A test that only ran
  * over a socket would be worth very little for a requirement whose whole content is that both
  * work.
+ *
+ * <p>Components involved: {@link ServerLink}, {@link Transport}, {@link ClientState}.
  */
 class ServerLinkTest {
 

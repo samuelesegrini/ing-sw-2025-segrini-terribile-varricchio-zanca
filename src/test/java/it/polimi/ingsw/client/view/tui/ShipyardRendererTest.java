@@ -30,6 +30,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * anybody may take, how many players have finished is how much time is really left, and the
  * free start spaces are what everybody is racing for. A screen showing only your own ship would
  * be a screen you could not play from.
+ *
+ * <p>Components involved: {@link ShipyardRenderer}, {@link Direction}, {@link Connector}.
  */
 class ShipyardRendererTest {
 

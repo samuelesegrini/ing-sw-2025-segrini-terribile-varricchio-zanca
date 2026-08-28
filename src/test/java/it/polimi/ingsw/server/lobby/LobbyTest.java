@@ -45,6 +45,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * last seat, and not a command later. And that logging in with the name of a seat nobody is
  * attached to puts a player straight back into the game they dropped out of — because that is
  * the whole of the reconnection story, and there is deliberately no other way to do it.
+ *
+ * <p>Components involved: {@link Lobby}, {@link LobbyCommand}, {@link GameLevel}.
  */
 class LobbyTest {
 

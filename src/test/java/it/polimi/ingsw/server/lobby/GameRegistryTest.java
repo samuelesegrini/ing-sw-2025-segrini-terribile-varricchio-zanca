@@ -41,6 +41,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * <p>Isolation is the part worth testing rather than asserting. A server that runs three games
  * happily until one of them goes wrong has not isolated anything.
+ *
+ * <p>Components involved: {@link Lobby}, {@link GameController}.
  */
 class GameRegistryTest {
 

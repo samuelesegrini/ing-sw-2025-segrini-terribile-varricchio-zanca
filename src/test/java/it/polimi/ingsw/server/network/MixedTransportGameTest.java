@@ -51,6 +51,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * order, and that the events describing what happened are <em>identical</em> whichever door a
  * player came through. A transport-specific branch anywhere in the controller would show up
  * here as four players watching four slightly different games.
+ *
+ * <p>Components involved: {@link Server}, {@link SocketServer}, {@link RmiServer}.
  */
 class MixedTransportGameTest {
 

@@ -39,6 +39,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * <p>The rules here are deliberately dull, because a rule applied on somebody's behalf while
  * they cannot argue has to be one they would not argue with: take nothing, spend nothing, risk
  * nothing. What it must never be is <em>nothing at all</em>.
+ *
+ * <p>Components involved: {@link Game}, {@link Phase}, {@link PlayerPrompt}.
  */
 class ReconnectionTest {
 

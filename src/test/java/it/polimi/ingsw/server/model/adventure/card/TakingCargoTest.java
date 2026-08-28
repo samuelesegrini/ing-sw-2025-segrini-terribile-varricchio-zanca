@@ -36,6 +36,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * <p>Goods are most of the scoring on a level II flight. A game that could not load any is a
  * game where the only credits come from beating enemies, which is not the game.
+ *
+ * <p>Components involved: {@link CargoHandling}, {@link PlayerChoice}, {@link Ship}.
  */
 class TakingCargoTest {
 

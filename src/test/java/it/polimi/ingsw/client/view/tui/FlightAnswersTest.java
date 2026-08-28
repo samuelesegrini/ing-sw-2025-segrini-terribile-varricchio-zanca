@@ -33,6 +33,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * {@code keep} chooses a piece of a broken ship and sets a tile aside in the shipyard,
  * {@code leave} declines an offer and flies past a planet — and that a line it cannot use is
  * refused with something a person can act on rather than sent to be refused less helpfully.
+ *
+ * <p>Components involved: {@link FlightAnswers}, {@link PlayerPrompt}, {@link PlayerChoice}.
  */
 class FlightAnswersTest {
 

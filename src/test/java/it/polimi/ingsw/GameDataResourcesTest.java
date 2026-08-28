@@ -14,6 +14,8 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  * <p>Cards, components and boards are loaded from the classpath at runtime, so a
  * rename or a move that the compiler cannot see would only surface when a game is
  * started. These tests fail at build time instead.
+ *
+ * <p>Components involved: the JSON under {@code src/main/resources/data} and {@link it.polimi.ingsw.server.data.GameDataLoader}, which reads it.
  */
 class GameDataResourcesTest {
 

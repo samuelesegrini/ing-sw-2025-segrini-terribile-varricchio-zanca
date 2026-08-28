@@ -33,6 +33,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * every renderer was tested; there was simply no way to say anything.
  *
  * <p>That is the shape of gap a renderer test cannot find and a whole-game test can.
+ *
+ * <p>Components involved: {@link TextInterface}, {@link Server}, {@link ClientState}.
  */
 class RepairAndCrewByTypingTest {
 

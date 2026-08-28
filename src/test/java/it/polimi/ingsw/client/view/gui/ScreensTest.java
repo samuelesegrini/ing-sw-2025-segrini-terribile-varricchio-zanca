@@ -33,6 +33,8 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
  * <p>Everything that <em>decides</em> anything — which screen, which picture — is a pure
  * function tested next door with no toolkit at all. What is left here is whether the windows
  * are actually built and have the controls a player needs to press.
+ *
+ * <p>Components involved: {@link Screens}, {@link Screen}, {@link ClientState}.
  */
 class ScreensTest {
 

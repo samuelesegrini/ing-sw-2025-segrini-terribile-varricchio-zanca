@@ -24,6 +24,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * a phase too long leaves somebody staring at a shipyard that closed, and nothing throws. It is
  * also the piece that can be checked exhaustively without a screen, which is what this does —
  * every phase the game has, not the four somebody remembered.
+ *
+ * <p>Components involved: {@link SceneRouter}, {@link Screen}, {@link GamePhase}.
  */
 class SceneRouterTest {
 

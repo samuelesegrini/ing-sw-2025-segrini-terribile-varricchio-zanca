@@ -53,6 +53,8 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
  * <p>What each button answers is {@link PromptChoices}' business and is checked next door with
  * no toolkit. What is checked here is that pressing one sends that answer and nothing else, and
  * that the ledger shows the lines the manual scores separately.
+ *
+ * <p>Components involved: {@link FlightPane}, {@link LedgerPane}, {@link GameView}.
  */
 class FlightAndLedgerTest {
 

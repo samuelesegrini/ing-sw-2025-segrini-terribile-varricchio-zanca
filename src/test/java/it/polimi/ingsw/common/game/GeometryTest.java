@@ -12,6 +12,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * Checks {@link Direction}, {@link Rotation} and {@link Position}: the arithmetic every
  * placement, connection check and threat resolution goes through.
+ *
+ * <p>Components involved: {@link Position}, {@link Direction}, {@link Rotation}.
  */
 class GeometryTest {
 

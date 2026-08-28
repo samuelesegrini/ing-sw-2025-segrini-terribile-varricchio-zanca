@@ -26,6 +26,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * running total of something — credits, whose turn it is, how many tiles are left — and drifts.
  * There is one test at the bottom that says so directly: throw away every narration event and
  * the picture is unchanged.
+ *
+ * <p>Components involved: {@link ClientState}, {@link GameEvent}, {@link FlightEvent}.
  */
 class ClientStateTest {
 

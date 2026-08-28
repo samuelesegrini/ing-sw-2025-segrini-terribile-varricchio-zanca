@@ -41,6 +41,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * <p>They also matter on the receiving end. A record is rebuilt through its canonical
  * constructor when it is deserialized, so these run again on everything that arrives over a
  * socket or an RMI connection. The guard a client skipped, the server applies.
+ *
+ * <p>Components involved: {@link Command}, {@link Event}, {@link Envelope}.
  */
 class MalformedMessagesTest {
 

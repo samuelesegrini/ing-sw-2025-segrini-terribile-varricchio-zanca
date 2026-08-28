@@ -13,6 +13,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * <p>These four lines decide whether a ship is legal, so each clause of the rule gets
  * its own test rather than being folded into a truth table nobody reads.
+ *
+ * <p>Components involved: {@link Connector}.
  */
 class ConnectorTest {
 

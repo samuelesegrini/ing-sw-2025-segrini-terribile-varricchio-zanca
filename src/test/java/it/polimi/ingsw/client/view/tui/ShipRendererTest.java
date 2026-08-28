@@ -38,6 +38,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * <em>printed on the board</em>, because that is what a meteor roll names. And firepower has to
  * be shown in halves, because it is the one number in this game that decides fights and a
  * display that rounded it would be lying.
+ *
+ * <p>Components involved: {@link ShipRenderer}, {@link ShipView}, {@link Glyphs}.
  */
 class ShipRendererTest {
 

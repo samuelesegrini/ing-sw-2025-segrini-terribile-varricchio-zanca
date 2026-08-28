@@ -17,6 +17,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * <p>A list of every command in the game would be a list a player has to filter in their head
  * while an hourglass runs. So it shows what is legal in the phase they are in, and the three
  * things that are always legal underneath.
+ *
+ * <p>Components involved: {@link Help}, {@link GamePhase}.
  */
 class HelpTest {
 

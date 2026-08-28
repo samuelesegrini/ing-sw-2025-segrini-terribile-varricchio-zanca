@@ -22,6 +22,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * nullable {@code Path} whose {@code null} meant "keep no games", and the shipped server could
  * not reach the one that kept any — so what a forgetful caller gets is worth pinning rather
  * than assuming.
+ *
+ * <p>Components involved: {@link ServerSettings}, {@link Snapshots}, {@link Lobby}.
  */
 class ServerSettingsTest {
 

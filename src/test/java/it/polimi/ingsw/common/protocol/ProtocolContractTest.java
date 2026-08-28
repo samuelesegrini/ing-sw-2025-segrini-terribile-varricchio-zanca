@@ -53,6 +53,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * above worth naming, because {@code Optional} is deliberately not serializable and is
  * otherwise the obvious thing to reach for. A value that may be absent is {@code null} and
  * is read through an {@code …IfAny()} accessor.
+ *
+ * <p>Components involved: {@link Command}, {@link Event}, {@link GameView}.
  */
 class ProtocolContractTest {
 

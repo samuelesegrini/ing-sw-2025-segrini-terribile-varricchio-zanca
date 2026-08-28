@@ -31,6 +31,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * <p>The failures worth catching here are the quiet ones: a command that belongs to another
  * phase being applied anyway, a refused command that changed something on its way to being
  * refused, and a projection that shows one player what another is holding.
+ *
+ * <p>Components involved: {@link Game}, {@link PlayerColor}, {@link BuildingCommand}.
  */
 class GameTest {
 

@@ -19,6 +19,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * <p>Rotation is where placement bugs hide: a tile is catalogued in its printed
  * orientation, and every connection check, engine clearance check and shield lookup
  * has to ask what the tile looks like after the turn rather than before it.
+ *
+ * <p>Components involved: {@link ComponentTile}, {@link Connector}, {@link Direction}.
  */
 class ComponentTileTest {
 

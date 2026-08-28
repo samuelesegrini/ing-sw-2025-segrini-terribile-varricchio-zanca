@@ -36,6 +36,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * are — absolute, going up for ever — because a ship a whole lap behind the leader is out of the
  * flight, and that is invisible if positions wrap. And a prompt shows only the choices it
  * carries, because a screen offering something the server would refuse teaches the wrong game.
+ *
+ * <p>Components involved: {@link RouteRenderer}, {@link PromptRenderer}, {@link FlightView}.
  */
 class FlightRenderersTest {
 

@@ -30,6 +30,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * <p>So this drives {@link AbstractChannel} through a stand-in with no I/O in it, where all
  * three can simply be arranged.
+ *
+ * <p>Components involved: {@link AbstractChannel}, {@link Command}, {@link Liveness}.
  */
 class AbstractChannelTest {
 

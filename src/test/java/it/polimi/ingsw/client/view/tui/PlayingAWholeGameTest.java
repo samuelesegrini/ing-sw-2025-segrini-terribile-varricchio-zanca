@@ -48,6 +48,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * flight, and {@code FlightRenderersTest} checks what it says. A test that only fails where
  * nobody can watch it, and proves nothing the others do not, is worth less than the time spent
  * on it.
+ *
+ * <p>Components involved: {@link TextInterface}, {@link Server}, {@link ClientState}.
  */
 class PlayingAWholeGameTest {
 
