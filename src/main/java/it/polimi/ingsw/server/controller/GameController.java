@@ -11,6 +11,8 @@ import it.polimi.ingsw.common.transport.ChannelListener;
 import it.polimi.ingsw.server.model.game.Game;
 import it.polimi.ingsw.server.model.game.Reaction;
 import it.polimi.ingsw.server.model.game.Seat;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.util.EnumMap;
@@ -41,6 +43,8 @@ import java.util.concurrent.TimeUnit;
  * and there is no new truth to send.
  */
 public final class GameController implements AutoCloseable {
+
+    private static final Logger LOG = LoggerFactory.getLogger(GameController.class);
 
     /** How often to let the hourglass notice that it has run out. */
     private static final Duration TICK = Duration.ofMillis(500);
@@ -208,8 +212,12 @@ public final class GameController implements AutoCloseable {
         switch (game.apply(player, command)) {
             // Only to the sender, and no state after it: nothing changed, so there is no new
             // truth to send and nobody else has anything to learn.
-            case Reaction.Refused refused -> sessionOf(player)
-                    .send(new GameEvent.Rejected(nameOf(command), refused.reason()));
+            case Reaction.Refused refused -> {
+                LOG.debug("{} {} refused {}: {}", game.id(), player, nameOf(command),
+                        refused.reason());
+                sessionOf(player).send(new GameEvent.Rejected(nameOf(command),
+                        refused.reason()));
+            }
             case Reaction.Accepted accepted -> publish(accepted.narration());
         }
     }
@@ -319,7 +327,7 @@ public final class GameController implements AutoCloseable {
         try {
             keeper.accept(game);
         } catch (RuntimeException failed) {
-            System.err.println("could not keep " + game.id() + ": " + failed.getMessage());
+            LOG.error("could not keep {}: {}", game.id(), failed.getMessage());
         }
     }
 

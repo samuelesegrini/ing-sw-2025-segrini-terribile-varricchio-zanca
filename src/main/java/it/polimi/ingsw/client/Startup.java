@@ -85,7 +85,8 @@ public record Startup(boolean graphical, Transport transport, String host, int p
      * @return one line of usage
      */
     public static String usage() {
-        return "usage: [--tui|--gui] [--socket|--rmi] [--host <name>] [--port <number>]";
+        return "usage: [--tui|--gui] [--socket|--rmi] [--host <name>] [--port <number>] "
+                + it.polimi.ingsw.common.logging.Tracing.usage();
     }
 
     private static int defaultPortFor(Transport transport) {

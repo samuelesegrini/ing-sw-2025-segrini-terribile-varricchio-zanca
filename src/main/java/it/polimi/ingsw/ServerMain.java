@@ -1,9 +1,12 @@
 package it.polimi.ingsw;
 
+import it.polimi.ingsw.common.logging.Tracing;
 import it.polimi.ingsw.common.transport.DefaultPorts;
 import it.polimi.ingsw.common.transport.TransportException;
 import it.polimi.ingsw.server.lobby.ServerSettings;
 import it.polimi.ingsw.server.network.Server;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Entry point of the server process.
@@ -21,6 +24,8 @@ public final class ServerMain {
         // Entry point holder, never instantiated.
     }
 
+    private static final Logger LOG = LoggerFactory.getLogger(ServerMain.class);
+
     /** Where games are written down, relative to wherever the server was started. */
     private static final java.nio.file.Path GAMES = java.nio.file.Path.of("games");
 
@@ -31,8 +36,14 @@ public final class ServerMain {
      *             the operating system for a free one
      */
     public static void main(String[] args) {
-        int socketPort = portFrom(args, 0, DefaultPorts.SOCKET);
-        int rmiPort = portFrom(args, 1, DefaultPorts.RMI);
+        // Before anything else has a chance to log. The trace is off unless asked for, and the
+        // flag is taken out of the arguments so the ports below parse exactly as they always
+        // did, whichever order the two were given in.
+        Tracing.toConsole(Tracing.wanted(args, System::getenv));
+        String[] ports = Tracing.without(args);
+
+        int socketPort = portFrom(ports, 0, DefaultPorts.SOCKET);
+        int rmiPort = portFrom(ports, 1, DefaultPorts.RMI);
 
         Server server;
         try {
@@ -43,20 +54,23 @@ public final class ServerMain {
             // here, where it can be read.
             server = Server.start(socketPort, rmiPort, ServerSettings.defaults().keeping(GAMES));
         } catch (TransportException unavailable) {
-            System.err.println("Could not start: " + unavailable.getMessage());
+            LOG.error("Could not start: {}", unavailable.getMessage());
             System.exit(1);
             return;
         }
 
-        System.out.println("Galaxy Trucker server");
-        System.out.println("  socket  localhost:" + server.socketPort());
-        System.out.println("  rmi     localhost:" + server.rmiPort());
+        LOG.info("Galaxy Trucker server");
+        LOG.info("  socket  localhost:{}", server.socketPort());
+        LOG.info("  rmi     localhost:{}", server.rmiPort());
         // Said out loud, because a feature nobody can see is one nobody can check. Stopping
         // this server and starting it again brings these games back.
-        System.out.println("  games   " + GAMES.toAbsolutePath());
-        System.out.println("Ctrl-C to stop.");
+        LOG.info("  games   {}", GAMES.toAbsolutePath());
+        LOG.info("Ctrl-C to stop.");
 
-        Runtime.getRuntime().addShutdownHook(new Thread(server::close, "shutdown"));
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            LOG.info("stopping");
+            server.close();
+        }, "shutdown"));
         // Everything that matters runs on daemon threads, so something has to keep the process
         // alive. Waiting on a lock nobody holds is the cheapest way to do nothing for ever.
         try {
@@ -73,7 +87,7 @@ public final class ServerMain {
         try {
             return Integer.parseInt(args[index]);
         } catch (NumberFormatException notANumber) {
-            System.err.println("Not a port: " + args[index] + ", using " + fallback);
+            LOG.warn("Not a port: {}, using {}", args[index], fallback);
             return fallback;
         }
     }

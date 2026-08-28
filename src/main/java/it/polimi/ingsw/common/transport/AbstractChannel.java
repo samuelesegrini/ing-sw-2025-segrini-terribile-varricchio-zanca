@@ -1,5 +1,8 @@
 package it.polimi.ingsw.common.transport;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.Serializable;
 import java.time.Duration;
 import java.util.Optional;
@@ -34,6 +37,8 @@ import java.util.concurrent.atomic.AtomicReference;
 public abstract class AbstractChannel<O extends Serializable, I extends Serializable>
         implements Channel<O, I> {
 
+    private static final Logger LOG = LoggerFactory.getLogger(AbstractChannel.class);
+
     private static final ScheduledExecutorService CLOCK =
             Executors.newSingleThreadScheduledExecutor(runnable -> {
                 Thread thread = new Thread(runnable, "channel-liveness");
@@ -47,6 +52,16 @@ public abstract class AbstractChannel<O extends Serializable, I extends Serializ
     private final AtomicLong lastHeard = new AtomicLong(System.nanoTime());
     private final AtomicReference<ScheduledFuture<?>> heartbeat = new AtomicReference<>();
     private final Liveness liveness;
+
+    /**
+     * What this connection is called in the trace.
+     *
+     * <p>The class names the door it came through — a stream, a registry, or neither — and the
+     * identity distinguishes two connections of the same kind, which is the whole point when
+     * four players are in one process.
+     */
+    private final String id = getClass().getSimpleName() + "@"
+            + Integer.toHexString(System.identityHashCode(this));
 
     /**
      * Builds a channel that will watch for silence once it is started.
@@ -123,6 +138,7 @@ public abstract class AbstractChannel<O extends Serializable, I extends Serializ
         if (liveness == null || heartbeat.get() != null) {
             return;
         }
+        LOG.debug("{} open, {}", id, liveness == null ? "no heartbeat" : liveness);
         long period = liveness.keepAliveEvery().toMillis();
         heartbeat.set(CLOCK.scheduleAtFixedRate(
                 this::beat, period, period, TimeUnit.MILLISECONDS));
@@ -169,11 +185,20 @@ public abstract class AbstractChannel<O extends Serializable, I extends Serializ
         // connection never throws, and nothing up there is catching. Now it stops the build.
         switch (envelope) {
             case Envelope.KeepAlive ignored -> {
+                LOG.trace("{} <- keep-alive", id);
                 // Consumed here. Nothing above the transport ever learns that the connection
                 // has to keep proving it works.
             }
-            case Envelope.Goodbye ignored -> shutdown("the other end said goodbye");
-            case Envelope.Message message -> passUp(message.payload());
+            case Envelope.Goodbye ignored -> {
+                LOG.trace("{} <- goodbye", id);
+                shutdown("the other end said goodbye");
+            }
+            case Envelope.Message message -> {
+                // Parameterised, so a payload's toString is never built when nobody is
+                // listening — which on a StateChanged is a whole projection.
+                LOG.debug("{} <- {}", id, message.payload().getClass().getSimpleName());
+                passUp(message.payload());
+            }
         }
     }
 
@@ -213,6 +238,7 @@ public abstract class AbstractChannel<O extends Serializable, I extends Serializ
             return;
         }
         try {
+            LOG.debug("{} -> {}", id, message.getClass().getSimpleName());
             transmit(new Envelope.Message(message));
         } catch (Exception problem) {
             shutdown("could not send: " + problem);
@@ -282,6 +308,7 @@ public abstract class AbstractChannel<O extends Serializable, I extends Serializ
         } catch (RuntimeException problem) {
             // Already closing. There is nowhere useful for this to go.
         }
+        LOG.debug("{} closed: {}", id, reason);
         ChannelListener<I> told = listener.get();
         if (told != null) {
             told.closed(reason);

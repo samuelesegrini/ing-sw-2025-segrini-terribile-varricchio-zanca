@@ -79,4 +79,26 @@ class StartupTest {
         assertThrows(NullPointerException.class,
                 () -> new Startup(false, null, "localhost", 4321));
     }
+
+    @Test
+    @DisplayName("the tracing flags are not Startup's business, and never reach it")
+    void tracingArgumentsAreStrippedBeforeStartupSeesThem() {
+        // Both jars take a --debug that neither Startup nor the server's port reader knows
+        // about. It is taken out before either parses, so the option lives in one place rather
+        // than in every parser that might see it — and it works in any position.
+        Startup before = Startup.from(it.polimi.ingsw.common.logging.Tracing
+                .without(new String[] {"--debug", "--rmi", "--host", "elsewhere"}));
+        Startup after = Startup.from(it.polimi.ingsw.common.logging.Tracing
+                .without(new String[] {"--rmi", "--host", "elsewhere", "--debug"}));
+
+        assertEquals(before, after);
+        assertEquals("elsewhere", before.host());
+    }
+
+    @Test
+    @DisplayName("and an option nobody knows is still refused")
+    void anUnknownOptionIsStillRefused() {
+        assertThrows(IllegalArgumentException.class, () -> Startup.from(
+                it.polimi.ingsw.common.logging.Tracing.without(new String[] {"--verbose"})));
+    }
 }

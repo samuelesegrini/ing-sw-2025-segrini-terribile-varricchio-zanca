@@ -49,6 +49,9 @@ public final class TextInterface implements UserInterface {
 
     private final Object screen = new Object();
 
+    /** Whether the line naming this game has been printed; it is printed once, ever. */
+    private boolean announcedTheGame;
+
     private int narrationShown;
     private boolean stopped;
     private boolean promptShowing;
@@ -613,6 +616,12 @@ public final class TextInterface implements UserInterface {
         List<it.polimi.ingsw.common.protocol.Event> fresh = state.narrationAfter(narrationShown);
         narrationShown += fresh.size();
         List<String> lines = new java.util.ArrayList<>();
+        if (!announcedTheGame) {
+            state.game().ifPresent(game -> {
+                lines.add(NarrationRenderer.gameBegan(game));
+                announcedTheGame = true;
+            });
+        }
         for (it.polimi.ingsw.common.protocol.Event event : fresh) {
             if (event instanceof FlightEvent.Awaiting awaiting) {
                 // A question addressed to this player is the one event worth more than a line.

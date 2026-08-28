@@ -1,9 +1,12 @@
 package it.polimi.ingsw.client.view.tui;
 
+import it.polimi.ingsw.common.game.GamePhase;
 import it.polimi.ingsw.common.protocol.Event;
 import it.polimi.ingsw.common.protocol.FlightEvent;
 import it.polimi.ingsw.common.protocol.GameEvent;
 import it.polimi.ingsw.common.protocol.LobbyEvent;
+import it.polimi.ingsw.common.protocol.view.GameView;
+import it.polimi.ingsw.common.protocol.view.PlayerView;
 
 import java.util.Optional;
 
@@ -38,7 +41,7 @@ public final class NarrationRenderer {
                     "  " + entered.nickname() + " sat down (" + entered.colour() + ")";
             case LobbyEvent.PlayerLeft left -> "  " + left.nickname() + " left";
             case GameEvent.PhaseBegan phase ->
-                    "── " + phase.phase().name().toLowerCase().replace('_', ' ');
+                    "── " + name(phase.phase().name()) + " — " + purposeOf(phase.phase());
             case GameEvent.ConnectionChanged changed ->
                     // Neutral on purpose. The same event announces a player arriving for the
                     // first time and one returning after their laptop closed, and "is back"
@@ -64,6 +67,55 @@ public final class NarrationRenderer {
                     "  " + retired.player() + " is out of the flight: " + retired.reason();
             default -> null;
         });
+    }
+
+    /**
+     * Says a game has begun, and who is in it.
+     *
+     * <p>Printed when the client first has a {@link GameView} where it had none, rather than
+     * off the first {@code PhaseBegan}. That is not a preference: there is no {@code PhaseBegan}
+     * at the start of a game at all. {@code GameController} sets its {@code lastAnnounced} to
+     * the phase the game opens in, so the opening phase is never announced — a line triggered
+     * off it would print for every phase except the one this exists for.
+     *
+     * <p>Taking the transition rather than the event also settles the rejoin case on its own:
+     * a client has no game and then has one exactly once, whether it is sitting down at a new
+     * table or coming back to a flight already in progress.
+     *
+     * @param game what the player can see
+     * @return the line naming the game, its rules and the table
+     */
+    public static String gameBegan(GameView game) {
+        String table = game.players().stream()
+                .map(player -> player.nickname() + " (" + player.colour()
+                        + (player.colour() == game.you() ? ", you" : "") + ")")
+                .collect(java.util.stream.Collectors.joining(", "));
+        return "── " + game.gameId() + " — " + name(game.level().name()) + " — " + table;
+    }
+
+    /**
+     * Says what a phase is for, in one clause.
+     *
+     * <p>What the player can now do, not which commands do it — {@code help} lists those, and
+     * restating them here would be the same list in two places drifting apart.
+     *
+     * <p>Exhaustive over {@link GamePhase} with no {@code default}, so a phase added later
+     * stops the build here rather than printing its own name back at a player as though that
+     * explained anything.
+     *
+     * @param phase where the game has got to
+     * @return what it is for
+     */
+    public static String purposeOf(GamePhase phase) {
+        return switch (phase) {
+            case LOBBY -> "waiting for the table to fill";
+            case BUILDING -> "build a ship out of what is on the table";
+            case VALIDATION -> "put right whatever will not fly";
+            case CREW_PLACEMENT -> "put people and aliens in the cabins";
+            case FLIGHT -> "the cards are turned over one at a time";
+            case SCORING -> "the ledger is settled";
+            case FINISHED -> "nothing left but the final board";
+        };
     }
 
     private static String threat(FlightEvent.ThreatResolved threat) {
