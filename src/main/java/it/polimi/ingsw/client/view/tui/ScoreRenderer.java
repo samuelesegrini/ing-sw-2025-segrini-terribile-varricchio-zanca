@@ -19,6 +19,16 @@ import java.util.List;
  */
 public final class ScoreRenderer {
 
+    /**
+     * One layout, used for the headings and for the numbers under them.
+     *
+     * <p>Written once rather than twice. Two format strings that have to agree are two format
+     * strings that will not: the headings were a column wider than the rows for as long as
+     * "prettiest" had eight columns to sit in and nine characters to do it with, and
+     * {@link String#format} pads but never truncates, so it simply pushed the rest along.
+     */
+    private static final String COLUMNS = "%-3s%-12s%8s%10s%8s%8s%8s%9s";
+
     private ScoreRenderer() {
     }
 
@@ -43,7 +53,7 @@ public final class ScoreRenderer {
     }
 
     private static String header() {
-        return String.format("%-3s%-12s%8s%8s%8s%8s%8s%9s",
+        return String.format(COLUMNS,
                 "", "player", "finish", "prettiest", "goods", "earned", "lost", "total");
     }
 
@@ -53,7 +63,7 @@ public final class ScoreRenderer {
                 .map(PlayerView::nickname)
                 .findFirst()
                 .orElse(sheet.player().name().toLowerCase());
-        return String.format("%-3s%-12s%8s%8s%8s%8s%8s%9d",
+        return String.format(COLUMNS,
                 (place + 1) + ".",
                 name,
                 sheet.finishedTheFlight() ? String.valueOf(sheet.finishReward()) : "—",
@@ -61,7 +71,7 @@ public final class ScoreRenderer {
                 sheet.goodsSold(),
                 sheet.creditsEarned(),
                 sheet.lostComponents() == 0 ? "—" : "-" + sheet.lostComponents(),
-                sheet.total());
+                String.valueOf(sheet.total()));
     }
 
     /**
