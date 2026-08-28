@@ -36,6 +36,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * above.
  *
  * <p>Nothing here is adapted for RMI. If it had to be, the abstraction would be leaking.
+ *
+ * <p>Components involved: {@link RmiChannel}, {@link RmiServer}, {@link RmiConnector}.
  */
 @DisplayName("an RMI channel")
 class RmiChannelTest extends ChannelContract {

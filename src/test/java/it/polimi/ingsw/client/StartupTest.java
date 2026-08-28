@@ -16,6 +16,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * <p>Including the one that is easy to get wrong: a port not given has to follow the transport.
  * Asking somebody launching four clients to remember which of two numbers goes with which of
  * two words is asking for a mistake, and the mistake looks like a server that is not there.
+ *
+ * <p>Components involved: {@link Startup}, {@link Transport}, {@link DefaultPorts}.
  */
 class StartupTest {
 

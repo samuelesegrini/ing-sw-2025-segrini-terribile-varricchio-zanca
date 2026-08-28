@@ -50,6 +50,8 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
  * send looks exactly like no send. The second fired a mouse event at the pane, which does not
  * reach the handler at all, because the handler is on the board inside it. Both passed with the
  * guards removed, which is how they were found.
+ *
+ * <p>Components involved: {@link ShipyardPane}, {@link Artwork}, {@link TileImages}.
  */
 class ShipyardPaneTest {
 

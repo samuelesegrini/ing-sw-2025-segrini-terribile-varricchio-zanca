@@ -46,6 +46,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * orderly close still leaves the last snapshot on disk and nothing in memory, which is what
  * recovery has to work from either way. What a {@code kill -9} adds is an interrupted write,
  * and {@code SnapshotStore} tests that directly by corrupting a partial file.
+ *
+ * <p>Components involved: {@link Server}, {@link LobbyEvent}, {@link ServerSettings}.
  */
 class ServerPersistenceTest {
 

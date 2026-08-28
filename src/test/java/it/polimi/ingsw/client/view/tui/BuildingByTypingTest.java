@@ -32,6 +32,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * <p>Two clients, because the shipyard is the one phase where everybody acts at once and half
  * of what is on the screen is about the other players.
+ *
+ * <p>Components involved: {@link TextInterface}, {@link Server}, {@link ClientState}.
  */
 class BuildingByTypingTest {
 

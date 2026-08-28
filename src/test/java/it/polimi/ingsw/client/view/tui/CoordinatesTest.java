@@ -22,6 +22,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * <p>Worth its own tests because getting it backwards is not a crash. It is a tile welded three
  * squares from where the player meant, found during validation, and paid for with a component —
  * the kind of mistake that looks like the game being unfair rather than the client being wrong.
+ *
+ * <p>Components involved: {@link Coordinates}, {@link Position}, {@link ShipView}.
  */
 class CoordinatesTest {
 

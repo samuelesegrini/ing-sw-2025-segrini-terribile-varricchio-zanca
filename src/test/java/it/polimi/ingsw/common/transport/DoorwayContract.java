@@ -29,6 +29,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * <p>Before {@link Doorway} there was no type to write this against. The two servers were
  * separately tested through their channels, and the promise that they had the same shape was
  * a sentence in {@code RmiServer}'s Javadoc.
+ *
+ * <p>Components involved: {@link Doorway}, {@link Doorman}, {@link AbstractListeningPost}.
  */
 public abstract class DoorwayContract {
 

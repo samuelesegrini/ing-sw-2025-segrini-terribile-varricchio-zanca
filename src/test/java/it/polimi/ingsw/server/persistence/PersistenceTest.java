@@ -44,6 +44,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * <p>The part that has to be right whatever the format is the writing. A server killed halfway
  * through saving must leave the previous snapshot exactly as it was, because the alternative is
  * players being told they have resumed a game that is half somebody else's.
+ *
+ * <p>Components involved: {@link GameSnapshot}, {@link SnapshotStore}, {@link PlayerColor}.
  */
 class PersistenceTest {
 

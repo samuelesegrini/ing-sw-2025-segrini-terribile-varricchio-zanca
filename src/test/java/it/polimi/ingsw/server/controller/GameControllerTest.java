@@ -48,6 +48,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * <p>The connections are {@link LocalChannel}s. No sockets, no registry, no ports — which is
  * the point of having written one: the controller cannot tell the difference, and neither can
  * this test.
+ *
+ * <p>Components involved: {@link GameController}, {@link PlayerColor}, {@link GameEvent}.
  */
 class GameControllerTest {
 

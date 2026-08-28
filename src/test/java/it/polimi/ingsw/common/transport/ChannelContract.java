@@ -34,6 +34,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * calling thread. Everything waits on a queue with a timeout, because the in-process channel
  * delivers on the caller's thread and a socket does not, and a suite that worked for one and
  * not the other would be worth very little.
+ *
+ * <p>Components involved: {@link Channel}, {@link AbstractChannel}, {@link Envelope}.
  */
 public abstract class ChannelContract {
 

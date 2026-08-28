@@ -46,6 +46,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * empty because nobody wrote its case, a firepower rounded on the way out, or a hole in the
  * printed board that a client offers to build on. All three are silent, and all three are
  * what these tests are for.
+ *
+ * <p>Components involved: {@link Projections}, {@link ComponentKind}, {@link Ship}.
  */
 class ProjectionsTest {
 

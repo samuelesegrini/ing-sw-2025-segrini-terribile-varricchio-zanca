@@ -21,6 +21,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * <p>None of this needs a screen, which is the point of keeping the lookup away from anything
  * that draws — the machine that builds this project has no display at all.
+ *
+ * <p>Components involved: {@link Artwork}, {@link GameData}, {@link GameLevel}.
  */
 class ArtworkTest {
 

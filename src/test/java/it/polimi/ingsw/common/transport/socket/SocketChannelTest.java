@@ -35,6 +35,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * <p>The tests below the inherited ones are the socket's own — the things that can only go
  * wrong when there is an operating system in the middle.
+ *
+ * <p>Components involved: {@link StreamChannel}, {@link SocketServer}, {@link SocketConnector}.
  */
 @DisplayName("a socket channel")
 class SocketChannelTest extends ChannelContract {

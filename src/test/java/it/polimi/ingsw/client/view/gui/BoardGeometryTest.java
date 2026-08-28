@@ -19,6 +19,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * coordinates were written to avoid, arriving by a different route.
  *
  * <p>No screen needed: it is arithmetic over a rectangle.
+ *
+ * <p>Components involved: {@link BoardGeometry}, {@link Position}.
  */
 class BoardGeometryTest {
 

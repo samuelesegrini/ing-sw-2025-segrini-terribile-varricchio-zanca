@@ -28,6 +28,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * {@link ShipRendererTest}'s job, on projections, with no server in sight. Splitting the two is
  * the point of the renderers being pure functions: this file can be short and that one can be
  * exhaustive.
+ *
+ * <p>Components involved: {@link TextInterface}, {@link ClientState}, {@link ServerLink}.
  */
 class TextInterfaceTest {
 

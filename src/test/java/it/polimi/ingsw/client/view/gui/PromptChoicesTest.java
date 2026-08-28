@@ -32,6 +32,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * prompt already carries its own options, so this is about not inventing any.
  *
  * <p>No screen: it is a function from a question to a list of things to press.
+ *
+ * <p>Components involved: {@link PromptChoices}, {@link PlayerPrompt}, {@link Position}.
  */
 class PromptChoicesTest {
 

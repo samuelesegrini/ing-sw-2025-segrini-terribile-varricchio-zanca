@@ -26,6 +26,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * <p>Nothing held those three in agreement. This test is what replaces that: the passive
  * answer to a question has to be an answer that question accepts, checked for every variant,
  * so a prompt added later cannot ship with a default its own card would throw out.
+ *
+ * <p>Components involved: {@link PlayerPrompt}, {@link PlayerChoice}, {@link Position}.
  */
 class PlayerPromptTest {
 

@@ -38,6 +38,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * appender on the client's logger tree tears the ship the TUI is drawing, and would do it only
  * when somebody happened to log mid-frame. A trace built at {@code INFO} costs a projection's
  * {@code toString} on every message whether or not anybody reads it.
+ *
+ * <p>Components involved: {@link Tracing}, {@link Command}, {@link Envelope}.
  */
 class TracingTest {
 

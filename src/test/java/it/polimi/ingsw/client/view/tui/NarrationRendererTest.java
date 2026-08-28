@@ -35,6 +35,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * meteor, and a board state cannot tell you that. So every event that says something has to say
  * it in words — and the test at the bottom is the one that matters: it walks every message the
  * protocol defines and insists that anything worth printing prints.
+ *
+ * <p>Components involved: {@link NarrationRenderer}, {@link GameEvent}, {@link FlightEvent}.
  */
 class NarrationRendererTest {
 

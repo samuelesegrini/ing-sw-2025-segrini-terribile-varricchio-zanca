@@ -33,6 +33,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * <p>These run against the real forty cards, so which one comes up is a fact about the seed
  * rather than something arranged. That is deliberate — a flight driven by one hand-picked card
  * would not exercise the loop.
+ *
+ * <p>Components involved: {@link FlightPhase}, {@link PlayerColor}, {@link Game}.
  */
 class FlightPhaseTest {
 

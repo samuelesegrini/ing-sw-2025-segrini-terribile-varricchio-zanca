@@ -39,6 +39,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * never checked is whether asking to reserve a tile in a trial flight gets an answer or gets
  * away with it. So these go through {@code apply}, which is the door a real client knocks on,
  * rather than reaching past it.
+ *
+ * <p>Components involved: {@link Game}, {@link GameLevel}, {@link LevelSpec}.
  */
 class TestFlightTest {
 
