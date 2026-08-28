@@ -32,8 +32,12 @@ DECLARATION = re.compile(
 # the visibility is optional — which means the pattern also matches `if (`, `throw new ...(`
 # and every other line that happens to be two words and a bracket. NOT_A_METHOD is what keeps
 # those out; without it the diagrams filled up with methods called "if".
+#
+# `private` has to be turned away by name. Left to itself the optional visibility skips over it
+# and the return type swallows the rest, so `private <T> List<T> askTheDesk(...)` was drawn as
+# a public `+askTheDesk() : private <T> List<T>` — the word left in the type being the tell.
 PUBLIC_METHOD = re.compile(
-    r"^\s{4}(?:(?:public|protected)\s+)?"
+    r"^\s{4}(?!private\b)(?:(?:public|protected)\s+)?"
     r"(?:static\s+|final\s+|synchronized\s+|abstract\s+|default\s+)*"
     r"([A-Za-z_$][\w.<>\[\],?]*(?:\s*<[^;{]*?>)?)\s+([a-z_$]\w*)\s*\(",
     re.MULTILINE,

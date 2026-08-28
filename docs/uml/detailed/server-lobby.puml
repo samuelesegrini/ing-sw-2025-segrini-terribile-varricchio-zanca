@@ -61,7 +61,6 @@ class Lobby {
   +welcome() : ChannelListener<Command>
   +submit() : void
   +disconnected() : void
-  +askTheDesk() : private <T> List<T>
   +awaitQuiet() : boolean
   +fromSomebodyNamed() : void
   +login() : void

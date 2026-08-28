@@ -117,3 +117,7 @@ A unit of work is done when all of the following hold.
 - [ ] Every public type and method has English Javadoc explaining *why*, not restating the signature.
 - [ ] No method longer than roughly 30 lines and no duplicated logic — both are graded (`requirements.pdf` § 3).
 - [ ] The protocol document is updated if any message changed.
+- [ ] The UML is regenerated **and re-rendered** if a public type changed — both steps, per
+      [`docs/uml/README.md`](docs/uml/README.md). Nothing fails when these go stale: the
+      generator writes `.puml` only, and five milestones ran it without ever running PlantUML,
+      leaving the checked-in images drawing a design that no longer existed.
