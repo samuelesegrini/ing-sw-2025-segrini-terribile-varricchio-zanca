@@ -37,19 +37,29 @@ class InGame <<record>> {
 }
 enum DisconnectionPolicy {
 }
-class Lobby {
+class GameArchive {
   -LOG : Logger
   -data : GameData
   -random : RandomGenerator
   -clock : InstantSource
-  -onDisconnection : DisconnectionPolicy
-  -SHUTDOWN_PATIENCE : Duration
   -soloTimeout : Duration
   -snapshots : Snapshots
+  --
+  +deal() : GameController
+  +recoverAll() : List<GameController>
+  +forget() : void
+}
+class Lobby {
+  -LOG : Logger
+  -archive : GameArchive
+  -onDisconnection : DisconnectionPolicy
+  -SHUTDOWN_PATIENCE : Duration
   -queue : ExecutorService
   -nextGame : AtomicInteger
   -loggedIn : Map<String, Connection>
   -waiting : Map<String, PendingGame>
+  -playing : Map<String, Seated>
+  -games : Map<String, GameController>
   --
   +welcome() : ChannelListener<Command>
   +submit() : void

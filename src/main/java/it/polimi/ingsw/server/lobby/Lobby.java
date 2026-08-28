@@ -9,17 +9,11 @@ import it.polimi.ingsw.common.protocol.LobbyEvent;
 import it.polimi.ingsw.common.transport.Channel;
 import it.polimi.ingsw.common.transport.ChannelListener;
 import it.polimi.ingsw.server.controller.GameController;
-import it.polimi.ingsw.common.game.GameLevel;
-import it.polimi.ingsw.server.data.GameData;
-import it.polimi.ingsw.server.persistence.GameSnapshot;
-import it.polimi.ingsw.server.persistence.Snapshots;
-import it.polimi.ingsw.server.model.game.Game;
 import it.polimi.ingsw.server.model.game.Seat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
-import java.time.InstantSource;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -32,7 +26,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.random.RandomGenerator;
 
 /**
  * The front desk: names, tables, and getting people to the right one.
@@ -50,15 +43,11 @@ public final class Lobby implements AutoCloseable {
 
     private static final Logger LOG = LoggerFactory.getLogger(Lobby.class);
 
-    private final GameData data;
-    private final RandomGenerator random;
-    private final InstantSource clock;
+    private final GameArchive archive;
     private final DisconnectionPolicy onDisconnection;
     /** How long to let the worker finish what it was doing before shutting the desk. */
     private static final Duration SHUTDOWN_PATIENCE = Duration.ofSeconds(2);
 
-    private final Duration soloTimeout;
-    private final Snapshots snapshots;
     private final ExecutorService queue;
     private final AtomicInteger nextGame = new AtomicInteger(1);
 
@@ -78,12 +67,8 @@ public final class Lobby implements AutoCloseable {
      *                 how long a game waits for its last player, and where games are kept
      */
     public Lobby(ServerSettings settings) {
-        this.data = settings.data();
-        this.random = settings.random();
-        this.clock = settings.clock();
+        this.archive = new GameArchive(settings);
         this.onDisconnection = settings.onDisconnection();
-        this.soloTimeout = settings.soloTimeout();
-        this.snapshots = settings.snapshots();
         this.queue = Executors.newSingleThreadExecutor(runnable -> {
             Thread thread = new Thread(runnable, "lobby");
             thread.setDaemon(true);
@@ -351,14 +336,7 @@ public final class Lobby implements AutoCloseable {
             seats.add(new Seat(player.nickname(), table.colourOf(player)));
         }
 
-        // A seed of its own, drawn from the desk's shuffle. A game that shared the lobby's
-        // generator could not be written down: reproducing it would mean reproducing every
-        // other game that had drawn from it since.
-        long seed = random.nextLong();
-        Game game = Game.create(table.id(), table.level(), seats, data, new java.util.Random(seed), clock,
-                soloTimeout);
-        GameController controller = new GameController(game, keeping(table.id(), table.level(),
-                seats, seed));
+        GameController controller = archive.deal(table.id(), table.level(), seats);
         games.put(table.id(), controller);
 
         // Everybody is attached before anybody is announced. Announcing as each is bound would
@@ -374,27 +352,6 @@ public final class Lobby implements AutoCloseable {
     }
 
     /**
-     * Returns something that writes this game down whenever it reaches a point worth keeping.
-     *
-     * @param id    what the game is called
-     * @param level which rules
-     * @param seats who is playing
-     * @param seed  its shuffle
-     * @return the keeper the controller calls
-     */
-    private java.util.function.Consumer<Game> keeping(String id, GameLevel level,
-                                                      List<Seat> seats, long seed) {
-        List<GameSnapshot.Seated> written = seats.stream()
-                .map(seat -> new GameSnapshot.Seated(seat.nickname(), seat.colour()))
-                .toList();
-        return game -> {
-            snapshots.save(new GameSnapshot(GameSnapshot.FORMAT, id, level, written,
-                    seed, game.history()));
-            LOG.debug("{} written down, {} commands", id, game.history().size());
-        };
-    }
-
-    /**
      * Picks up every game that was running when the server stopped.
      *
      * <p>They come back with nobody attached: the seats are held under the old nicknames, and
@@ -402,26 +359,13 @@ public final class Lobby implements AutoCloseable {
      * takes after their own connection drops, which is why there is not a second one.
      */
     private void recoverWhatWasKept() {
-        for (GameSnapshot kept : snapshots.loadAll()) {
-            try {
-                Game game = Game.restore(kept, data, clock, soloTimeout);
-                GameController controller = new GameController(game,
-                        keeping(kept.gameId(), kept.level(),
-                                game.seats(), kept.seed()));
-                games.put(kept.gameId(), controller);
-                controller.seats().forEach(seat ->
-                        playing.put(seat.nickname(), new Seated(controller, seat.colour())));
-                LOG.info("{} picked up again, {} commands replayed", kept.gameId(),
-                        kept.accepted().size());
-            } catch (RuntimeException broken) {
-                // One game that cannot be replayed must not stop the server carrying the rest.
-                // The file is kept, because somebody will want to know why, but moved out of
-                // the way: a server that reads this directory at every startup would otherwise
-                // report the same dead game for ever.
-                LOG.warn("could not put {} back, setting it aside: {}", kept.gameId(),
-                        broken.getMessage());
-                snapshots.setAside(kept.gameId());
-            }
+        // Which games came back, and whether one of them could not, is the archive's business.
+        // The desk's business is that the seats are held under the old nicknames, so that
+        // logging in with one finds them.
+        for (GameController controller : archive.recoverAll()) {
+            games.put(controller.game().id(), controller);
+            controller.seats().forEach(seat ->
+                    playing.put(seat.nickname(), new Seated(controller, seat.colour())));
         }
     }
 
@@ -501,7 +445,7 @@ public final class Lobby implements AutoCloseable {
         games.remove(id);
         // A finished game is not worth keeping, and one left behind would come back from the
         // dead the next time the server started.
-        snapshots.delete(id);
+        archive.forget(id);
         LOG.debug("{} reclaimed, nobody left at it", id);
         controller.announceToEveryone(new GameEvent.GameEnded());
         controller.awaitQuiet(Duration.ofSeconds(1));
