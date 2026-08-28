@@ -71,8 +71,10 @@ class LobbyTest {
     /**
      * Swaps in a lobby that ends a game when somebody leaves it.
      *
-     * <p>Requirement L4's baseline, which the requirements are explicit has to stay reachable
-     * even once AF4 replaces it.
+     * <p>Requirement L4's baseline. Keeping it reachable is a decision rather than a
+     * requirement — the PDF says nothing about it, and §&nbsp;2.3 lets an advanced feature
+     * supersede what it replaces — but keeping it means it has to work, which is what these
+     * tests are for.
      */
     private void withTheBaselinePolicy() {
         lobby.close();
