@@ -31,11 +31,14 @@ class Glyphs {
   +arrow() : char
 }
 class Help {
-  -ALWAYS : List<Line>
-  -LOBBY : List<Line>
+  -ALWAYS : List<Verb>
+  -LOBBY : List<Verb>
   --
   +inTheLobby() : List<String>
   +during() : List<String>
+  +verbsDuring() : List<Verb>
+  +always() : List<Verb>
+  +inTheLobbyVerbs() : List<Verb>
 }
 class LobbyRenderer {
   +render() : List<String>
@@ -99,6 +102,11 @@ class Typed <<record>> {
   +word() : Optional<String>
   +number() : OptionalInt
   +rest() : String
+}
+class Verb <<record>> {
+  +of() : Verb
+  +matches() : boolean
+  +rendered() : String
 }
 
 Reading <|.. Answer

@@ -14,26 +14,19 @@ import java.util.List;
  */
 public final class Help {
 
-    /** One command and what it does. */
-    private record Line(String form, String meaning) {
+    private static final List<Verb> ALWAYS = List.of(
+            Verb.of("help", "this list", "help", "?"),
+            Verb.of("look [player]", "show a ship — yours, or somebody else's", "look"),
+            Verb.of("yard", "the shipyard, while it is open", "yard", "pool", "shipyard"),
+            Verb.of("scores", "the ledger, once there is one", "scores", "ledger"),
+            Verb.of("quit", "leave", "quit", "exit"));
 
-        String rendered() {
-            return "  " + String.format("%-22s", form) + meaning;
-        }
-    }
-
-    private static final List<Line> ALWAYS = List.of(
-            new Line("help", "this list"),
-            new Line("look [player]", "show a ship — yours, or somebody else's"),
-            new Line("scores", "the ledger, once there is one"),
-            new Line("quit", "leave"));
-
-    private static final List<Line> LOBBY = List.of(
-            new Line("name <nickname>", "claim a name, or take back a seat you dropped out of"),
-            new Line("games", "list the games waiting for players"),
-            new Line("new <2-4> [test]", "open a game; add 'test' for the test flight"),
-            new Line("join <game>", "take a seat at one"),
-            new Line("leave", "give up a seat before the game starts"));
+    private static final List<Verb> LOBBY = List.of(
+            Verb.of("name <nickname>", "claim a name, or take back a seat you dropped out of", "name", "login"),
+            Verb.of("games", "list the games waiting for players", "games", "list"),
+            Verb.of("new <2-4> [test]", "open a game; add 'test' for the test flight", "new", "create"),
+            Verb.of("join <game>", "take a seat at one", "join"),
+            Verb.of("leave", "give up a seat before the game starts", "leave"));
 
     private Help() {
     }
@@ -58,50 +51,83 @@ public final class Help {
                 commandsDuring(phase));
     }
 
-    private static List<Line> commandsDuring(GamePhase phase) {
+    /**
+     * Returns every word a player can type in a phase, and what each one does.
+     *
+     * <p>Package-visible so that the vocabulary can be checked against the code that matches
+     * it. A verb accepted by a handler and missing from here is a command nobody can find, and
+     * one declared here and matched by nothing is a line of help pointing at nothing; neither
+     * shows up in ordinary use, so a test reads both and compares them.
+     *
+     * @param phase where the game has got to
+     * @return the verbs legal in it
+     */
+    static List<Verb> verbsDuring(GamePhase phase) {
+        return commandsDuring(phase);
+    }
+
+    /**
+     * Returns the words a player can always type, whatever is happening.
+     *
+     * @return the verbs
+     */
+    static List<Verb> always() {
+        return ALWAYS;
+    }
+
+    /**
+     * Returns the words a player can type before they are in a game.
+     *
+     * @return the verbs
+     */
+    static List<Verb> inTheLobbyVerbs() {
+        return LOBBY;
+    }
+
+    private static List<Verb> commandsDuring(GamePhase phase) {
         return switch (phase) {
             case BUILDING -> List.of(
-                    new Line("draw", "take the top tile off the heap"),
-                    new Line("take <tile>", "take one from the discard pile"),
-                    new Line("pile", "put the tile in hand on the discard pile"),
-                    new Line("keep", "set the tile in hand aside for later"),
-                    new Line("back <tile>", "take back one you set aside"),
-                    new Line("put <row> <col> [turns]", "put the tile in hand down"),
-                    new Line("turn <row> <col> <turns>", "move or turn it before welding"),
-                    new Line("weld", "make it part of the ship"),
-                    new Line("peek <pile>", "look at a pile of cards (level II)"),
-                    new Line("drop", "put the pile back"),
-                    new Line("flip", "turn the hourglass"),
-                    new Line("done [space]", "finish, and take a place on the starting line"));
+                    Verb.of("draw", "take the top tile off the heap", "draw"),
+                    Verb.of("take <tile>", "take one from the discard pile", "take"),
+                    Verb.of("pile", "put the tile in hand on the discard pile", "pile", "return"),
+                    Verb.of("keep", "set the tile in hand aside for later", "keep", "reserve"),
+                    Verb.of("back <tile>", "take back one you set aside", "back"),
+                    Verb.of("put <row> <col> [turns]", "put the tile in hand down", "put", "place"),
+                    Verb.of("turn <row> <col> <turns>", "move or turn it before welding", "turn", "move"),
+                    Verb.of("weld", "make it part of the ship", "weld"),
+                    Verb.of("peek <pile>", "look at a pile of cards (level II)", "peek", "scout"),
+                    Verb.of("drop", "put the pile back", "drop"),
+                    Verb.of("flip", "turn the hourglass", "flip"),
+                    Verb.of("done [space]", "finish, and take a place on the starting line", "done", "finish"));
             case VALIDATION -> List.of(
-                    new Line("scrap <row> <col>", "throw away a component that cannot stay"),
-                    new Line("keep <row> <col> …", "choose which piece of a broken ship to fly"));
+                    Verb.of("scrap <row> <col>", "throw away a component that cannot stay", "scrap", "remove"),
+                    Verb.of("keep <row> <col> …", "choose which piece of a broken ship to fly", "keep"));
             case CREW_PLACEMENT -> List.of(
-                    new Line("crew <row> <col>", "put two people in a cabin"),
-                    new Line("alien <row> <col> <p|b>", "put a purple or brown alien in one"),
-                    new Line("done", "fill the rest with people and launch"));
+                    Verb.of("crew <row> <col>", "put two people in a cabin", "crew", "people"),
+                    Verb.of("alien <row> <col> <p|b>", "put a purple or brown alien in one", "alien"),
+                    Verb.of("done", "fill the rest with people and launch", "done", "ready", "finish"));
             case FLIGHT -> List.of(
-                    new Line("route", "where everybody is, and who plays first"),
-                    new Line("take / leave", "accept or decline what a card is offering"),
-                    new Line("power [<row> <col> …]", "declare, powering these components"),
-                    new Line("load <colour> <r> <c>", "take a cube a card is offering"),
-                    new Line("move <r> <c> <r> <c> <col>", "shift a cube between holds"),
-                    new Line("drop <r> <c> <colour>", "throw one overboard"),
-                    new Line("done", "finished stowing"),
-                    new Line("crew <r> <c> …", "give up crew, one cabin per person"),
-                    new Line("shield <row> <col>", "put something in front of a shot"),
-                    new Line("hit", "take the shot"),
-                    new Line("keep <n>", "choose which piece of a broken ship to fly on"),
-                    new Line("planet <n>", "land on a planet"),
-                    new Line("give up", "leave the route"));
+                    Verb.of("route", "where everybody is, and who plays first", "route", "board"),
+                    Verb.of("take / leave", "accept or decline what a card is offering", "take", "yes", "leave", "no"),
+                    Verb.of("power [<row> <col> …]", "declare, powering these components", "power", "declare"),
+                    Verb.of("load <colour> <r> <c>", "take a cube a card is offering", "load"),
+                    Verb.of("move <r> <c> <r> <c> <col>", "shift a cube between holds", "move"),
+                    Verb.of("drop <r> <c> <colour>", "throw one overboard", "drop", "jettison"),
+                    Verb.of("done", "finished stowing", "done", "finished"),
+                    Verb.of("crew <r> <c> …", "give up crew, one cabin per person", "crew", "give"),
+                    Verb.of("shield <row> <col>", "put something in front of a shot", "shield", "use", "stop"),
+                    Verb.of("hit", "take the shot", "hit", "take"),
+                    Verb.of("keep <n>", "choose which piece of a broken ship to fly on", "keep"),
+                    Verb.of("planet <n>", "land on a planet", "planet", "land"),
+                    Verb.of("give up", "leave the route", "give", "quitflight"));
             case SCORING, FINISHED -> List.of(
-                    new Line("scores", "the final ledger, line by line"),
-                    new Line("route", "where everybody finished"));
+                    Verb.of("scores", "the final ledger, line by line", "scores", "ledger"),
+                    Verb.of("route", "where everybody finished", "route", "board"));
             case LOBBY -> List.of();
         };
     }
 
-    private static List<String> render(String title, List<Line> commands) {
+    private static List<String> render(String title, List<Verb> commands) {
         List<String> lines = new ArrayList<>();
         lines.add(title);
         commands.forEach(command -> lines.add(command.rendered()));
