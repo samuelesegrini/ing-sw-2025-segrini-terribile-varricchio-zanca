@@ -15,7 +15,6 @@ import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -51,14 +50,7 @@ public final class Lobby implements AutoCloseable {
     private final ExecutorService queue;
     private final AtomicInteger nextGame = new AtomicInteger(1);
 
-    private final Map<String, Connection> loggedIn = new HashMap<>();
-    private final Map<String, PendingGame> waiting = new LinkedHashMap<>();
-    private final Map<String, Seated> playing = new HashMap<>();
-    private final Map<String, GameController> games = new LinkedHashMap<>();
-
-    /** Where a nickname belongs once its game has started. */
-    private record Seated(GameController controller, PlayerColor colour) {
-    }
+    private final Roster roster = new Roster();
 
     /**
      * Opens a lobby.
@@ -133,7 +125,7 @@ public final class Lobby implements AutoCloseable {
         CountDownLatch deskIsClear = new CountDownLatch(1);
         try {
             queue.execute(() -> {
-                running.addAll(games.values());
+                running.addAll(roster.running());
                 deskIsClear.countDown();
             });
             if (!deskIsClear.await(patience.toMillis(), TimeUnit.MILLISECONDS)) {
@@ -169,8 +161,7 @@ public final class Lobby implements AutoCloseable {
             case LobbyCommand.Login ignored ->
                     refuse(from, command, "you are already " + from.nickname());
             case LobbyCommand.ListGames ignored ->
-                    from.send(new LobbyEvent.GamesListed(waiting.values().stream()
-                            .filter(PendingGame::hasRoom)
+                    from.send(new LobbyEvent.GamesListed(roster.withRoom().stream()
                             .map(PendingGame::summary)
                             .toList()));
             case LobbyCommand.CreateGame create -> create(from, create);
@@ -187,19 +178,19 @@ public final class Lobby implements AutoCloseable {
      */
     void login(Connection from, LobbyCommand.Login login) {
         String name = login.nickname();
-        Seated seat = playing.get(name);
-        if (seat != null) {
-            comeBack(from, name, seat);
+        Optional<Roster.Seated> seat = roster.seatOf(name);
+        if (seat.isPresent()) {
+            comeBack(from, name, seat.get());
             return;
         }
-        if (loggedIn.containsKey(name)) {
+        if (roster.isTaken(name)) {
             // Client-side choice, server-side enforcement (requirement L1). The message names
             // the problem so a client can ask for another name rather than guessing.
             refuse(from, login, "somebody is already called " + name);
             return;
         }
         from.nameYourself(name);
-        loggedIn.put(name, from);
+        roster.name(name, from);
         from.send(new LobbyEvent.LoggedIn(name));
         LOG.debug("{} logged in", name);
     }
@@ -211,13 +202,13 @@ public final class Lobby implements AutoCloseable {
      * a seat nobody is attached to <em>is</em> reconnecting. A separate code path would be a
      * second way of doing the same thing, and the two would eventually disagree.
      */
-    private void comeBack(Connection from, String name, Seated seat) {
+    private void comeBack(Connection from, String name, Roster.Seated seat) {
         if (seat.controller().isAttached(seat.colour())) {
             refuse(from, new LobbyCommand.Login(name), "somebody is already called " + name);
             return;
         }
         from.nameYourself(name);
-        loggedIn.put(name, from);
+        roster.name(name, from);
         from.send(new LobbyEvent.LoggedIn(name));
         from.send(new LobbyEvent.JoinedGame(seat.controller().game().id(), seat.colour()));
         // bind sends the whole picture, which is all a returning player needs and exactly what
@@ -232,7 +223,7 @@ public final class Lobby implements AutoCloseable {
         }
         PendingGame table = new PendingGame(
                 "game-" + nextGame.getAndIncrement(), create.level(), create.seats());
-        waiting.put(table.id(), table);
+        roster.open(table);
         LOG.debug("{} opened {} for {} at {}", from.nickname(), table.id(), create.seats(),
                 create.level());
         take(from, table);
@@ -242,20 +233,20 @@ public final class Lobby implements AutoCloseable {
         if (alreadySeated(from)) {
             return;
         }
-        PendingGame table = waiting.get(join.gameId());
-        if (table == null) {
+        Optional<PendingGame> table = roster.table(join.gameId());
+        if (table.isEmpty()) {
             refuse(from, join, "there is no game called " + join.gameId() + " waiting for players");
             return;
         }
-        if (!table.hasRoom()) {
+        if (!table.get().hasRoom()) {
             refuse(from, join, "that game is full");
             return;
         }
-        take(from, table);
+        take(from, table.get());
     }
 
     private boolean alreadySeated(Connection from) {
-        Optional<PendingGame> already = tableOf(from);
+        Optional<PendingGame> already = roster.tableOf(from);
         if (already.isEmpty()) {
             return false;
         }
@@ -265,7 +256,7 @@ public final class Lobby implements AutoCloseable {
     }
 
     private void take(Connection from, PendingGame table) {
-        PlayerColor colour = table.seat(from);
+        PlayerColor colour = roster.join(table, from);
         from.send(new LobbyEvent.JoinedGame(table.id(), colour));
         table.players().stream()
                 .filter(other -> other != from)
@@ -277,22 +268,21 @@ public final class Lobby implements AutoCloseable {
     }
 
     private void leave(Connection from) {
-        tableOf(from).ifPresent(table -> stepAwayFrom(table, from));
+        roster.tableOf(from).ifPresent(table -> stepAwayFrom(table, from));
     }
 
     private void stepAwayFrom(PendingGame table, Connection from) {
-        if (!table.remove(from)) {
+        if (onDisconnection == DisconnectionPolicy.ENDS_THE_GAME) {
+            // Nobody is taken off first, so that the player who left is told along with the
+            // rest. Reaching here at all means the roster had them at this table.
+            endBeforeItStarted(table, from);
             return;
         }
-        if (onDisconnection == DisconnectionPolicy.ENDS_THE_GAME) {
-            endBeforeItStarted(table, from);
+        if (!roster.leave(table, from)) {
             return;
         }
         LOG.debug("{} left {}", from.nickname(), table.id());
         table.players().forEach(other -> other.send(new LobbyEvent.PlayerLeft(from.nickname())));
-        if (table.isEmpty()) {
-            waiting.remove(table.id());
-        }
     }
 
     /**
@@ -308,17 +298,16 @@ public final class Lobby implements AutoCloseable {
      * end and that they hear about it, not that they be hung up on; the started-game path
      * closes channels because a controller is holding them, and there is none here.
      *
-     * @param table who is left at it, the departing player already removed
+     * @param table who is at it, the departing player included
      * @param who   the player who left or dropped
      */
     private void endBeforeItStarted(PendingGame table, Connection who) {
-        waiting.remove(table.id());
         LOG.debug("{} ended before it started: {} left", table.id(), who.nickname());
-        // Whoever just left is told as well. Sending to a connection that has already gone
-        // does nothing, so the dropped case costs an event nobody receives rather than a
-        // special case nobody tests.
-        table.players().forEach(other -> other.send(new GameEvent.GameEnded()));
-        who.send(new GameEvent.GameEnded());
+        // Everybody at it, which still includes whoever just left — sending to a connection
+        // that has already gone does nothing, so the dropped case costs an event nobody
+        // receives rather than a special case nobody tests.
+        table.players().forEach(player -> player.send(new GameEvent.GameEnded()));
+        roster.close(table);
     }
 
     /**
@@ -329,7 +318,6 @@ public final class Lobby implements AutoCloseable {
      * player who joined and changed their mind.
      */
     private void start(PendingGame table) {
-        waiting.remove(table.id());
         List<Connection> players = table.players();
         List<Seat> seats = new ArrayList<>();
         for (Connection player : players) {
@@ -337,15 +325,15 @@ public final class Lobby implements AutoCloseable {
         }
 
         GameController controller = archive.deal(table.id(), table.level(), seats);
-        games.put(table.id(), controller);
+        roster.close(table);
+        roster.started(controller);
 
         // Everybody is attached before anybody is announced. Announcing as each is bound would
         // mean the second player never hears about the first, and four players would end up
         // with four different accounts of the same moment.
         for (Connection player : players) {
-            PlayerColor colour = table.colourOf(player);
-            playing.put(player.nickname(), new Seated(controller, colour));
-            player.handOverTo(colour, controller.attach(colour, player.channel()));
+            player.handOverTo(table.colourOf(player),
+                    controller.attach(table.colourOf(player), player.channel()));
         }
         LOG.debug("{} started, {} at {}", table.id(), seats.size(), table.level());
         players.forEach(player -> controller.announceArrival(table.colourOf(player)));
@@ -362,11 +350,7 @@ public final class Lobby implements AutoCloseable {
         // Which games came back, and whether one of them could not, is the archive's business.
         // The desk's business is that the seats are held under the old nicknames, so that
         // logging in with one finds them.
-        for (GameController controller : archive.recoverAll()) {
-            games.put(controller.game().id(), controller);
-            controller.seats().forEach(seat ->
-                    playing.put(seat.nickname(), new Seated(controller, seat.colour())));
-        }
+        archive.recoverAll().forEach(roster::started);
     }
 
     // ------------------------------------------------------------------ leaving
@@ -382,8 +366,8 @@ public final class Lobby implements AutoCloseable {
      * @param gone the connection
      */
     void leftTheDesk(String name, Connection gone) {
-        loggedIn.remove(name, gone);
-        tableOf(gone).ifPresent(table -> stepAwayFrom(table, gone));
+        roster.release(name, gone);
+        roster.tableOf(gone).ifPresent(table -> stepAwayFrom(table, gone));
     }
 
     /**
@@ -393,39 +377,25 @@ public final class Lobby implements AutoCloseable {
      * @param gone the connection
      */
     void leftAGame(String name, Connection gone) {
-        loggedIn.remove(name, gone);
-        if (onDisconnection == DisconnectionPolicy.ENDS_THE_GAME) {
-            abandon(playing.get(name));
+        roster.release(name, gone);
+        Optional<Roster.Seated> seat = roster.seatOf(name);
+        if (seat.isEmpty()) {
             return;
         }
-        // The seat stays in `playing`, unattached, so that logging in again finds it. The
-        // game itself carries on without them: the controller has already been told, and a
-        // flight that stopped every time somebody's laptop did would be a worse game.
+        if (onDisconnection == DisconnectionPolicy.ENDS_THE_GAME) {
+            abandon(seat.get().controller());
+            return;
+        }
+        // The seat stays, unattached, so that logging in again finds it. The game itself
+        // carries on without them: the controller has already been told, and a flight that
+        // stopped every time somebody's laptop did would be a worse game.
         //
         // Unless they were the last one. A game with nobody connected to it has nobody to
         // carry on for, and holding it open costs a thread, a game, and every nickname at
         // that table — for as long as the server runs.
-        Seated seat = playing.get(name);
-        if (seat != null && nobodyIsLeftAt(seat.controller())) {
-            abandon(seat);
+        if (!roster.anybodyLeftAt(seat.get().controller())) {
+            abandon(seat.get().controller());
         }
-    }
-
-    /**
-     * Tells whether every seat at a table is empty.
-     *
-     * <p>Answered from the desk's own books rather than by asking the game. The game learns
-     * about a disconnection on its own queue, so asking it here races with that: the second
-     * player can hang up before the game has been told about the first, and the table looks
-     * occupied when nobody is in it. Who is logged in is this thread's own business and cannot
-     * be stale.
-     *
-     * @param controller the game
-     * @return {@code true} when nobody at that table is still connected
-     */
-    private boolean nobodyIsLeftAt(GameController controller) {
-        return controller.seats().stream()
-                .noneMatch(seat -> loggedIn.containsKey(seat.nickname()));
     }
 
     /**
@@ -435,14 +405,9 @@ public final class Lobby implements AutoCloseable {
      * because a client that is simply hung up on cannot tell the difference between a game that
      * ended and a network that failed.
      */
-    private void abandon(Seated seat) {
-        if (seat == null) {
-            return;
-        }
-        GameController controller = seat.controller();
+    private void abandon(GameController controller) {
         String id = controller.game().id();
-        controller.seats().forEach(sitting -> playing.remove(sitting.nickname()));
-        games.remove(id);
+        roster.reclaim(controller);
         // A finished game is not worth keeping, and one left behind would come back from the
         // dead the next time the server started.
         archive.forget(id);
@@ -450,12 +415,6 @@ public final class Lobby implements AutoCloseable {
         controller.announceToEveryone(new GameEvent.GameEnded());
         controller.awaitQuiet(Duration.ofSeconds(1));
         controller.close();
-    }
-
-    private Optional<PendingGame> tableOf(Connection player) {
-        return waiting.values().stream()
-                .filter(table -> table.players().contains(player))
-                .findFirst();
     }
 
     /**
@@ -477,7 +436,7 @@ public final class Lobby implements AutoCloseable {
      * @return their identifiers, oldest first
      */
     public List<String> tablesWaiting() {
-        return List.copyOf(waiting.keySet());
+        return roster.tablesWaiting();
     }
 
     /**
@@ -486,7 +445,7 @@ public final class Lobby implements AutoCloseable {
      * @return their identifiers, oldest first
      */
     public List<String> gamesRunning() {
-        return List.copyOf(games.keySet());
+        return roster.gamesRunning();
     }
 
     @Override
@@ -506,7 +465,7 @@ public final class Lobby implements AutoCloseable {
         }
         // A copy even so: closing a controller can call back in, and a collection being walked
         // is a poor place to be modified from.
-        List.copyOf(games.values()).forEach(GameController::close);
-        games.clear();
+        roster.running().forEach(GameController::close);
+        roster.forgetEveryGame();
     }
 }
