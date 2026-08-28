@@ -522,6 +522,74 @@ class LobbyTest {
         }
 
         @Test
+        @DisplayName("a table still filling ends too, because the baseline says even in start-up")
+        void aTableStillFillingEndsWhenSomebodyDrops() {
+            withTheBaselinePolicy();
+            Client host = new Client().login("samuele");
+            settle();
+            host.send(new LobbyCommand.CreateGame(GameLevel.LEVEL_II, 4));
+            settle();
+            Client guest = new Client().login("chiara");
+            settle();
+            guest.send(new LobbyCommand.JoinGame("game-1"));
+            settle();
+
+            guest.hangUp();
+            settle();
+
+            // requirements.pdf 2.2 names this case by hand: the game must terminate "anche se
+            // in fase di avvio" and everybody must be told. Before this the host was left at a
+            // table waiting for a seat that would never fill, told only that somebody had left.
+            assertEquals(List.of(), lobby.tablesWaiting(), "the table should be gone");
+            assertFalse(host.only(GameEvent.GameEnded.class).isEmpty(),
+                    "everybody still at the table has to be told it is over");
+        }
+
+        @Test
+        @DisplayName("and ends the same way when somebody leaves rather than drops")
+        void aTableStillFillingEndsWhenSomebodyLeaves() {
+            withTheBaselinePolicy();
+            Client host = new Client().login("samuele");
+            settle();
+            host.send(new LobbyCommand.CreateGame(GameLevel.LEVEL_II, 4));
+            settle();
+            Client guest = new Client().login("chiara");
+            settle();
+            guest.send(new LobbyCommand.JoinGame("game-1"));
+            settle();
+
+            guest.send(new LobbyCommand.LeaveGame());
+            settle();
+
+            // The baseline names both cases in one sentence — players leaving, and the network
+            // dropping — so one policy gives one answer to both.
+            assertEquals(List.of(), lobby.tablesWaiting());
+            assertFalse(host.only(GameEvent.GameEnded.class).isEmpty());
+        }
+
+        @Test
+        @DisplayName("but the default policy leaves the table standing, a seat lighter")
+        void underTheDefaultPolicyTheTableCarriesOn() {
+            Client host = new Client().login("samuele");
+            settle();
+            host.send(new LobbyCommand.CreateGame(GameLevel.LEVEL_II, 4));
+            settle();
+            Client guest = new Client().login("chiara");
+            settle();
+            guest.send(new LobbyCommand.JoinGame("game-1"));
+            settle();
+
+            guest.hangUp();
+            settle();
+
+            // AF4 replaces the baseline, and a table that dissolved because one person changed
+            // their mind would be a worse game than one that waits for somebody else.
+            assertEquals(List.of("game-1"), lobby.tablesWaiting());
+            assertFalse(host.only(LobbyEvent.PlayerLeft.class).isEmpty());
+            assertTrue(host.only(GameEvent.GameEnded.class).isEmpty(), "nothing ended");
+        }
+
+        @Test
         @DisplayName("under the baseline policy, somebody leaving ends the game for everybody")
         void theBaselinePolicy() {
             withTheBaselinePolicy();

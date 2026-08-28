@@ -43,6 +43,8 @@ class LobbyRenderer {
 }
 class NarrationRenderer {
   +render() : Optional<String>
+  +gameBegan() : String
+  +purposeOf() : String
 }
 class PromptRenderer {
   +render() : List<String>
@@ -75,6 +77,7 @@ class TextInterface {
   -in : BufferedReader
   -out : PrintStream
   -screen : Object
+  -announcedTheGame : boolean
   -narrationShown : int
   -stopped : boolean
   -promptShowing : boolean

@@ -15,6 +15,7 @@ class Seated <<record>> {
 class Recorded <<record>> {
 }
 class SnapshotStore {
+  -LOG : Logger
   -SUFFIX : String
   -PARTIAL : String
   -BROKEN : String

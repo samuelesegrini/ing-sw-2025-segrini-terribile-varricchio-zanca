@@ -6,6 +6,7 @@ skinparam classAttributeIconSize 0
 title it.polimi.ingsw.server.controller
 
 class GameController {
+  -LOG : Logger
   -TICK : Duration
   -SHUTDOWN_PATIENCE : Duration
   -game : Game
