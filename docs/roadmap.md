@@ -296,3 +296,48 @@ landed or makes a claim in the history true.
 - `main` keeps the previous submission untouched until the rebuild is deliverable;
   `v1.0.0` is the one release that merges into it. Milestones after it are tagged
   on `develop` and merged to `main` only when a new submission is cut.
+
+## M17 — What a whole game shows
+
+Nothing here was found by reading the code or by running the suite. All four
+came out of one sitting: two players, socket and RMI, a level II game played
+from the lobby to the final ledger through the built jars, and then the server
+stopped and started again.
+
+- **The terminal goes silent after two hundred events** (#195). The client
+  keeps the last two hundred events; the screen kept a count of everything it
+  had ever printed and handed that count back as an index into the window. They
+  agree until the two hundredth event and never again. The board went on
+  redrawing — a board is read off the last state, not off the story — so the
+  game looked alive while saying nothing: no phase announced itself, no card
+  was turned over, no prompt arrived, no ledger. The server had sent each player
+  1846 events.
+- **A saved game could not be put back** (#201). `DeckComposition` built its
+  counts in an `EnumMap` and threw that order away on the last line with
+  `Map.copyOf`, whose iteration order Java reshuffles once per JVM on purpose.
+  The deal walked that map to fill the piles, so the deck was settled by a coin
+  toss taken at process start rather than by the seed. Replaying one snapshot in
+  four fresh JVMs dealt three different first cards. Restarting the server put a
+  level II game back about half the time and set it aside as broken the rest.
+- **The final ledger was misaligned** (#197). `"prettiest"` is nine characters
+  in an eight-wide column, and `String.format` pads but never truncates, so
+  every heading after it sat one place left of the numbers it named. The
+  headings and the rows were two format strings kept in step by hand.
+- **The validation help described a command that does not exist** (#198).
+  `keep <row> <col>` where the handler reads a piece number, in the one phase
+  whose job is putting a broken ship right — and a hint after an unrecognised
+  word that named `scrap` and never `keep` at all.
+
+**What the suite could not have caught, and why.** Three of the four are
+invisible from inside a single test run. The narration cursor only diverges past
+the two-hundredth event and no test goes that far. The deck order is drawn once
+and held for the life of the process, so any two decks dealt in one JVM always
+agree — only a real restart can see it, and nothing in the suite restarts. The
+validation hint needs a ship that actually broke, and every ship the tests build
+is whole. `VocabularyTest` compares the words a handler matches against the
+words the help declares, both ways, and has nothing to say about the arguments
+after them.
+
+Exit criterion: a level II game played end to end through the jars over both
+transports, and a server restarted mid-flight that picks the game up again —
+both observed, not inferred.
