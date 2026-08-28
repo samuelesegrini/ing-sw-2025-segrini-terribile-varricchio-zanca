@@ -1,6 +1,6 @@
 # Roadmap
 
-Fourteen milestones, ordered so that each one is independently demonstrable and
+Fifteen milestones, ordered so that each one is independently demonstrable and
 nothing is built before the thing it depends on. The first twelve carry the
 submission; M12 was the first that changed no behaviour at all. Milestones map one-to-one onto
 GitHub milestones; every issue belongs to exactly one.
@@ -26,6 +26,7 @@ found in a unit test are free.
 | M12 | Polymorphic dispatch | Dispatch moved back into the hierarchies that own it | `v1.1.0` |
 | M13 | Seams and silent failures | A missing transport seam, two unchecked casts, a thread that dies quietly | `v1.2.0` |
 | M14 | What the jar actually does | An advanced feature the shipped server could not reach | `v1.3.0` |
+| M15 | What the requirements actually say | The derived spec read back against the PDF it came from | `v1.5.0` |
 
 ## M0 — Foundations
 
@@ -206,6 +207,43 @@ command; § 3.10 has the reasoning.
 Exit criterion: kill the running server jar mid-flight, start it again on the
 same ports, and log in with the nickname you had — by hand, not only in a
 test.
+
+## M15 — What the requirements actually say
+
+M14 was found by running the project instead of reading the tests. M15 was
+found by reading `documentation/rules-requirements/requirements.pdf` instead
+of reading `docs/specs/requirements.md`.
+
+Most of the PDF is met, and was checked item by item: validation done by the
+application rather than by the other players, every player able to see every
+ship in every phase through both interfaces, nickname uniqueness enforced
+server-side, one game at a time per client, the creating player choosing the
+level and the seat count, both transports in one game, both interfaces
+selectable at startup, and all four advanced features.
+
+What was not met is smaller and more awkward than a missing feature.
+
+- **The derived spec had drifted from the PDF** (#169), and not harmlessly:
+  it states as requirement two things the PDF does not say, and reading it
+  rather than the source produced a wrong recommendation that had to be
+  withdrawn. A spec that yields wrong answers is worse than no spec, because
+  it is trusted.
+- **A policy did not do what it documents** (#170). `ENDS_THE_GAME` models the
+  baseline rule that a disconnection ends the game *"anche se in fase di
+  avvio"*, and honoured it only for games that had already started.
+- **Half the test classes omit something the PDF asks for by name** (#171).
+  §3 wants each test to state the functionality tested **and the components
+  involved**; 44 of 93 did both, 49 did only the first.
+
+**The rule this milestone leaves behind.** `requirements.pdf` is normative.
+`docs/specs/requirements.md` is a reading of it, is labelled as one, and does
+not put words in its mouth. Where the PDF is silent — and it is silent about
+what happens when a table empties completely — the team's answer is recorded
+as a decision rather than dressed up as a requirement.
+
+Exit criterion: every claim in the derived spec is either a quotation or
+labelled a decision, and the two defects above are closed with tests that
+failed first.
 
 ## Working agreement
 
