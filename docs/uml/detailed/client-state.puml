@@ -9,6 +9,7 @@ class ClientState {
   -LOG : Logger
   -LOG_LENGTH : int
   -narration : Deque<Event>
+  -heard : long
   -listeners : List<Runnable>
   -nickname : String
   -colour : PlayerColor
@@ -17,7 +18,6 @@ class ClientState {
   -openGames : List<GameSummary>
   -lastRefusal : String
   -lostConnection : String
-  -connected : boolean
   --
   +apply() : void
   +disconnected() : void
@@ -31,7 +31,10 @@ class ClientState {
   +lostConnection() : Optional<String>
   +isConnected() : boolean
   +narration() : List<Event>
-  +narrationAfter() : List<Event>
+  +heard() : long
+  +narrationAfter() : Unshown
+}
+class Unshown <<record>> {
 }
 
 @enduml
