@@ -3,8 +3,6 @@ package it.polimi.ingsw;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -13,7 +11,6 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -86,24 +83,13 @@ class LayeringTest {
 
     private static List<Path> sourcesIn(String layer) {
         Path root = SOURCES.resolve(ROOT.replace('.', '/')).resolve(layer);
-        if (!Files.isDirectory(root)) {
-            return List.of();
-        }
-        try (Stream<Path> tree = Files.walk(root)) {
-            return tree.filter(path -> path.toString().endsWith(".java")).toList();
-        } catch (IOException problem) {
-            throw new UncheckedIOException("cannot read the " + layer + " sources", problem);
-        }
+        // A layer with no sources at all is not an error — it is a layer nobody has written
+        // anything in yet, and there is nothing there to point the wrong way.
+        return Files.isDirectory(root) ? SourceTree.filesUnder(root) : List.of();
     }
 
     private static List<String> referencesOf(Path source) {
-        String text;
-        try {
-            text = Files.readString(source);
-        } catch (IOException problem) {
-            throw new UncheckedIOException("cannot read " + source, problem);
-        }
-        Matcher matcher = REFERENCE.matcher(text);
+        Matcher matcher = REFERENCE.matcher(SourceTree.read(source));
         return matcher.results().map(result -> result.group(1)).toList();
     }
 
