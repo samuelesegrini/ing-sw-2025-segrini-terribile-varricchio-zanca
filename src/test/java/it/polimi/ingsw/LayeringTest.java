@@ -39,7 +39,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * inline — but a fully qualified {@code it.polimi.ingsw.server.…} inside a client file is
  * not something that happens by accident, and the compiler catches the rest.
  *
- * <p>Components involved: every type under {@link it.polimi.ingsw.common}, {@link it.polimi.ingsw.server} and {@link it.polimi.ingsw.client}.
+ * <p>Components involved: every type under {@link it.polimi.ingsw.common}, {@link
+ * it.polimi.ingsw.server} and {@link it.polimi.ingsw.client}.
  */
 class LayeringTest {
 

@@ -21,7 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * component lost along the route, worth a credit off the final score. Modelling it as a
  * free parking space would remove the whole cost of the decision.
  *
- * <p>Components involved: {@link ShipBuilder}, {@link ComponentPool}, {@link ShipBoardSpec}.
+ * <p>Components involved: {@link ShipBuilder}, {@link ComponentPool}, {@link it.polimi.ingsw.server.model.board.ShipBoardSpec}.
  */
 class ReservationTest {
 

@@ -25,7 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * final — which makes drawing a tile a commitment to the previous one rather than a
  * neutral act.
  *
- * <p>Components involved: {@link ShipBuilder}, {@link ComponentPool}, {@link Ship}.
+ * <p>Components involved: {@link ShipBuilder}, {@link ComponentPool}, {@link it.polimi.ingsw.server.model.ship.Ship}.
  */
 class ShipBuilderTest {
 

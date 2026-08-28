@@ -211,7 +211,7 @@ test.
 ## M15 — What the requirements actually say
 
 M14 was found by running the project instead of reading the tests. M15 was
-found by reading `documentation/rules-requirements/requirements.pdf` instead
+found by reading [`docs/rules/requirements.pdf`](rules/requirements.pdf) instead
 of reading `docs/specs/requirements.md`.
 
 Most of the PDF is met, and was checked item by item: validation done by the
@@ -230,7 +230,7 @@ What was not met is smaller and more awkward than a missing feature.
   it is trusted.
 - **A policy did not do what it documents** (#170). `ENDS_THE_GAME` models the
   baseline rule that a disconnection ends the game *"anche se in fase di
-  avvio"*, and honoured it only for games that had already started.
+  avvio"* — even while it is still filling —, and honoured it only for games that had already started.
 - **Half the test classes omit something the PDF asks for by name** (#171).
   §3 wants each test to state the functionality tested **and the components
   involved**; 44 of 93 did both, 49 did only the first.
