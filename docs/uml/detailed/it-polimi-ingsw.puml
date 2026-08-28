@@ -15,6 +15,7 @@ class ServerMain {
   -GAMES : Path
   --
   +main() : void
+  +portFrom() : int
 }
 
 @enduml

@@ -80,7 +80,22 @@ public final class ServerMain {
         }
     }
 
-    private static int portFrom(String[] args, int index, int fallback) {
+    /**
+     * Reads a port from the arguments, falling back when it is missing or not a number.
+     *
+     * <p>The ports are positional — {@code server.jar [socketPort] [rmiPort]} — so an option
+     * that wandered in here is not a port and is said so out loud rather than swallowed. Zero
+     * is a port: it asks the operating system for a free one.
+     *
+     * <p>Package-private so a test can read it. {@code main} itself blocks for ever on purpose,
+     * which is the whole of what is left once this is taken out of it.
+     *
+     * @param args     the arguments, with the trace flag already removed
+     * @param index    which port this is
+     * @param fallback what to use when there is nothing usable at that index
+     * @return the port
+     */
+    static int portFrom(String[] args, int index, int fallback) {
         if (args.length <= index) {
             return fallback;
         }
