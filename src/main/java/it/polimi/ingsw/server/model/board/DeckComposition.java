@@ -37,7 +37,11 @@ public record DeckComposition(int piles, Map<CardLevel, Integer> cardsPerPile, b
         if (counts.isEmpty()) {
             throw new IllegalArgumentException("a pile needs at least one card");
         }
-        cardsPerPile = Map.copyOf(counts);
+        // Kept as the EnumMap, which iterates in the order the levels are declared.
+        // Map.copyOf would hand back one of the immutable maps, and those are deliberately
+        // shuffled once per JVM — a deck dealt from it comes out differently in the next
+        // process, and a saved game replayed against it stops making sense.
+        cardsPerPile = java.util.Collections.unmodifiableMap(counts);
     }
 
     /**

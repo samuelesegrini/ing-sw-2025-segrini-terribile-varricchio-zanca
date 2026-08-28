@@ -64,12 +64,16 @@ public final class AdventureDeck {
         List<List<AdventureCardIdentity>> piles = new ArrayList<>();
         for (int pile = 0; pile < composition.piles(); pile++) {
             List<AdventureCardIdentity> cards = new ArrayList<>();
-            composition.cardsPerPile().forEach((level, count) -> {
+            // Walked in the order the levels are declared, like the shuffle above, rather
+            // than in whatever order the composition's map offers them. Which cards land in
+            // which pile depends on it, so a deck has to be settled by its seed alone.
+            for (CardLevel level : CardLevel.values()) {
+                int count = composition.cardsPerPile().getOrDefault(level, 0);
                 List<AdventureCardIdentity> pool = shuffled.get(level);
                 for (int i = 0; i < count; i++) {
                     cards.add(pool.removeLast());
                 }
-            });
+            }
             piles.add(List.copyOf(cards));
         }
         return new AdventureDeck(List.copyOf(piles));
