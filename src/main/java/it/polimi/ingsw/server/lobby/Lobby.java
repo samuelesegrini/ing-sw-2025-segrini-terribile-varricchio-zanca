@@ -299,11 +299,41 @@ public final class Lobby implements AutoCloseable {
         if (!table.remove(from)) {
             return;
         }
+        if (onDisconnection == DisconnectionPolicy.ENDS_THE_GAME) {
+            endBeforeItStarted(table, from);
+            return;
+        }
         LOG.debug("{} left {}", from.nickname(), table.id());
         table.players().forEach(other -> other.send(new LobbyEvent.PlayerLeft(from.nickname())));
         if (table.isEmpty()) {
             waiting.remove(table.id());
         }
+    }
+
+    /**
+     * Ends a table that never became a game.
+     *
+     * <p>The baseline rule this policy models says a game ends when somebody leaves it or their
+     * connection drops, <em>"anche se in fase di avvio"</em> — even while it is still filling —
+     * and that every player is told. Only the started case was honoured before, which left the
+     * others sitting at a table waiting for a seat that was never going to be taken, told
+     * nothing except that somebody had gone.
+     *
+     * <p>They keep their connections and their nicknames. The requirement asks that the game
+     * end and that they hear about it, not that they be hung up on; the started-game path
+     * closes channels because a controller is holding them, and there is none here.
+     *
+     * @param table who is left at it, the departing player already removed
+     * @param who   the player who left or dropped
+     */
+    private void endBeforeItStarted(PendingGame table, Connection who) {
+        waiting.remove(table.id());
+        LOG.debug("{} ended before it started: {} left", table.id(), who.nickname());
+        // Whoever just left is told as well. Sending to a connection that has already gone
+        // does nothing, so the dropped case costs an event nobody receives rather than a
+        // special case nobody tests.
+        table.players().forEach(other -> other.send(new GameEvent.GameEnded()));
+        who.send(new GameEvent.GameEnded());
     }
 
     /**

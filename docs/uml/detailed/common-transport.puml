@@ -6,6 +6,7 @@ skinparam classAttributeIconSize 0
 title it.polimi.ingsw.common.transport
 
 class AbstractChannel {
+  -LOG : Logger
   -CLOCK : ScheduledExecutorService
   -listener : AtomicReference<ChannelListener<I>>
   -expected : Class<I>
@@ -13,6 +14,7 @@ class AbstractChannel {
   -lastHeard : AtomicLong
   -heartbeat : AtomicReference<ScheduledFuture<?>>
   -liveness : Liveness
+  -id : String
   --
   +listenWith() : void
   +start() : void

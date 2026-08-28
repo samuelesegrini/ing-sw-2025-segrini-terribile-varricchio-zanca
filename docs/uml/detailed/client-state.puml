@@ -6,6 +6,7 @@ skinparam classAttributeIconSize 0
 title it.polimi.ingsw.client.state
 
 class ClientState {
+  -LOG : Logger
   -LOG_LENGTH : int
   -narration : Deque<Event>
   -listeners : List<Runnable>

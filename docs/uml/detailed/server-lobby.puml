@@ -38,6 +38,7 @@ class InGame <<record>> {
 enum DisconnectionPolicy {
 }
 class Lobby {
+  -LOG : Logger
   -data : GameData
   -random : RandomGenerator
   -clock : InstantSource
@@ -49,7 +50,6 @@ class Lobby {
   -nextGame : AtomicInteger
   -loggedIn : Map<String, Connection>
   -waiting : Map<String, PendingGame>
-  -playing : Map<String, Seated>
   --
   +welcome() : ChannelListener<Command>
   +submit() : void

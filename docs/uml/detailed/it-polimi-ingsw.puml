@@ -6,9 +6,12 @@ skinparam classAttributeIconSize 0
 title it.polimi.ingsw
 
 class ClientMain {
+  -LOG : Logger
+  --
   +main() : void
 }
 class ServerMain {
+  -LOG : Logger
   -GAMES : Path
   --
   +main() : void
