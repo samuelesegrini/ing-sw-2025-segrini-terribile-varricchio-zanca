@@ -56,10 +56,7 @@ class Lobby {
   -SHUTDOWN_PATIENCE : Duration
   -queue : ExecutorService
   -nextGame : AtomicInteger
-  -loggedIn : Map<String, Connection>
-  -waiting : Map<String, PendingGame>
-  -playing : Map<String, Seated>
-  -games : Map<String, GameController>
+  -roster : Roster
   --
   +welcome() : ChannelListener<Command>
   +submit() : void
@@ -91,6 +88,30 @@ class PendingGame {
   +remove() : boolean
   +isEmpty() : boolean
   +summary() : GameSummary
+}
+class Roster {
+  -named : Map<String, Connection>
+  -tables : Map<String, PendingGame>
+  -seats : Map<String, Seated>
+  -games : Map<String, GameController>
+  -waitingAt : Map<Connection, PendingGame>
+  --
+  +isTaken() : boolean
+  +name() : void
+  +release() : void
+  +open() : void
+  +table() : Optional<PendingGame>
+  +tableOf() : Optional<PendingGame>
+  +join() : PlayerColor
+  +leave() : boolean
+  +close() : void
+  +withRoom() : List<PendingGame>
+  +tablesWaiting() : List<String>
+  +started() : void
+  +seatOf() : Optional<Seated>
+  +reclaim() : void
+}
+class Seated <<record>> {
 }
 class ServerSettings <<record>> {
   +defaults() : ServerSettings
