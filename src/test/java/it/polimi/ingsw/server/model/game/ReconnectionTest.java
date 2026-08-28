@@ -40,7 +40,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * they cannot argue has to be one they would not argue with: take nothing, spend nothing, risk
  * nothing. What it must never be is <em>nothing at all</em>.
  *
- * <p>Components involved: {@link Game}, {@link Phase}, {@link PlayerPrompt}.
+ * <p>Components involved: {@link Game}, {@link Phase}, {@link
+ * it.polimi.ingsw.common.game.PlayerPrompt}.
  */
 class ReconnectionTest {
 

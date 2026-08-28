@@ -42,7 +42,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * constructor when it is deserialized, so these run again on everything that arrives over a
  * socket or an RMI connection. The guard a client skipped, the server applies.
  *
- * <p>Components involved: {@link Command}, {@link Event}, {@link Envelope}.
+ * <p>Components involved: {@link Command}, {@link Event}, {@link
+ * it.polimi.ingsw.common.transport.Envelope}.
  */
 class MalformedMessagesTest {
 

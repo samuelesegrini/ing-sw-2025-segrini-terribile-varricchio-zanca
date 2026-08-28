@@ -525,10 +525,12 @@ class LobbyTest {
                     client.only(GameEvent.Rejected.class).get(0).reason());
         }
 
-        @Test
-        @DisplayName("a table still filling ends too, because the baseline says even in start-up")
-        void aTableStillFillingEndsWhenSomebodyDrops() {
-            withTheBaselinePolicy();
+        /**
+         * Opens a table for four and seats two of them, leaving it still filling.
+         *
+         * @return the host first, then the guest
+         */
+        private List<Client> aTableOfFourWithTwoSeated() {
             Client host = new Client().login("samuele");
             settle();
             host.send(new LobbyCommand.CreateGame(GameLevel.LEVEL_II, 4));
@@ -537,6 +539,16 @@ class LobbyTest {
             settle();
             guest.send(new LobbyCommand.JoinGame("game-1"));
             settle();
+            return List.of(host, guest);
+        }
+
+        @Test
+        @DisplayName("a table still filling ends too, because the baseline says even in start-up")
+        void aTableStillFillingEndsWhenSomebodyDrops() {
+            withTheBaselinePolicy();
+            List<Client> table = aTableOfFourWithTwoSeated();
+            Client host = table.get(0);
+            Client guest = table.get(1);
 
             guest.hangUp();
             settle();
@@ -553,14 +565,9 @@ class LobbyTest {
         @DisplayName("and ends the same way when somebody leaves rather than drops")
         void aTableStillFillingEndsWhenSomebodyLeaves() {
             withTheBaselinePolicy();
-            Client host = new Client().login("samuele");
-            settle();
-            host.send(new LobbyCommand.CreateGame(GameLevel.LEVEL_II, 4));
-            settle();
-            Client guest = new Client().login("chiara");
-            settle();
-            guest.send(new LobbyCommand.JoinGame("game-1"));
-            settle();
+            List<Client> table = aTableOfFourWithTwoSeated();
+            Client host = table.get(0);
+            Client guest = table.get(1);
 
             guest.send(new LobbyCommand.LeaveGame());
             settle();
@@ -574,14 +581,9 @@ class LobbyTest {
         @Test
         @DisplayName("but the default policy leaves the table standing, a seat lighter")
         void underTheDefaultPolicyTheTableCarriesOn() {
-            Client host = new Client().login("samuele");
-            settle();
-            host.send(new LobbyCommand.CreateGame(GameLevel.LEVEL_II, 4));
-            settle();
-            Client guest = new Client().login("chiara");
-            settle();
-            guest.send(new LobbyCommand.JoinGame("game-1"));
-            settle();
+            List<Client> table = aTableOfFourWithTwoSeated();
+            Client host = table.get(0);
+            Client guest = table.get(1);
 
             guest.hangUp();
             settle();

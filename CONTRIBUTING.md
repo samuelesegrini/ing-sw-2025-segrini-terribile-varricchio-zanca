@@ -12,6 +12,13 @@ comments, Javadoc, specifications, commit messages, issue and PR text
 (`requirements.pdf` § 2.2). Only the user-facing strings of the application may be
 Italian, and this project keeps them English too for consistency.
 
+**One exception: quoting the requirements.** `requirements.pdf` is written in Italian
+and is the normative document. Where a comment or a specification turns on the exact
+words of a requirement, quote them verbatim and put an English gloss beside them —
+paraphrasing a rule and then arguing from the paraphrase is how `docs/specs` came to
+assert things the PDF does not say (M15). The quote is evidence; the gloss is for the
+reader; neither stands alone.
+
 ## Branches
 
 | Branch | Purpose | Who merges into it |

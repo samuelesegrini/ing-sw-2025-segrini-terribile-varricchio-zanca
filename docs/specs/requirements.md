@@ -104,10 +104,13 @@ say nothing.
 | policy | what a dropped connection does |
 |:--|:--|
 | `ENDS_THE_GAME` | L4, including a table still filling. Everybody still at it is told the game is over; in a started game they are then hung up on. Tests only. |
-| `GAME_CARRIES_ON` | AF4, and what the server runs. The seat waits and turns are skipped. |
+| `GAME_CARRIES_ON` | AF4, and what the server runs. A disconnected player may reconnect and carry on; while away their turns are skipped; with one player left the game suspends until somebody returns or a timeout awards them the win. |
 
-**What AF4 actually says, and where it stops.** Quoted, because this is the sentence the
-wording used to overreach:
+**What AF4 actually says, and where it stops.** Quoted verbatim, because this is the sentence
+the wording used to overreach — *disconnected players may reconnect and continue; while a
+player is away the game carries on skipping their turns; if only one player is left the game
+suspends until somebody else reconnects or a timeout awards the win to the only one still
+connected*:
 
 > I giocatori disconnessi … possono ricollegarsi e continuare la partita. Mentre un giocatore
 > non è collegato, il gioco continua saltando i turni di quel giocatore. **Se rimane attivo un

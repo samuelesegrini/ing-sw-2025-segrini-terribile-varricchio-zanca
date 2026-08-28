@@ -15,7 +15,9 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  * rename or a move that the compiler cannot see would only surface when a game is
  * started. These tests fail at build time instead.
  *
- * <p>Components involved: the JSON under {@code src/main/resources/data} and {@link it.polimi.ingsw.server.data.GameDataLoader}, which reads it.
+ * <p>Components involved: the JSON under {@code src/main/resources/data}, read here as
+ * resources rather than through {@link it.polimi.ingsw.server.data.GameDataLoader}, so that a
+ * file missing from the jar fails here and not in every test that loads it.
  */
 class GameDataResourcesTest {
 
