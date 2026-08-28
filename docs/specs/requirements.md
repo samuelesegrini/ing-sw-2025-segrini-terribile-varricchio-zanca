@@ -1,8 +1,21 @@
 # Project Requirements — Traceability
 
-Derived from `docs/rules/requirements.pdf` (A.Y. 2024/2025,
+Derived from [`docs/rules/requirements.pdf`](../rules/requirements.pdf) (A.Y. 2024/2025,
 Prof. Cugola). This document restates every requirement as a checkable statement so
 that each one can be traced to an issue, a test and a piece of code.
+
+> **The PDF is normative. This file is a reading of it.**
+>
+> Where the two disagree the PDF wins, and this file is wrong. That is not a formality: a
+> claim here that the PDF does not make once produced a design recommendation that had to
+> be withdrawn after somebody read the source (#169). Two rules follow from it, and they
+> are why the wording below is fussier than it used to be.
+>
+> - A sentence that says *the requirements ask for X* must be traceable to words in the PDF,
+>   and quotes them where the point is contested.
+> - Where the PDF is **silent**, this file says so and records the team's answer as a
+>   **decision**. A decision can be revisited; a requirement cannot, and dressing one as the
+>   other removes the choice from whoever reads this next.
 
 ## Grading table (`requirements.pdf` Table 1)
 
@@ -65,7 +78,7 @@ and demonstrated autonomy and communication.
 | L1 | Connecting with no game starting creates one; otherwise the player joins the starting game | `LobbyTest` |
 | L2 | The creating player chooses the player count (2-4) | `LobbyTest.creatingATable` |
 | L3 | The game starts as soon as the expected player count is reached | `LobbyTest.reachingTheExpectedCountStartsTheGame` |
-| L4 | A player leaving **or** a dropped connection ends the game, including during setup, and every player is notified | `LobbyTest.theBaselinePolicy` |
+| L4 | A player leaving **or** a dropped connection ends the game, including during setup, and every player is notified | `LobbyTest.theBaselinePolicy`, `LobbyTest.aTableStillFillingEndsWhenSomebodyDrops` |
 
 **L1 and AF2 want different things**, and AF2 wins where they disagree. The baseline
 describes a server running one game at a time, where there is nothing to choose between.
@@ -75,14 +88,42 @@ client does by default over that: list, then join the first open game or create 
 server does not decide for them, because with more than one game open it would be deciding
 wrongly.
 
-**L4 is the baseline that AF4 replaces**, and the requirements are explicit that both must
-stay reachable and that the active one must be a decision rather than an accident. It is
-one: `DisconnectionPolicy`, passed to the `Lobby`.
+**L4 is the baseline that AF4 replaces.** § 2.3 makes the advanced features optional and,
+where implemented, they supersede the behaviour they replace — so a project implementing AF4
+is not obliged to end games on disconnection at all, and the PDF asks nothing about keeping
+the superseded behaviour selectable.
+
+*Decision (not a requirement).* Both are kept, as one `DisconnectionPolicy` passed to the
+`Lobby`, so that the baseline stays exercised by tests rather than deleted and asserted about
+in prose. `ENDS_THE_GAME` is **not** offered at runtime: `ServerMain` composes
+`GAME_CARRIES_ON` and there is no flag to change it. AF4 is strictly the better behaviour and
+a switch that makes the server worse serves no requirement. An earlier version of this file
+claimed the requirements were *"explicit that both must stay reachable"*. They are not. They
+say nothing.
 
 | policy | what a dropped connection does |
 |:--|:--|
-| `ENDS_THE_GAME` | L4. Everybody still connected is told the game is over, then hung up on. |
-| `GAME_CARRIES_ON` | AF4, and the default. The seat waits, turns are skipped, logging in again reclaims it. |
+| `ENDS_THE_GAME` | L4, including a table still filling. Everybody still at it is told the game is over; in a started game they are then hung up on. Tests only. |
+| `GAME_CARRIES_ON` | AF4, and what the server runs. The seat waits and turns are skipped. |
+
+**What AF4 actually says, and where it stops.** Quoted, because this is the sentence the
+wording used to overreach:
+
+> I giocatori disconnessi … possono ricollegarsi e continuare la partita. Mentre un giocatore
+> non è collegato, il gioco continua saltando i turni di quel giocatore. **Se rimane attivo un
+> solo giocatore**, il gioco viene sospeso fino a che non si ricollega almeno un altro
+> giocatore oppure scade un timeout che decreta la vittoria **dell'unico giocatore rimasto
+> connesso**.
+
+The exception is defined down to *one* player and no further.
+
+*The PDF is silent on what happens when the last player leaves.* Its own timeout cannot
+resolve that case — there is no *unico giocatore rimasto connesso* to award anything to — so
+§ 2.2's baseline is what is left standing.
+
+*Decision.* A table with nobody connected is reclaimed and its snapshot deleted: the game is
+over. This was questioned and the current behaviour kept, precisely because the argument for
+changing it rested on this file's old wording rather than on the PDF.
 
 ## AF — Advanced features (§ 2.3)
 
