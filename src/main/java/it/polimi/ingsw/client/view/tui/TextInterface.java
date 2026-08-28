@@ -52,7 +52,7 @@ public final class TextInterface implements UserInterface {
     /** Whether the line naming this game has been printed; it is printed once, ever. */
     private boolean announcedTheGame;
 
-    private int narrationShown;
+    private long narrationShown;
     private boolean stopped;
     private boolean promptShowing;
 
@@ -551,7 +551,7 @@ public final class TextInterface implements UserInterface {
     private static final long QUIET_MS = 25;
 
     private void send(Command command) {
-        int before = state.narration().size();
+        long before = state.heard();
         server.send(command);
         awaitAnswer(before);
     }
@@ -570,15 +570,15 @@ public final class TextInterface implements UserInterface {
      *
      * @param narrationBefore how much had been heard before the command went out
      */
-    private void awaitAnswer(int narrationBefore) {
+    private void awaitAnswer(long narrationBefore) {
         long deadline = System.nanoTime()
                 + java.time.Duration.ofMillis(ANSWER_TIMEOUT_MS).toNanos();
         long quiet = java.time.Duration.ofMillis(QUIET_MS).toNanos();
-        int heard = narrationBefore;
+        long heard = narrationBefore;
         long lastChange = System.nanoTime();
 
         while (System.nanoTime() < deadline) {
-            int now = state.narration().size();
+            long now = state.heard();
             if (now != heard) {
                 heard = now;
                 lastChange = System.nanoTime();
@@ -613,8 +613,9 @@ public final class TextInterface implements UserInterface {
      * to print an event.
      */
     private List<String> pendingNarration() {
-        List<it.polimi.ingsw.common.protocol.Event> fresh = state.narrationAfter(narrationShown);
-        narrationShown += fresh.size();
+        ClientState.Unshown unshown = state.narrationAfter(narrationShown);
+        List<it.polimi.ingsw.common.protocol.Event> fresh = unshown.events();
+        narrationShown = unshown.cursor();
         List<String> lines = new java.util.ArrayList<>();
         if (!announcedTheGame) {
             state.game().ifPresent(game -> {

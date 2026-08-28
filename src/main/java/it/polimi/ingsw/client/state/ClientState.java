@@ -44,6 +44,15 @@ public final class ClientState {
     private static final int LOG_LENGTH = 200;
 
     private final Deque<Event> narration = new ArrayDeque<>();
+
+    /**
+     * How many events have ever arrived, including the ones {@link #LOG_LENGTH} has since
+     * dropped.
+     *
+     * <p>The narration itself is a window; this is not. A screen that has printed part of the
+     * story needs a mark that keeps meaning the same thing after the window has slid past it.
+     */
+    private long heard;
     private final List<Runnable> listeners = new CopyOnWriteArrayList<>();
 
     private String nickname;
@@ -123,6 +132,7 @@ public final class ClientState {
 
     private void remember(Event event) {
         narration.addLast(event);
+        heard++;
         while (narration.size() > LOG_LENGTH) {
             narration.removeFirst();
         }
@@ -234,13 +244,43 @@ public final class ClientState {
     }
 
     /**
+     * Returns how many events have ever arrived.
+     *
+     * <p>Unlike {@code narration().size()} this keeps climbing once the log is full, so it can
+     * be compared against itself to tell whether anything new has been said.
+     *
+     * @return the count of everything heard, dropped or not
+     */
+    public synchronized long heard() {
+        return heard;
+    }
+
+    /**
      * Returns the narration since a point, for a screen that has already shown the rest.
      *
-     * @param alreadySeen how many events have been shown
-     * @return everything after those
+     * <p>The cursor counts events heard, not places in the log, so it goes on meaning the same
+     * thing after the log has dropped its oldest. A screen that has been away longer than the
+     * log is deep is given everything still kept rather than nothing.
+     *
+     * @param alreadySeen the {@link Unshown#cursor()} from last time, or 0 to start
+     * @return what has not been shown, and the cursor to ask with next time
      */
-    public synchronized List<Event> narrationAfter(int alreadySeen) {
+    public synchronized Unshown narrationAfter(long alreadySeen) {
         List<Event> all = new ArrayList<>(narration);
-        return alreadySeen >= all.size() ? List.of() : List.copyOf(all.subList(alreadySeen, all.size()));
+        long dropped = heard - all.size();
+        int from = (int) Math.min(all.size(), Math.max(0, alreadySeen - dropped));
+        return new Unshown(List.copyOf(all.subList(from, all.size())), heard);
+    }
+
+    /**
+     * The narration a screen has not drawn yet, with the mark to come back with.
+     *
+     * <p>The two travel together because reading and advancing have to be one step: taking the
+     * cursor separately either loses the events that land in between or shows them twice.
+     *
+     * @param events what to draw now, oldest first
+     * @param cursor what to pass to the next {@link #narrationAfter(long)}
+     */
+    public record Unshown(List<Event> events, long cursor) {
     }
 }

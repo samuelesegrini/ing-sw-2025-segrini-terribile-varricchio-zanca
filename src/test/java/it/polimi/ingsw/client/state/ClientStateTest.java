@@ -81,7 +81,7 @@ class ClientStateTest {
 
         assertEquals("there is nothing waiting to be welded", state.lastRefusal().orElseThrow());
         assertEquals(1, state.narration().size());
-        assertEquals(0, state.narrationAfter(1).size(),
+        assertEquals(0, state.narrationAfter(1).events().size(),
                 "a stream each event appears in exactly once is what 'say this once' wants");
     }
 
@@ -116,8 +116,8 @@ class ClientStateTest {
         assertEquals(2, state.narration().size(),
                 "a client that dropped events it did not understand would get quieter as the "
                         + "protocol grew");
-        assertEquals(1, state.narrationAfter(1).size());
-        assertEquals(List.of(), state.narrationAfter(9));
+        assertEquals(1, state.narrationAfter(1).events().size());
+        assertEquals(List.of(), state.narrationAfter(9).events());
     }
 
     @Test
@@ -128,6 +128,26 @@ class ClientStateTest {
         }
 
         assertEquals(200, state.narration().size());
+    }
+
+    @Test
+    @DisplayName("a screen draining as it goes never falls silent, however long the game runs")
+    void narrationOutlivesTheCap() {
+        long shown = 0;
+        int drawn = 0;
+
+        for (int event = 0; event < 500; event++) {
+            state.apply(new FlightEvent.DiceRolled(7));
+            ClientState.Unshown unshown = state.narrationAfter(shown);
+            drawn += unshown.events().size();
+            shown = unshown.cursor();
+        }
+
+        assertEquals(500, drawn,
+                "the screen went mute part way through: a cursor counting everything ever shown "
+                        + "was read as an index into a window that only keeps the last "
+                        + "few hundred, so once the window slid there was never anything after "
+                        + "the cursor again");
     }
 
     @Test
