@@ -36,8 +36,10 @@ import java.util.random.RandomGenerator;
  * <p>The desk above no longer knows that games have seeds, that snapshots have a format, or
  * that a {@link GameSnapshot.Seated} exists. It knows who is at which table.
  *
- * <p><b>Not thread-safe, and it does not need to be.</b> Every caller is the lobby's single
- * worker, which is what {@link Lobby} already guarantees for everything it owns.
+ * <p><b>Not thread-safe, and it does not need to be.</b> {@link #recoverAll} is called once,
+ * from the lobby's constructor, before anything can connect — a server that let somebody log in
+ * while games were still being put back could tell them their name was free and then find it
+ * was not. Everything else is reached on the lobby's single worker.
  */
 public final class GameArchive {
 

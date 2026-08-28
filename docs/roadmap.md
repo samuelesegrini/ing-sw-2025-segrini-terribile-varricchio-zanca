@@ -27,7 +27,7 @@ found in a unit test are free.
 | M13 | Seams and silent failures | A missing transport seam, two unchecked casts, a thread that dies quietly | `v1.2.0` |
 | M14 | What the jar actually does | An advanced feature the shipped server could not reach | `v1.3.0` |
 | M15 | What the requirements actually say | The derived spec read back against the PDF it came from | `v1.5.0` |
-| M16 | Where the defects kept landing | Two deepenings the earlier reviews proposed and nobody built | `v1.6.0` |
+| M16 | Where the defects kept landing | Two deepenings the earlier reviews proposed and nobody built, and two smaller debts | `v1.6.0` |
 
 ## M0 — Foundations
 
@@ -265,9 +265,15 @@ code sits still.
 - **Where a nickname is has no name** (#184). Four maps, fourteen methods
   keeping them in step by hand, three of those methods added since the
   proposal. The invariants holding them together are comments.
-- **A verb's meaning depends on a phase checked inline** (#185). The client is
-  the last tier still asking `if` where the server asks a `Phase` and the lobby
-  asks a `ConnectionState`.
+- **A verb and its documentation were two separate things** (#185). This item
+  was proposed as a `Screen` per phase, on the grounds that the client
+  dispatched a typed line through thirty branches in a chain. It does not, and
+  reading it said so: the dispatch is four comparisons handing off to five
+  handlers. The `Screen` tier was **dropped rather than deferred**, and what
+  shipped is the part that was real — a verb that carries the words meaning it
+  alongside its description, and a check that the terminal accepts exactly what
+  the help declares, in both directions. It found an undocumented command on
+  its first run.
 - **A duplication a merged PR says it removed** (#182). It does not; the claim
   is the only reason the item exists.
 

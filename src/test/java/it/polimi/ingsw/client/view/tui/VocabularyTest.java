@@ -20,7 +20,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -45,11 +45,17 @@ class VocabularyTest {
             Path.of("src/main/java/it/polimi/ingsw/client/view/tui/TextInterface.java"),
             Path.of("src/main/java/it/polimi/ingsw/client/view/tui/FlightAnswers.java"));
 
-    /** A `typed.is("a", "b")` call, with its literals. */
+    /**
+     * A {@code typed.is("a", "b")} call, with its literals.
+     *
+     * <p>Any character but a quote. An earlier version asked for {@code [a-z]+}, which meant
+     * {@code typed.is("help", "?")} matched nothing at all and neither word was ever seen —
+     * so a whole call went unscanned and the comparison below passed by not looking.
+     */
     private static final Pattern MATCHED =
-            Pattern.compile("typed\\.is\\(\\s*((?:\"[a-z]+\"\\s*,?\\s*)+)\\)");
+            Pattern.compile("typed\\.is\\(\\s*((?:\"[^\"]+\"\\s*,?\\s*)+)\\)");
 
-    private static final Pattern LITERAL = Pattern.compile("\"([a-z]+)\"");
+    private static final Pattern LITERAL = Pattern.compile("\"([^\"]+)\"");
 
     private static Set<String> declared() {
         Set<String> words = new HashSet<>(namesIn(Help.always()));
@@ -109,17 +115,45 @@ class VocabularyTest {
             assertTrue(accepted().size() > 20,
                     "if this drops to nothing the comparison above passes vacuously");
         }
+
+        @Test
+        @DisplayName("and it sees words that are not letters, which it once did not")
+        void theScanSeesSymbols() {
+            // typed.is("help", "?") was invisible to the first version of the pattern, and it
+            // is the call that would have failed the reverse check below.
+            assertTrue(accepted().contains("?"),
+                    "a verb spelled with a symbol is still a verb");
+        }
+    }
+
+    @Nested
+    @DisplayName("the other direction")
+    class WhatIsDocumented {
+
+        @Test
+        @DisplayName("every word the help declares is one the terminal actually accepts")
+        void nothingIsDocumentedAndUnreachable() {
+            List<String> unreachable = new ArrayList<>(new TreeSet<>(declared()));
+            unreachable.removeAll(accepted());
+
+            // The worse of the two failures: a player reads the help, types the word, and is
+            // told it is not something they can do.
+            assertEquals(List.of(), unreachable,
+                    "these words appear in a help line and nothing matches them");
+        }
     }
 
     @Nested
     @DisplayName("the words the help declares")
     class WhatIsDeclared {
 
-        @ParameterizedTest
-        @EnumSource(GamePhase.class)
-        @DisplayName("carry at least one word that means them, in every phase")
-        void everyVerbHasAWord(GamePhase phase) {
-            Help.verbsDuring(phase).forEach(verb -> assertFalse(verb.aliases().isEmpty()));
+        @Test
+        @DisplayName("cannot be declared without a word that means them")
+        void averbWithoutAWordIsRefused() {
+            // The previous version of this walked the declarations asserting none was empty,
+            // which the compact constructor already makes impossible — it could not fail.
+            assertThrows(IllegalArgumentException.class,
+                    () -> Verb.of("mystery", "does something"));
         }
 
         @ParameterizedTest

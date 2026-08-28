@@ -11,9 +11,16 @@ import java.util.List;
  * documented and unreachable, and neither shows up until somebody types the wrong thing and is
  * told it is not something they can do.
  *
- * <p>So a verb carries both. What matches it and what explains it are the same object, and
- * accepting a word the help does not mention now takes deliberate effort rather than
- * forgetfulness.
+ * <p>So a verb carries both, and {@code VocabularyTest} reads the declaration and the sources
+ * that match it and compares the two sets in both directions.
+ *
+ * <p><b>Why the handlers still match on literals.</b> A verb that the handlers called directly
+ * — {@code Help.RETURN_TO_PILE.matches(typed)} — would make divergence impossible rather than
+ * merely detectable, which is the better property. It would also replace thirty readable words
+ * with thirty constant references inside a terminal that is finished and working, for no
+ * behavioural gain. The check is the proportionate answer, and it is only worth anything
+ * because it runs both ways: a word matched and undeclared, and a word declared and matched by
+ * nothing, both fail it.
  *
  * @param aliases every word that means this, first one preferred
  * @param form    how it reads in the help, arguments included
@@ -44,16 +51,6 @@ record Verb(List<String> aliases, String form, String meaning) {
      */
     static Verb of(String form, String meaning, String... aliases) {
         return new Verb(List.of(aliases), form, meaning);
-    }
-
-    /**
-     * Tells whether a typed line is this verb.
-     *
-     * @param typed what somebody wrote
-     * @return {@code true} when its first word is one of these aliases
-     */
-    boolean matches(Typed typed) {
-        return typed.is(aliases.toArray(String[]::new));
     }
 
     /**
