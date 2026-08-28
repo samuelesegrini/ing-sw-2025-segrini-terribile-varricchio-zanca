@@ -54,5 +54,5 @@ card still on the table. The window was not exercised this time round; the termi
 
 Also on these binaries: quiet by default, with nothing on stderr; `--debug` tracing every
 message the server sees; and a client run with `--debug` writing nothing at all to its
-terminal and 489 bytes to `galaxy-trucker-client.log` instead. They have not been run on a
+terminal, writing to `galaxy-trucker-client.log` instead. They have not been run on a
 machine other than the one they were built on.
