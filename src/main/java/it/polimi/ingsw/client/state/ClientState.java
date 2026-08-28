@@ -37,6 +37,9 @@ import java.util.concurrent.CopyOnWriteArrayList;
  */
 public final class ClientState {
 
+    private static final org.slf4j.Logger LOG =
+            org.slf4j.LoggerFactory.getLogger(ClientState.class);
+
     /** How much narration to keep. Enough to fill a screen twice over. */
     private static final int LOG_LENGTH = 200;
 
@@ -69,20 +72,38 @@ public final class ClientState {
      */
     public synchronized void apply(Event event) {
         switch (event) {
-            case LobbyEvent.LoggedIn loggedIn -> nickname = loggedIn.nickname();
-            case LobbyEvent.GamesListed listed -> openGames = listed.games();
+            case LobbyEvent.LoggedIn loggedIn -> {
+                nickname = loggedIn.nickname();
+                LOG.debug("logged in as {}", nickname);
+            }
+            case LobbyEvent.GamesListed listed -> {
+                openGames = listed.games();
+                LOG.debug("{} games waiting", openGames.size());
+            }
             case LobbyEvent.JoinedGame joined -> {
                 gameId = joined.gameId();
                 colour = joined.colour();
+                LOG.debug("seated at {} as {}", gameId, colour);
             }
             case GameEvent.StateChanged changed -> {
                 game = changed.state();
                 lastRefusal = null;
+                // Summarised, never dumped: a whole projection in a log file is unreadable and
+                // is also the one message that carries what the other players cannot see.
+                LOG.debug("state: {} phase, {} players, waiting on {}", game.phase(),
+                        game.players().size(),
+                        game.pendingIfAny().map(prompt -> prompt.player().toString())
+                                .orElse("nobody"));
             }
-            case GameEvent.Rejected rejected -> lastRefusal = rejected.reason();
-            default -> {
-                // Narration, and nothing to record beyond having heard it.
+            case GameEvent.Rejected rejected -> {
+                lastRefusal = rejected.reason();
+                LOG.debug("refused {}: {}", rejected.command(), rejected.reason());
             }
+            default ->
+                // Narration, and nothing to record beyond having heard it. Traced all the
+                // same: from a player's chair an event this state ignores looks exactly like
+                // one that never arrived.
+                    LOG.debug("narration: {}", event.getClass().getSimpleName());
         }
         remember(event);
         listeners.forEach(Runnable::run);
@@ -94,6 +115,7 @@ public final class ClientState {
      * @param reason what to show, for somebody who was in the middle of something
      */
     public synchronized void disconnected(String reason) {
+        LOG.info("connection lost: {}", reason);
         connected = false;
         lostConnection = reason;
         listeners.forEach(Runnable::run);

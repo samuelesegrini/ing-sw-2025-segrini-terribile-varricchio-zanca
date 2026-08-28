@@ -26,6 +26,7 @@ import java.util.Optional;
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -175,6 +176,11 @@ class PlayingAWholeGameTest {
         link.close();
 
         String printed = screen.toString(StandardCharsets.UTF_8);
+        // Printed when the client first has a game and never again — not off PhaseBegan, which
+        // is never sent for the phase a game opens in, and not off every state, which would
+        // repeat it all game.
+        assertEquals(1, printed.lines().filter(line -> line.startsWith("── game-1 —")).count(),
+                "the line naming the game belongs at the start of it, once");
         assertTrue(printed.contains("Shipyard"), "the shipyard was never drawn");
         assertTrue(printed.contains("Route"), "the route was never drawn");
         assertTrue(printed.contains("Final ledger"),

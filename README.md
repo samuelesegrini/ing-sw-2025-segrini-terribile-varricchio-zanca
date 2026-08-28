@@ -111,3 +111,22 @@ each square sits on it was measured from the artwork rather than guessed.
 
 In the terminal, type `help` at any point: it lists what is legal in the phase the game is
 actually in, which is shorter and more useful than everything the game can do.
+
+### When something goes wrong
+
+Both jars are quiet by default: they print what they print above and nothing per request.
+`--debug` turns on a trace of what that process is actually doing — every message in and out,
+every join, drop, rejoin and snapshot on the server, and what the client did with each event
+it was handed. `GT_DEBUG=1` in the environment does the same, for when a jar is started by a
+script. Either may go anywhere on the command line; the arguments above keep working around
+it.
+
+```bash
+java -jar target/server.jar 4321 4322 --debug
+java -jar target/client.jar --tui --socket --debug
+```
+
+The server traces to its terminal, because it owns it. **The client traces to a file** —
+`galaxy-trucker-client.log` beside where it was started, or wherever `--log <file>` or `GT_LOG`
+says. It is never the terminal and never stderr: the interface is drawing a ship, a board and
+a set of prompts there, and a log line arriving mid-frame tears the picture apart.

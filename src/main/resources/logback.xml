@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  The quiet case, which is the one that ships.
+
+  Without this file Logback falls back to its own default — the root logger at DEBUG, straight
+  to the console — so a jar with slf4j on the classpath and nothing configuring it would have
+  been at its noisiest in front of whoever ran it. INFO here, and it takes an explicit
+  debug flag to hear any more.
+
+  The pattern is the bare message on purpose. The server's startup lines are the program
+  talking to whoever started it and have to come out exactly as they did when they were
+  System.out.println; a timestamp and a level in front of them would be a change to the
+  program's output, not to its logging. The client never uses this appender at all — it
+  replaces it with a file at startup, because its terminal belongs to the ship it is drawing.
+-->
+<configuration>
+
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+    </root>
+
+</configuration>

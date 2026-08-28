@@ -13,6 +13,9 @@ import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.util.stream.Stream;
 
 /**
@@ -29,6 +32,8 @@ import java.util.stream.Stream;
  * and then find their ship was somebody else's.
  */
 public final class SnapshotStore implements Snapshots {
+
+    private static final Logger LOG = LoggerFactory.getLogger(SnapshotStore.class);
 
     private static final String SUFFIX = ".snapshot";
     private static final String PARTIAL = ".writing";
@@ -163,7 +168,7 @@ public final class SnapshotStore implements Snapshots {
         try {
             move(fileFor(gameId), directory.resolve(gameId + SUFFIX + BROKEN));
         } catch (IOException | RuntimeException stuck) {
-            System.err.println("could not set " + gameId + " aside: " + stuck.getMessage());
+            LOG.warn("could not set {} aside: {}", gameId, stuck.getMessage());
         }
     }
 

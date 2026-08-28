@@ -75,10 +75,46 @@ class NarrationRendererTest {
     @Test
     @DisplayName("a phase change is marked, because it is when a view has to restructure")
     void phases() {
-        assertEquals("── building", rendered(new GameEvent.PhaseBegan(GamePhase.BUILDING)));
-        assertEquals("── crew placement",
+        assertEquals("── building — build a ship out of what is on the table",
+                rendered(new GameEvent.PhaseBegan(GamePhase.BUILDING)));
+        assertEquals("── crew placement — put people and aliens in the cabins",
                 rendered(new GameEvent.PhaseBegan(GamePhase.CREW_PLACEMENT)));
         assertEquals("── the game is over", rendered(new GameEvent.GameEnded()));
+    }
+
+    @ParameterizedTest
+    @EnumSource(GamePhase.class)
+    @DisplayName("and says what the phase is for, for every phase there is")
+    void everyPhaseSaysWhatItIsFor(GamePhase phase) {
+        String line = rendered(new GameEvent.PhaseBegan(phase));
+
+        // The name alone is what this replaced: it told a player something had changed and
+        // nothing about what was now expected of them. Driven off values(), so a phase added
+        // later fails here as well as failing to compile.
+        assertTrue(line.startsWith("── "), line);
+        assertTrue(line.contains(" — "), "no clause after the rule: " + line);
+        assertFalse(NarrationRenderer.purposeOf(phase).isBlank());
+    }
+
+    @Test
+    @DisplayName("a game beginning names itself, its rules and the table")
+    void aGameBeginningNamesTheTable() {
+        String line = NarrationRenderer.gameBegan(Messages.state());
+
+        assertTrue(line.contains("game-1"), line);
+        assertTrue(line.contains("level ii"), line);
+        assertTrue(line.contains("samuele"), line);
+        assertTrue(line.contains("chiara"), line);
+    }
+
+    @Test
+    @DisplayName("and marks which of them is the player reading it")
+    void theTableSaysWhichOneIsYou() {
+        String line = NarrationRenderer.gameBegan(Messages.state());
+
+        // A player who joined a game somebody else opened has no other way to tell.
+        assertTrue(line.contains("(RED, you)"), line);
+        assertFalse(line.contains("(BLUE, you)"), line);
     }
 
     @Test
@@ -152,4 +188,5 @@ class NarrationRendererTest {
         assertEquals("  waiting for RED",
                 rendered(new FlightEvent.Awaiting(Messages.prompts().get(0))));
     }
+
 }

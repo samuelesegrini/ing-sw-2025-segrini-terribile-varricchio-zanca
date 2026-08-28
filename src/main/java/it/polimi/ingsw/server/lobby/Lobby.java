@@ -15,6 +15,8 @@ import it.polimi.ingsw.server.persistence.GameSnapshot;
 import it.polimi.ingsw.server.persistence.Snapshots;
 import it.polimi.ingsw.server.model.game.Game;
 import it.polimi.ingsw.server.model.game.Seat;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.time.InstantSource;
@@ -45,6 +47,8 @@ import java.util.random.RandomGenerator;
  * is still asked, which is where somebody belongs when they come back.
  */
 public final class Lobby implements AutoCloseable {
+
+    private static final Logger LOG = LoggerFactory.getLogger(Lobby.class);
 
     private final GameData data;
     private final RandomGenerator random;
@@ -212,6 +216,7 @@ public final class Lobby implements AutoCloseable {
         from.nameYourself(name);
         loggedIn.put(name, from);
         from.send(new LobbyEvent.LoggedIn(name));
+        LOG.debug("{} logged in", name);
     }
 
     /**
@@ -232,6 +237,7 @@ public final class Lobby implements AutoCloseable {
         from.send(new LobbyEvent.JoinedGame(seat.controller().game().id(), seat.colour()));
         // bind sends the whole picture, which is all a returning player needs and exactly what
         // a new one gets. There is no third case to write.
+        LOG.debug("{} rejoined {} as {}", name, seat.controller().game().id(), seat.colour());
         from.handOverTo(seat.colour(), seat.controller().bind(seat.colour(), from.channel()));
     }
 
@@ -242,6 +248,8 @@ public final class Lobby implements AutoCloseable {
         PendingGame table = new PendingGame(
                 "game-" + nextGame.getAndIncrement(), create.level(), create.seats());
         waiting.put(table.id(), table);
+        LOG.debug("{} opened {} for {} at {}", from.nickname(), table.id(), create.seats(),
+                create.level());
         take(from, table);
     }
 
@@ -277,6 +285,7 @@ public final class Lobby implements AutoCloseable {
         table.players().stream()
                 .filter(other -> other != from)
                 .forEach(other -> other.send(new LobbyEvent.PlayerEntered(from.nickname(), colour)));
+        LOG.debug("{} took a seat at {} as {}", from.nickname(), table.id(), colour);
         if (table.isFull()) {
             start(table);
         }
@@ -290,6 +299,7 @@ public final class Lobby implements AutoCloseable {
         if (!table.remove(from)) {
             return;
         }
+        LOG.debug("{} left {}", from.nickname(), table.id());
         table.players().forEach(other -> other.send(new LobbyEvent.PlayerLeft(from.nickname())));
         if (table.isEmpty()) {
             waiting.remove(table.id());
@@ -329,6 +339,7 @@ public final class Lobby implements AutoCloseable {
             playing.put(player.nickname(), new Seated(controller, colour));
             player.handOverTo(colour, controller.attach(colour, player.channel()));
         }
+        LOG.debug("{} started, {} at {}", table.id(), seats.size(), table.level());
         players.forEach(player -> controller.announceArrival(table.colourOf(player)));
     }
 
@@ -346,8 +357,11 @@ public final class Lobby implements AutoCloseable {
         List<GameSnapshot.Seated> written = seats.stream()
                 .map(seat -> new GameSnapshot.Seated(seat.nickname(), seat.colour()))
                 .toList();
-        return game -> snapshots.save(new GameSnapshot(GameSnapshot.FORMAT, id, level, written,
-                seed, game.history()));
+        return game -> {
+            snapshots.save(new GameSnapshot(GameSnapshot.FORMAT, id, level, written,
+                    seed, game.history()));
+            LOG.debug("{} written down, {} commands", id, game.history().size());
+        };
     }
 
     /**
@@ -367,13 +381,15 @@ public final class Lobby implements AutoCloseable {
                 games.put(kept.gameId(), controller);
                 controller.seats().forEach(seat ->
                         playing.put(seat.nickname(), new Seated(controller, seat.colour())));
+                LOG.info("{} picked up again, {} commands replayed", kept.gameId(),
+                        kept.accepted().size());
             } catch (RuntimeException broken) {
                 // One game that cannot be replayed must not stop the server carrying the rest.
                 // The file is kept, because somebody will want to know why, but moved out of
                 // the way: a server that reads this directory at every startup would otherwise
                 // report the same dead game for ever.
-                System.err.println("could not put " + kept.gameId() + " back, setting it aside: "
-                        + broken.getMessage());
+                LOG.warn("could not put {} back, setting it aside: {}", kept.gameId(),
+                        broken.getMessage());
                 snapshots.setAside(kept.gameId());
             }
         }
@@ -456,6 +472,7 @@ public final class Lobby implements AutoCloseable {
         // A finished game is not worth keeping, and one left behind would come back from the
         // dead the next time the server started.
         snapshots.delete(id);
+        LOG.debug("{} reclaimed, nobody left at it", id);
         controller.announceToEveryone(new GameEvent.GameEnded());
         controller.awaitQuiet(Duration.ofSeconds(1));
         controller.close();
