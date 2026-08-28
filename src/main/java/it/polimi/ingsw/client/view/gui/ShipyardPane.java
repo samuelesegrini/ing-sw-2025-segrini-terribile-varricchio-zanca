@@ -4,7 +4,10 @@ import it.polimi.ingsw.client.state.ClientState;
 import it.polimi.ingsw.common.game.PlayerColor;
 import it.polimi.ingsw.common.game.Position;
 import it.polimi.ingsw.common.game.Rotation;
+import it.polimi.ingsw.common.game.AlienColor;
+import it.polimi.ingsw.common.game.GamePhase;
 import it.polimi.ingsw.common.protocol.BuildingCommand;
+import it.polimi.ingsw.common.protocol.PreparationCommand;
 import it.polimi.ingsw.common.protocol.view.BuildingView;
 import it.polimi.ingsw.common.protocol.view.CellView;
 import it.polimi.ingsw.common.protocol.view.GameView;
@@ -66,6 +69,17 @@ final class ShipyardPane extends BorderPane {
 
     /** How far the tile in hand has been turned, before it is put down. */
     private Rotation turned = Rotation.NONE;
+
+    /** The three sets of controls, one per phase this pane serves. */
+    private final VBox buildingControls = new VBox(10);
+    private final VBox repairControls = new VBox(10);
+    private final VBox crewControls = new VBox(10);
+
+    /** Which pieces of a broken ship can be kept, one button each, rebuilt as the ship changes. */
+    private final VBox pieceChoices = new VBox(6);
+
+    /** What a click on a cabin boards: people, or an alien of this colour. */
+    private AlienColor boarding;
 
     /**
      * Builds the shipyard.
@@ -134,21 +148,114 @@ final class ShipyardPane extends BorderPane {
         Button done = new Button("Finished building");
         done.setOnAction(clicked -> send(new BuildingCommand.FinishBuilding(null)));
 
-        VBox box = new VBox(10,
+        buildingControls.getChildren().setAll(
                 new Label("In hand"), hand,
                 draw, turn, weld, putBack, setAside,
                 new Label("Set aside"), reserved,
                 new Label("Face up — anybody may take these"), pile,
-                flip, peek, done, trouble);
+                flip, peek, done);
+
+        buildRepairControls();
+        buildCrewControls();
+
+        VBox box = new VBox(10, buildingControls, repairControls, crewControls, trouble);
         box.setPadding(new Insets(0, 0, 0, 16));
         box.setPrefWidth(320);
         return box;
     }
 
+    /**
+     * The controls for looking a ship over before it flies.
+     *
+     * <p>Throwing a component off is a click on the board rather than a button, because the
+     * thing being thrown off is a square and naming a square in a button is worse than pointing
+     * at one. Which piece of a broken ship to keep is a button each, since a player choosing
+     * between two halves wants to see how big they are.
+     */
+    private void buildRepairControls() {
+        Label how = new Label("Click a component to throw it off.");
+        how.setWrapText(true);
+        repairControls.getChildren().setAll(
+                new Label("Check over the ship"), how,
+                new Label("If it is in pieces, keep one:"), pieceChoices);
+    }
+
+    /**
+     * The controls for crewing a ship.
+     *
+     * <p>A cabin takes two people or one alien, never a mixture, so the buttons choose what the
+     * next click will board rather than boarding anything themselves. An alien only goes where
+     * life support of its colour is welded on, which the server enforces; choosing one here and
+     * being refused is the cheaper way round, because the alternative is the window deciding
+     * which cabins are legal and disagreeing with the rules.
+     */
+    private void buildCrewControls() {
+        Button people = new Button("Put people aboard");
+        people.setOnAction(clicked -> boardingIs(null));
+
+        Button purple = new Button("Board a purple alien");
+        purple.setOnAction(clicked -> boardingIs(AlienColor.PURPLE));
+
+        Button brown = new Button("Board a brown alien");
+        brown.setOnAction(clicked -> boardingIs(AlienColor.BROWN));
+
+        Button ready = new Button("Ready — launch");
+        ready.setOnAction(clicked -> send(new PreparationCommand.FinishPreparation()));
+
+        Label how = new Label("Choose what to board, then click a cabin. "
+                + "'Ready' fills the rest with people and launches.");
+        how.setWrapText(true);
+
+        crewControls.getChildren().setAll(
+                new Label("Crew the ship"), how, people, purple, brown, ready);
+    }
+
+    private void boardingIs(AlienColor alien) {
+        boarding = alien;
+        trouble.setText(alien == null
+                ? "clicking a cabin will put two people in it"
+                : "clicking a cabin will put a " + alien.name().toLowerCase() + " alien in it");
+    }
+
+    /** Shows the controls belonging to the phase, and hides the other two. */
+    private void showControlsFor(GamePhase phase) {
+        onlyWhen(buildingControls, phase == GamePhase.BUILDING || phase == GamePhase.LOBBY);
+        onlyWhen(repairControls, phase == GamePhase.VALIDATION);
+        onlyWhen(crewControls, phase == GamePhase.CREW_PLACEMENT);
+    }
+
+    private static void onlyWhen(javafx.scene.Node node, boolean wanted) {
+        node.setVisible(wanted);
+        // Managed as well as visible, or the hidden ones go on taking up the room they would
+        // have needed and the sidebar is mostly gaps.
+        node.setManaged(wanted);
+    }
+
+    /** Redraws the one-button-per-piece list a broken ship is choosing between. */
+    private void drawPieceChoices(ShipView ship) {
+        pieceChoices.getChildren().clear();
+        if (ship.pieces().size() < 2) {
+            return;
+        }
+        for (int piece = 0; piece < ship.pieces().size(); piece++) {
+            java.util.Set<Position> squares = ship.pieces().get(piece);
+            Button keep = new Button("Keep the piece of " + squares.size()
+                    + (squares.size() == 1 ? " component" : " components"));
+            keep.setOnAction(clicked -> send(new PreparationCommand.KeepPiece(squares)));
+            pieceChoices.getChildren().add(keep);
+        }
+    }
+
     // ------------------------------------------------------------------ what a click means
 
     /**
-     * Puts the tile in hand on the square that was clicked.
+     * Acts on the square that was clicked, according to what the game is waiting for.
+     *
+     * <p>The same board serves three phases, so the same click means three things: putting the
+     * tile in hand down while the shipyard is open, throwing a component off while the ship is
+     * being checked over, and boarding crew into a cabin while it is being crewed. A pane that
+     * always sent a building command left the other two phases with no way to say anything at
+     * all.
      *
      * <p>A square that is not part of the ship is refused here rather than sent: the outline is
      * in the projection, so the client can see it, and a refusal that arrives instantly reads
@@ -178,9 +285,17 @@ final class ShipyardPane extends BorderPane {
             return;
         }
         trouble.setText("");
-        send(ship.cells().containsKey(square)
-                ? new BuildingCommand.AdjustPlacement(square, turned)
-                : new BuildingCommand.PlaceInHand(square, turned));
+        switch (phaseNow()) {
+            case VALIDATION -> send(new PreparationCommand.RemoveComponent(square));
+            case CREW_PLACEMENT -> send(new PreparationCommand.BoardCrew(square, boarding));
+            default -> send(ship.cells().containsKey(square)
+                    ? new BuildingCommand.AdjustPlacement(square, turned)
+                    : new BuildingCommand.PlaceInHand(square, turned));
+        }
+    }
+
+    private GamePhase phaseNow() {
+        return state.game().map(GameView::phase).orElse(GamePhase.LOBBY);
     }
 
     private void send(it.polimi.ingsw.common.protocol.Command command) {
@@ -210,9 +325,11 @@ final class ShipyardPane extends BorderPane {
         heading.setText(whose == game.you()
                 ? "Your ship"
                 : nameOf(game, whose) + "'s ship — 'Your ship' to go back");
+        showControlsFor(game.phase());
         drawBoard(ship);
         game.buildingIfAny().ifPresent(this::drawTheYard);
         drawReserved(ship);
+        drawPieceChoices(ship);
         drawOtherShips(game);
         trouble.setText(state.lastRefusal().orElse(trouble.getText()));
     }
