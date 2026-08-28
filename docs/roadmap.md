@@ -341,3 +341,53 @@ after them.
 Exit criterion: a level II game played end to end through the jars over both
 transports, and a server restarted mid-flight that picks the game up again —
 both observed, not inferred.
+
+## M18 — Before 2.0.0
+
+M17 played a game through the terminal and found four things. This one asked the
+same question of everything that had never been played: the two advanced
+features no test drives end to end, and the other interface.
+
+- **Disconnection, driven rather than modelled** (AF4). A player killed mid-game
+  and brought back: `GREEN has dropped`, then
+  `GREEN is away — stopped building where they were for them`, then
+  `waiting for somebody to come back; 120s before the last player standing takes
+  it`, then `somebody is back; carrying on` — with the tile they had welded
+  still on the board. Nothing wrong with it.
+- **Three games at once** (AF2). Six clients, mixed transports, three tables
+  opened and joined together. Correct seating, three independent snapshots, and
+  no cross-talk: each player saw only their own game's names. Nothing wrong with
+  it either.
+- **The window could not finish a game** (#205). It never constructed a single
+  `PreparationCommand`, so a player with only the GUI reached validation, or
+  crew placement, and had nothing to press. Both phases are mandatory between
+  the shipyard and the flight. `SceneRouter` routed to a `REPAIRS` and a `CREW`
+  screen, both had titles, and `Screens.build` mapped both to the *shipyard's*
+  pane — `Draw from the heap` and `Weld it down`, under a heading reading "Crew
+  the ship".
+- **The ports, and the images** (#208, #207). The one package at nothing was the
+  two `main` classes; what is worth reading back there is how the positional
+  ports are taken off the command line, which is quiet about being got wrong.
+  Three checked-in UML images were a milestone or two behind, and the generator
+  was drawing one private method as public.
+
+**The one that matters is #205, and what it was.** It is the same gap the
+terminal had. `RepairAndCrewByTypingTest` opens by saying so — *"These two
+phases had no commands at all until a test tried to play through them and found
+the game stuck in crew placement with nothing that would move it. Every screen
+was drawn and every renderer was tested; there was simply no way to say
+anything."* Found there by playing through, fixed there, and never looked for in
+the other interface. Seven GUI test classes were green throughout: they check
+that windows *build* and that pure functions *decide*, and not one pressed a
+control and asked whether the game moved.
+
+**No TestFX.** Its bundled Monocle is a JDK 8 artifact and cannot go headless on
+this toolchain, so it would have opened real windows on every build.
+`ScreensTest` already had the harness worth having — start the toolkit, build on
+its thread, walk the node tree — and `GuiGameTest` presses buttons through it
+against a real server.
+
+Exit criterion: every advanced feature driven through the jars rather than
+argued from a test, and a game played through the window by something that runs
+in the suite. Both met; a person has still not watched the GUI play one, which
+is the last thing worth doing by hand.
